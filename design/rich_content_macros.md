@@ -1,137 +1,209 @@
 # Technical Design: Rich Content Macros
 
-This document specifies the schema, HTML rendering, React node views, and collaboration models of Arkollab's rich content macro extensions: **Callout Panels** and **Inline Status Badges**.
+This document specifies the schemas, serialization behaviors, and rendering models of Arkollab's rich content macro extensions: **Callout Panels**, **Inline Status Badges**, **Task Lists**, **Expandable Accordions**, **Inline Dates**, **Symbols**, and **No Format Panels**.
 
 ---
 
 ## 1. Callout Panels
 
-Callout Panels are container blocks styled based on their type to call out notes, tips, warnings, or info alerts.
+Callout Panels are container blocks styled based on their type to call out notes, tips, warnings, error messages, success checks, or info alerts, supporting a customizable title and rich text body.
 
-```
-┌────────────────────────────────────────────────────────┐
-│ CalloutPanelView (React Wrapper)                       │
-│                                                        │
-│  [ℹ️ Icon]  [Editable Content Area (NodeViewContent)]  │
-│             Supports nesting paragraphs, lists, etc.   │
-│                                                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Hover Actions: [Info] [Note] [Tip] [Warn] [🗑️]   │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
-```
-
-### 1.1 Tiptap Schema Definition
-Callout panels are registered as custom Tiptap block nodes:
 - **Group**: `block`
 - **Content**: `block+` (allowing nested blocks like paragraphs, bullet points, and code blocks)
-- **Defining**: `true` (boundaries are preserved during paste and Enter keystrokes)
+- **Defining**: `true`
+- **Attributes**:
+  - `type` (defaults to `"info"`; accepts `"info"`, `"warning"`, `"error"`, `"check"`, `"note"`, or `"tip"`)
+  - `title` (defaults to `""`)
 
-#### Attribute Schema
-- `type`: String (defaults to `"info"`; accepts `"info"`, `"note"`, `"tip"`, or `"warning"`)
-
-### 1.2 Serialization (HTML Parser & Renderer)
-To save and load document states, Tiptap translates nodes to and from HTML.
-
-#### HTML Parser (ProseMirror AST ingestion)
-```typescript
-parseHTML() {
-  return [
-    {
-      tag: "div[data-type=callout-panel]",
-      getAttrs: (node) => ({
-        type: (node as HTMLElement).getAttribute("data-callout-type") || "info",
-      }),
-    },
-  ];
-}
-```
-
-#### HTML Renderer (Output/Serialization)
-```typescript
-renderHTML({ HTMLAttributes }) {
-  return [
+### Serialization (HTML Parser & Renderer)
+- **Tag Parser**:
+  ```typescript
+  {
+    tag: "div[data-type=callout-panel]",
+    getAttrs: (node) => ({
+      type: (node as HTMLElement).getAttribute("data-callout-type") || "info",
+      title: (node as HTMLElement).getAttribute("data-callout-title") || "",
+    })
+  }
+  ```
+- **Tag Renderer**:
+  ```typescript
+  [
     "div",
-    mergeAttributes(HTMLAttributes, {
+    {
       "data-type": "callout-panel",
       "data-callout-type": HTMLAttributes.type,
-    }),
-    0, // Slot indicating where nested child contents should be output
-  ];
-}
-```
-
-### 1.3 React Node View: `CalloutPanelView`
-- **Left Margin Highlight**: Styled with a solid 4px left border matching the alert type's color scheme.
-- **Dynamic Icons**: Maps type attributes to Lucide React icons (`Info`, `AlertCircle`, `Lightbulb`, `AlertTriangle`).
-- **Interactive Action Bar**: Appears on hover. Clicking an action button calls `updateAttributes({ type: "..." })` or `deleteNode()`.
+      "data-callout-title": HTMLAttributes.title,
+    },
+    0
+  ]
+  ```
 
 ---
 
 ## 2. Inline Status Badges
 
-Inline Status Badges are inline markers that can be inserted directly within paragraphs to indicate states, priorities, or tasks (e.g. TODO, IN PROGRESS, DONE).
+Inline Status Badges are inline markers that can be inserted directly within paragraphs to indicate states, priorities, or tasks (e.g. TODO, APPROVED, BLOCKED).
 
-```
-This task is currently [TODO ▾] and needs review.
-```
+- **Group**: `inline`, `inline: true`, `atom: true`
+- **Attributes**:
+  - `text` (default `"TODO"`)
+  - `color` (default `"blue"`; accepts `"blue"`, `"yellow"`, `"green"`, `"red"`, or `"gray"`)
 
-### 2.1 Tiptap Schema Definition
-Status badges are inline nodes:
-- **Group**: `inline`
-- **Inline**: `true`
-- **Atom**: `true` (behaves as a single, immutable text widget block that moves together)
-
-#### Attribute Schema
-- `text`: String (defaults to `"TODO"`)
-- `color`: String (defaults to `"blue"`; accepts `"blue"`, `"yellow"`, `"green"`, `"red"`, or `"gray"`)
-
-### 2.2 Serialization (HTML Parser & Renderer)
-
-#### HTML Parser
-```typescript
-parseHTML() {
-  return [
-    {
-      tag: "span[data-type=inline-status]",
-      getAttrs: (node) => ({
-        text: (node as HTMLElement).getAttribute("data-status-text") || "TODO",
-        color: (node as HTMLElement).getAttribute("data-status-color") || "blue",
-      }),
-    },
-  ];
-}
-```
-
-#### HTML Renderer
-```typescript
-renderHTML({ HTMLAttributes }) {
-  return [
-    "span",
-    mergeAttributes(HTMLAttributes, {
-      "data-type": "inline-status",
-      "data-status-text": HTMLAttributes.text,
-      "data-status-color": HTMLAttributes.color,
-    }),
-  ];
-}
-```
-
-### 2.3 React Node View: `InlineStatusView`
-- **Pill UI**: Rendered as a compact Material-UI `Chip` containing uppercase text and a custom background/border.
-- **Popover Editor**: Clicking the badge displays an anchor-aligned popover containing:
-  - A text input (limited to 16 characters) updating the status label.
-  - A color dot grid to choose from the five theme colors.
-  - A delete icon to remove the badge.
+### Serialization (HTML Parser & Renderer)
+- **Tag Parser**:
+  ```typescript
+  {
+    tag: "span[data-type=inline-status]",
+    getAttrs: (node) => ({
+      text: (node as HTMLElement).getAttribute("data-status-text") || "TODO",
+      color: (node as HTMLElement).getAttribute("data-status-color") || "blue",
+    })
+  }
+  ```
+- **Tag Renderer**:
+  ```typescript
+  ["span", { "data-type": "inline-status", "data-status-text": HTMLAttributes.text, "data-status-color": HTMLAttributes.color }]
+  ```
 
 ---
 
-## 3. Collaboration Syncing via Node Attributes
+## 3. Task Lists
 
-When a user modifies a callout's type or a status badge's text/color, changes are distributed in real time without manual WebSocket messaging:
+Task lists display a checkable list of items. Checking/unchecking updates the list state.
 
-1. The React view calls `updateAttributes({ text: "NEW_VAL" })`.
-2. This triggers a ProseMirror transaction modifying the node's properties.
-3. The collaboration extension intercepts the transaction and updates the local `Y.Doc`.
-4. Yjs serializes the node attribute change and propagates it to all connected clients.
-5. Clients receive the Yjs transaction and re-render the React Node View with the new properties.
+- **Extension**: `@tiptap/extension-task-list` and `@tiptap/extension-task-item`
+- **TaskList Node**: `group: "block"`, `content: "taskItem+"`
+- **TaskItem Node**: `content: "paragraph block*"`, `defining: true`, `isolating: true`
+- **Attributes**: `checked` (boolean, default `false`)
+
+### Serialization (HTML Parser & Renderer)
+- **TaskList Parser**: `{ tag: "ul[data-type=taskList]" }`
+- **TaskList Renderer**: `["ul", { "data-type": "taskList" }, 0]`
+- **TaskItem Parser**: `{ tag: "li[data-type=taskItem]" }`
+- **TaskItem Renderer**: `["li", { "data-type": "taskItem", "data-checked": HTMLAttributes.checked }, 0]`
+
+---
+
+## 4. Expandable Accordions (Details/Summary)
+
+Expandable boxes are collapsible accordions leveraging HTML5 `<details>` and `<summary>` elements.
+
+- **Details Node**: `group: "block"`, `content: "detailsSummary detailsContent"`, `defining: true`
+  - **Attribute**: `open` (boolean, default `true`)
+  - **Tag Renderer**: `["details", { "data-type": "details", class: "details-macro" }, 0]`
+  - **Toggling Interaction**: Implemented using a custom ProseMirror `Plugin` capturing click events on the `<summary>` element:
+    - In **Edit Mode** (`view.editable` is true), the plugin dispatches a `setNodeMarkup` transaction toggling the `open` attribute so the expansion state is saved in the document and synchronized in real time.
+    - In **Read-Only Mode** (`view.editable` is false), the plugin directly updates the DOM element's `open` attribute to allow local reader collapse/expand actions without attempting invalid document modifications.
+- **DetailsSummary Node**: `group: "block"`, `content: "inline*"`, `defining: true`, `isolating: true`
+  - **Tag Renderer**: `["summary", {}, 0]`
+  - **Keyboard Shortcut**: Pressing `Enter` intercepts the text break, shifting cursor focus directly into the `detailsContent` block.
+- **DetailsContent Node**: `group: "block"`, `content: "block+"`, `defining: true`, `isolating: true`
+  - **Tag Renderer**: `["div", { class: "details-content", "data-type": "details-content" }, 0]`
+
+---
+
+## 5. Inline Date Selector Pills
+
+Date selector pills display dates inline and support calendar selection.
+
+- **Group**: `inline`, `inline: true`, `atom: true`
+- **Attribute**: `date` (string `YYYY-MM-DD`, defaults to today's local date)
+
+### React Node View (`InlineDateView`)
+- Rendered as an inline chip wrapping a `<Calendar>` icon.
+- Clicking the badge anchors an MUI `Popover` displaying an `<input type="date">`.
+- Triggering `updateAttributes({ date })` distributes modifications over Yjs room document relays.
+
+### Serialization (HTML Parser & Renderer)
+- **Tag Parser**:
+  ```typescript
+  {
+    tag: "span[data-type=inline-date]",
+    getAttrs: (node) => ({
+      date: (node as HTMLElement).getAttribute("data-date") || new Date().toISOString().split("T")[0],
+    })
+  }
+  ```
+- **Tag Renderer**:
+  ```typescript
+  ["span", { "data-type": "inline-date", "data-date": HTMLAttributes.date }]
+  ```
+
+---
+
+## 6. Symbol Picker (Inline Text Insertion)
+
+The symbol picker does not use a custom node schema. It relies on standard browser text selections:
+
+1. The user clicks a symbol icon in the toolbar, opening a Popover grid.
+2. The click event retrieves the target symbol character (e.g. `Ω`, `→`).
+3. The editor inserts the character as raw text at the current cursor selection:
+   ```typescript
+   editor.chain().focus().insertContent(symbolChar).run();
+   ```
+4. Because it inserts standard characters, it integrates naturally with Yjs text synchronization, with zero operational overhead.
+
+---
+
+## 7. No Format Panels
+
+No Format panels render plain unformatted text in a monospace block, ignoring standard typographic marks.
+
+- **Group**: `block`
+- **Content**: `text*` (disallows nested node structures)
+- **Code**: `true` (ProseMirror disables typographic keybindings inside)
+- **Marks**: `""` (disallows bold, italic, links, etc.)
+
+### Serialization (HTML Parser & Renderer)
+- **Tag Parser**: `{ tag: "pre[data-type=no-format]" }`
+- **Tag Renderer**:
+  ```typescript
+  ["pre", { "data-type": "no-format", class: "no-format-panel" }, 
+    ["code", { class: "no-format-text" }, 0]
+  ]
+  ```
+- **Keyboard Shortcut**: Pressing `Enter` on a blank line inside the panel executes a `lift` command, inserting a clean paragraph node below to exit the block.
+
+---
+
+## 8. Hierarchical Macros (Children Display & Page Index)
+
+Children Display and Page Index macros dynamically render lists of document structures within the active workspace/space.
+
+### Schema Attributes & Tiptap Node Configuration
+- **Node Type**: `macroBlock` (a leaf block node, `atom: true`)
+- **Attributes**:
+  - `type`: string (accepts `"children-display"` or `"page-index"`)
+  - `config`: object (defaults to `{}`)
+
+### Serialization
+- **Tag Parser**:
+  ```typescript
+  {
+    tag: "macro-block",
+    getAttrs: (node) => ({
+      type: (node as HTMLElement).getAttribute("type") || "status-badge",
+      config: JSON.parse((node as HTMLElement).getAttribute("config") || "{}"),
+    })
+  }
+  ```
+- **Tag Renderer**:
+  ```typescript
+  ["macro-block", { type: HTMLAttributes.type, config: JSON.stringify(HTMLAttributes.config) }]
+  ```
+
+### Rendering Engine (`MacroBlockView`)
+1. **DocumentContext Integration**:
+   - `EditorCanvas` provides a React `DocumentContext` conveying the full hierarchically built `documents` tree, the `activeDocId` string, and the `onSelectDoc` navigation callback function.
+   - `MacroBlockView` consumes this context to retrieve up-to-date document layouts.
+2. **Children Display Render Logic**:
+   - Locates the active document node in the hierarchical tree using a recursive depth-first search helper.
+   - Retrieves its child sub-pages from the node's `children` array.
+   - Renders a nested bulleted directory tree. Click handlers on the page titles trigger the `onSelectDoc(child.id)` navigation callback.
+3. **Page Index Render Logic**:
+   - Flattens the hierarchical tree of active documents into a single flat array.
+   - Sorts the document list alphabetically by `title` (case-insensitive).
+   - Groups the sorted pages by their first character (normalized to uppercase letters, with non-alphabetic characters grouped under `#`).
+   - Renders a multi-column responsive index grid showcasing pages under their respective letter headers. Click actions invoke navigation.
+

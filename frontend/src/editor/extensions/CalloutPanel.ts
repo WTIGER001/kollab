@@ -11,7 +11,10 @@ export const CalloutPanel = Node.create({
   addAttributes() {
     return {
       type: {
-        default: "info", // "info" | "note" | "tip" | "warning"
+        default: "info", // "info" | "warning" | "error" | "check" | "note" | "tip"
+      },
+      title: {
+        default: "",
       },
     };
   },
@@ -22,6 +25,7 @@ export const CalloutPanel = Node.create({
         tag: "div[data-type=callout-panel]",
         getAttrs: (node) => ({
           type: (node as HTMLElement).getAttribute("data-callout-type") || "info",
+          title: (node as HTMLElement).getAttribute("data-callout-title") || "",
         }),
       },
     ];
@@ -33,6 +37,7 @@ export const CalloutPanel = Node.create({
       mergeAttributes(HTMLAttributes, {
         "data-type": "callout-panel",
         "data-callout-type": HTMLAttributes.type,
+        "data-callout-title": HTMLAttributes.title,
       }),
       0, // Renders child content within the tag
     ];
