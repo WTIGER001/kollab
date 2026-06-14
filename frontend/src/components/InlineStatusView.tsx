@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
+import { useIsEditable } from "../hooks/useIsEditable";
 import { Box, Chip, Popover, TextField, IconButton, Tooltip } from "@mui/material";
 import { Trash2 } from "lucide-react";
 
-export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes }) => {
+export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
   const { text = "TODO", color = "blue" } = node.attrs;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [inputText, setInputText] = useState(text);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!editor?.isEditable) return;
     setAnchorEl(event.currentTarget);
     setInputText(text); // Reset input to current text
   };
@@ -46,6 +48,8 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
     { name: "gray", hex: "#94a3b8" },
   ];
 
+  const isEditable = useIsEditable(editor);
+
   return (
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>
       <Chip
@@ -60,12 +64,12 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
           backgroundColor: style.bg,
           border: `1px solid ${style.border}`,
           borderRadius: "4px",
-          cursor: "pointer",
+          cursor: isEditable ? "pointer" : "default",
           transition: "all 0.15s ease",
-          "&:hover": {
+          "&:hover": isEditable ? {
             opacity: 0.85,
             boxShadow: `0 0 0 1px ${style.text}`,
-          },
+          } : {},
         }}
       />
 

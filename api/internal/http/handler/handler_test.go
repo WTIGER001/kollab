@@ -22,15 +22,19 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	inmemdoc "arkollab/api/internal/document"
+	inmemcomment "arkollab/api/internal/comment"
+	inmemtask "arkollab/api/internal/task"
 	"arkollab/api/internal/domain"
 	apihttp "arkollab/api/internal/http"
 	"arkollab/api/internal/http/handler"
 	imgservice "arkollab/api/internal/image"
 	pgrepo "arkollab/api/internal/postgres"
 	"arkollab/api/internal/storage"
+	inmemsystem "arkollab/api/internal/system"
 	inmemteam "arkollab/api/internal/team"
 	themepkg "arkollab/api/internal/theme"
 	inmemuser "arkollab/api/internal/user"
+	inmematt "arkollab/api/internal/attachment"
 	"arkollab/api/internal/ws"
 )
 
@@ -43,6 +47,10 @@ func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
 	docRepo := inmemdoc.NewInMemoryDocumentRepository()
 	imageRepo := imgservice.NewInMemoryImageRepository()
 	themeRepo := themepkg.NewInMemoryThemeRepository()
+	systemRepo := inmemsystem.NewInMemorySystemRepository()
+	commentRepo := inmemcomment.NewInMemoryCommentRepository()
+	attachmentRepo := inmematt.NewInMemoryAttachmentRepository()
+	taskRepo := inmemtask.NewInMemoryTaskRepository()
 
 	tmpDir, err := os.MkdirTemp("", "arkollab-image-test-*")
 	if err != nil {
@@ -55,7 +63,7 @@ func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
 
-	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, storageProvider, jwtSecret)
+	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
 }
 
 func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
@@ -108,6 +116,10 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	docRepo := pgrepo.NewPostgresDocumentRepository(db)
 	imageRepo := pgrepo.NewPostgresImageRepository(db)
 	themeRepo := pgrepo.NewPostgresThemeRepository(db)
+	systemRepo := pgrepo.NewPostgresSystemRepository(db)
+	commentRepo := pgrepo.NewPostgresCommentRepository(db)
+	attachmentRepo := pgrepo.NewPostgresAttachmentRepository(db)
+	taskRepo := pgrepo.NewPostgresTaskRepository(db)
 
 	tmpDir, err := os.MkdirTemp("", "arkollab-postgres-image-test-*")
 	if err != nil {
@@ -120,19 +132,22 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
 
-	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, storageProvider, jwtSecret)
+	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
 }
 
-func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, storageProvider domain.FileStorage, jwtSecret string) {
+func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, systemRepo domain.SystemRepository, commentRepo domain.CommentRepository, attachmentRepo domain.AttachmentRepository, taskRepo domain.TaskRepository, storageProvider domain.FileStorage, jwtSecret string) {
 	// Services
 	authService := inmemuser.NewAuthService(userRepo, jwtSecret)
 	teamService := inmemteam.NewTeamService(teamRepo)
-	docService := inmemdoc.NewDocumentService(docRepo)
+	systemService := inmemsystem.NewSystemService(systemRepo)
+	_ = systemService.EnsurePartitions(context.Background())
+	docService := inmemdoc.NewDocumentService(docRepo, systemService, taskRepo)
 	imageService := imgservice.NewImageService(imageRepo, storageProvider)
 	themeService := themepkg.NewThemeService(themeRepo)
+	attachmentService := inmematt.NewAttachmentService(attachmentRepo, storageProvider)
 
 	// WebSocket Hub
-	wsHub := ws.NewHub()
+	wsHub := ws.NewHub(docService)
 	go wsHub.Run()
 
 	// Handlers
@@ -147,9 +162,13 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	imgH := handler.NewImageHandler(imageService)
 	themeH := handler.NewThemeHandler(themeService)
 	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub)
+	systemH := handler.NewSystemHandler(systemService)
+	commentService := inmemcomment.NewCommentService(commentRepo)
+	commentH := handler.NewCommentHandler(commentService, userRepo)
+	attachmentH := handler.NewAttachmentHandler(attachmentService)
 
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userH, teamH, docH, imgH, themeH, wsH)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {
@@ -222,8 +241,8 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	if err := json.Unmarshal(w.Body.Bytes(), &teams); err != nil {
 		t.Fatalf("failed to parse teams: %v", err)
 	}
-	if len(teams) != 3 {
-		t.Errorf("expected 3 teams, got %d", len(teams))
+	if len(teams) != 4 {
+		t.Errorf("expected 4 teams, got %d", len(teams))
 	}
 
 	// 6. Test GET /api/projects with token
@@ -256,6 +275,25 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	}
 	if len(docs) != 2 {
 		t.Errorf("expected 2 documents for proj_wiki, got %d", len(docs))
+	}
+
+	// 8b. Test GET /api/documents with teamId (should not return project documents)
+	// First fetch team_eng home page to seed it in InMemory repo
+	_, code = sendReq("GET", "/api/documents/team_eng", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected code 200 for team_eng, got %d", code)
+	}
+
+	w, code = sendReq("GET", "/api/documents?teamId=team_eng", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected code 200 for team document list, got %d", code)
+	}
+	var teamDocs []*domain.Document
+	if err := json.Unmarshal(w.Body.Bytes(), &teamDocs); err != nil {
+		t.Fatalf("failed to parse team documents: %v", err)
+	}
+	if len(teamDocs) != 1 {
+		t.Errorf("expected 1 document for team_eng, got %d", len(teamDocs))
 	}
 
 	// 9. Test POST /api/documents (Create Document)
@@ -292,10 +330,194 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		t.Fatalf("expected code 204 for delete, got %d", code)
 	}
 
-	// Verify document is deleted
-	_, code = sendReq("GET", "/api/documents/"+newDoc.ID, nil, token)
-	if code != http.StatusNotFound {
-		t.Fatalf("expected code 404 for deleted document, got %d", code)
+	// 11b. Test PUT /api/documents/{id}/move (Move Page / Re-parenting & Cycle Safety)
+	// Create two new documents
+	wA, codeA := sendReq("POST", "/api/documents", []byte(`{"title": "Doc A", "projectId": "proj_wiki"}`), token)
+	if codeA != http.StatusCreated {
+		t.Fatalf("expected code 201 for doc A creation, got %d", codeA)
+	}
+	var docA domain.Document
+	_ = json.Unmarshal(wA.Body.Bytes(), &docA)
+
+	wB, codeB := sendReq("POST", "/api/documents", []byte(`{"title": "Doc B", "projectId": "proj_wiki"}`), token)
+	if codeB != http.StatusCreated {
+		t.Fatalf("expected code 201 for doc B creation, got %d", codeB)
+	}
+	var docB domain.Document
+	_ = json.Unmarshal(wB.Body.Bytes(), &docB)
+
+	// Move B under A
+	movePayload := fmt.Sprintf(`{"parentId": "%s"}`, docA.ID)
+	wMove1, codeMove1 := sendReq("PUT", fmt.Sprintf("/api/documents/%s/move", docB.ID), []byte(movePayload), token)
+	if codeMove1 != http.StatusOK {
+		t.Fatalf("expected code 200 for moving B under A, got %d. Body: %s", codeMove1, wMove1.Body.String())
+	}
+	var movedB domain.Document
+	_ = json.Unmarshal(wMove1.Body.Bytes(), &movedB)
+	if movedB.ParentID == nil || *movedB.ParentID != docA.ID {
+		t.Errorf("expected B parent to be %s, got %v", docA.ID, movedB.ParentID)
+	}
+
+	// Try to move A under B (Cycle!)
+	cyclePayload := fmt.Sprintf(`{"parentId": "%s"}`, docB.ID)
+	_, codeCycle := sendReq("PUT", fmt.Sprintf("/api/documents/%s/move", docA.ID), []byte(cyclePayload), token)
+	if codeCycle != http.StatusBadRequest {
+		t.Errorf("expected code 400 (Bad Request) for cycle move A under B, got %d", codeCycle)
+	}
+
+	// Move B back to root (parentId = null)
+	rootMovePayload := `{"parentId": null}`
+	wMoveRoot, codeMoveRoot := sendReq("PUT", fmt.Sprintf("/api/documents/%s/move", docB.ID), []byte(rootMovePayload), token)
+	if codeMoveRoot != http.StatusOK {
+		t.Fatalf("expected code 200 for moving B to root, got %d", codeMoveRoot)
+	}
+	var movedBRoot domain.Document
+	_ = json.Unmarshal(wMoveRoot.Body.Bytes(), &movedBRoot)
+	if movedBRoot.ParentID != nil {
+		t.Errorf("expected B parent to be nil, got %v", movedBRoot.ParentID)
+	}
+
+	// 11c. Test GET /api/documents/recent (Recent Documents)
+	wRecent, codeRecent := sendReq("GET", "/api/documents/recent?type=both", nil, token)
+	if codeRecent != http.StatusOK {
+		t.Fatalf("expected code 200 for recent documents, got %d", codeRecent)
+	}
+	var recentDocs []*domain.Document
+	if err := json.Unmarshal(wRecent.Body.Bytes(), &recentDocs); err != nil {
+		t.Fatalf("failed to parse recent documents: %v", err)
+	}
+	hasA, hasB := false, false
+	for _, rd := range recentDocs {
+		if rd.ID == docA.ID {
+			hasA = true
+		}
+		if rd.ID == docB.ID {
+			hasB = true
+		}
+	}
+	if !hasA || !hasB {
+		t.Errorf("expected recent documents list to contain Doc A and Doc B, got: %+v", recentDocs)
+	}
+
+	// Clean up docs (using permanent delete to keep clean state)
+	_, _ = sendReq("DELETE", "/api/documents/"+docA.ID+"?permanent=true", nil, token)
+	_, _ = sendReq("DELETE", "/api/documents/"+docB.ID+"?permanent=true", nil, token)
+
+	// 11d. Test Soft Delete, Trash listing, Restoration, and Permanent Deletion
+	// Create two docs: Parent and Child
+	wP, _ := sendReq("POST", "/api/documents", []byte(`{"title": "Trash Parent", "projectId": "proj_wiki"}`), token)
+	var trashParent domain.Document
+	_ = json.Unmarshal(wP.Body.Bytes(), &trashParent)
+
+	wChild, _ := sendReq("POST", "/api/documents", []byte(fmt.Sprintf(`{"title": "Trash Child", "projectId": "proj_wiki", "parentId": "%s"}`, trashParent.ID)), token)
+	var trashChild domain.Document
+	_ = json.Unmarshal(wChild.Body.Bytes(), &trashChild)
+
+	// Verify both exist in normal list
+	wNormal, _ := sendReq("GET", "/api/documents?projectId=proj_wiki", nil, token)
+	var normalDocs []*domain.Document
+	_ = json.Unmarshal(wNormal.Body.Bytes(), &normalDocs)
+	foundParent, foundChild := false, false
+	for _, nd := range normalDocs {
+		if nd.ID == trashParent.ID { foundParent = true }
+		if nd.ID == trashChild.ID { foundChild = true }
+	}
+	if !foundParent || !foundChild {
+		t.Errorf("expected both parent and child in normal doc list, got parent=%t, child=%t", foundParent, foundChild)
+	}
+
+	// Soft delete trashParent (should recursively soft-delete child too)
+	_, codeDel := sendReq("DELETE", "/api/documents/"+trashParent.ID, nil, token)
+	if codeDel != http.StatusNoContent {
+		t.Errorf("expected 204 for soft delete, got %d", codeDel)
+	}
+
+	// Verify both are excluded from normal list
+	wNormal2, _ := sendReq("GET", "/api/documents?projectId=proj_wiki", nil, token)
+	var normalDocs2 []*domain.Document
+	_ = json.Unmarshal(wNormal2.Body.Bytes(), &normalDocs2)
+	for _, nd := range normalDocs2 {
+		if nd.ID == trashParent.ID {
+			t.Errorf("expected soft-deleted parent to be filtered out of normal list")
+		}
+		if nd.ID == trashChild.ID {
+			t.Errorf("expected recursively soft-deleted child to be filtered out of normal list")
+		}
+	}
+
+	// List trash: should contain both
+	wTrash, codeTrash := sendReq("GET", "/api/documents/trash?projectId=proj_wiki", nil, token)
+	if codeTrash != http.StatusOK {
+		t.Fatalf("expected 200 for trash list, got %d", codeTrash)
+	}
+	var trashDocs []*domain.Document
+	_ = json.Unmarshal(wTrash.Body.Bytes(), &trashDocs)
+	foundParentTrash, foundChildTrash := false, false
+	for _, td := range trashDocs {
+		if td.ID == trashParent.ID { foundParentTrash = true }
+		if td.ID == trashChild.ID { foundChildTrash = true }
+	}
+	if !foundParentTrash || !foundChildTrash {
+		t.Errorf("expected parent and child in trash list, got parent=%t, child=%t", foundParentTrash, foundChildTrash)
+	}
+
+	// Restore parent
+	wRest, codeRest := sendReq("POST", "/api/documents/"+trashParent.ID+"/restore", nil, token)
+	if codeRest != http.StatusOK {
+		t.Fatalf("expected 200 for restore parent, got %d", codeRest)
+	}
+	var restParent domain.Document
+	_ = json.Unmarshal(wRest.Body.Bytes(), &restParent)
+	if restParent.DeletedAt != nil {
+		t.Errorf("expected restored parent to have deletedAt nil")
+	}
+
+	// Verify parent is back in normal list, but child remains in trash
+	wNormal3, _ := sendReq("GET", "/api/documents?projectId=proj_wiki", nil, token)
+	var normalDocs3 []*domain.Document
+	_ = json.Unmarshal(wNormal3.Body.Bytes(), &normalDocs3)
+	foundParent3, foundChild3 := false, false
+	for _, nd := range normalDocs3 {
+		if nd.ID == trashParent.ID { foundParent3 = true }
+		if nd.ID == trashChild.ID { foundChild3 = true }
+	}
+	if !foundParent3 || foundChild3 {
+		t.Errorf("expected parent restored and child still in trash, got parent=%t, child=%t", foundParent3, foundChild3)
+	}
+
+	// Restore child: since its parent is active, it should restore under its parent
+	wRestChild, codeRestChild := sendReq("POST", "/api/documents/"+trashChild.ID+"/restore", nil, token)
+	if codeRestChild != http.StatusOK {
+		t.Fatalf("expected 200 for child restore, got %d", codeRestChild)
+	}
+	var restChild domain.Document
+	_ = json.Unmarshal(wRestChild.Body.Bytes(), &restChild)
+	if restChild.ParentID == nil || *restChild.ParentID != trashParent.ID {
+		t.Errorf("expected restored child to retain parent ID, got %v", restChild.ParentID)
+	}
+
+	// Soft-delete parent again
+	_, _ = sendReq("DELETE", "/api/documents/"+trashParent.ID, nil, token)
+
+	// Restore child while parent is still in trash (should orphan child to root)
+	wRestChildOrphan, codeRestChildOrphan := sendReq("POST", "/api/documents/"+trashChild.ID+"/restore", nil, token)
+	if codeRestChildOrphan != http.StatusOK {
+		t.Fatalf("expected 200 for child restore, got %d", codeRestChildOrphan)
+	}
+	var restChildOrphan domain.Document
+	_ = json.Unmarshal(wRestChildOrphan.Body.Bytes(), &restChildOrphan)
+	if restChildOrphan.ParentID != nil {
+		t.Errorf("expected restored child to be orphaned (parent is deleted), got parent ID %v", restChildOrphan.ParentID)
+	}
+
+	// Permanent Delete parent and child
+	_, codePermParent := sendReq("DELETE", "/api/documents/"+trashParent.ID+"?permanent=true", nil, token)
+	if codePermParent != http.StatusNoContent {
+		t.Errorf("expected 204 for permanent delete parent, got %d", codePermParent)
+	}
+	_, codePermChild := sendReq("DELETE", "/api/documents/"+restChildOrphan.ID+"?permanent=true", nil, token)
+	if codePermChild != http.StatusNoContent {
+		t.Errorf("expected 204 for permanent delete child, got %d", codePermChild)
 	}
 
 	// 12. Test GET /api/teams/{teamId}/users
@@ -467,18 +689,21 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		t.Fatalf("expected update doc code 200, got %d", updateVCode)
 	}
 
-	// Fetch versions again (should have 1 auto-saved snapshot containing original empty content)
+	// Fetch versions again (should have 1 virtual live changes version and 1 auto-saved database snapshot)
 	wVListAfterUpdate, vListAfterUpdateCode := sendReq("GET", "/api/documents/"+vDoc.ID+"/versions", nil, token)
 	if vListAfterUpdateCode != http.StatusOK {
 		t.Fatalf("expected get versions code 200, got %d", vListAfterUpdateCode)
 	}
 	var vListAfterUpdate []*domain.DocumentVersion
 	_ = json.Unmarshal(wVListAfterUpdate.Body.Bytes(), &vListAfterUpdate)
-	if len(vListAfterUpdate) != 1 {
-		t.Errorf("expected 1 auto-saved version, got %d", len(vListAfterUpdate))
+	if len(vListAfterUpdate) != 2 {
+		t.Errorf("expected 2 versions (1 virtual, 1 database), got %d", len(vListAfterUpdate))
 	} else {
-		if vListAfterUpdate[0].VersionNumber != 1 || !strings.Contains(vListAfterUpdate[0].Content, `{"type":"doc","content":[{"type":"paragraph"}]}`) {
-			t.Errorf("unexpected auto-saved version contents: %+v", vListAfterUpdate[0])
+		if vListAfterUpdate[0].VersionNumber != -1 || *vListAfterUpdate[0].ChangeSummary != "Unsaved Live Changes" {
+			t.Errorf("expected virtual live changes version, got: %+v", vListAfterUpdate[0])
+		}
+		if vListAfterUpdate[1].VersionNumber != 1 || !strings.Contains(vListAfterUpdate[1].Content, `{"type":"doc","content":[{"type":"paragraph"}]}`) {
+			t.Errorf("unexpected auto-saved version contents: %+v", vListAfterUpdate[1])
 		}
 	}
 
@@ -492,16 +717,16 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	if err := json.Unmarshal(wMilestone.Body.Bytes(), &milestone); err != nil {
 		t.Fatalf("failed to decode milestone response: %v", err)
 	}
-	if *milestone.ChangeSummary != "Specification Milestone 1" || milestone.VersionNumber != 2 {
+	if *milestone.ChangeSummary != "Specification Milestone 1" || milestone.VersionNumber != 1 {
 		t.Errorf("unexpected milestone contents: %+v", milestone)
 	}
 
-	// Verify versions count is now 2
+	// Verify versions count is now 1 (merged auto-save snapshot, no unsaved live changes)
 	wVList2, vList2Code := sendReq("GET", "/api/documents/"+vDoc.ID+"/versions", nil, token)
 	var vList2 []*domain.DocumentVersion
 	_ = json.Unmarshal(wVList2.Body.Bytes(), &vList2)
-	if vList2Code != http.StatusOK || len(vList2) != 2 {
-		t.Fatalf("expected 2 versions in list, got code %d, count %d", vList2Code, len(vList2))
+	if vList2Code != http.StatusOK || len(vList2) != 1 {
+		t.Fatalf("expected 1 version in list, got code %d, count %d", vList2Code, len(vList2))
 	}
 
 	// Fetch specific version by ID
@@ -515,15 +740,15 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		t.Errorf("expected fetched version ID to match, got %s vs %s", specificV.ID, milestone.ID)
 	}
 
-	// Restore document to version 1 (which had blank content)
-	wRestore, restoreCode := sendReq("POST", "/api/documents/"+vDoc.ID+"/versions/"+vListAfterUpdate[0].ID+"/restore", nil, token)
+	// Restore document to version 1 (which has the updated content)
+	wRestore, restoreCode := sendReq("POST", "/api/documents/"+vDoc.ID+"/versions/"+milestone.ID+"/restore", nil, token)
 	if restoreCode != http.StatusOK {
 		t.Fatalf("expected restore code 200, got %d. Body: %s", restoreCode, wRestore.Body.String())
 	}
 	var restoredDoc domain.Document
 	_ = json.Unmarshal(wRestore.Body.Bytes(), &restoredDoc)
-	if !strings.Contains(restoredDoc.Content, `{"type":"doc","content":[{"type":"paragraph"}]}`) {
-		t.Errorf("expected restored content to be blank doc, got %s", restoredDoc.Content)
+	if !strings.Contains(restoredDoc.Content, `First update`) {
+		t.Errorf("expected restored content to contain 'First update', got %s", restoredDoc.Content)
 	}
 
 	// 14. Test Themes & User Preferences
@@ -665,35 +890,250 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	}
 	defer wsConn.Close()
 
-	// Read initial presence message broadcast
-	_, pMsg, err := wsConn.ReadMessage()
-	if err != nil {
-		t.Fatalf("failed to read message from WebSocket: %v", err)
-	}
-
-	// The server write pump batches messages separating them by newlines
-	lines := strings.Split(string(pMsg), "\n")
 	var presenceMsg ws.WSMessage
 	foundPresence := false
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			continue
+
+	for i := 0; i < 5; i++ {
+		_, pMsg, err := wsConn.ReadMessage()
+		if err != nil {
+			t.Fatalf("failed to read message from WebSocket: %v", err)
 		}
-		var msg ws.WSMessage
-		if err := json.Unmarshal([]byte(line), &msg); err == nil {
-			if msg.Type == "presence" {
-				presenceMsg = msg
-				foundPresence = true
-				break
+
+		lines := strings.Split(string(pMsg), "\n")
+		for _, line := range lines {
+			if strings.TrimSpace(line) == "" {
+				continue
 			}
+			var msg ws.WSMessage
+			if err := json.Unmarshal([]byte(line), &msg); err == nil {
+				if msg.Type == "presence" {
+					presenceMsg = msg
+					foundPresence = true
+					break
+				}
+			}
+		}
+		if foundPresence {
+			break
 		}
 	}
 
 	if !foundPresence || len(presenceMsg.Users) != 1 {
-		t.Errorf("unexpected or missing presence message: %s", string(pMsg))
+		t.Errorf("unexpected or missing presence message")
 	} else {
 		if presenceMsg.Users[0].Username != "testuser" {
 			t.Errorf("expected presence username 'testuser', got '%s'", presenceMsg.Users[0].Username)
 		}
 	}
+
+	// 15. Test Page Analytics
+	_, code = sendReq("GET", "/api/documents/doc_guides_eng", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected GET document code 200, got %d", code)
+	}
+
+	wAnal1, codeAnal1 := sendReq("GET", "/api/documents/doc_guides_eng/analytics", nil, token)
+	if codeAnal1 != http.StatusOK {
+		t.Fatalf("expected GET analytics code 200, got %d. Body: %s", codeAnal1, wAnal1.Body.String())
+	}
+	var anal1 domain.DocumentAnalytics
+	if err := json.Unmarshal(wAnal1.Body.Bytes(), &anal1); err != nil {
+		t.Fatalf("failed to parse analytics: %v", err)
+	}
+	if anal1.TotalViews != 1 || anal1.TotalVisitors != 1 {
+		t.Errorf("expected 1 view and 1 visitor initially, got views=%d, visitors=%d", anal1.TotalViews, anal1.TotalVisitors)
+	}
+	if len(anal1.History) != 7 {
+		t.Errorf("expected 7 history data points, got %d", len(anal1.History))
+	} else {
+		todayPt := anal1.History[6]
+		if todayPt.Views != 1 || todayPt.UniqueVisitors != 1 {
+			t.Errorf("expected today to have 1 view and 1 visitor, got views=%d, visitors=%d", todayPt.Views, todayPt.UniqueVisitors)
+		}
+	}
+
+	_, _ = sendReq("GET", "/api/documents/doc_guides_eng", nil, token)
+	_, _ = sendReq("GET", "/api/documents/doc_guides_eng", nil, token2)
+
+	wAnal2, codeAnal2 := sendReq("GET", "/api/documents/doc_guides_eng/analytics", nil, token)
+	if codeAnal2 != http.StatusOK {
+		t.Fatalf("expected GET analytics code 200, got %d", codeAnal2)
+	}
+	var anal2 domain.DocumentAnalytics
+	if err := json.Unmarshal(wAnal2.Body.Bytes(), &anal2); err != nil {
+		t.Fatalf("failed to parse analytics 2: %v", err)
+	}
+	if anal2.TotalViews != 3 || anal2.TotalVisitors != 2 {
+		t.Errorf("expected 3 views and 2 visitors, got views=%d, visitors=%d", anal2.TotalViews, anal2.TotalVisitors)
+	}
+	if len(anal2.History) == 7 {
+		todayPt := anal2.History[6]
+		if todayPt.Views != 3 || todayPt.UniqueVisitors != 2 {
+			t.Errorf("expected today to have 3 views and 2 visitors in history, got views=%d, visitors=%d", todayPt.Views, todayPt.UniqueVisitors)
+		}
+	}
+
+	// 12. Test System Settings and Audit Logs
+	wSettings, codeSettings := sendReq("GET", "/api/system/settings", nil, token)
+	if codeSettings != http.StatusOK {
+		t.Fatalf("expected GET settings code 200, got %d. Body: %s", codeSettings, wSettings.Body.String())
+	}
+	var settings domain.SystemSettings
+	if err := json.Unmarshal(wSettings.Body.Bytes(), &settings); err != nil {
+		t.Fatalf("failed to parse system settings: %v", err)
+	}
+	if settings.AuditRetentionPolicy != "forever" {
+		t.Errorf("expected default policy 'forever', got %q", settings.AuditRetentionPolicy)
+	}
+	if settings.TrashRetentionPolicy != "forever" {
+		t.Errorf("expected default trash policy 'forever', got %q", settings.TrashRetentionPolicy)
+	}
+
+	// Update settings
+	settings.AuditRetentionPolicy = "30d"
+	settings.AuditRetentionCustomDays = 45
+	settings.TrashRetentionPolicy = "7d"
+	settings.TrashRetentionCustomDays = 14
+	settingsPayload, _ := json.Marshal(settings)
+	wUpSettings, codeUpSettings := sendReq("PUT", "/api/system/settings", settingsPayload, token)
+	if codeUpSettings != http.StatusOK {
+		t.Fatalf("expected PUT settings code 200, got %d. Body: %s", codeUpSettings, wUpSettings.Body.String())
+	}
+	var settingsUpdated domain.SystemSettings
+	_ = json.Unmarshal(wUpSettings.Body.Bytes(), &settingsUpdated)
+	if settingsUpdated.AuditRetentionPolicy != "30d" || settingsUpdated.AuditRetentionCustomDays != 45 {
+		t.Errorf("expected updated policy '30d' and custom days 45, got policy=%q, custom_days=%d", settingsUpdated.AuditRetentionPolicy, settingsUpdated.AuditRetentionCustomDays)
+	}
+	if settingsUpdated.TrashRetentionPolicy != "7d" || settingsUpdated.TrashRetentionCustomDays != 14 {
+		t.Errorf("expected updated trash policy '7d' and custom days 14, got policy=%q, custom_days=%d", settingsUpdated.TrashRetentionPolicy, settingsUpdated.TrashRetentionCustomDays)
+	}
+
+	// Check page audit trail
+	wAudit, codeAudit := sendReq("GET", "/api/documents/doc_guides_eng/audit", nil, token)
+	if codeAudit != http.StatusOK {
+		t.Fatalf("expected GET audit code 200, got %d. Body: %s", codeAudit, wAudit.Body.String())
+	}
+	var auditLogs []*domain.AuditLog
+	if err := json.Unmarshal(wAudit.Body.Bytes(), &auditLogs); err != nil {
+		t.Fatalf("failed to parse page audit logs: %v", err)
+	}
+	if len(auditLogs) == 0 {
+		t.Errorf("expected at least 1 audit log, got 0")
+	}
+	hasView := false
+	for _, l := range auditLogs {
+		if l.Action == "view" {
+			hasView = true
+		}
+		if l.DocumentID != "doc_guides_eng" {
+			t.Errorf("expected document ID 'doc_guides_eng', got %q", l.DocumentID)
+		}
+	}
+	if !hasView {
+		t.Errorf("expected audit logs to contain at least 1 'view' event")
+	}
+
+	// 13. Test Comments
+	// Create a comment (bad request - empty content)
+	badCommentPayload := `{"content": ""}`
+	_, codeBadComment := sendReq("POST", "/api/documents/doc_guides_eng/comments", []byte(badCommentPayload), token)
+	if codeBadComment != http.StatusBadRequest {
+		t.Errorf("expected POST comment with empty content to return 400, got %d", codeBadComment)
+	}
+
+	// Create a comment (success)
+	commentPayload := `{"content": "This is a test comment"}`
+	wCreateComment, codeCreateComment := sendReq("POST", "/api/documents/doc_guides_eng/comments", []byte(commentPayload), token)
+	if codeCreateComment != http.StatusCreated {
+		t.Fatalf("expected POST comment code 201, got %d. Body: %s", codeCreateComment, wCreateComment.Body.String())
+	}
+	var createdComment domain.Comment
+	if err := json.Unmarshal(wCreateComment.Body.Bytes(), &createdComment); err != nil {
+		t.Fatalf("failed to parse created comment: %v", err)
+	}
+	if createdComment.Content != "This is a test comment" {
+		t.Errorf("expected comment content 'This is a test comment', got %q", createdComment.Content)
+	}
+	if createdComment.CreatedByName == "" {
+		t.Errorf("expected comment to have a createdByName")
+	}
+
+	// List comments (should contain the one we created)
+	wListComments, codeListComments := sendReq("GET", "/api/documents/doc_guides_eng/comments", nil, token)
+	if codeListComments != http.StatusOK {
+		t.Fatalf("expected GET comments code 200, got %d. Body: %s", codeListComments, wListComments.Body.String())
+	}
+	var commentsList []*domain.Comment
+	if err := json.Unmarshal(wListComments.Body.Bytes(), &commentsList); err != nil {
+		t.Fatalf("failed to parse comments list: %v", err)
+	}
+	if len(commentsList) != 1 {
+		t.Errorf("expected 1 comment, got %d", len(commentsList))
+	}
+
+	// Create a reply comment
+	replyPayload := fmt.Sprintf(`{"parentId": "%s", "content": "This is a reply comment"}`, createdComment.ID)
+	wCreateReply, codeCreateReply := sendReq("POST", "/api/documents/doc_guides_eng/comments", []byte(replyPayload), token)
+	if codeCreateReply != http.StatusCreated {
+		t.Fatalf("expected POST reply comment code 201, got %d. Body: %s", codeCreateReply, wCreateReply.Body.String())
+	}
+	var createdReply domain.Comment
+	if err := json.Unmarshal(wCreateReply.Body.Bytes(), &createdReply); err != nil {
+		t.Fatalf("failed to parse reply comment: %v", err)
+	}
+	if createdReply.ParentID == nil || *createdReply.ParentID != createdComment.ID {
+		t.Errorf("expected reply comment parent ID to be %q, got %v", createdComment.ID, createdReply.ParentID)
+	}
+
+	// List comments (should now contain both comments)
+	wListComments2, codeListComments2 := sendReq("GET", "/api/documents/doc_guides_eng/comments", nil, token)
+	if codeListComments2 != http.StatusOK {
+		t.Fatalf("expected GET comments list 2 code 200, got %d", codeListComments2)
+	}
+	var commentsList2 []*domain.Comment
+	_ = json.Unmarshal(wListComments2.Body.Bytes(), &commentsList2)
+	if len(commentsList2) != 2 {
+		t.Errorf("expected 2 comments in list, got %d", len(commentsList2))
+	}
+
+	// Update comment (unauthorized - other user)
+	updatePayload = `{"content": "This is an edited comment"}`
+	_, codeUpdateUnauth := sendReq("PUT", fmt.Sprintf("/api/comments/%s", createdComment.ID), []byte(updatePayload), token2)
+	if codeUpdateUnauth != http.StatusForbidden {
+		t.Errorf("expected PUT comment with unauthorized user to return 403, got %d", codeUpdateUnauth)
+	}
+
+	// Update comment (success - author)
+	wUpdate, codeUpdateAuth := sendReq("PUT", fmt.Sprintf("/api/comments/%s", createdComment.ID), []byte(updatePayload), token)
+	if codeUpdateAuth != http.StatusOK {
+		t.Errorf("expected PUT comment with author to return 200, got %d. Body: %s", codeUpdateAuth, wUpdate.Body.String())
+	}
+	var updatedComment domain.Comment
+	_ = json.Unmarshal(wUpdate.Body.Bytes(), &updatedComment)
+	if updatedComment.Content != "This is an edited comment" {
+		t.Errorf("expected updated comment content to be 'This is an edited comment', got %q", updatedComment.Content)
+	}
+
+	// Delete comment (unauthorized - other user)
+	_, codeDeleteUnauth := sendReq("DELETE", fmt.Sprintf("/api/comments/%s", createdComment.ID), nil, token2)
+	if codeDeleteUnauth != http.StatusForbidden {
+		t.Errorf("expected DELETE comment with unauthorized user to return 403, got %d", codeDeleteUnauth)
+	}
+
+	// Delete comment (success - author)
+	_, codeDeleteAuth := sendReq("DELETE", fmt.Sprintf("/api/comments/%s", createdComment.ID), nil, token)
+	if codeDeleteAuth != http.StatusNoContent {
+		t.Errorf("expected DELETE comment with author to return 204, got %d", codeDeleteAuth)
+	}
+
+	// List comments (should be empty if database cascades or contains only reply depending on DB vs in-memory)
+	wListComments3, _ := sendReq("GET", "/api/documents/doc_guides_eng/comments", nil, token)
+	var commentsList3 []*domain.Comment
+	_ = json.Unmarshal(wListComments3.Body.Bytes(), &commentsList3)
+	for _, c := range commentsList3 {
+		if c.ID == createdComment.ID {
+			t.Errorf("expected deleted comment %s to be missing from the list", createdComment.ID)
+		}
+	}
 }
+

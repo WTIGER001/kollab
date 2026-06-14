@@ -7,6 +7,7 @@ import { theme } from './theme.ts'
 import './index.css'
 import App from './App.tsx'
 import { fetchOIDCConfig } from './services/api.ts'
+import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 
 interface OidcConfig {
   authority: string;
@@ -81,6 +82,8 @@ function Root() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Root />
+    <ErrorBoundary>
+      <Root />
+    </ErrorBoundary>
   </StrictMode>,
 )

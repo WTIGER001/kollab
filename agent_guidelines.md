@@ -42,10 +42,37 @@ The design specifications are located in the [design/](file:///Users/johnbauer/D
 
 ---
 
+## 🌗 Theme Support Mandate
+
+To ensure a seamless user experience, all UI elements, custom components, and editing controls must have explicit support for both **light and dark themes**.
+- Avoid hardcoding dark-only or light-only background, text, and border colors (e.g., solid black borders or pure white backgrounds) unless they are theme-aware.
+- Use dynamic theme checks (e.g., matching the `themeMode` variable or React theme context) or standard color tokens that adapt automatically.
+- Test visual contrast and readability of all elements (like icons, menus, input placeholder texts, and drag handles) in both light and dark modes.
+
+---
+
+## 🔲 Dialogs vs Pages Policy
+
+- **Prefer dedicated pages over dialogs/modals**: Only in rare situations should dialogs or modal windows be used. Feature views (like audit logs, Page activity, Trash bin, etc.) must be built as full pages with their own dedicated routes.
+- **Trash Bin Routing**: The Trash Bin must be its own page and its own route, scoped per parent context:
+  - Team Trash: `/teams/{teamId}/trash` (or by abbreviation if applicable)
+  - Project Trash: `/projects/{projectId}/trash`
+  - Personal Trash: `/personal/trash`
+
+---
+
+## 🚫 Server Execution Policy
+
+- **Do NOT start or run the servers**: The AI agent must not run the Go backend server (`go run cmd/server/main.go`, `./server`) or the React frontend development server (`npm run dev`, `vite`). The user will manage and run the servers themselves.
+- **Verification only**: The AI agent should limit execution commands to compilation, type checking, and automated tests (e.g., `go test`, `npx tsc --noEmit`) to verify the correctness of the code.
+
+---
+
 ## 🛠️ Checklist for Agents
 
 Before completing a turn, verify:
 - [ ] Did you modify or add any feature?
 - [ ] If yes, is the user-facing instruction added/updated in the [user_guide/](file:///Users/johnbauer/Dev/Personal/arkm/user_guide/) folder?
 - [ ] If yes, is the technical implementation design documented in the [design/](file:///Users/johnbauer/Dev/Personal/arkm/design/) folder?
+- [ ] Do all new or modified UI elements fully support both light and dark theme modes?
 - [ ] Did you verify that all links in the documentation are clickable and reference the correct files?

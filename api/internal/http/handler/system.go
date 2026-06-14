@@ -1,0 +1,86 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"arkollab/api/internal/domain"
+)
+
+type SystemHandler struct {
+	systemService domain.SystemService
+}
+
+func NewSystemHandler(systemService domain.SystemService) *SystemHandler {
+	return &SystemHandler{
+		systemService: systemService,
+	}
+}
+
+func (h *SystemHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	settings, err := h.systemService.GetSettings(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(settings)
+}
+
+func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	var settings domain.SystemSettings
+	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Basic validation on policy
+	validPolicies := map[string]bool{
+		"forever": true, "Forever": true,
+		"5yr": true, "5y": true, "5 year": true, "5 years": true,
+		"3yr": true, "3y": true, "3 year": true, "3 years": true,
+		"1yr": true, "1y": true, "1 year": true, "1 years": true,
+		"90d": true, "90 days": true, "90days": true,
+		"60d": true, "60 days": true, "60days": true,
+		"30d": true, "30 days": true, "30days": true,
+		"custom": true,
+	}
+
+	if !validPolicies[settings.AuditRetentionPolicy] {
+		http.Error(w, "Invalid audit retention policy", http.StatusBadRequest)
+		return
+	}
+
+	if settings.AuditRetentionCustomDays < 1 {
+		settings.AuditRetentionCustomDays = 30
+	}
+
+	if err := h.systemService.UpdateSettings(r.Context(), &settings); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(settings)
+}
+
+func (h *SystemHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
+	docID := chi.URLParam(r, "id")
+	if docID == "" {
+		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	logs, err := h.systemService.GetAuditLogsForPage(r.Context(), docID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(logs)
+}
+

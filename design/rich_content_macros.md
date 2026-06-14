@@ -207,3 +207,41 @@ Children Display and Page Index macros dynamically render lists of document stru
    - Groups the sorted pages by their first character (normalized to uppercase letters, with non-alphabetic characters grouped under `#`).
    - Renders a multi-column responsive index grid showcasing pages under their respective letter headers. Click actions invoke navigation.
 
+---
+
+## 9. Macro Organizer Dialog & Toolbar Favorites System
+
+To streamline the formatting toolbar, Arkollab utilizes a dynamic, user-configurable macros dialog that allows users to pin and unpin formatting elements.
+
+### 9.1 Category Taxonomy & Data Schema
+Each command item inside the editor's command array matches the `SlashCommandItem` interface, extended with an optional `category` classifier:
+```typescript
+interface SlashCommandItem {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  action: (editor: any) => void;
+  category?: "text" | "layout" | "callouts" | "tasks" | "advanced";
+}
+```
+
+### 9.2 Local Storage Favorites State Sync
+- **State Initialization**: Upon mounting the `EditorCanvas`, the component reads the user's preferred layout favorites:
+  ```typescript
+  const stored = localStorage.getItem("arkollab_favorite_macros");
+  const initialFavorites = stored ? JSON.parse(stored) : DEFAULT_FAVORITES;
+  ```
+- **State Mutation**: Click events on the star icons invoke a toggle function which updates the React state and writes the serialized JSON array back to `localStorage`.
+
+### 9.3 Responsive Layout Management (Overflow Hiding)
+To prevent toolbar wrap or clipping of core text controls when multiple macros are favorited, the editor splits macro items into two visual sub-containers:
+1. **Favorites Wrap (`flex-shrink: 1`)**: Maps favorited buttons inside a flex container styled with `overflow: "hidden"` and `flexWrap: "nowrap"`. This forces the browser to drop overflowing icons from the viewport when horizontal spacing is constrained.
+2. **Dialog Trigger (`flex-shrink: 0`)**: The Plus (`+`) button sits outside the favorites wrap with zero-shrink parameters, ensuring the macro chooser remains accessible in all viewport dimensions.
+
+### 9.4 Dialog Search Bar & Global Filter
+- **Input State**: `macroSearchQuery` string state tracks the text input. The state is initialized to `""` on Plus button click.
+- **Visual Switch**: 
+  - When the search query is empty, the vertical tabs sidebar is visible (`!macroSearchQuery && <Tabs ... />`), and items are filtered by `cmd.category === activeCategoryTab`.
+  - When the search query is active, the vertical tabs sidebar is hidden, letting the grid layout container take up the full width of the dialog and filter results globally using case-insensitive substring checks on `cmd.label` and `cmd.description`.
+

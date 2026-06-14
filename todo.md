@@ -8,20 +8,20 @@ This document organizes the requested features into prioritized, sequential impl
 
 ### 📋 Phase 1: Rich Editor Blocks & Callouts (Tiptap UI)
 *Focuses on enriching the inline editing experience with customizable widgets and blocks. These require minimal backend changes.*
-- [ ] **Status (Badge)**: Communicates status of a project, task, or milestone with visual pills.
-- [ ] **Info/Note/Tip/Warning Panels**: Customizable colored message panels (Blue, Yellow, Green, Red) to highlight tips, warnings, or summaries.
-- [ ] **Expand (Expandable Box)**: Embeds expandable/collapsible details section into documents.
-- [ ] **Task List**: Interactive checkboxes (`Tiptap TaskList` extension) for actionable items.
-- [ ] **Date Selector**: Inline date element selector widget.
-- [ ] **Symbol Picker**: Picker to insert special characters and symbols.
-- [ ] **No Format Panel**: Renders code or unformatted text in a monospace block.
+- [x] **Status (Badge)**: Communicates status of a project, task, or milestone with visual pills.
+- [x] **Info/Note/Tip/Warning Panels**: Customizable colored message panels (Blue, Yellow, Green, Red) to highlight tips, warnings, or summaries.
+- [x] **Expand (Expandable Box)**: Embeds expandable/collapsible details section into documents.
+- [x] **Task List**: Interactive checkboxes (`Tiptap TaskList` extension) for actionable items.
+- [x] **Date Selector**: Inline date element selector widget.
+- [x] **Symbol Picker**: Picker to insert special characters and symbols.
+- [x] **No Format Panel**: Renders code or unformatted text in a monospace block.
 
 ### 🌳 Phase 2: Page Architecture & Hierarchy
 *Enables structural organization and navigation as the page count grows.*
-- [ ] **Table of Contents**: Auto-generated ToC based on the page's headings hierarchy.
-- [ ] **Breadcrumbs**: Top header indicator showing parent page ancestors (`Home > Engineering > Wiki`).
-- [ ] **Move Page (Hierarchical)**: Drag-and-drop or select dialog to re-parent pages in the directory.
-- [ ] **Trash / Undelete**: Soft-delete database query and a "Trash bin" sidebar view to restore documents.
+- [x] **Table of Contents**: Auto-generated ToC based on the page's headings hierarchy.
+- [x] **Breadcrumbs**: Top header indicator showing parent page ancestors (`Home > Engineering > Wiki`).
+- [x] **Move Page (Hierarchical)**: Drag-and-drop or select dialog to re-parent pages in the directory.
+- [x] **Trash / Undelete**: Soft-delete database query and a "Trash bin" sidebar view to restore documents.
 - [ ] **Children Display**: Automatic index block listing child pages under the current document.
 - [ ] **Page Index**: Alphabetical index of all pages within the active project.
 

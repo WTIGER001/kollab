@@ -113,12 +113,12 @@ func (h *WSHandler) validateToken(ctx context.Context, tokenString string) (stri
 		userID = uid
 	}
 
-	if uName, ok := claims["username"].(string); ok {
+	if name, ok := claims["name"].(string); ok {
+		username = name
+	} else if uName, ok := claims["username"].(string); ok {
 		username = uName
 	} else if prefName, ok := claims["preferred_username"].(string); ok {
 		username = prefName
-	} else if name, ok := claims["name"].(string); ok {
-		username = name
 	}
 
 	if userID == "" {

@@ -20,6 +20,9 @@ func NewLocalStorage(basePath string) (*LocalStorage, error) {
 
 func (s *LocalStorage) Save(ctx context.Context, key string, data []byte) error {
 	filePath := filepath.Join(s.basePath, key)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return fmt.Errorf("failed to create parent directories: %w", err)
+	}
 	return os.WriteFile(filePath, data, 0644)
 }
 

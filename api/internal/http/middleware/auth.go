@@ -15,6 +15,8 @@ import (
 	"log"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"arkollab/api/internal/domain"
 )
 
 type contextKey string
@@ -165,7 +167,7 @@ func (c *JWKSCache) GetKey(ctx context.Context, kid string) (any, error) {
 
 // AuthMiddleware returns a middleware that validates a JWT token and adds user claims to the context.
 // It supports verifying OIDC tokens using a JWKS cache with an HMAC fallback for local development and testing.
-func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache) func(http.Handler) http.Handler {
+func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.UserRepository) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -208,7 +210,7 @@ func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache) func(http.Handler) h
 			})
 
 			if err != nil || !token.Valid {
-				log.Printf("JWT validation failed: err=%v, tokenString=%q", err, tokenString)
+				log.Printf("JWT validation failed: %v", err)
 				http.Error(w, "Unauthorized: Invalid or expired token", http.StatusUnauthorized)
 				return
 			}
@@ -236,6 +238,31 @@ func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache) func(http.Handler) h
 
 			if username == "" {
 				username = userID // fallback
+			}
+
+			var email, displayName string
+			if em, ok := claims["email"].(string); ok {
+				email = em
+			}
+			if n, ok := claims["name"].(string); ok {
+				displayName = n
+			} else {
+				displayName = username
+			}
+
+			// Perform lazy user detail upsert in the background
+			if userRepo != nil {
+				go func() {
+					u := &domain.User{
+						ID:          userID,
+						Username:    username,
+						Email:       email,
+						DisplayName: displayName,
+					}
+					if err := userRepo.Upsert(context.Background(), u); err != nil {
+						log.Printf("Warning: failed to upsert user details: %v", err)
+					}
+				}()
 			}
 
 			ctx := context.WithValue(r.Context(), userIDKey, userID)

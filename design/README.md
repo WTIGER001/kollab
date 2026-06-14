@@ -20,3 +20,16 @@ This directory contains the hierarchical technical specifications of Project Ark
 
 ### 🛠️ [5. Rich Content Macros](file:///Users/johnbauer/Dev/Personal/arkm/design/rich_content_macros.md)
 *Tiptap node schemas, attribute bindings, HTML parsing rules, and dynamic React node view components (CalloutPanel and InlineStatus).*
+
+### 🗑️ [6. Soft Delete & Restoration](file:///Users/johnbauer/Dev/Personal/arkm/design/trash_undelete.md)
+*Nullable soft deletion columns, cascading recursive CTE database queries, permanent purging, and parent-orphaning restoration checks.*
+
+### 💬 [7. Document Comments & Threads](file:///Users/johnbauer/Dev/Personal/arkm/design/comments.md)
+*PostgreSQL table schemas, Go service layer domains, CRUD HTTP REST endpoints, OIDC authorization checks, and React nested threads state rendering.*
+
+### 👤 [8. User Initials Avatar](file:///Users/johnbauer/Dev/Personal/arkm/design/user_avatar.md)
+*Technical specifications, initials calculation algorithm, and interface bindings of the custom UserAvatar component.*
+
+### 📋 [9. Task Synchronization & Dashboard](file:///Users/johnbauer/Dev/Personal/arkm/design/tasks.md)
+*Technical specifications of the AST parser, relational schema sync transactions, autocomplete input rules, and urgency layout.*
+

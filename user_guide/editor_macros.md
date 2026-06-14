@@ -4,6 +4,33 @@ Arkollab includes powerful widgets to structure, format, and annotate your docum
 
 ---
 
+## ➕ Inserting Macros & Managing Favorites (The Plus Dialog)
+
+To keep the editing toolbar clean and focused, Arkollab groups all document macros, widgets, and layout sections into a single, organized **Insert Macro** dialog. You can access all blocks from this dialog and pin/favorite your most frequently used macros directly to the formatting toolbar.
+
+### How to Open the Insert Dialog
+1. In the editor toolbar, locate the **`+` (Plus icon)**. The plus button is always visible.
+2. Click the plus button to open the **Insert Macro or Block** dialog.
+
+### Browsing Categories
+The Insert Dialog is divided into 5 vertical tabs on the left:
+1.  **Text & Lists**: Basic formatting blocks, lists, code panels, lorem ipsum debugging generator, and special symbol insertions.
+2.  **Layout & Media**: Equal-width columns (2 or 3 columns), asymmetric grid layouts (70/30 or 30/70), image uploads, and data tables.
+3.  **Callouts & Details**: Beautiful colored information, tip, warning, note, error, or checkmark panels, and collapsible boxes.
+4.  **Task & Status**: Actionable checklist lists, inline status indicators, and date deadline pills.
+5.  **Advanced Macros**: Table of Contents, children listings, alphabetical directories, page attachments, and page excerpt widgets.
+### Searching Macros
+- **Search Bar**: A search input is located at the top of the dialog. Type any term (e.g., `table` or `color`) to find matching macros immediately by name or description.
+- **Global Search Layout**: When you type a search query, the vertical tabs sidebar temporarily collapses to present a full-width grid of search results matching globally. Clearing the search query instantly restores the category vertical tabs.
+
+### Pinning Favorites to the Toolbar
+- **Pin a Macro**: Open the Insert Dialog, find the macro card you want to keep handy, and click the **Star icon** on the right side of the card. The macro icon will instantly appear in your editor toolbar.
+- **Unpin a Macro**: Click the star icon again to unpin it from the toolbar.
+- **Persistence**: Your favorites list is saved directly in your web browser, ensuring it persists across page reloads.
+- **Responsive Width Hiding**: If you favorite a large number of macros, Arkollab will automatically hide overflowing icons when the browser window is narrowed, ensuring the toolbar never wraps or breaks page layouts.
+
+---
+
 ## 🛈 Callout Panels (Info, Note, Tip, Warning, Error, Check)
 
 Callout panels are beautifully colored message boxes featuring a distinct editable **Title** header and a rich-text **Message** area. They help highlight key takeaways, rules, warnings, errors, or success checkpoints.
@@ -58,6 +85,8 @@ Task lists allow you to embed interactive checklists with clickable check boxes 
 ### How to Use
 * **Checking Tasks**: Click on any checkbox to toggle its completed state. When checked, the task line text is automatically struck through and greyed out.
 * **Nesting Tasks**: Press **`Tab`** on a task line to nest it under the previous task, creating sub-tasks. Press **`Shift + Tab`** to lift it back up.
+* **User Assignment Shortcuts**: Type **`@`** while editing a task line to trigger the team user autocomplete popup. Use the arrow keys or mouse to select a user (e.g. `@dev_admin`) and press **`Enter`** to assign it.
+* **Due Date Shortcuts**: Type **`//`** anywhere on a task line to instantly create an inline date pill and automatically trigger the calendar dropdown to select a due date.
 
 ---
 
@@ -84,11 +113,11 @@ Date pills are compact inline elements that help you select, display, and coordi
 ### How to Insert a Date Pill
 1. Type **`/date`** and press **`Enter`**.
 2. Alternatively, click the **Calendar icon** in the quick formatting toolbar.
-3. An inline date badge displaying today's date is inserted.
+3. Type **`//`** anywhere in your editor document to insert a date pill instantly.
 
 ### How to Customize
-1. **Click the date badge**. A calendar popover will open.
-2. **Select Date**: Use the native calendar input to select a date. The pill text updates automatically.
+1. **Instant Calendar Popup**: When you type **`//`** or insert a date pill, the browser's native calendar selector automatically pops up, allowing you to select a date immediately without additional clicks.
+2. **Click the date badge**: If you need to change the date later, click the date badge. A calendar popover will open and trigger the picker.
 3. **Delete Pill**: Click the **Trash icon** inside the calendar popover to remove the date.
 
 ---
@@ -159,3 +188,29 @@ The Page Index macro generates a comprehensive, A-Z directory of all pages in th
 * **A-Z Columns**: The macro groups all pages in the current team/project space alphabetically by their first letter in a multi-column card layout.
 * **Instant Navigation**: Click on any page title in the alphabetical lists to open it.
 * **Delete Macro**: In edit mode, hover over the macro block and click the **Trash icon** in the top-right corner.
+
+---
+
+## ↕️ Text Alignment Options
+
+You can customize the alignment of paragraphs and headings within the document.
+
+### How to Align Text
+1. Click inside the paragraph or heading you want to align.
+2. In the editor formatting toolbar, click on one of the alignment buttons:
+   * **Align Left** (default)
+   * **Align Center**
+   * **Align Right**
+3. The paragraph or heading is aligned instantly, and the change is synchronized with other users.
+
+---
+
+## 📝 Lorem Ipsum Paragraph Generator (Debugging Macro)
+
+For debugging, layout testing, or placeholder copywriting, you can insert multi-paragraph placeholder text instantly.
+
+### How to Use the Lorem Generator
+1. Type **`/lorem`** and press **`Enter`**.
+2. A premium placeholder generator dialog will open.
+3. Select how many paragraphs you want to generate (**1 to 5 paragraphs**).
+4. Click **Insert** to place the lorem ipsum text at your current cursor selection.

@@ -3,18 +3,28 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(255) PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL
+    password_hash VARCHAR(255)
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255);
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS teams (
     id VARCHAR(255) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    name VARCHAR(255) NOT NULL,
+    abbreviation VARCHAR(255) UNIQUE,
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS projects (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE
+    team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE,
+    logo_url TEXT,
+    abbreviation VARCHAR(255),
+    description TEXT,
+    CONSTRAINT unique_team_project_abbreviation UNIQUE (team_id, abbreviation)
 );
 
 CREATE TABLE IF NOT EXISTS documents (
@@ -22,13 +32,24 @@ CREATE TABLE IF NOT EXISTS documents (
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     project_id VARCHAR(255) REFERENCES projects(id) ON DELETE CASCADE,
+    team_id VARCHAR(255) NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
     parent_id VARCHAR(255) REFERENCES documents(id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
-    embedding vector(768)
+    embedding vector(768),
+    created_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
+    updated_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
+    deleted_at TIMESTAMP
 );
 
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedding vector(768);
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE;
+UPDATE documents d SET team_id = p.team_id FROM projects p WHERE d.project_id = p.id AND d.team_id IS NULL;
+ALTER TABLE documents ALTER COLUMN team_id SET NOT NULL;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS created_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_documents_team_id ON documents (team_id);
 
 CREATE TABLE IF NOT EXISTS document_versions (
     id VARCHAR(255) PRIMARY KEY,
@@ -83,17 +104,19 @@ INSERT INTO workspace_themes (id, name, logo_url, light_mode, dark_mode, is_defa
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Seed Teams
-INSERT INTO teams (id, name) VALUES 
-('team_arkloud', 'Arkloud'),
-('team_eng', 'Engineering'),
-('team_mkt', 'Marketing')
+INSERT INTO teams (id, name, abbreviation, description) VALUES 
+('team_arkloud', 'Arkloud', 'arkloud', 'Main organization workspace'),
+('team_eng', 'Engineering', 'eng', 'Engineering & Development department'),
+('team_mkt', 'Marketing', 'mkt', 'Brand & Launch campaign team')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed Users
-INSERT INTO users (id, username, password_hash) VALUES
-('sh4ag0cxowti', 'sh4ag0cxowti', '$2a$10$UnXg804xZ0s9p4lBqG09Nu9c3zF1mQJqQ7j3x9y9z9.8h8g8g8g8g'),
-('mock-user-id', 'mock-user', '$2a$10$UnXg804xZ0s9p4lBqG09Nu9c3zF1mQJqQ7j3x9y9z9.8h8g8g8g8g')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO users (id, username, password_hash, display_name, email) VALUES
+('sh4ag0cxowti', 'sh4ag0cxowti', '$2a$10$UnXg804xZ0s9p4lBqG09Nu9c3zF1mQJqQ7j3x9y9z9.8h8g8g8g8g', 'John Bauer', 'john.bauerii@gmail.com'),
+('mock-user-id', 'mock-user', '$2a$10$UnXg804xZ0s9p4lBqG09Nu9c3zF1mQJqQ7j3x9y9z9.8h8g8g8g8g', 'Mock User', 'mock-user@example.com')
+ON CONFLICT (id) DO UPDATE
+SET display_name = EXCLUDED.display_name,
+    email = EXCLUDED.email;
 
 -- Seed Team Members
 INSERT INTO team_members (team_id, user_id) VALUES
@@ -102,18 +125,96 @@ INSERT INTO team_members (team_id, user_id) VALUES
 ON CONFLICT (team_id, user_id) DO NOTHING;
 
 -- Seed Projects
-INSERT INTO projects (id, name, team_id) VALUES 
-('proj_arkollab_test', 'Arkollab Test', 'team_arkloud'),
-('proj_wiki', 'Engineering Wiki', 'team_eng'),
-('proj_roadmap', 'Product Roadmap', 'team_eng'),
-('proj_campaign', 'Summer Launch 2026', 'team_mkt')
+INSERT INTO projects (id, name, team_id, logo_url, abbreviation, description) VALUES 
+('proj_arkollab_test', 'Arkollab Test', 'team_arkloud', '', 'arkollab', 'Arkollab team collaborative testing sandbox'),
+('proj_wiki', 'Engineering Wiki', 'team_eng', '', 'wiki', 'Technical specifications and style guides'),
+('proj_roadmap', 'Product Roadmap', 'team_eng', '', 'roadmap', 'Product roadmap timeline and schedule'),
+('proj_campaign', 'Summer Launch 2026', 'team_mkt', '', 'campaign', 'Summer launch assets and press releases')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed Documents
-INSERT INTO documents (id, title, content, project_id, parent_id, created_at, updated_at) VALUES 
-('doc_welcome_arkloud', 'Welcome to Arkollab Test Workspace', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Welcome to your Arkloud Workspace!"}]},{"type":"paragraph","content":[{"type":"text","text":"This workspace is backed by Logto OIDC authentication and PostgreSQL. Create pages, layouts, and document tables."}]}]}', 'proj_arkollab_test', NULL, NOW(), NOW()),
-('doc_welcome_eng', 'Welcome to Engineering Wiki', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Welcome to the Engineering Wiki!"}]},{"type":"paragraph","content":[{"type":"text","text":"This is the collaborative home for all our software design specifications, API endpoints, and architectures. Use the ''/'' command to insert templates, status indicator widgets, and column layouts."}]}]}', 'proj_wiki', NULL, NOW(), NOW()),
-('doc_guides_eng', 'Developer Style Guides', '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Coding Guidelines"}]},{"type":"paragraph","content":[{"type":"text","text":"Please follow clean architecture principles, write Go code that compiles cleanly, and ensure frontend layouts follow modern responsive design patterns."}]}]}', 'proj_wiki', NULL, NOW() - INTERVAL '2 hours', NOW()),
-('doc_welcome_roadmap', 'Product Roadmap Overview', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Product Roadmap Q3/Q4"}]},{"type":"paragraph","content":[{"type":"text","text":"Below is our roadmap schedule mapping out critical features, database models, and target deployments."}]}]}', 'proj_roadmap', NULL, NOW(), NOW()),
-('doc_welcome_mkt', 'Summer Launch 2026', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Summer Launch Campaign Kickoff"}]},{"type":"paragraph","content":[{"type":"text","text":"Review our key assets, marketing target audiences, and press releases for the upcoming launch event."}]}]}', 'proj_campaign', NULL, NOW(), NOW())
+INSERT INTO documents (id, title, content, project_id, team_id, parent_id, created_at, updated_at, created_by, updated_by) VALUES 
+('doc_welcome_arkloud', 'Welcome to Arkollab Test Workspace', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Welcome to your Arkloud Workspace!"}]},{"type":"paragraph","content":[{"type":"text","text":"This workspace is backed by Logto OIDC authentication and PostgreSQL. Create pages, layouts, and document tables."}]}]}', 'proj_arkollab_test', 'team_arkloud', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti'),
+('doc_welcome_eng', 'Welcome to Engineering Wiki', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Welcome to the Engineering Wiki!"}]},{"type":"paragraph","content":[{"type":"text","text":"This is the collaborative home for all our software design specifications, API endpoints, and architectures. Use the ''/'' command to insert templates, status indicator widgets, and column layouts."}]}]}', 'proj_wiki', 'team_eng', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti'),
+('doc_guides_eng', 'Developer Style Guides', '{"type":"doc","content":[{"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Coding Guidelines"}]},{"type":"paragraph","content":[{"type":"text","text":"Please follow clean architecture principles, write Go code that compiles cleanly, and ensure frontend layouts follow modern responsive design patterns."}]}]}', 'proj_wiki', 'team_eng', NULL, NOW() - INTERVAL '2 hours', NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti'),
+('doc_welcome_roadmap', 'Product Roadmap Overview', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Product Roadmap Q3/Q4"}]},{"type":"paragraph","content":[{"type":"text","text":"Below is our roadmap schedule mapping out critical features, database models, and target deployments."}]}]}', 'proj_roadmap', 'team_eng', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti'),
+('doc_welcome_mkt', 'Summer Launch 2026', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Summer Launch Campaign Kickoff"}]},{"type":"paragraph","content":[{"type":"text","text":"Review our key assets, marketing target audiences, and press releases for the upcoming launch event."}]}]}', 'proj_campaign', 'team_mkt', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti')
 ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS document_views (
+    id VARCHAR(255) PRIMARY KEY,
+    document_id VARCHAR(255) REFERENCES documents(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) NOT NULL,
+    viewed_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_views_doc_time ON document_views (document_id, viewed_at);
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+    user_id VARCHAR(255) NOT NULL,
+    document_id VARCHAR(255) REFERENCES documents(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, document_id)
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR(255) PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+INSERT INTO system_settings (key, value) VALUES 
+('audit_retention_policy', 'forever'),
+('audit_retention_custom_days', '30'),
+('audit_log_destination', 'postgres')
+ON CONFLICT (key) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS document_audit_logs (
+    id VARCHAR(255) NOT NULL,
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    user_id VARCHAR(255),
+    action VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (id, created_at)
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE IF NOT EXISTS document_audit_logs_default PARTITION OF document_audit_logs DEFAULT;
+
+CREATE TABLE IF NOT EXISTS comments (
+    id VARCHAR(255) PRIMARY KEY,
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    parent_id VARCHAR(255) REFERENCES comments(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_by VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_comments_doc_id ON comments(document_id);
+
+CREATE TABLE IF NOT EXISTS attachments (
+    id VARCHAR(255) PRIMARY KEY,
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(255) NOT NULL,
+    file_size BIGINT NOT NULL,
+    storage_key VARCHAR(255) NOT NULL,
+    uploaded_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
+    uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_attachments_document_id ON attachments(document_id);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id VARCHAR(255) PRIMARY KEY,
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    assignee VARCHAR(255) NOT NULL,
+    due_date DATE,
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee);
+
+
+
+

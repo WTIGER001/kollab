@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes, nodeInputRule } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { InlineDateView } from "../../components/InlineDateView";
 
@@ -17,6 +17,10 @@ export const InlineDate = Node.create({
           const localNow = new Date(now.getTime() - offset * 60 * 1000);
           return localNow.toISOString().split("T")[0]; // YYYY-MM-DD local format
         },
+      },
+      autoOpen: {
+        default: false,
+        keepOnSplit: false,
       },
     };
   },
@@ -42,7 +46,18 @@ export const InlineDate = Node.create({
     ];
   },
 
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: /(?:\s|^)\/\/$/,
+        type: this.type,
+        getAttributes: () => ({ autoOpen: true }),
+      }),
+    ];
+  },
+
   addNodeView() {
     return ReactNodeViewRenderer(InlineDateView);
   },
 });
+

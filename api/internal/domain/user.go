@@ -8,11 +8,14 @@ type User struct {
 	ID           string `json:"id"`
 	Username     string `json:"username"`
 	PasswordHash string `json:"-"`
+	Email        string `json:"email"`
+	DisplayName  string `json:"displayName"`
 }
 
 type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*User, error)
 	Create(ctx context.Context, user *User) error
+	Upsert(ctx context.Context, user *User) error
 }
 
 type AuthService interface {

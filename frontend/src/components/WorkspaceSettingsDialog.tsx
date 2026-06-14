@@ -10,28 +10,43 @@ import {
   TextField,
   Button,
   Typography,
-  IconButton
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from "@mui/material";
 import { X, Sparkles } from "lucide-react";
-import type { ColorScheme, WorkspaceTheme } from "../services/api";
+import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
 
 interface WorkspaceSettingsDialogProps {
   open: boolean;
   onClose: () => void;
   currentTheme: WorkspaceTheme | null;
   onSave: (name: string, logoUrl: string, lightMode: ColorScheme, darkMode: ColorScheme) => void;
+  systemSettings: SystemSettings | null;
+  onSaveSettings: (settings: SystemSettings) => Promise<void>;
 }
 
 export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   open,
   onClose,
   currentTheme,
-  onSave
+  onSave,
+  systemSettings,
+  onSaveSettings
 }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   
+  // Audit settings states
+  const [policy, setPolicy] = useState("forever");
+  const [customDays, setCustomDays] = useState(30);
+  const [destination, setDestination] = useState("postgres");
+  const [trashPolicy, setTrashPolicy] = useState("forever");
+  const [trashCustomDays, setTrashCustomDays] = useState(30);
+
   // Color scheme state defaults (based on Tailwind/harmony palettes)
   const [lightColors, setLightColors] = useState<ColorScheme>({
     primary: "#8b5cf6",
@@ -55,22 +70,38 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
     accent: "#3b82f6"
   });
 
-  // Load current theme values when open
+  // Load current theme values and system settings when open
   useEffect(() => {
-    if (open && currentTheme) {
-      setName(currentTheme.name);
-      setLogoUrl(currentTheme.logoUrl || "");
-      if (currentTheme.lightMode) setLightColors(currentTheme.lightMode);
-      if (currentTheme.darkMode) setDarkColors(currentTheme.darkMode);
+    if (open) {
+      if (currentTheme) {
+        setName(currentTheme.name);
+        setLogoUrl(currentTheme.logoUrl || "");
+        if (currentTheme.lightMode) setLightColors(currentTheme.lightMode);
+        if (currentTheme.darkMode) setDarkColors(currentTheme.darkMode);
+      }
+      if (systemSettings) {
+        setPolicy(systemSettings.auditRetentionPolicy);
+        setCustomDays(systemSettings.auditRetentionCustomDays);
+        setDestination(systemSettings.auditLogDestination);
+        setTrashPolicy(systemSettings.trashRetentionPolicy || "forever");
+        setTrashCustomDays(systemSettings.trashRetentionCustomDays || 30);
+      }
     }
-  }, [open, currentTheme]);
+  }, [open, currentTheme, systemSettings]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabIndex(newValue);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     onSave(name, logoUrl, lightColors, darkColors);
+    await onSaveSettings({
+      auditRetentionPolicy: policy,
+      auditRetentionCustomDays: customDays,
+      auditLogDestination: destination,
+      trashRetentionPolicy: trashPolicy,
+      trashRetentionCustomDays: trashCustomDays
+    });
     onClose();
   };
 
@@ -183,6 +214,7 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
           <Tab label="General Settings" />
           <Tab label="Light Palette Editor" />
           <Tab label="Dark Palette Editor" />
+          <Tab label="Audit & Retention" />
         </Tabs>
 
         <Box sx={{ p: 4 }}>
@@ -256,6 +288,146 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
                 {renderColorInput("Secondary/Muted Text Color", "textSecondary", darkColors, setDarkColors)}
                 {renderColorInput("Border & Line Color", "border", darkColors, setDarkColors)}
                 {renderColorInput("Special Highlight Accent", "accent", darkColors, setDarkColors)}
+              </Box>
+            </Box>
+          )}
+
+          {tabIndex === 3 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  Log Retention Policy
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                  Configure how long document view and edit logs are retained in the database. Older log partitions are automatically pruned daily.
+                </Typography>
+                
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={policy}
+                    onChange={(e) => setPolicy(e.target.value)}
+                    sx={{
+                      backgroundColor: "action.hover",
+                      fontSize: "13px",
+                      "& fieldset": { borderColor: "var(--border-color)" },
+                      "&:hover fieldset": { borderColor: "primary.main" }
+                    }}
+                  >
+                    <MenuItem value="forever">Forever (Recommended)</MenuItem>
+                    <MenuItem value="5yr">5 Years</MenuItem>
+                    <MenuItem value="3yr">3 Years</MenuItem>
+                    <MenuItem value="1yr">1 Year</MenuItem>
+                    <MenuItem value="90d">90 Days</MenuItem>
+                    <MenuItem value="60d">60 Days</MenuItem>
+                    <MenuItem value="30d">30 Days</MenuItem>
+                    <MenuItem value="custom">Custom Duration...</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {policy === "custom" && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, display: "block", mb: 0.5 }}>
+                      Custom Retention Period (Days)
+                    </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={customDays}
+                      onChange={(e) => setCustomDays(parseInt(e.target.value) || 30)}
+                      fullWidth
+                      slotProps={{
+                        htmlInput: { min: 1, style: { fontSize: "13px" } }
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          backgroundColor: "action.hover",
+                          "& fieldset": { borderColor: "var(--border-color)" },
+                          "&:hover fieldset": { borderColor: "primary.main" }
+                        }
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  Trash Page Retention Policy
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                  Configure how long pages remain in the Trash Bin before they are permanently purged from the database.
+                </Typography>
+                
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={trashPolicy}
+                    onChange={(e) => setTrashPolicy(e.target.value)}
+                    sx={{
+                      backgroundColor: "action.hover",
+                      fontSize: "13px",
+                      "& fieldset": { borderColor: "var(--border-color)" },
+                      "&:hover fieldset": { borderColor: "primary.main" }
+                    }}
+                  >
+                    <MenuItem value="forever">Forever (Keep indefinitely)</MenuItem>
+                    <MenuItem value="30d">30 Days</MenuItem>
+                    <MenuItem value="14d">14 Days</MenuItem>
+                    <MenuItem value="7d">7 Days</MenuItem>
+                    <MenuItem value="custom">Custom Duration...</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {trashPolicy === "custom" && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, display: "block", mb: 0.5 }}>
+                      Custom Retention Period (Days)
+                    </Typography>
+                    <TextField
+                      type="number"
+                      size="small"
+                      value={trashCustomDays}
+                      onChange={(e) => setTrashCustomDays(parseInt(e.target.value) || 30)}
+                      fullWidth
+                      slotProps={{
+                        htmlInput: { min: 1, style: { fontSize: "13px" } }
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          backgroundColor: "action.hover",
+                          "& fieldset": { borderColor: "var(--border-color)" },
+                          "&:hover fieldset": { borderColor: "primary.main" }
+                        }
+                      }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  Audit Log Storage Destination
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                  Select where audit trail log records should be written. External destinations will be supported in future versions.
+                </Typography>
+                
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    sx={{
+                      backgroundColor: "action.hover",
+                      fontSize: "13px",
+                      "& fieldset": { borderColor: "var(--border-color)" },
+                      "&:hover fieldset": { borderColor: "primary.main" }
+                    }}
+                  >
+                    <MenuItem value="postgres">PostgreSQL Partitioned Database Table (Default)</MenuItem>
+                    <MenuItem value="file" disabled>External File Storage (Eventually)</MenuItem>
+                    <MenuItem value="cloudwatch" disabled>AWS CloudWatch / Cloud Logging (Eventually)</MenuItem>
+                    <MenuItem value="azure" disabled>Azure Log Analytics (Eventually)</MenuItem>
+                  </Select>
+                </FormControl>
               </Box>
             </Box>
           )}

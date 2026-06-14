@@ -11,9 +11,10 @@ import (
 )
 
 type OllamaClient struct {
-	baseURL string
-	model   string
-	client  *http.Client
+	baseURL    string
+	embedModel string
+	textModel  string
+	client     *http.Client
 }
 
 func NewOllamaClient() *OllamaClient {
@@ -21,15 +22,20 @@ func NewOllamaClient() *OllamaClient {
 	if baseURL == "" {
 		baseURL = "http://localhost:11434"
 	}
-	model := os.Getenv("OLLAMA_EMBED_MODEL")
-	if model == "" {
-		model = "nomic-embed-text"
+	embedModel := os.Getenv("OLLAMA_EMBED_MODEL")
+	if embedModel == "" {
+		embedModel = "nomic-embed-text"
+	}
+	textModel := os.Getenv("OLLAMA_TEXT_MODEL")
+	if textModel == "" {
+		textModel = "llama3"
 	}
 	return &OllamaClient{
-		baseURL: baseURL,
-		model:   model,
+		baseURL:    baseURL,
+		embedModel: embedModel,
+		textModel:  textModel,
 		client: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 10 * time.Second,
 		},
 	}
 }
@@ -43,9 +49,9 @@ type embeddingsResponse struct {
 	Embedding []float32 `json:"embedding"`
 }
 
-func (c *OllamaClient) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+func (c *OllamaClient) GenerateTextEmbeddings(ctx context.Context, text string) ([]float32, error) {
 	reqBody := embeddingsRequest{
-		Model:  c.model,
+		Model:  c.embedModel,
 		Prompt: text,
 	}
 	buf := new(bytes.Buffer)
@@ -75,4 +81,49 @@ func (c *OllamaClient) GenerateEmbedding(ctx context.Context, text string) ([]fl
 	}
 
 	return respBody.Embedding, nil
+}
+
+type ollamaGenerateRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+	Stream bool   `json:"stream"`
+}
+
+type ollamaGenerateResponse struct {
+	Response string `json:"response"`
+}
+
+func (c *OllamaClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	reqBody := ollamaGenerateRequest{
+		Model:  c.textModel,
+		Prompt: prompt,
+		Stream: false,
+	}
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(reqBody); err != nil {
+		return "", fmt.Errorf("failed to encode request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/api/generate", buf)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to call Ollama API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Ollama API returned non-OK status: %d", resp.StatusCode)
+	}
+
+	var respBody ollamaGenerateResponse
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return respBody.Response, nil
 }

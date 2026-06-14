@@ -1,11 +1,15 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
+
+	"arkollab/api/internal/domain"
 )
 
 type Client struct {
@@ -37,6 +41,7 @@ type Hub struct {
 	Register   chan *Client
 	Unregister chan *Client
 	Broadcast  chan BroadcastMessage
+	docService domain.DocumentService
 }
 
 type UserPresence struct {
@@ -58,12 +63,13 @@ type WSMessage struct {
 	Updates  []string       `json:"updates,omitempty"` // For sync-history
 }
 
-func NewHub() *Hub {
+func NewHub(docService domain.DocumentService) *Hub {
 	return &Hub{
 		Rooms:      make(map[string]*Room),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Broadcast:  make(chan BroadcastMessage),
+		docService: docService,
 	}
 }
 
@@ -128,9 +134,59 @@ func (h *Hub) handleUnregister(client *Client) {
 			}
 			if len(room.Clients) == 0 {
 				delete(h.Rooms, client.DocID)
+				// Spawn session ended auto-save if docService is configured
+				if h.docService != nil {
+					go h.autoSaveSession(client.DocID, client.UserID)
+				}
 			} else {
 				h.broadcastPresenceList(client.DocID)
 			}
+		}
+	}
+}
+
+func (h *Hub) autoSaveSession(docID string, userID string) {
+	// Wait 10 seconds to buffer normal refreshes/reconnects
+	time.Sleep(10 * time.Second)
+
+	h.RLock()
+	room, active := h.Rooms[docID]
+	h.RUnlock()
+
+	// If the room has been re-created or clients rejoined, abort the autosave
+	if active && room != nil && len(room.Clients) > 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Check if there are live unsaved changes
+	doc, err := h.docService.GetDocument(ctx, docID)
+	if err != nil {
+		log.Printf("Session autosave: failed to fetch document %s: %v", docID, err)
+		return
+	}
+
+	versions, err := h.docService.GetDocumentVersions(ctx, docID)
+	if err != nil {
+		log.Printf("Session autosave: failed to fetch versions for %s: %v", docID, err)
+		return
+	}
+
+	latestContent := `{"type":"doc","content":[{"type":"paragraph"}]}`
+	for _, v := range versions {
+		if v.VersionNumber != -1 {
+			latestContent = v.Content
+			break
+		}
+	}
+
+	if doc.Content != latestContent {
+		log.Printf("Session autosave: Saving snapshot for document %s (Session ended)", docID)
+		_, err = h.docService.CreateManualMilestone(ctx, docID, "Auto-saved snapshot (Session ended)", userID)
+		if err != nil {
+			log.Printf("Session autosave: failed to create manual milestone for %s: %v", docID, err)
 		}
 	}
 }

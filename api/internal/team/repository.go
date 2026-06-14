@@ -29,14 +29,14 @@ func NewInMemoryTeamRepository() *InMemoryTeamRepository {
 }
 
 func (r *InMemoryTeamRepository) seed() {
-	r.teams["team_arkloud"] = &domain.Team{ID: "team_arkloud", Name: "Arkloud"}
-	r.teams["team_eng"] = &domain.Team{ID: "team_eng", Name: "Engineering"}
-	r.teams["team_mkt"] = &domain.Team{ID: "team_mkt", Name: "Marketing"}
+	r.teams["team_arkloud"] = &domain.Team{ID: "team_arkloud", Name: "Arkloud", Abbreviation: "arkloud", Description: "Main organization workspace"}
+	r.teams["team_eng"] = &domain.Team{ID: "team_eng", Name: "Engineering", Abbreviation: "eng", Description: "Engineering & Development department"}
+	r.teams["team_mkt"] = &domain.Team{ID: "team_mkt", Name: "Marketing", Abbreviation: "mkt", Description: "Brand & Launch campaign team"}
 
-	r.projects["proj_arkollab_test"] = &domain.Project{ID: "proj_arkollab_test", Name: "Arkollab Test", TeamID: "team_arkloud"}
-	r.projects["proj_wiki"] = &domain.Project{ID: "proj_wiki", Name: "Engineering Wiki", TeamID: "team_eng"}
-	r.projects["proj_roadmap"] = &domain.Project{ID: "proj_roadmap", Name: "Product Roadmap", TeamID: "team_eng"}
-	r.projects["proj_campaign"] = &domain.Project{ID: "proj_campaign", Name: "Summer Launch 2026", TeamID: "team_mkt"}
+	r.projects["proj_arkollab_test"] = &domain.Project{ID: "proj_arkollab_test", Name: "Arkollab Test", TeamID: "team_arkloud", Abbreviation: "arkollab", Description: "Arkollab team collaborative testing sandbox"}
+	r.projects["proj_wiki"] = &domain.Project{ID: "proj_wiki", Name: "Engineering Wiki", TeamID: "team_eng", Abbreviation: "wiki", Description: "Technical specifications and style guides"}
+	r.projects["proj_roadmap"] = &domain.Project{ID: "proj_roadmap", Name: "Product Roadmap", TeamID: "team_eng", Abbreviation: "roadmap", Description: "Product roadmap timeline and schedule"}
+	r.projects["proj_campaign"] = &domain.Project{ID: "proj_campaign", Name: "Summer Launch 2026", TeamID: "team_mkt", Abbreviation: "campaign", Description: "Summer launch assets and press releases"}
 
 	r.teamMembers["team_arkloud"] = map[string]bool{"sh4ag0cxowti": true}
 	r.teamMembers["team_eng"] = map[string]bool{"mock-user-id": true}
@@ -121,4 +121,98 @@ func (r *InMemoryTeamRepository) GetUsersByTeamID(ctx context.Context, teamID st
 	})
 
 	return list, nil
+}
+
+func (r *InMemoryTeamRepository) UpdateTeam(ctx context.Context, team *domain.Team) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, t := range r.teams {
+		if t.ID != team.ID && t.Abbreviation == team.Abbreviation && team.Abbreviation != "" {
+			return errors.New("team abbreviation must be unique systemwide")
+		}
+	}
+
+	t, exists := r.teams[team.ID]
+	if !exists {
+		return errors.New("team not found")
+	}
+
+	t.Name = team.Name
+	t.Abbreviation = team.Abbreviation
+	t.Description = team.Description
+	return nil
+}
+
+func (r *InMemoryTeamRepository) UpdateProject(ctx context.Context, project *domain.Project) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, p := range r.projects {
+		if p.ID != project.ID && p.TeamID == project.TeamID && p.Abbreviation == project.Abbreviation && project.Abbreviation != "" {
+			return errors.New("project abbreviation must be unique in this team")
+		}
+	}
+
+	p, exists := r.projects[project.ID]
+	if !exists {
+		return errors.New("project not found")
+	}
+
+	p.Name = project.Name
+	p.LogoURL = project.LogoURL
+	p.Abbreviation = project.Abbreviation
+	p.Description = project.Description
+	return nil
+}
+
+func (r *InMemoryTeamRepository) GetTeamByAbbreviation(ctx context.Context, abbreviation string) (*domain.Team, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, t := range r.teams {
+		if t.Abbreviation == abbreviation {
+			return t, nil
+		}
+	}
+	return nil, errors.New("team not found")
+}
+
+func (r *InMemoryTeamRepository) CreateTeam(ctx context.Context, team *domain.Team) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, t := range r.teams {
+		if t.Abbreviation == team.Abbreviation && team.Abbreviation != "" {
+			return errors.New("team abbreviation must be unique systemwide")
+		}
+	}
+
+	r.teams[team.ID] = team
+	return nil
+}
+
+func (r *InMemoryTeamRepository) CreateProject(ctx context.Context, project *domain.Project) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, p := range r.projects {
+		if p.TeamID == project.TeamID && p.Abbreviation == project.Abbreviation && project.Abbreviation != "" {
+			return errors.New("project abbreviation must be unique in this team")
+		}
+	}
+
+	r.projects[project.ID] = project
+	return nil
+}
+
+func (r *InMemoryTeamRepository) AddTeamMember(ctx context.Context, teamID string, userID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.teamMembers[teamID]; !exists {
+		r.teamMembers[teamID] = make(map[string]bool)
+	}
+	r.teamMembers[teamID][userID] = true
+	return nil
 }

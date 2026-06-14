@@ -18,7 +18,7 @@ interface SearchModalProps {
   open: boolean;
   onClose: () => void;
   projectId: string | null;
-  onSelectDoc: (id: string) => void;
+  onSelectDoc: (id: string, projectId?: string | null) => void;
 }
 
 const getPlainTextFromTiptap = (jsonStr: string): string => {
@@ -103,7 +103,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (results[selectedIndex]) {
-        onSelectDoc(results[selectedIndex].id);
+        onSelectDoc(results[selectedIndex].id, results[selectedIndex].projectId);
         onClose();
       }
     } else if (e.key === "Escape") {
@@ -215,7 +215,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 <ListItemButton
                   key={doc.id}
                   onClick={() => {
-                    onSelectDoc(doc.id);
+                    onSelectDoc(doc.id, doc.projectId);
                     onClose();
                   }}
                   selected={isSelected}

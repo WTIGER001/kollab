@@ -48,3 +48,21 @@ func (r *InMemoryUserRepository) Create(ctx context.Context, user *domain.User) 
 	r.users[user.ID] = user
 	return nil
 }
+
+func (r *InMemoryUserRepository) Upsert(ctx context.Context, user *domain.User) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	existing, exists := r.users[user.ID]
+	if exists {
+		existing.Username = user.Username
+		existing.Email = user.Email
+		existing.DisplayName = user.DisplayName
+		if user.PasswordHash != "" {
+			existing.PasswordHash = user.PasswordHash
+		}
+	} else {
+		r.users[user.ID] = user
+	}
+	return nil
+}

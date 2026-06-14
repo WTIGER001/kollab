@@ -1,14 +1,31 @@
 import React, { useState } from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
+import { useIsEditable } from "../hooks/useIsEditable";
 import { Chip, Popover, IconButton, Tooltip } from "@mui/material";
 import { Calendar, Trash2 } from "lucide-react";
 
-export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes }) => {
+export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
   const { date } = node.attrs;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const chipRef = React.useRef<HTMLDivElement | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    if (node.attrs.autoOpen) {
+      // Small timeout to ensure the DOM element is fully painted and positioned
+      const timer = setTimeout(() => {
+        if (chipRef.current) {
+          setAnchorEl(chipRef.current);
+          updateAttributes({ autoOpen: false });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [node.attrs.autoOpen, updateAttributes]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!editor?.isEditable) return;
     setAnchorEl(event.currentTarget);
   };
 
@@ -17,6 +34,22 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   };
 
   const open = Boolean(anchorEl);
+
+  React.useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          try {
+            inputRef.current.focus();
+            inputRef.current.showPicker();
+          } catch (e) {
+            console.warn("Failed to trigger showPicker:", e);
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   // Format date in a user-friendly format, e.g. "Jun 14, 2026"
   const getFriendlyDate = () => {
@@ -38,9 +71,12 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     }
   };
 
+  const isEditable = useIsEditable(editor);
+
   return (
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>
       <Chip
+        ref={chipRef as any}
         icon={<Calendar size={12} style={{ color: "var(--primary-color)" }} />}
         label={getFriendlyDate()}
         onClick={handleClick}
@@ -53,14 +89,14 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           backgroundColor: "rgba(139, 92, 246, 0.08)", // Primary HSL alpha
           border: "1px solid rgba(139, 92, 246, 0.25)",
           borderRadius: "4px",
-          cursor: "pointer",
+          cursor: isEditable ? "pointer" : "default",
           transition: "all 0.15s ease",
           "& .MuiChip-icon": { marginLeft: "6px", marginRight: "-2px" },
-          "&:hover": {
+          "&:hover": isEditable ? {
             opacity: 0.85,
             boxShadow: "0 0 0 1px var(--primary-color)",
             backgroundColor: "rgba(139, 92, 246, 0.12)",
-          },
+          } : {},
         }}
       />
 
@@ -95,6 +131,7 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       >
         {/* Date HTML5 Input */}
         <input
+          ref={inputRef}
           type="date"
           value={date}
           onChange={(e) => {
