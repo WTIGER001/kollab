@@ -1,0 +1,6 @@
+# Compiled binaries
+/server
+
+# Local environment files
+.env
+.env.local

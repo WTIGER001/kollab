@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Production builds
+dist/
+dist-ssr/
+frontend/dist/
+
+# Compiled Go binaries
+server
+api/server
+
+# Local environment & config files
+.env
+.env.local
+.env.*.local
+*.local
+
+# SQLite / database outputs
+*.db
+*.sqlite
+
+# Uploaded assets
+api/uploads/
+uploads/
+
+# OS/Editor directories
+.DS_Store
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
