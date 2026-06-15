@@ -12,14 +12,8 @@ else
   echo "ℹ️ Skipping Git pull (not a Git repository)..."
 fi
 
-# 2. Build the React frontend
-echo "📦 Building the React frontend application..."
-cd frontend
-echo "Installing npm dependencies..."
-npm install
-echo "Compiling production build..."
-npm run build
-cd ..
+# 2. Build is handled by Docker (no host npm/node needed)
+echo "ℹ️ Frontend build is embedded inside Caddy Docker image (no host npm needed)."
 
 # 3. Check for .env file
 if [ ! -f .env ]; then

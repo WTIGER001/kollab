@@ -30,7 +30,9 @@ services:
       - db
 
   caddy:
-    image: caddy:latest
+    build:
+      context: .
+      dockerfile: Caddy.Dockerfile
     restart: always
     ports:
       - "80:80"
@@ -39,7 +41,6 @@ services:
       DOMAIN: ${DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./frontend/dist:/srv/dist
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
