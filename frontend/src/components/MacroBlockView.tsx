@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments } from "../services/api";
+import { fetchAttachments, API_BASE_URL } from "../services/api";
 import type { Attachment } from "../services/api";
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
@@ -715,7 +715,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       key={att.id}
                       elevation={0}
                       component="a"
-                      href={`http://localhost:8080/api/attachments/${att.id}`}
+                      href={`${API_BASE_URL}/api/attachments/${att.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{
@@ -821,7 +821,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             <IconButton 
                               size="small" 
                               component="a"
-                              href={`http://localhost:8080/api/attachments/${att.id}`}
+                              href={`${API_BASE_URL}/api/attachments/${att.id}`}
                               download={att.filename}
                               sx={{ p: 0.5, color: "text.secondary", "&:hover": { color: "primary.light" } }}
                             >
@@ -872,7 +872,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   <Paperclip size={14} style={{ color: "var(--primary-color, #8b5cf6)" }} />
                   <Typography 
                     component="a" 
-                    href={`http://localhost:8080/api/attachments/${att.id}`}
+                    href={`${API_BASE_URL}/api/attachments/${att.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{ 
@@ -896,7 +896,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 <Paper
                   elevation={0}
                   component="a"
-                  href={`http://localhost:8080/api/attachments/${att.id}`}
+                  href={`${API_BASE_URL}/api/attachments/${att.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{

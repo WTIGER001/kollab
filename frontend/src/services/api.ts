@@ -77,7 +77,10 @@ export interface DocumentVersion {
   createdAt: string;
 }
 
-const BASE_URL = "http://localhost:8080";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:8080" : window.location.origin);
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "ws://localhost:8080" : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`);
+
+const BASE_URL = API_BASE_URL;
 let apiToken: string | null = null;
 let onUnauthorizedCallback: (() => void) | null = null;
 

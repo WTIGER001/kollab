@@ -2,6 +2,7 @@ import React from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import { Box, IconButton, Tooltip, Divider, Button } from "@mui/material";
 import { AlignLeft, AlignCenter, AlignRight, Trash2 } from "lucide-react";
+import { API_BASE_URL } from "../services/api";
 
 export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteNode, selected }: any) => {
   const { imageId, size, alignment, src, alt, originalWidth } = node.attrs;
@@ -11,7 +12,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
   };
 
   const handleSize = (sz: string) => {
-    const newSrc = `http://localhost:8080/api/images/${imageId}/${sz}`;
+    const newSrc = `${API_BASE_URL}/api/images/${imageId}/${sz}`;
     updateAttributes({ size: sz, src: newSrc });
   };
 

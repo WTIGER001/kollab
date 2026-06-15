@@ -20,7 +20,7 @@ import { CustomTableCell, CustomTableHeader } from "../editor/extensions/CustomT
 import { CustomImage } from "../editor/extensions/CustomImage";
 import { PresenceCursors } from "../editor/extensions/PresenceCursors";
 import { usePresence } from "../hooks/usePresence";
-import { uploadImage, fetchVersions, restoreVersion, createMilestone, fetchDocument, fetchDocumentAnalytics, autogenSummary, addFavorite, removeFavorite, isFavorite as checkIsFavorite, fetchComments, createComment, updateComment, deleteComment, fetchAttachments, fetchTeamUsers } from "../services/api";
+import { uploadImage, fetchVersions, restoreVersion, createMilestone, fetchDocument, fetchDocumentAnalytics, autogenSummary, addFavorite, removeFavorite, isFavorite as checkIsFavorite, fetchComments, createComment, updateComment, deleteComment, fetchAttachments, fetchTeamUsers, API_BASE_URL } from "../services/api";
 import type { DocumentVersion, DocumentAnalytics, Comment, Attachment } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
 import Collaboration from "@tiptap/extension-collaboration";
@@ -448,7 +448,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           type: "customImage",
           attrs: {
             imageId: meta.id,
-            src: `http://localhost:8080/api/images/${meta.id}/O`,
+            src: `${API_BASE_URL}/api/images/${meta.id}/O`,
             size: "O",
             alignment: "center",
             originalWidth: meta.originalWidth,

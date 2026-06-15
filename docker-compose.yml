@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_DB: arkollab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No exposed ports to the internet for security. Internal network only.
+
+  go-backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD}@db:5432/arkollab?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      OIDC_AUTHORITY: ${OIDC_AUTHORITY}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
+      PORT: 8080
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - db
+
+  caddy:
+    image: caddy:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./frontend/dist:/srv/dist
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - go-backend
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

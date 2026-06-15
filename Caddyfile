@@ -1,0 +1,14 @@
+{$DOMAIN:localhost} {
+    # Serve the React frontend static build
+    root * /srv/dist
+    file_server
+
+    # Fallback to index.html for client-side routing (React SPA)
+    try_files {path} /index.html
+
+    # Proxy API and WebSocket connections to the Go backend container
+    # (Caddy automatically handles WebSocket connection upgrading out of the box)
+    handle /api/* {
+        reverse_proxy go-backend:8080
+    }
+}

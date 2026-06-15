@@ -28,6 +28,8 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
   return bytes;
 };
 
+import { WS_BASE_URL } from "../services/api";
+
 export const usePresence = (
   activeDocId: string | null,
   authToken: string | null,
@@ -66,7 +68,7 @@ export const usePresence = (
         wsRef.current.close();
       }
 
-      const wsUrl = `ws://localhost:8080/api/ws?token=${authToken}&docId=${activeDocId}`;
+      const wsUrl = `${WS_BASE_URL}/api/ws?token=${authToken}&docId=${activeDocId}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
