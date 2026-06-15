@@ -39,6 +39,7 @@ import (
 )
 
 func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
+	t.Setenv("GEMINI_KEY", "mock-key")
 	jwtSecret := "test-secret-key-inmem"
 
 	// InMemory Repositories
@@ -67,6 +68,7 @@ func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
 }
 
 func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
+	t.Setenv("GEMINI_KEY", "mock-key")
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
 	}
@@ -180,7 +182,9 @@ func (m *mockLLMClient) GenerateTextEmbeddings(ctx context.Context, text string)
 }
 
 func TestSystemHealthHandler(t *testing.T) {
-	// 1. Success case
+	t.Setenv("GEMINI_KEY", "mock-gemini-key")
+
+	// 1. Success case with Gemini
 	repoSuccess := &mockSystemRepo{pingErr: nil}
 	serviceSuccess := inmemsystem.NewSystemService(repoSuccess)
 	hSuccess := handler.NewSystemHandler(serviceSuccess)
@@ -204,8 +208,44 @@ func TestSystemHealthHandler(t *testing.T) {
 	if checks["database"] != "up" {
 		t.Errorf("expected checks.database 'up', got %v", checks["database"])
 	}
+	if checks["ai"] != "Gemini" {
+		t.Errorf("expected checks.ai 'Gemini', got %v", checks["ai"])
+	}
 
-	// 2. Failure case
+	// 1b. Test with OpenAI
+	t.Setenv("GEMINI_KEY", "")
+	t.Setenv("OPENAI_KEY", "mock-openai-key")
+	wOpenAI := httptest.NewRecorder()
+	hSuccess.Health(wOpenAI, req)
+	if wOpenAI.Code != 300 {
+		t.Errorf("expected status 300 for OpenAI, got %d", wOpenAI.Code)
+	}
+	var payloadOpenAI map[string]interface{}
+	_ = json.Unmarshal(wOpenAI.Body.Bytes(), &payloadOpenAI)
+	checksOpenAI := payloadOpenAI["checks"].(map[string]interface{})
+	if checksOpenAI["ai"] != "OpenAI" {
+		t.Errorf("expected checks.ai 'OpenAI', got %v", checksOpenAI["ai"])
+	}
+
+	// 1c. Test with MISSING (error case)
+	t.Setenv("OPENAI_KEY", "")
+	wMissing := httptest.NewRecorder()
+	hSuccess.Health(wMissing, req)
+	if wMissing.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500 for missing AI, got %d", wMissing.Code)
+	}
+	var payloadMissing map[string]interface{}
+	_ = json.Unmarshal(wMissing.Body.Bytes(), &payloadMissing)
+	if payloadMissing["status"] != "error" {
+		t.Errorf("expected status 'error', got %v", payloadMissing["status"])
+	}
+	checksMissing := payloadMissing["checks"].(map[string]interface{})
+	if checksMissing["ai"] != "MISSING" {
+		t.Errorf("expected checks.ai 'MISSING', got %v", checksMissing["ai"])
+	}
+
+	// 2. Database Failure case
+	t.Setenv("GEMINI_KEY", "mock-gemini-key") // restore key so we only test db failure
 	repoFailure := &mockSystemRepo{pingErr: fmt.Errorf("db connection refused")}
 	serviceFailure := inmemsystem.NewSystemService(repoFailure)
 	hFailure := handler.NewSystemHandler(serviceFailure)

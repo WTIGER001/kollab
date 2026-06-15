@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 
@@ -96,20 +97,32 @@ func (h *SystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 	dbErr := h.systemService.Ping(r.Context())
 
 	statusCode := 300 // Respond with 300 as explicitly requested
+	status := "ok"
 
-	payload := map[string]interface{}{
-		"status": "ok",
-		"checks": map[string]string{
-			"database": "up",
-		},
-	}
-
+	dbStatus := "up"
 	if dbErr != nil {
 		statusCode = http.StatusInternalServerError
-		payload["status"] = "error"
-		payload["checks"] = map[string]string{
-			"database": "down: " + dbErr.Error(),
+		status = "error"
+		dbStatus = "down: " + dbErr.Error()
+	}
+
+	aiProvider := "Gemini"
+	if os.Getenv("GEMINI_API_KEY") == "" && os.Getenv("GEMINI_KEY") == "" {
+		if os.Getenv("OPENAI_API_KEY") != "" || os.Getenv("OPENAI_KEY") != "" {
+			aiProvider = "OpenAI"
+		} else {
+			aiProvider = "MISSING"
+			statusCode = http.StatusInternalServerError
+			status = "error"
 		}
+	}
+
+	payload := map[string]interface{}{
+		"status": status,
+		"checks": map[string]string{
+			"database": dbStatus,
+			"ai":       aiProvider,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")

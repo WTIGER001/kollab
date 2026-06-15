@@ -35,7 +35,7 @@ import (
 )
 
 func loadLocalEnv() {
-	for _, filename := range []string{".local.env", ".env"} {
+	for _, filename := range []string{".env.local", ".local.env", ".env"} {
 		file, err := os.Open(filename)
 		if err != nil {
 			continue // Skip if file does not exist
