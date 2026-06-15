@@ -13,8 +13,8 @@ dist-ssr/
 frontend/dist/
 
 # Compiled Go binaries
-server
-api/server
+/server
+/api/server
 
 # Local environment & config files
 .env
