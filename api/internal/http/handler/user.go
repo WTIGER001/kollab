@@ -8,27 +8,38 @@ import (
 )
 
 type UserHandler struct {
-	authService  domain.AuthService
-	themeService domain.ThemeService
-	oidcConfig   map[string]string
+	authService   domain.AuthService
+	themeService  domain.ThemeService
+	systemService domain.SystemService
+	oidcConfig    map[string]string
 }
 
-func NewUserHandler(authService domain.AuthService, themeService domain.ThemeService, oidcConfig map[string]string) *UserHandler {
+func NewUserHandler(authService domain.AuthService, themeService domain.ThemeService, systemService domain.SystemService, oidcConfig map[string]string) *UserHandler {
 	return &UserHandler{
-		authService:  authService,
-		themeService: themeService,
-		oidcConfig:   oidcConfig,
+		authService:   authService,
+		themeService:  themeService,
+		systemService: systemService,
+		oidcConfig:    oidcConfig,
 	}
 }
 
 func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	theme, _ := h.themeService.GetDefaultTheme(r.Context())
 
+	welcomeTitle := "Welcome to Arkollab"
+	welcomeText := "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces."
+	if settings, err := h.systemService.GetSettings(r.Context()); err == nil && settings != nil {
+		welcomeTitle = settings.WelcomeTitle
+		welcomeText = settings.WelcomeText
+	}
+
 	resp := map[string]interface{}{
-		"authority":   h.oidcConfig["authority"],
-		"clientId":    h.oidcConfig["clientId"],
-		"redirectUri": h.oidcConfig["redirectUri"],
-		"theme":       theme,
+		"authority":    h.oidcConfig["authority"],
+		"clientId":     h.oidcConfig["clientId"],
+		"redirectUri":  h.oidcConfig["redirectUri"],
+		"theme":        theme,
+		"welcomeTitle": welcomeTitle,
+		"welcomeText":  welcomeText,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

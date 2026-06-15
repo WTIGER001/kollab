@@ -1014,6 +1014,25 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "advanced"
     },
     {
+      id: "ai-content",
+      label: "AI Content Block",
+      description: "Ask AI to generate text directly on the page",
+      icon: <Sparkles size={16} style={{ color: "var(--accent-purple)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "ai-content",
+              config: { prompt: "", generatedText: "" }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
       id: "chart-analytics",
       label: "Analytics Chart",
       description: "Insert interactive chart block",
@@ -3274,7 +3293,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       </Dialog>
 
       {/* Table Contextual Bubble Toolbar */}
-      {editor && !previewVersion && <TableBubbleToolbar editor={editor} />}
+      {editor && !previewVersion && isEditing && <TableBubbleToolbar editor={editor} />}
 
       {/* AI Assistant Inline Prompt Bar */}
       {editor && !previewVersion && (

@@ -35,11 +35,12 @@ import {
   Eye,
   File,
   Image as ImageIcon,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent } from "../services/api";
 import type { Attachment } from "../services/api";
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
@@ -166,6 +167,9 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+
   useEffect(() => {
     if (context?.activeDocId && (type === "attachments-list" || type === "single-attachment")) {
       setAttachmentsLoading(true);
@@ -175,6 +179,31 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         .finally(() => setAttachmentsLoading(false));
     }
   }, [context?.activeDocId, type]);
+
+  const handleAIGenerate = () => {
+    const prompt = config.prompt || "";
+    if (!prompt.trim()) return;
+
+    setIsGenerating(true);
+    setGenerateError("");
+
+    generateAIContent(prompt)
+      .then((res) => {
+        updateAttributes({
+          config: {
+            ...config,
+            generatedText: res.text,
+          },
+        });
+      })
+      .catch((err) => {
+        console.error("AI Generation failed:", err);
+        setGenerateError(err.message || "Failed to generate content");
+      })
+      .finally(() => {
+        setIsGenerating(false);
+      });
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -240,6 +269,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         return <Smile size={14} color="#34d399" />;
       case "chart-analytics":
         return <BarChart2 size={14} color="#c084fc" />;
+      case "ai-content":
+        return <Sparkles size={14} color="#c084fc" />;
       case "children-display":
         return <FolderOpen size={14} color="#60a5fa" />;
       case "page-index":
@@ -257,8 +288,126 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const isEditable = useIsEditable(editor);
 
   const renderViewport = () => {
+    const updateConfig = (key: string, val: any) => {
+      updateAttributes({
+        config: {
+          ...config,
+          [key]: val
+        }
+      });
+    };
+
     return (
       <>
+          {type === "ai-content" && (
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: 1.5, 
+              p: 2.5, 
+              border: "1px solid var(--border-color)", 
+              borderRadius: 2, 
+              bgcolor: "rgba(139, 92, 246, 0.02)",
+              backdropFilter: "blur(8px)"
+            }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                <Box sx={{ p: 0.5, display: "flex", borderRadius: 1, backgroundColor: "rgba(139, 92, 246, 0.1)", border: "1px solid rgba(139, 92, 246, 0.2)" }}>
+                  <Sparkles size={14} style={{ color: "var(--accent-purple)" }} />
+                </Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', fontSize: "13px", color: "text.primary" }}>
+                  AI Content Generator
+                </Typography>
+              </Box>
+
+              {isEditable ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <TextField
+                    label="Enter prompt for AI..."
+                    placeholder="e.g. Write a brief overview of the importance of clean architecture..."
+                    value={config.prompt || ""}
+                    onChange={(e) => updateConfig("prompt", e.target.value)}
+                    multiline
+                    minRows={2}
+                    fullWidth
+                    size="small"
+                    slotProps={{
+                      inputLabel: { style: { fontSize: "12px" } },
+                      htmlInput: { style: { fontSize: "13px" } }
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "rgba(0,0,0,0.15)",
+                        "& fieldset": { borderColor: "var(--border-color)" },
+                        "&:hover fieldset": { borderColor: "primary.main" }
+                      }
+                    }}
+                  />
+                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={isGenerating || !config.prompt?.trim()}
+                      onClick={handleAIGenerate}
+                      sx={{
+                        py: 0.75,
+                        px: 2,
+                        textTransform: "none",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        bgcolor: "primary.main",
+                        borderRadius: "6px",
+                        boxShadow: "0 4px 12px rgba(139, 92, 246, 0.15)",
+                        "&:hover": { bgcolor: "primary.dark" }
+                      }}
+                    >
+                      {isGenerating ? (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CircularProgress size={12} color="inherit" />
+                          <span>Generating...</span>
+                        </Box>
+                      ) : (
+                        "Generate Content"
+                      )}
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                config.prompt && (
+                  <Typography variant="body2" sx={{ fontSize: "12.5px", color: "text.secondary", fontStyle: "italic", borderLeft: "2px solid var(--border-color)", pl: 1.5, py: 0.5 }}>
+                    Prompt: {config.prompt}
+                  </Typography>
+                )
+              )}
+
+              {config.generatedText && (
+                <Box sx={{ 
+                  mt: 0.5, 
+                  p: 2, 
+                  borderRadius: 1.5,
+                  borderLeft: "3.5px solid var(--accent-purple)", 
+                  bgcolor: "rgba(139, 92, 246, 0.03)",
+                  border: "1px solid rgba(139, 92, 246, 0.08)",
+                  borderLeftColor: "var(--accent-purple)"
+                }}>
+                  <Typography variant="body2" sx={{ 
+                    whiteSpace: "pre-wrap", 
+                    fontSize: "13.5px", 
+                    lineHeight: 1.6, 
+                    color: "text.primary" 
+                  }}>
+                    {config.generatedText}
+                  </Typography>
+                </Box>
+              )}
+
+              {generateError && (
+                <Typography variant="caption" sx={{ color: "error.main", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  {generateError}
+                </Typography>
+              )}
+            </Box>
+          )}
+
           {type === "status-badge" && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               {isEditable && (
@@ -1005,13 +1154,15 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <IconButton 
-              size="small" 
-              onClick={handleSettingsClick}
-              sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "text.primary" } }}
-            >
-              <Settings size={13} />
-            </IconButton>
+            {type !== "ai-content" && (
+              <IconButton 
+                size="small" 
+                onClick={handleSettingsClick}
+                sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "text.primary" } }}
+              >
+                <Settings size={13} />
+              </IconButton>
+            )}
             <IconButton size="small" onClick={deleteNode} sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}>
               <Trash2 size={13} />
             </IconButton>

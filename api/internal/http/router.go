@@ -14,7 +14,7 @@ import (
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,
 // and maps public/protected routes using JWT middleware.
-func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler) http.Handler {
+func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Standard middleware
@@ -37,6 +37,10 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Post("/login", userH.Login)
 		r.Get("/config", userH.GetOIDCConfig)
 	})
+
+	// Health check endpoints
+	r.Get("/health", systemH.Health)
+	r.Get("/api/health", systemH.Health)
 
 	// Public image retrieval route (no auth header needed for <img> elements in canvas)
 	r.Get("/api/images/{id}/{size}", imgH.GetImage)
@@ -77,6 +81,8 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Get("/system/settings", systemH.GetSettings)
 		r.Put("/system/settings", systemH.UpdateSettings)
+
+		r.Post("/ai/generate", aiH.Generate)
 
 		r.Route("/documents", func(r chi.Router) {
 			r.Get("/", docH.List)

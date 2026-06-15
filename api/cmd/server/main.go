@@ -31,6 +31,7 @@ import (
 	attrepo "arkollab/api/internal/attachment"
 	"arkollab/api/internal/storage"
 	"arkollab/api/internal/ws"
+	"arkollab/api/internal/ai"
 )
 
 func loadLocalEnv() {
@@ -208,7 +209,7 @@ func main() {
 	go wsHub.Run()
 
 	// Instantiate handlers
-	userHandler := handler.NewUserHandler(authService, themeService, oidcConfig)
+	userHandler := handler.NewUserHandler(authService, themeService, systemService, oidcConfig)
 	teamHandler := handler.NewTeamHandler(teamService)
 	docHandler := handler.NewDocumentHandler(docService, wsHub)
 	imageHandler := handler.NewImageHandler(imageService)
@@ -216,11 +217,15 @@ func main() {
 	systemHandler := handler.NewSystemHandler(systemService)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
+
+	aiClient := ai.NewLLMClient()
+	aiHandler := handler.NewAIHandler(systemService, aiClient)
+
 	// Configure router with JWKS cache
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

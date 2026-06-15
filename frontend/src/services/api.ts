@@ -220,6 +220,8 @@ export const fetchOIDCConfig = (): Promise<{
   clientId: string;
   redirectUri: string;
   theme: WorkspaceTheme | null;
+  welcomeTitle?: string;
+  welcomeText?: string;
 }> => {
   return fetch(`${BASE_URL}/api/auth/config`).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch OIDC configuration");
@@ -422,6 +424,9 @@ export interface SystemSettings {
   auditLogDestination: string;
   trashRetentionPolicy: string;
   trashRetentionCustomDays: number;
+  aiRateLimit: number;
+  welcomeTitle: string;
+  welcomeText: string;
 }
 
 export interface AuditLogEntry {
@@ -442,6 +447,13 @@ export const updateSystemSettings = (settings: SystemSettings): Promise<SystemSe
   return request("/api/system/settings", {
     method: "PUT",
     body: JSON.stringify(settings),
+  });
+};
+
+export const generateAIContent = (prompt: string): Promise<{ text: string }> => {
+  return request("/api/ai/generate", {
+    method: "POST",
+    body: JSON.stringify({ prompt }),
   });
 };
 

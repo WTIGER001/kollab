@@ -34,6 +34,9 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 		AuditLogDestination:      "postgres",
 		TrashRetentionPolicy:     "forever",
 		TrashRetentionCustomDays: 30,
+		AIRateLimit:              10,
+		WelcomeTitle:             "Welcome to Arkollab",
+		WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
 	}
 
 	for rows.Next() {
@@ -56,6 +59,14 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 			if days, err := strconv.Atoi(val); err == nil {
 				settings.TrashRetentionCustomDays = days
 			}
+		case "ai_rate_limit":
+			if limit, err := strconv.Atoi(val); err == nil {
+				settings.AIRateLimit = limit
+			}
+		case "welcome_title":
+			settings.WelcomeTitle = val
+		case "welcome_text":
+			settings.WelcomeText = val
 		}
 	}
 
@@ -77,6 +88,9 @@ func (r *PostgresSystemRepository) UpdateSettings(ctx context.Context, settings 
 		{"audit_log_destination", settings.AuditLogDestination},
 		{"trash_retention_policy", settings.TrashRetentionPolicy},
 		{"trash_retention_custom_days", strconv.Itoa(settings.TrashRetentionCustomDays)},
+		{"ai_rate_limit", strconv.Itoa(settings.AIRateLimit)},
+		{"welcome_title", settings.WelcomeTitle},
+		{"welcome_text", settings.WelcomeText},
 	}
 
 	for _, q := range queries {
@@ -297,5 +311,9 @@ func (r *PostgresSystemRepository) PruneTrash(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *PostgresSystemRepository) Ping(ctx context.Context) error {
+	return r.db.Ping(ctx)
 }
 

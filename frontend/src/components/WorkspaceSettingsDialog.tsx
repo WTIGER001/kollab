@@ -47,6 +47,11 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
   const [trashPolicy, setTrashPolicy] = useState("forever");
   const [trashCustomDays, setTrashCustomDays] = useState(30);
 
+  // New settings states
+  const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Arkollab");
+  const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+  const [aiRateLimit, setAiRateLimit] = useState(10);
+
   // Color scheme state defaults (based on Tailwind/harmony palettes)
   const [lightColors, setLightColors] = useState<ColorScheme>({
     primary: "#8b5cf6",
@@ -85,6 +90,9 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
         setDestination(systemSettings.auditLogDestination);
         setTrashPolicy(systemSettings.trashRetentionPolicy || "forever");
         setTrashCustomDays(systemSettings.trashRetentionCustomDays || 30);
+        setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Arkollab");
+        setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+        setAiRateLimit(systemSettings.aiRateLimit || 10);
       }
     }
   }, [open, currentTheme, systemSettings]);
@@ -100,7 +108,10 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
       auditRetentionCustomDays: customDays,
       auditLogDestination: destination,
       trashRetentionPolicy: trashPolicy,
-      trashRetentionCustomDays: trashCustomDays
+      trashRetentionCustomDays: trashCustomDays,
+      welcomeTitle: welcomeTitle,
+      welcomeText: welcomeText,
+      aiRateLimit: aiRateLimit
     });
     onClose();
   };
@@ -247,6 +258,62 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
                 slotProps={{
                   inputLabel: { style: { fontSize: "13px" } },
                   htmlInput: { style: { fontSize: "13.5px" } }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "var(--border-color)" },
+                    "&:hover fieldset": { borderColor: "primary.main" }
+                  }
+                }}
+              />
+
+              <TextField
+                label="Welcome Screen Title"
+                placeholder="Welcome to Arkollab"
+                value={welcomeTitle}
+                onChange={(e) => setWelcomeTitle(e.target.value)}
+                fullWidth
+                slotProps={{
+                  inputLabel: { style: { fontSize: "13px" } },
+                  htmlInput: { style: { fontSize: "13.5px" } }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "var(--border-color)" },
+                    "&:hover fieldset": { borderColor: "primary.main" }
+                  }
+                }}
+              />
+
+              <TextField
+                label="Welcome Screen Description"
+                placeholder="A premium block-based document workspace..."
+                value={welcomeText}
+                onChange={(e) => setWelcomeText(e.target.value)}
+                fullWidth
+                multiline
+                minRows={2}
+                slotProps={{
+                  inputLabel: { style: { fontSize: "13px" } },
+                  htmlInput: { style: { fontSize: "13.5px" } }
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": { borderColor: "var(--border-color)" },
+                    "&:hover fieldset": { borderColor: "primary.main" }
+                  }
+                }}
+              />
+
+              <TextField
+                label="AI Rate Limit (Requests per minute per user)"
+                type="number"
+                value={aiRateLimit}
+                onChange={(e) => setAiRateLimit(parseInt(e.target.value) || 10)}
+                fullWidth
+                slotProps={{
+                  inputLabel: { style: { fontSize: "13px" } },
+                  htmlInput: { min: 1, style: { fontSize: "13.5px" } }
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {

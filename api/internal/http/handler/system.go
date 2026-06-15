@@ -58,6 +58,14 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		settings.AuditRetentionCustomDays = 30
 	}
 
+	if settings.AIRateLimit < 1 {
+		settings.AIRateLimit = 10
+	}
+
+	if settings.WelcomeTitle == "" {
+		settings.WelcomeTitle = "Welcome to Arkollab"
+	}
+
 	if err := h.systemService.UpdateSettings(r.Context(), &settings); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,5 +90,30 @@ func (h *SystemHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(logs)
+}
+
+func (h *SystemHandler) Health(w http.ResponseWriter, r *http.Request) {
+	dbErr := h.systemService.Ping(r.Context())
+
+	statusCode := 300 // Respond with 300 as explicitly requested
+
+	payload := map[string]interface{}{
+		"status": "ok",
+		"checks": map[string]string{
+			"database": "up",
+		},
+	}
+
+	if dbErr != nil {
+		statusCode = http.StatusInternalServerError
+		payload["status"] = "error"
+		payload["checks"] = map[string]string{
+			"database": "down: " + dbErr.Error(),
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(payload)
 }
 

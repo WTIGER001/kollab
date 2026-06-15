@@ -289,6 +289,8 @@ function App({ isMockMode = false }: AppProps) {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
+  const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Arkollab");
+  const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [createSpaceOpen, setCreateSpaceOpen] = useState(false);
@@ -359,6 +361,12 @@ function App({ isMockMode = false }: AppProps) {
       .then((cfg) => {
         if (cfg.theme) {
           setWorkspaceTheme(cfg.theme);
+        }
+        if (cfg.welcomeTitle) {
+          setWelcomeTitle(cfg.welcomeTitle);
+        }
+        if (cfg.welcomeText) {
+          setWelcomeText(cfg.welcomeText);
         }
       })
       .catch((err) => console.error("Error fetching OIDC theme config:", err));
@@ -1392,10 +1400,10 @@ function App({ isMockMode = false }: AppProps) {
             </Box>
 
             <Typography variant="h5" sx={{ color: "text.primary", fontWeight: 800, mb: 1, fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.01em" }}>
-              Welcome to {workspaceTheme?.name || "Arkollab"}
+              {welcomeTitle}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", display: "block", mb: 4, lineHeight: 1.6, px: 2 }}>
-              A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.
+              {welcomeText}
             </Typography>
 
             {auth?.error && (

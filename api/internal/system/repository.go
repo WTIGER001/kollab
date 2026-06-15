@@ -21,6 +21,9 @@ func NewInMemorySystemRepository() *InMemorySystemRepository {
 			AuditLogDestination:      "postgres",
 			TrashRetentionPolicy:     "forever",
 			TrashRetentionCustomDays: 30,
+			AIRateLimit:              10,
+			WelcomeTitle:             "Welcome to Arkollab",
+			WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
 		},
 		auditLogs: make([]*domain.AuditLog, 0),
 	}
@@ -69,5 +72,9 @@ func (r *InMemorySystemRepository) PrunePartitions(ctx context.Context) error {
 }
 
 func (r *InMemorySystemRepository) PruneTrash(ctx context.Context) error {
+	return nil
+}
+
+func (r *InMemorySystemRepository) Ping(ctx context.Context) error {
 	return nil
 }

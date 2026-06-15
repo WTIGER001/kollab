@@ -134,8 +134,101 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
-
 	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
+}
+
+type mockSystemRepo struct {
+	pingErr error
+}
+
+func (m *mockSystemRepo) GetSettings(ctx context.Context) (*domain.SystemSettings, error) {
+	return nil, nil
+}
+func (m *mockSystemRepo) UpdateSettings(ctx context.Context, settings *domain.SystemSettings) error {
+	return nil
+}
+func (m *mockSystemRepo) RecordAuditLog(ctx context.Context, log *domain.AuditLog) error {
+	return nil
+}
+func (m *mockSystemRepo) GetAuditLogsForPage(ctx context.Context, docID string) ([]*domain.AuditLog, error) {
+	return nil, nil
+}
+func (m *mockSystemRepo) EnsurePartitions(ctx context.Context) error {
+	return nil
+}
+func (m *mockSystemRepo) PrunePartitions(ctx context.Context) error {
+	return nil
+}
+func (m *mockSystemRepo) PruneTrash(ctx context.Context) error {
+	return nil
+}
+func (m *mockSystemRepo) Ping(ctx context.Context) error {
+	return m.pingErr
+}
+
+type mockLLMClient struct {
+	generateTextVal string
+	generateTextErr error
+}
+
+func (m *mockLLMClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	return m.generateTextVal, m.generateTextErr
+}
+
+func (m *mockLLMClient) GenerateTextEmbeddings(ctx context.Context, text string) ([]float32, error) {
+	return []float32{0.1, 0.2, 0.3}, nil
+}
+
+func TestSystemHealthHandler(t *testing.T) {
+	// 1. Success case
+	repoSuccess := &mockSystemRepo{pingErr: nil}
+	serviceSuccess := inmemsystem.NewSystemService(repoSuccess)
+	hSuccess := handler.NewSystemHandler(serviceSuccess)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+	hSuccess.Health(w, req)
+
+	if w.Code != 300 {
+		t.Errorf("expected status 300, got %d", w.Code)
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("failed to decode health response: %v", err)
+	}
+	if payload["status"] != "ok" {
+		t.Errorf("expected status 'ok', got %v", payload["status"])
+	}
+	checks := payload["checks"].(map[string]interface{})
+	if checks["database"] != "up" {
+		t.Errorf("expected checks.database 'up', got %v", checks["database"])
+	}
+
+	// 2. Failure case
+	repoFailure := &mockSystemRepo{pingErr: fmt.Errorf("db connection refused")}
+	serviceFailure := inmemsystem.NewSystemService(repoFailure)
+	hFailure := handler.NewSystemHandler(serviceFailure)
+
+	reqFail := httptest.NewRequest("GET", "/health", nil)
+	wFail := httptest.NewRecorder()
+	hFailure.Health(wFail, reqFail)
+
+	if wFail.Code != http.StatusInternalServerError {
+		t.Errorf("expected status 500, got %d", wFail.Code)
+	}
+
+	var payloadFail map[string]interface{}
+	if err := json.Unmarshal(wFail.Body.Bytes(), &payloadFail); err != nil {
+		t.Fatalf("failed to decode health response: %v", err)
+	}
+	if payloadFail["status"] != "error" {
+		t.Errorf("expected status 'error', got %v", payloadFail["status"])
+	}
+	checksFail := payloadFail["checks"].(map[string]interface{})
+	if !strings.Contains(checksFail["database"].(string), "down: db connection refused") {
+		t.Errorf("expected checks.database to contain 'down: db connection refused', got %v", checksFail["database"])
+	}
 }
 
 func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, systemRepo domain.SystemRepository, commentRepo domain.CommentRepository, attachmentRepo domain.AttachmentRepository, taskRepo domain.TaskRepository, storageProvider domain.FileStorage, jwtSecret string) {
@@ -159,7 +252,7 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		"clientId":    "mock-client-id",
 		"redirectUri": "http://localhost:5173",
 	}
-	userH := handler.NewUserHandler(authService, themeService, mockOidcConfig)
+	userH := handler.NewUserHandler(authService, themeService, systemService, mockOidcConfig)
 	teamH := handler.NewTeamHandler(teamService)
 	docH := handler.NewDocumentHandler(docService, wsHub)
 	imgH := handler.NewImageHandler(imageService)
@@ -170,8 +263,11 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	commentH := handler.NewCommentHandler(commentService, userRepo)
 	attachmentH := handler.NewAttachmentHandler(attachmentService)
 
+	aiClient := &mockLLMClient{generateTextVal: "Mock AI generated response"}
+	aiH := handler.NewAIHandler(systemService, aiClient)
+
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {
@@ -1222,6 +1318,81 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		if f.DocumentID == "doc_guides_eng" {
 			t.Errorf("expected doc_guides_eng to be removed from favorites after permanent delete")
 		}
+	}
+
+	// 15. Test Health Check endpoints (public, no token needed)
+	wHealth, codeHealth := sendReq("GET", "/health", nil, "")
+	if codeHealth != 300 {
+		t.Errorf("expected health code 300, got %d. Body: %s", codeHealth, wHealth.Body.String())
+	}
+	var healthRes map[string]interface{}
+	if err := json.Unmarshal(wHealth.Body.Bytes(), &healthRes); err != nil {
+		t.Fatalf("failed to decode health response: %v", err)
+	}
+	if healthRes["status"] != "ok" {
+		t.Errorf("expected health status 'ok', got %q", healthRes["status"])
+	}
+	checks, ok := healthRes["checks"].(map[string]interface{})
+	if !ok || checks["database"] != "up" {
+		t.Errorf("expected checks.database to be 'up', got %+v", healthRes)
+	}
+
+	wAPIHealth, codeAPIHealth := sendReq("GET", "/api/health", nil, "")
+	if codeAPIHealth != 300 {
+		t.Errorf("expected api health code 300, got %d. Body: %s", codeAPIHealth, wAPIHealth.Body.String())
+	}
+
+	// 16. Test AI Generation & Rate Limiting
+	// Default rate limit is 10, let's first test that a normal generation succeeds
+	aiPayload := `{"prompt": "Generate a test overview"}`
+	wAI, codeAI := sendReq("POST", "/api/ai/generate", []byte(aiPayload), token)
+	if codeAI != http.StatusOK {
+		t.Fatalf("expected AI generation to succeed with 200, got %d. Body: %s", codeAI, wAI.Body.String())
+	}
+	var aiRes map[string]string
+	if err := json.Unmarshal(wAI.Body.Bytes(), &aiRes); err != nil {
+		t.Fatalf("failed to parse AI response: %v", err)
+	}
+	if aiRes["text"] != "Mock AI generated response" {
+		t.Errorf("expected AI response 'Mock AI generated response', got %q", aiRes["text"])
+	}
+
+	// Update settings to set rate limit to 2
+	wSettingsGet, _ := sendReq("GET", "/api/system/settings", nil, token)
+	var aiSettings domain.SystemSettings
+	_ = json.Unmarshal(wSettingsGet.Body.Bytes(), &aiSettings)
+	aiSettings.AIRateLimit = 2
+	aiSettings.WelcomeTitle = "Custom Welcome Title"
+	aiSettings.WelcomeText = "Custom Welcome Description"
+
+	aiSettingsPayload, _ := json.Marshal(aiSettings)
+	_, codeSet := sendReq("PUT", "/api/system/settings", aiSettingsPayload, token)
+	if codeSet != http.StatusOK {
+		t.Fatalf("expected PUT settings code 200, got %d", codeSet)
+	}
+
+	// Verify custom welcome text and title are returned publicly by OIDC config
+	wOIDC, codeOIDC := sendReq("GET", "/api/auth/config", nil, "")
+	if codeOIDC != http.StatusOK {
+		t.Fatalf("expected public OIDC config status 200, got %d", codeOIDC)
+	}
+	var oidcRes map[string]interface{}
+	_ = json.Unmarshal(wOIDC.Body.Bytes(), &oidcRes)
+	if oidcRes["welcomeTitle"] != "Custom Welcome Title" || oidcRes["welcomeText"] != "Custom Welcome Description" {
+		t.Errorf("expected dynamic welcome settings from public config, got Title: %v, Text: %v", oidcRes["welcomeTitle"], oidcRes["welcomeText"])
+	}
+
+	// Since we set AI Rate Limit to 2, and we already made 1 request above:
+	// Making request 2: should succeed
+	_, codeAI2 := sendReq("POST", "/api/ai/generate", []byte(aiPayload), token)
+	if codeAI2 != http.StatusOK {
+		t.Errorf("expected request 2 to succeed (2/2), got status %d", codeAI2)
+	}
+
+	// Making request 3: should fail with 429 Too Many Requests
+	wAI3, codeAI3 := sendReq("POST", "/api/ai/generate", []byte(aiPayload), token)
+	if codeAI3 != http.StatusTooManyRequests {
+		t.Errorf("expected request 3 to fail with 429 Too Many Requests, got status %d. Body: %s", codeAI3, wAI3.Body.String())
 	}
 }
 

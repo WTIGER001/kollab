@@ -11,6 +11,9 @@ type SystemSettings struct {
 	AuditLogDestination      string `json:"auditLogDestination"`
 	TrashRetentionPolicy     string `json:"trashRetentionPolicy"`
 	TrashRetentionCustomDays int    `json:"trashRetentionCustomDays"`
+	AIRateLimit              int    `json:"aiRateLimit"`
+	WelcomeTitle             string `json:"welcomeTitle"`
+	WelcomeText              string `json:"welcomeText"`
 }
 
 type AuditLog struct {
@@ -31,6 +34,7 @@ type SystemRepository interface {
 	EnsurePartitions(ctx context.Context) error
 	PrunePartitions(ctx context.Context) error
 	PruneTrash(ctx context.Context) error
+	Ping(ctx context.Context) error
 }
 
 type SystemService interface {
@@ -42,4 +46,5 @@ type SystemService interface {
 	PrunePartitions(ctx context.Context) error
 	PruneTrash(ctx context.Context) error
 	StartCleanupWorker(ctx context.Context, interval time.Duration)
+	Ping(ctx context.Context) error
 }
