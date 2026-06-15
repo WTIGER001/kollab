@@ -1,0 +1,21 @@
+name: CD - Auto Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main # Change this if your default branch is different (e.g., master)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Droplet via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/arkm
+            ./deploy.sh
