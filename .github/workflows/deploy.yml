@@ -5,6 +5,11 @@ on:
     branches:
       - main # Change this if your default branch is different (e.g., master)
 
+# Automatically cancel any in-progress runs of this workflow when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
