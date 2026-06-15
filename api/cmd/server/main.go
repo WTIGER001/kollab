@@ -128,11 +128,30 @@ func main() {
 	}
 	log.Println("PostgreSQL connection established successfully.")
 
-	// Initialize database schema and seeds
+	// Initialize database schema
 	if err := pgrepo.InitSchema(ctx, db); err != nil {
 		log.Fatalf("Failed to initialize database schema: %v", err)
 	}
-	log.Println("Database schema initialized and seeded successfully.")
+	log.Println("Database schema initialized successfully.")
+
+	// Determine if we should seed mock data
+	shouldSeed := false
+	if dbURL == "" {
+		// Always seed testcontainer database
+		shouldSeed = true
+	} else if os.Getenv("SEED_MOCK_DATA") == "true" {
+		// Seed real database if explicitly requested
+		shouldSeed = true
+	}
+
+	if shouldSeed {
+		log.Println("Seeding database with mock teams, projects, users, and documents...")
+		if err := pgrepo.InitSeeds(ctx, db); err != nil {
+			log.Fatalf("Failed to seed database: %v", err)
+		}
+		log.Println("Database seeded successfully.")
+	}
+
 
 	// Instantiate repositories with Postgres backend
 	userRepo := pgrepo.NewPostgresUserRepository(db)
@@ -191,7 +210,7 @@ func main() {
 	// Instantiate handlers
 	userHandler := handler.NewUserHandler(authService, themeService, oidcConfig)
 	teamHandler := handler.NewTeamHandler(teamService)
-	docHandler := handler.NewDocumentHandler(docService)
+	docHandler := handler.NewDocumentHandler(docService, wsHub)
 	imageHandler := handler.NewImageHandler(imageService)
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService)

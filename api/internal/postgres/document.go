@@ -183,7 +183,27 @@ func (r *PostgresDocumentRepository) Update(ctx context.Context, doc *domain.Doc
 }
 
 func (r *PostgresDocumentRepository) Delete(ctx context.Context, id string) error {
-	ct, err := r.db.Exec(ctx, `
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Delete matching user favorites
+	_, err = tx.Exec(ctx, `
+		WITH RECURSIVE descendants AS (
+			SELECT id FROM documents WHERE id = $1
+			UNION ALL
+			SELECT d.id FROM documents d JOIN descendants desc_ ON d.parent_id = desc_.id
+		)
+		DELETE FROM user_favorites WHERE document_id IN (SELECT id FROM descendants)
+	`, id)
+	if err != nil {
+		return err
+	}
+
+	// Soft-delete documents
+	ct, err := tx.Exec(ctx, `
 		WITH RECURSIVE descendants AS (
 			SELECT id FROM documents WHERE id = $1
 			UNION ALL
@@ -194,10 +214,12 @@ func (r *PostgresDocumentRepository) Delete(ctx context.Context, id string) erro
 	if err != nil {
 		return err
 	}
+
 	if ct.RowsAffected() == 0 {
 		return errors.New("document not found")
 	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
@@ -603,7 +625,7 @@ func (r *PostgresDocumentRepository) GetFavorites(ctx context.Context, userID st
 		JOIN documents d ON f.document_id = d.id
 		JOIN teams t ON d.team_id = t.id
 		LEFT JOIN projects p ON d.project_id = p.id
-		WHERE f.user_id = $1
+		WHERE f.user_id = $1 AND d.deleted_at IS NULL AND (d.project_id IS NULL OR p.id IS NOT NULL)
 	`
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {

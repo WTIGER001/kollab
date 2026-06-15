@@ -5,7 +5,7 @@ import type { DocumentItem } from "./components/Sidebar";
 import { EditorCanvas } from "./components/EditorCanvas";
 import { SearchModal } from "./components/SearchModal";
 import { HelpDialog } from "./components/HelpDialog";
-import { Box, Typography, Button, Snackbar, Alert, CircularProgress } from "@mui/material";
+import { Box, Typography, Button, Snackbar, Alert, CircularProgress, useMediaQuery } from "@mui/material";
 import { Layers, Sparkles, GripVertical, ChevronsLeftRight } from "lucide-react";
 import { 
   fetchTeams, 
@@ -245,6 +245,15 @@ function App({ isMockMode = false }: AppProps) {
   const [sidebarWidth, setSidebarWidth] = useState(240);
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Responsive / collapsible sidebar states
+  const isMobile = useMediaQuery("(max-width:768px)");
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Sync sidebar open state with breakpoint changes
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const startResizing = () => {
     setIsResizing(true);
@@ -561,6 +570,13 @@ function App({ isMockMode = false }: AppProps) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // Close sidebar on mobile whenever routeState updates
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [routeState, isMobile]);
+
   // Fetch Teams on successful authentication
   useEffect(() => {
     if (isAuthenticated) {
@@ -709,6 +725,15 @@ function App({ isMockMode = false }: AppProps) {
     refreshDocuments();
   }, [isAuthenticated, selectedTeamId, selectedProjectId]);
 
+  // Listen for WebSocket/global document tree update events
+  useEffect(() => {
+    const handleTreeUpdate = () => {
+      refreshDocuments();
+    };
+    window.addEventListener("document-tree-updated", handleTreeUpdate);
+    return () => window.removeEventListener("document-tree-updated", handleTreeUpdate);
+  }, [isAuthenticated, selectedTeamId, selectedProjectId]);
+
   const handleMoveDoc = async (id: string, parentId: string | null) => {
     try {
       await moveDocument(id, parentId);
@@ -791,9 +816,9 @@ function App({ isMockMode = false }: AppProps) {
     }
   }, [isAuthenticated, activeDocId, documents]);
 
-  // Reset newlyCreatedDocId after it has been used to initialize edit mode
+  // Reset newlyCreatedDocId after navigating away from it
   useEffect(() => {
-    if (newlyCreatedDocId && activeDocId === newlyCreatedDocId) {
+    if (newlyCreatedDocId && activeDocId !== newlyCreatedDocId) {
       setNewlyCreatedDocId(null);
     }
   }, [activeDocId, newlyCreatedDocId]);
@@ -937,6 +962,10 @@ function App({ isMockMode = false }: AppProps) {
   };
 
   const handleDeleteDoc = (id: string) => {
+    // Find the document to check for a parent page
+    const docToDelete = findDocById(documents, id);
+    const parentId = docToDelete ? docToDelete.parentId : null;
+
     deleteDocument(id)
       .then(() => {
         setDocuments(prev => {
@@ -956,15 +985,24 @@ function App({ isMockMode = false }: AppProps) {
           return filterRecursively(prev);
         });
 
-        if (activeDocId === id && activeTeam && activeProject) {
-          // Navigate to project root, which will automatically redirect to first remaining page
-          navigateTo(
-            activeTeam.abbreviation || activeTeam.id,
-            activeProject.abbreviation || activeProject.id,
-            null
-          );
+        if (activeDocId === id && activeTeam) {
+          const projectArg = activeProject ? (activeProject.abbreviation || activeProject.id) : null;
+          if (parentId) {
+            navigateTo(
+              activeTeam.abbreviation || activeTeam.id,
+              projectArg,
+              parentId
+            );
+          } else {
+            // Navigate to project/team root, which will automatically redirect to first remaining page
+            navigateTo(
+              activeTeam.abbreviation || activeTeam.id,
+              projectArg,
+              null
+            );
+          }
         }
-        showToast("Page deleted successfully.", "success");
+        showToast("Page moved to Trash.", "success");
       })
       .catch(err => {
         console.error("Error deleting document:", err);
@@ -1415,93 +1453,102 @@ function App({ isMockMode = false }: AppProps) {
           onOpenTasks={() => navigateTo(null, null, null, false, false, false, false, false, false, true)}
           developerMode={developerMode}
           onToggleDeveloperMode={handleToggleDeveloperMode}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+          isMobile={isMobile}
         />
 
         {/* Bottom Area: Sidebar + Content */}
-        <Box sx={{ display: "flex", flex: 1, height: "calc(100vh - 48px)", overflow: "hidden" }}>
+        <Box sx={{ display: "flex", flex: 1, height: "calc(100vh - 48px)", overflow: "hidden", position: "relative" }}>
           {/* Sidebar Navigation */}
-          <Sidebar
-            documents={documents}
-            activeDocId={activeDocId}
-            onSelectDoc={handleSelectDoc}
-            onAddDoc={handleAddDoc}
-            onDeleteDoc={handleDeleteDoc}
-            onMoveDoc={handleMoveDoc}
-            teams={teams}
-            projects={allProjects}
-            selectedTeamId={selectedTeamId}
-            selectedProjectId={selectedProjectId}
-            navigateTo={navigateTo}
-            width={sidebarWidth}
-            recentSpaces={recentSpaces}
-            onOpenCreateSpace={() => setCreateSpaceOpen(true)}
-            onRestoreDoc={handleRestoreDoc}
-            onDeleteDocPermanently={handleDeleteDocPermanently}
-          />
+          {sidebarOpen && (
+            <Sidebar
+              documents={documents}
+              activeDocId={activeDocId}
+              onSelectDoc={handleSelectDoc}
+              onAddDoc={handleAddDoc}
+              onDeleteDoc={handleDeleteDoc}
+              onMoveDoc={handleMoveDoc}
+              teams={teams}
+              projects={allProjects}
+              selectedTeamId={selectedTeamId}
+              selectedProjectId={selectedProjectId}
+              navigateTo={navigateTo}
+              width={sidebarWidth}
+              recentSpaces={recentSpaces}
+              onOpenCreateSpace={() => setCreateSpaceOpen(true)}
+              onRestoreDoc={handleRestoreDoc}
+              onDeleteDocPermanently={handleDeleteDocPermanently}
+              isMobile={isMobile}
+              onCloseSidebar={() => setSidebarOpen(false)}
+            />
+          )}
 
           {/* Resizable Drag Handle */}
-          <Box
-            onMouseDown={startResizing}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            sx={{
-              width: "4px",
-              cursor: "col-resize",
-              position: "relative",
-              zIndex: 20,
-              backgroundColor: isResizing || isHovered ? "var(--primary-color)" : "transparent",
-              transition: "background-color 0.15s ease",
-              "&:hover": {
-                backgroundColor: "var(--primary-color)",
-              },
-              // Hit area expander
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                bottom: 0,
-                left: "-4px",
-                right: "-4px",
-              },
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {/* Grip Icon */}
+          {!isMobile && sidebarOpen && (
             <Box
+              onMouseDown={startResizing}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
               sx={{
-                width: "16px",
-                height: "32px",
-                backgroundColor: isResizing || isHovered 
-                  ? "var(--primary-color)" 
-                  : (themeMode === "light" ? "#ffffff" : "rgba(22, 25, 36, 0.6)"),
-                border: "1px solid",
-                borderColor: isResizing || isHovered 
-                  ? "var(--primary-color)" 
-                  : (themeMode === "light" ? "rgba(0, 0, 0, 0.12)" : "rgba(255, 255, 255, 0.08)"),
-                borderRadius: "4px",
+                width: "4px",
+                cursor: "col-resize",
+                position: "relative",
+                zIndex: 20,
+                backgroundColor: isResizing || isHovered ? "var(--primary-color)" : "transparent",
+                transition: "background-color 0.15s ease",
+                "&:hover": {
+                  backgroundColor: "var(--primary-color)",
+                },
+                // Hit area expander
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: "-4px",
+                  right: "-4px",
+                },
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: isResizing || isHovered 
-                  ? "#ffffff" 
-                  : (themeMode === "light" ? "rgba(0, 0, 0, 0.45)" : "text.secondary"),
-                cursor: "col-resize",
-                pointerEvents: "none",
-                transition: "all 0.15s ease",
-                boxShadow: themeMode === "light" 
-                  ? "0 1px 4px rgba(0, 0, 0, 0.08)" 
-                  : "0 1px 4px rgba(0, 0, 0, 0.25)",
               }}
             >
-              {isResizing || isHovered ? (
-                <ChevronsLeftRight size={10} />
-              ) : (
-                <GripVertical size={10} />
-              )}
+              {/* Grip Icon */}
+              <Box
+                sx={{
+                  width: "16px",
+                  height: "32px",
+                  backgroundColor: isResizing || isHovered 
+                    ? "var(--primary-color)" 
+                    : (themeMode === "light" ? "#ffffff" : "rgba(22, 25, 36, 0.6)"),
+                  border: "1px solid",
+                  borderColor: isResizing || isHovered 
+                    ? "var(--primary-color)" 
+                    : (themeMode === "light" ? "rgba(0, 0, 0, 0.12)" : "rgba(255, 255, 255, 0.08)"),
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: isResizing || isHovered 
+                    ? "#ffffff" 
+                    : (themeMode === "light" ? "rgba(0, 0, 0, 0.45)" : "text.secondary"),
+                  cursor: "col-resize",
+                  pointerEvents: "none",
+                  transition: "all 0.15s ease",
+                  boxShadow: themeMode === "light" 
+                    ? "0 1px 4px rgba(0, 0, 0, 0.08)" 
+                    : "0 1px 4px rgba(0, 0, 0, 0.25)",
+                }}
+              >
+                {isResizing || isHovered ? (
+                  <ChevronsLeftRight size={10} />
+                ) : (
+                  <GripVertical size={10} />
+                )}
+              </Box>
             </Box>
-          </Box>
+          )}
 
           {/* Main Canvas Workspace */}
           <Box component="main" sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>

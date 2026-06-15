@@ -221,6 +221,28 @@ func (h *Hub) UnregisterClient(c *Client) {
 	h.Unregister <- c
 }
 
+// BroadcastToAll sends a message to all connected clients across all active rooms.
+func (h *Hub) BroadcastToAll(msg WSMessage) {
+	h.RLock()
+	defer h.RUnlock()
+
+	payload, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshalling BroadcastToAll message: %v", err)
+		return
+	}
+
+	for _, room := range h.Rooms {
+		for c := range room.Clients {
+			select {
+			case c.Send <- payload:
+			default:
+				// client blocked, it will be cleaned up in its own pumps or unregister
+			}
+		}
+	}
+}
+
 // broadcastPresenceList helper sends the active user presence list to all room clients.
 // Assumes Lock is already held by caller.
 func (h *Hub) broadcastPresenceList(docID string) {

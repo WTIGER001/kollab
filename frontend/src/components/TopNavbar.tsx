@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { 
   Box, 
   Typography, 
-  Button, 
   IconButton, 
   Tooltip, 
   Avatar, 
@@ -24,7 +23,8 @@ import {
   Settings,
   Star,
   Clock,
-  ListTodo
+  ListTodo,
+  Menu as MenuIcon
 } from "lucide-react";
 import type { Team } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
@@ -46,6 +46,9 @@ interface TopNavbarProps {
   activeUsers?: any[];
   developerMode?: boolean;
   onToggleDeveloperMode?: (enabled: boolean) => void;
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
+  isMobile?: boolean;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -64,7 +67,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenTasks,
   activeUsers = [],
   developerMode = false,
-  onToggleDeveloperMode
+  onToggleDeveloperMode,
+  onToggleSidebar
 }) => {
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -92,7 +96,21 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       backdropFilter: "blur(20px)",
     }}>
       {/* Left section: Logo & Navigation */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        {/* Toggle Sidebar Button */}
+        <IconButton 
+          onClick={onToggleSidebar}
+          size="small"
+          sx={{ 
+            color: "text.secondary", 
+            "&:hover": { color: "text.primary" },
+            p: 0.5,
+            borderRadius: "6px"
+          }}
+        >
+          <MenuIcon size={18} />
+        </IconButton>
+
         {/* Brand Logo */}
         <Box 
           onClick={() => {
@@ -121,16 +139,23 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           }}>
             <Layers size={16} style={{ color: "var(--accent-purple)" }} />
           </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.02em", color: "text.primary" }}>
+          <Typography 
+            variant="subtitle1" 
+            sx={{ 
+              fontWeight: 800, 
+              fontFamily: '"Outfit", sans-serif', 
+              letterSpacing: "-0.02em", 
+              color: "text.primary",
+              display: { xs: "none", sm: "block" }
+            }}
+          >
             Arkollab
           </Typography>
         </Box>
-
-
       </Box>
 
       {/* Middle section: Global Search Box */}
-      <Box sx={{ flex: 1, maxWidth: 320, mx: 4 }}>
+      <Box sx={{ flex: 1, maxWidth: 320, mx: { xs: 1, sm: 4 }, display: { xs: "none", sm: "block" } }}>
         <Box 
           onClick={onOpenSearch}
           sx={{ 
@@ -175,7 +200,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {/* Presence Users List */}
         {activeUsers.length > 0 && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: -0.5, mr: 1 }}>
+          <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: -0.5, mr: 1 }}>
             {activeUsers.slice(0, 3).map((user, idx) => (
               <Tooltip key={user.userId || idx} title={user.username || "Active User"}>
                 <UserAvatar 
@@ -199,16 +224,45 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </Box>
         )}
 
+        {/* Search Icon Button - Visible only on mobile */}
+        <IconButton 
+          size="small" 
+          onClick={onOpenSearch} 
+          sx={{ 
+            color: "text.secondary", 
+            "&:hover": { color: "text.primary" },
+            display: { xs: "inline-flex", sm: "none" } 
+          }}
+        >
+          <Search size={16} />
+        </IconButton>
+
         {/* Help Center Icon */}
         <Tooltip title="Help & User Guide" arrow>
-          <IconButton size="small" onClick={onOpenHelp} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}>
+          <IconButton 
+            size="small" 
+            onClick={onOpenHelp} 
+            sx={{ 
+              color: "text.secondary", 
+              "&:hover": { color: "text.primary" },
+              display: { xs: "none", sm: "inline-flex" } 
+            }}
+          >
             <HelpCircle size={16} />
           </IconButton>
         </Tooltip>
 
         {/* Light/Dark Toggle */}
         <Tooltip title={themeMode === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"} arrow>
-          <IconButton size="small" onClick={onToggleThemeMode} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}>
+          <IconButton 
+            size="small" 
+            onClick={onToggleThemeMode} 
+            sx={{ 
+              color: "text.secondary", 
+              "&:hover": { color: "text.primary" },
+              display: { xs: "none", sm: "inline-flex" } 
+            }}
+          >
             {themeMode === "light" ? <Moon size={16} /> : <Sun size={16} />}
           </IconButton>
         </Tooltip>
@@ -265,6 +319,36 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             </Typography>
           </Box>
           <Divider sx={{ my: 0.5 }} />
+          
+          {/* Mobile Theme/Help Center Links */}
+          <Box sx={{ display: { xs: "block", sm: "none" } }}>
+            <MenuItem 
+              onClick={() => {
+                handleCloseProfileMenu();
+                onToggleThemeMode();
+              }}
+              sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                {themeMode === "light" ? <Moon size={14} /> : <Sun size={14} />}
+              </ListItemIcon>
+              <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>
+                {themeMode === "light" ? "Dark Mode" : "Light Mode"}
+              </Typography>} />
+            </MenuItem>
+
+            <MenuItem 
+              onClick={() => {
+                handleCloseProfileMenu();
+                onOpenHelp();
+              }}
+              sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}><HelpCircle size={14} /></ListItemIcon>
+              <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Help & Guide</Typography>} />
+            </MenuItem>
+            <Divider sx={{ my: 0.5 }} />
+          </Box>
           
 
 

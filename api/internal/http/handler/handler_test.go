@@ -109,6 +109,9 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	if err := pgrepo.InitSchema(ctx, db); err != nil {
 		t.Fatalf("failed to initialize schema: %v", err)
 	}
+	if err := pgrepo.InitSeeds(ctx, db); err != nil {
+		t.Fatalf("failed to seed database: %v", err)
+	}
 
 	// Postgres Repositories
 	userRepo := pgrepo.NewPostgresUserRepository(db)
@@ -158,7 +161,7 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	}
 	userH := handler.NewUserHandler(authService, themeService, mockOidcConfig)
 	teamH := handler.NewTeamHandler(teamService)
-	docH := handler.NewDocumentHandler(docService)
+	docH := handler.NewDocumentHandler(docService, wsHub)
 	imgH := handler.NewImageHandler(imageService)
 	themeH := handler.NewThemeHandler(themeService)
 	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub)
@@ -1133,6 +1136,91 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	for _, c := range commentsList3 {
 		if c.ID == createdComment.ID {
 			t.Errorf("expected deleted comment %s to be missing from the list", createdComment.ID)
+		}
+	}
+
+	// 14. Test Favorites and Soft/Hard-Delete Cascading
+	// Favorite a document
+	_, codeFav := sendReq("POST", "/api/favorites/doc_guides_eng", nil, token)
+	if codeFav != http.StatusOK {
+		t.Errorf("expected POST favorite to return 200, got %d", codeFav)
+	}
+
+	// Verify status
+	wFavStatus, codeFavStatus := sendReq("GET", "/api/favorites/doc_guides_eng/status", nil, token)
+	if codeFavStatus != http.StatusOK {
+		t.Errorf("expected GET favorite status to return 200, got %d", codeFavStatus)
+	}
+	var favStatus map[string]bool
+	_ = json.Unmarshal(wFavStatus.Body.Bytes(), &favStatus)
+	if !favStatus["isFavorite"] {
+		t.Errorf("expected isFavorite to be true")
+	}
+
+	// List favorites
+	wFavList, codeFavList := sendReq("GET", "/api/favorites", nil, token)
+	if codeFavList != http.StatusOK {
+		t.Errorf("expected GET favorites to return 200, got %d", codeFavList)
+	}
+	var favList []*domain.Favorite
+	_ = json.Unmarshal(wFavList.Body.Bytes(), &favList)
+	foundFav := false
+	for _, f := range favList {
+		if f.DocumentID == "doc_guides_eng" {
+			foundFav = true
+			break
+		}
+	}
+	if !foundFav {
+		t.Errorf("expected to find doc_guides_eng in favorites list")
+	}
+
+	// Soft-delete the document
+	_, codeDel = sendReq("DELETE", "/api/documents/doc_guides_eng", nil, token)
+	if codeDel != http.StatusNoContent {
+		t.Errorf("expected DELETE document to return 204, got %d", codeDel)
+	}
+
+	// Verify favorite status is gone
+	wFavStatus2, _ := sendReq("GET", "/api/favorites/doc_guides_eng/status", nil, token)
+	var favStatus2 map[string]bool
+	_ = json.Unmarshal(wFavStatus2.Body.Bytes(), &favStatus2)
+	if favStatus2["isFavorite"] {
+		t.Errorf("expected isFavorite to be false after soft-delete")
+	}
+
+	// Verify it does not show up in list
+	wFavList2, _ := sendReq("GET", "/api/favorites", nil, token)
+	var favList2 []*domain.Favorite
+	_ = json.Unmarshal(wFavList2.Body.Bytes(), &favList2)
+	for _, f := range favList2 {
+		if f.DocumentID == "doc_guides_eng" {
+			t.Errorf("expected doc_guides_eng to be removed from favorites after soft-delete")
+		}
+	}
+
+	// Restore the document
+	_, codeRest = sendReq("POST", "/api/documents/doc_guides_eng/restore", nil, token)
+	if codeRest != http.StatusOK {
+		t.Errorf("expected POST restore document to return 200, got %d", codeRest)
+	}
+
+	// Re-favorite it
+	_, _ = sendReq("POST", "/api/favorites/doc_guides_eng", nil, token)
+
+	// Hard-delete it
+	_, codePermDel := sendReq("DELETE", "/api/documents/doc_guides_eng?permanent=true", nil, token)
+	if codePermDel != http.StatusNoContent {
+		t.Errorf("expected DELETE permanent to return 204, got %d", codePermDel)
+	}
+
+	// Verify it is gone from list
+	wFavList3, _ := sendReq("GET", "/api/favorites", nil, token)
+	var favList3 []*domain.Favorite
+	_ = json.Unmarshal(wFavList3.Body.Bytes(), &favList3)
+	for _, f := range favList3 {
+		if f.DocumentID == "doc_guides_eng" {
+			t.Errorf("expected doc_guides_eng to be removed from favorites after permanent delete")
 		}
 	}
 }

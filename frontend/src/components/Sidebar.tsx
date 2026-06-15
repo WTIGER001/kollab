@@ -35,7 +35,8 @@ import {
   Users,
   Check,
   User,
-  FolderInput
+  FolderInput,
+  X
 } from "lucide-react";
 import type { Team, Project } from "../services/api";
 
@@ -235,6 +236,8 @@ interface SidebarProps {
   onOpenCreateSpace: () => void;
   onRestoreDoc: (id: string) => Promise<void>;
   onDeleteDocPermanently: (id: string) => Promise<void>;
+  isMobile?: boolean;
+  onCloseSidebar?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -253,7 +256,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   recentSpaces,
   onOpenCreateSpace,
   onRestoreDoc,
-  onDeleteDocPermanently
+  onDeleteDocPermanently,
+  isMobile = false,
+  onCloseSidebar
 }) => {
   const [expandedDocs, setExpandedDocs] = useState<Record<string, boolean>>({
     "1": true,
@@ -444,14 +449,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       component="aside"
       className="glass-sidebar"
       sx={{
-        width: width,
+        width: isMobile ? "100%" : width,
         height: "100%",
         display: "flex",
         flexDirection: "column",
         flexShrink: 0,
-        zIndex: 10,
-        borderRight: "1px solid var(--border-color)",
+        zIndex: isMobile ? 1200 : 10,
+        position: isMobile ? "absolute" : "relative",
+        left: 0,
+        top: 0,
+        borderRight: isMobile ? "none" : "1px solid var(--border-color)",
         backgroundColor: "var(--panel-color)",
+        backdropFilter: isMobile ? "blur(20px)" : "none",
+        boxShadow: isMobile ? "0 8px 32px rgba(0, 0, 0, 0.4)" : "none",
       }}
     >
       {/* Active Project Switcher Header */}
@@ -515,13 +525,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </Typography>
             </Box>
           </Box>
-          <IconButton 
-            size="small" 
-            onClick={handleOpenProjectMenu}
-            sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
-          >
-            <MoreHorizontal size={14} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <IconButton 
+              size="small" 
+              onClick={handleOpenProjectMenu}
+              sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+            >
+              <MoreHorizontal size={14} />
+            </IconButton>
+            {isMobile && onCloseSidebar && (
+              <IconButton 
+                size="small" 
+                onClick={onCloseSidebar}
+                sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+              >
+                <X size={16} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
       ) : activeProject ? (
         <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)", mb: 2 }}>
@@ -584,13 +605,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </Typography>
             </Box>
           </Box>
-          <IconButton 
-            size="small" 
-            onClick={handleOpenProjectMenu}
-            sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
-          >
-            <MoreHorizontal size={14} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <IconButton 
+              size="small" 
+              onClick={handleOpenProjectMenu}
+              sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+            >
+              <MoreHorizontal size={14} />
+            </IconButton>
+            {isMobile && onCloseSidebar && (
+              <IconButton 
+                size="small" 
+                onClick={onCloseSidebar}
+                sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+              >
+                <X size={16} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
       ) : activeTeam ? (
         <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)", mb: 2 }}>
@@ -652,22 +684,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </Typography>
             </Box>
           </Box>
-          <IconButton 
-            size="small" 
-            onClick={handleOpenProjectMenu}
-            sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
-          >
-            <MoreHorizontal size={14} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <IconButton 
+              size="small" 
+              onClick={handleOpenProjectMenu}
+              sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+            >
+              <MoreHorizontal size={14} />
+            </IconButton>
+            {isMobile && onCloseSidebar && (
+              <IconButton 
+                size="small" 
+                onClick={onCloseSidebar}
+                sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
+              >
+                <X size={16} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
       ) : (
         <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)", mb: 2 }}>
           <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
             Select Project...
           </Typography>
-          <IconButton size="small" onClick={handleOpenProjectMenu} sx={{ color: "text.secondary" }}>
-            <MoreHorizontal size={14} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <IconButton size="small" onClick={handleOpenProjectMenu} sx={{ color: "text.secondary" }}>
+              <MoreHorizontal size={14} />
+            </IconButton>
+            {isMobile && onCloseSidebar && (
+              <IconButton size="small" onClick={onCloseSidebar} sx={{ color: "text.secondary" }}>
+                <X size={16} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
       )}
 
@@ -964,7 +1014,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           variant="text"
           size="small"
           disabled={!selectedTeamId}
-          onClick={() => onAddDoc(activeDocId || undefined)}
+          onClick={() => {
+            const isDoc = activeDocId && activeDocId !== selectedProjectId && activeDocId !== selectedTeamId;
+            onAddDoc(isDoc ? activeDocId : undefined);
+          }}
           startIcon={<PostAdd sx={{ fontSize: 16 }} />}
           sx={{ 
             textTransform: "none", 

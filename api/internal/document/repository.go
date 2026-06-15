@@ -246,10 +246,13 @@ func (r *InMemoryDocumentRepository) Delete(ctx context.Context, id string) erro
 	}
 
 	now := time.Now()
+	deletedIDs := make(map[string]bool)
+
 	var markDeleted func(string)
 	markDeleted = func(parentID string) {
 		if doc, ok := r.documents[parentID]; ok {
 			doc.DeletedAt = &now
+			deletedIDs[parentID] = true
 		}
 		for _, doc := range r.documents {
 			if doc.ParentID != nil && *doc.ParentID == parentID {
@@ -258,6 +261,16 @@ func (r *InMemoryDocumentRepository) Delete(ctx context.Context, id string) erro
 		}
 	}
 	markDeleted(id)
+
+	// Clean up favorites
+	newFavs := make([]InMemoryFavorite, 0)
+	for _, fav := range r.favorites {
+		if !deletedIDs[fav.DocumentID] {
+			newFavs = append(newFavs, fav)
+		}
+	}
+	r.favorites = newFavs
+
 	return nil
 }
 
@@ -310,9 +323,12 @@ func (r *InMemoryDocumentRepository) DeletePermanently(ctx context.Context, id s
 		return errors.New("document not found")
 	}
 
+	deletedIDs := make(map[string]bool)
+
 	var deleteRec func(string)
 	deleteRec = func(parentID string) {
 		delete(r.documents, parentID)
+		deletedIDs[parentID] = true
 		for _, doc := range r.documents {
 			if doc.ParentID != nil && *doc.ParentID == parentID {
 				deleteRec(doc.ID)
@@ -320,6 +336,16 @@ func (r *InMemoryDocumentRepository) DeletePermanently(ctx context.Context, id s
 		}
 	}
 	deleteRec(id)
+
+	// Clean up favorites
+	newFavs := make([]InMemoryFavorite, 0)
+	for _, fav := range r.favorites {
+		if !deletedIDs[fav.DocumentID] {
+			newFavs = append(newFavs, fav)
+		}
+	}
+	r.favorites = newFavs
+
 	return nil
 }
 

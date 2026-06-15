@@ -7,15 +7,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	"arkollab/api/internal/domain"
 	"arkollab/api/internal/http/middleware"
+	"arkollab/api/internal/ws"
 )
 
 type DocumentHandler struct {
 	docService domain.DocumentService
+	hub        *ws.Hub
 }
 
-func NewDocumentHandler(docService domain.DocumentService) *DocumentHandler {
+func NewDocumentHandler(docService domain.DocumentService, hub *ws.Hub) *DocumentHandler {
 	return &DocumentHandler{
 		docService: docService,
+		hub:        hub,
 	}
 }
 
@@ -93,6 +96,10 @@ func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(doc)
@@ -125,6 +132,10 @@ func (h *DocumentHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(doc)
 }
@@ -147,6 +158,10 @@ func (h *DocumentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -192,6 +207,10 @@ func (h *DocumentHandler) Restore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(doc)
 }
@@ -219,6 +238,10 @@ func (h *DocumentHandler) Move(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -273,6 +296,10 @@ func (h *DocumentHandler) RestoreVersion(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
 	}
 
 	w.Header().Set("Content-Type", "application/json")

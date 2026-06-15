@@ -1777,7 +1777,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         {editor && !previewVersion && (
           <Box sx={{
             display: "flex",
-            alignItems: "center",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
             justifyContent: "space-between",
             color: "text.secondary",
             px: { xs: 2, sm: 3, md: 4 },
@@ -1785,6 +1786,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             pb: 1.5,
             borderBottom: "1px solid var(--border-color)",
             borderColor: "rgba(255, 255, 255, 0.04)",
+            gap: { xs: 1.5, sm: 2 },
           }}>
             {/* Left: Breadcrumbs in Readonly, Mode/Save in Edit */}
             {!isEditing ? (
@@ -1999,14 +2001,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
-                    startIcon={<Code size={13} />}
                     onClick={() => setJsonDialogOpen(true)}
                     sx={{
                       fontSize: "11px",
                       fontWeight: 600,
                       fontFamily: '"Outfit", sans-serif',
                       height: 26,
-                      px: 1.25,
+                      px: { xs: 1, sm: 1.25 },
+                      minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       borderColor: "rgba(255, 255, 255, 0.08)",
                       color: "text.secondary",
@@ -2017,7 +2019,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       }
                     }}
                   >
-                    View JSON
+                    <Code size={13} />
+                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                      View JSON
+                    </Box>
                   </Button>
                 </Tooltip>
               )}
@@ -2029,14 +2034,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <Button
                       variant="outlined"
                       size="small"
-                      startIcon={<BarChart2 size={13} />}
                       onClick={() => setAnalyticsOpen(true)}
                       sx={{
                         fontSize: "11px",
                         fontWeight: 600,
                         fontFamily: '"Outfit", sans-serif',
                         height: 26,
-                        px: 1.25,
+                        px: { xs: 1, sm: 1.25 },
+                        minWidth: { xs: 26, sm: "auto" },
                         borderRadius: "5px",
                         borderColor: "rgba(255, 255, 255, 0.08)",
                         color: "text.secondary",
@@ -2047,7 +2052,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         }
                       }}
                     >
-                      Analytics
+                      <BarChart2 size={13} />
+                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                        Analytics
+                      </Box>
                     </Button>
                   </Tooltip>
 
@@ -2056,14 +2064,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <Button
                       variant="outlined"
                       size="small"
-                      startIcon={<History size={13} />}
                       onClick={handleToggleHistory}
                       sx={{
                         fontSize: "11px",
                         fontWeight: 600,
                         fontFamily: '"Outfit", sans-serif',
                         height: 26,
-                        px: 1.25,
+                        px: { xs: 1, sm: 1.25 },
+                        minWidth: { xs: 26, sm: "auto" },
                         borderRadius: "5px",
                         borderColor: "rgba(255, 255, 255, 0.08)",
                         color: "text.secondary",
@@ -2074,7 +2082,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         }
                       }}
                     >
-                      History
+                      <History size={13} />
+                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                        History
+                      </Box>
                     </Button>
                   </Tooltip>
 
@@ -2084,7 +2095,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   <Button
                     variant="contained"
                     size="small"
-                    startIcon={<Edit size={12} />}
                     disabled={!!deletedAt}
                     onClick={() => setIsEditing(true)}
                     sx={{
@@ -2092,7 +2102,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       fontWeight: 600,
                       fontFamily: '"Outfit", sans-serif',
                       height: 26,
-                      px: 1.5,
+                      px: { xs: 1, sm: 1.5 },
+                      minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       backgroundColor: "var(--primary-color)",
                       color: "#ffffff",
@@ -2104,7 +2115,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       }
                     }}
                   >
-                    Edit
+                    <Edit size={12} />
+                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                      Edit
+                    </Box>
                   </Button>
                 </>
               ) : (
@@ -2138,7 +2152,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       fontWeight: 600,
                       fontFamily: '"Outfit", sans-serif',
                       height: 26,
-                      px: 1.5,
+                      px: { xs: 1, sm: 1.5 },
+                      minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       backgroundColor: "rgba(16, 185, 129, 0.12)",
                       color: "#10b981",
@@ -2152,7 +2167,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       }
                     }}
                   >
-                    Done
+                    <Check size={12} />
+                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                      Done
+                    </Box>
                   </Button>
                 </>
               )}

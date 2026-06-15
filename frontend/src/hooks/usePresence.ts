@@ -120,6 +120,8 @@ export const usePresence = (
               const binaryUpdate = base64ToUint8Array(msg.update);
               // Apply it locally, specifying "websocket" origin to prevent infinite loop
               Y.applyUpdate(ydoc, binaryUpdate, "websocket");
+            } else if (msg.type === "document-tree-updated") {
+              window.dispatchEvent(new CustomEvent("document-tree-updated"));
             } else if (msg.type === "sync-history") {
               // Apply all historical updates transactionally
               const hasHistory = msg.updates && msg.updates.length > 0;
