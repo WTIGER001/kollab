@@ -88,51 +88,56 @@ export const usePresence = (
       };
 
       ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "presence") {
-            const users = msg.users || [];
-            setActiveUsers(users);
-            if (editor && !editor.isDestroyed) {
-              editor.view.dispatch(
-                editor.view.state.tr.setMeta("presence-users", users)
-              );
+        const lines = event.data.split("\n");
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const msg = JSON.parse(trimmed);
+            if (msg.type === "presence") {
+              const users = msg.users || [];
+              setActiveUsers(users);
+              if (editor && !editor.isDestroyed) {
+                editor.view.dispatch(
+                  editor.view.state.tr.setMeta("presence-users", users)
+                );
+              }
+            } else if (msg.type === "cursor") {
+              if (editor && !editor.isDestroyed) {
+                editor.view.dispatch(
+                  editor.view.state.tr.setMeta("presence-cursor", {
+                    userId: msg.userId,
+                    username: msg.username,
+                    color: msg.color,
+                    position: msg.position,
+                    anchor: msg.anchor,
+                    docId: msg.docId
+                  })
+                );
+              }
+            } else if (msg.type === "sync") {
+              // Decode base64 to binary Yjs update blob safely
+              const binaryUpdate = base64ToUint8Array(msg.update);
+              // Apply it locally, specifying "websocket" origin to prevent infinite loop
+              Y.applyUpdate(ydoc, binaryUpdate, "websocket");
+            } else if (msg.type === "sync-history") {
+              // Apply all historical updates transactionally
+              const hasHistory = msg.updates && msg.updates.length > 0;
+              if (hasHistory) {
+                Y.transact(ydoc, () => {
+                  msg.updates.forEach((updateStr: string) => {
+                    const binaryUpdate = base64ToUint8Array(updateStr);
+                    Y.applyUpdate(ydoc, binaryUpdate, "websocket");
+                  });
+                }, "websocket");
+                onSyncReadyRef.current(false);
+              } else {
+                onSyncReadyRef.current(true);
+              }
             }
-          } else if (msg.type === "cursor") {
-            if (editor && !editor.isDestroyed) {
-              editor.view.dispatch(
-                editor.view.state.tr.setMeta("presence-cursor", {
-                  userId: msg.userId,
-                  username: msg.username,
-                  color: msg.color,
-                  position: msg.position,
-                  anchor: msg.anchor,
-                  docId: msg.docId
-                })
-              );
-            }
-          } else if (msg.type === "sync") {
-            // Decode base64 to binary Yjs update blob safely
-            const binaryUpdate = base64ToUint8Array(msg.update);
-            // Apply it locally, specifying "websocket" origin to prevent infinite loop
-            Y.applyUpdate(ydoc, binaryUpdate, "websocket");
-          } else if (msg.type === "sync-history") {
-            // Apply all historical updates transactionally
-            const hasHistory = msg.updates && msg.updates.length > 0;
-            if (hasHistory) {
-              Y.transact(ydoc, () => {
-                msg.updates.forEach((updateStr: string) => {
-                  const binaryUpdate = base64ToUint8Array(updateStr);
-                  Y.applyUpdate(ydoc, binaryUpdate, "websocket");
-                });
-              }, "websocket");
-              onSyncReadyRef.current(false);
-            } else {
-              onSyncReadyRef.current(true);
-            }
+          } catch (err) {
+            console.error("Error parsing WebSocket message line:", trimmed, err);
           }
-        } catch (err) {
-          console.error("Error parsing WebSocket message:", err);
         }
       };
     };

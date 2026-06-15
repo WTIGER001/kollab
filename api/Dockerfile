@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go server binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server/main.go
+RUN ls -la && ls -la cmd && CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server/main.go
 
 # Stage 2: Final lightweight image
 FROM alpine:latest
