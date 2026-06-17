@@ -428,7 +428,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
           zIndex: 10
         }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0, flex: 1 }}>
           {typeDetails.icon}
           <Box sx={{ minWidth: 0 }}>
             <Typography
@@ -458,10 +458,10 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
         </Stack>
 
         {/* Dynamic Controls based on File Format */}
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           {/* PPTX Pager Controls */}
           {slides.length > 0 && (
-            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: 2 }}>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mr: 2 }}>
               <IconButton 
                 size="small" 
                 onClick={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
@@ -495,7 +495,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
 
           {/* DOCX Zoom Controls */}
           {docxBuffer && (
-            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: 2 }}>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mr: 2 }}>
               <IconButton size="small" onClick={() => handleZoom("out")} sx={{ color: "text.primary" }}>
                 <ZoomOut size={15} />
               </IconButton>
@@ -566,7 +566,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
         {/* Loading Overlay */}
         {(loading || serverPreviewsEnabled === null) && (
           <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(0,0,0,0.6)", zIndex: 5 }}>
-            <Stack spacing={2} alignItems="center">
+            <Stack spacing={2} sx={{ alignItems: "center" }}>
               <CircularProgress size={32} sx={{ color: "var(--primary-color)" }} />
               <Typography variant="body2" sx={{ color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
                 Loading preview content...
@@ -782,7 +782,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     {slides[currentSlideIndex].bullets.length > 0 ? (
                       <Stack spacing={1.5}>
                         {slides[currentSlideIndex].bullets.map((bullet, bidx) => (
-                          <Stack key={bidx} direction="row" spacing={1.5} alignItems="flex-start">
+                          <Stack key={bidx} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
                             <Box 
                               sx={{ 
                                 width: "6px", 
