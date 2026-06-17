@@ -27,10 +27,10 @@ This document organizes the requested features into prioritized, sequential impl
 
 ### 📎 Phase 3: Assets & Collaboration (Mentions & Files)
 *Enriches collaboration by tying media files and team identity to pages.*
-- [ ] **Attachments**: List of files uploaded to the page with download/preview triggers.
+- [x] **Attachments**: List of files uploaded to the page with download/preview triggers.
 - [ ] **Multimedia (Widget Connector)**: Embed audio, video, or iframe widgets (YouTube, Vimeo, PDF presentation viewer).
 - [ ] **Image Gallery**: Grid gallery view of all image attachments on the page.
-- [ ] **Mentions & Tagging**: Tiptap suggestions menu triggered by `@` to tag registered team members/emails.
+- [x] **Mentions & Tagging**: Tiptap suggestions menu triggered by `@` to tag registered team members/emails.
 - [ ] **Watch**: "Watch" page toggle to subscribe to email or feed alerts on edit.
 
 ### 🏷️ Phase 4: Organization, Labels & Space Activity

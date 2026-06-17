@@ -42,6 +42,7 @@ import {
   AtSign
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
+import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
 import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions } from "../services/api";
 import type { Attachment, Tag as TagType } from "../services/api";
@@ -1528,6 +1529,22 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
             const style = config.layoutStyle || "tile";
 
+            if (style === "preview") {
+              return (
+                <Box sx={{ mt: 1.5, width: "100%" }}>
+                  <DocumentPreviewer
+                    attachmentId={att.id}
+                    filename={att.filename}
+                    mimeType={att.mimeType}
+                    fileSize={att.fileSize}
+                    apiBaseUrl={API_BASE_URL}
+                    heightSize={config.previewSize || "md"}
+                    onHeightChange={(newSize) => updateConfig("previewSize", newSize)}
+                  />
+                </Box>
+              );
+            }
+
             if (style === "hyperlink") {
               return (
                 <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, py: 0.5 }}>
@@ -2014,8 +2031,24 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   >
                     <MenuItem value="tile" sx={{ fontSize: "13px" }}>Tile Card</MenuItem>
                     <MenuItem value="hyperlink" sx={{ fontSize: "13px" }}>Hyperlink</MenuItem>
+                    <MenuItem value="preview" sx={{ fontSize: "13px" }}>Interactive Preview</MenuItem>
                   </Select>
                 </FormControl>
+
+                {config.layoutStyle === "preview" && (
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Default Height</FormLabel>
+                    <Select
+                      value={config.previewSize || "md"}
+                      onChange={(e) => updateConfig("previewSize", e.target.value)}
+                      sx={{ fontSize: "13px", height: 36 }}
+                    >
+                      <MenuItem value="sm" sx={{ fontSize: "13px" }}>Small (320px)</MenuItem>
+                      <MenuItem value="md" sx={{ fontSize: "13px" }}>Medium (540px)</MenuItem>
+                      <MenuItem value="lg" sx={{ fontSize: "13px" }}>Large (820px)</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
               </>
             )}
           </Stack>

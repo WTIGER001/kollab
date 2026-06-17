@@ -29,6 +29,8 @@
     "@tiptap/starter-kit": "^3.26.1",
     "autoprefixer": "^10.5.0",
     "clsx": "^2.1.1",
+    "docx-preview": "^0.3.7",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.17.0",
     "marked": "^18.0.5",
     "oidc-client-ts": "^3.5.0",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
