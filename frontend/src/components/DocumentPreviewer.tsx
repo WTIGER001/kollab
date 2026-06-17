@@ -171,7 +171,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
     return () => {
       clearObjectUrls();
     };
-  }, [attachmentId, mimeType]);
+  }, [attachmentId, mimeType, filename, serverPreviewsEnabled]);
 
   // DOCX rendering trigger
   useEffect(() => {
