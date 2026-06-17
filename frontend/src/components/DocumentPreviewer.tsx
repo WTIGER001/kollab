@@ -607,16 +607,19 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
           >
             <style>{`
               .docx-preview-container {
-                background-color: #ffffff !important;
+                background-color: transparent !important;
                 color: #2f3033 !important;
               }
               .docx-preview-container section {
                 background-color: #ffffff !important;
                 color: #2f3033 !important;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
                 margin: 0 auto 24px auto !important;
-                padding: 48px 56px !important;
+                padding: 64px 72px !important;
                 display: block !important;
+                width: 812px !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
               }
               .docx-preview-container section p,
               .docx-preview-container section span,
@@ -635,12 +638,10 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
               style={{
                 transform: `scale(${zoom / 100})`,
                 transformOrigin: "top center",
-                width: "812px", // standard page width
-                backgroundColor: "#ffffff",
-                color: "#2f3033",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
-                padding: "48px 56px",
-                borderRadius: "4px",
+                width: "100%",
+                backgroundColor: "transparent",
+                boxShadow: "none",
+                padding: "0",
                 fontFamily: "Calibri, Arial, sans-serif",
                 minHeight: "100%",
                 transition: "transform 0.2s ease"
