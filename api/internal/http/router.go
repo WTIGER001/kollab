@@ -47,6 +47,8 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 	// Public attachment download/preview route
 	r.Get("/api/attachments/{id}", attH.Download)
+	r.Get("/api/attachments/previews/status", attH.PreviewStatus)
+	r.Get("/api/attachments/{id}/preview", attH.Preview)
 
 	// WebSocket presence connection route (handles auth internally via token query param)
 	r.Get("/api/ws", wsH.ServeWS)

@@ -2,8 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -135,4 +138,37 @@ func (h *AttachmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AttachmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	data, att, err := h.attachmentService.GetAttachmentPreview(r.Context(), id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Preview generation failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.Header().Set("Content-Disposition", "inline; filename=\""+att.Filename+".pdf\"")
+	_, _ = w.Write(data)
+}
+
+func (h *AttachmentHandler) PreviewStatus(w http.ResponseWriter, r *http.Request) {
+	macPath := "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+	_, macErr := os.Stat(macPath)
+	_, sofficePathErr := exec.LookPath("soffice")
+	_, libreofficePathErr := exec.LookPath("libreoffice")
+
+	libreofficeInstalled := macErr == nil || sofficePathErr == nil || libreofficePathErr == nil
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]bool{
+		"libreofficeInstalled": libreofficeInstalled,
+	})
 }

@@ -515,6 +515,13 @@ export const fetchAttachments = (docId: string): Promise<Attachment[]> => {
   return request(`/api/documents/${encodeURIComponent(docId)}/attachments`);
 };
 
+export const fetchPreviewStatus = (): Promise<{ libreofficeInstalled: boolean }> => {
+  return fetch(`${BASE_URL}/api/attachments/previews/status`).then((res) => {
+    if (!res.ok) throw new Error("Failed to fetch preview status");
+    return res.json();
+  });
+};
+
 export const uploadAttachment = (docId: string, file: File): Promise<Attachment> => {
   const formData = new FormData();
   formData.append("file", file);

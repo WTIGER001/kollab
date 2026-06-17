@@ -30,6 +30,7 @@ import {
 import JSZip from "jszip";
 // @ts-ignore
 import { renderAsync } from "docx-preview";
+import { fetchPreviewStatus } from "../services/api";
 
 interface DocumentPreviewerProps {
   attachmentId: string;
@@ -71,6 +72,8 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showSlideList, setShowSlideList] = useState(true);
 
+  const [serverPreviewsEnabled, setServerPreviewsEnabled] = useState<boolean | null>(null);
+
   const objectUrlsRef = useRef<string[]>([]);
   const downloadUrl = `${apiBaseUrl}/api/attachments/${attachmentId}`;
 
@@ -105,8 +108,24 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
     return Array.from(elements);
   };
 
+  // Check if server-side PDF conversion is available
+  useEffect(() => {
+    fetchPreviewStatus()
+      .then(status => {
+        setServerPreviewsEnabled(status.libreofficeInstalled);
+      })
+      .catch(err => {
+        console.warn("Failed to fetch server preview status, falling back to client-side:", err);
+        setServerPreviewsEnabled(false);
+      });
+  }, []);
+
   // Fetch document data for DOCX/PPTX parsing
   useEffect(() => {
+    if (serverPreviewsEnabled === null || serverPreviewsEnabled === true) {
+      return; // If server previews are supported or loading, don't parse client-side
+    }
+
     const isDocx = mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || filename.endsWith(".docx");
     const isPptx = mimeType === "application/vnd.openxmlformats-officedocument.presentationml.presentation" || filename.endsWith(".pptx");
 
@@ -545,7 +564,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
       {/* 2. Main Content Viewport */}
       <Box sx={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", bgcolor: "rgba(0,0,0,0.15)" }}>
         {/* Loading Overlay */}
-        {loading && (
+        {(loading || serverPreviewsEnabled === null) && (
           <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(0,0,0,0.6)", zIndex: 5 }}>
             <Stack spacing={2} alignItems="center">
               <CircularProgress size={32} sx={{ color: "var(--primary-color)" }} />
@@ -581,19 +600,29 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
           </Box>
         )}
 
-        {/* PDF Previewer (native iframe) */}
-        {!loading && !error && (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf")) && (
+        {/* PDF Previewer (native iframe or server-converted PDF preview) */}
+        {!loading && !error && (
+          // 1. Direct PDF file
+          (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf")) ||
+          // 2. Server converted PDF preview
+          (serverPreviewsEnabled === true && 
+           (mimeType.includes("word") || filename.endsWith(".docx") || mimeType.includes("presentation") || filename.endsWith(".pptx")))
+        ) && (
           <iframe
-            src={downloadUrl}
+            src={
+              (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf"))
+                ? downloadUrl
+                : `${apiBaseUrl}/api/attachments/${attachmentId}/preview`
+            }
             width="100%"
             height="100%"
-            title="PDF Document Preview"
+            title="Document Preview"
             style={{ border: "none" }}
           />
         )}
 
         {/* DOCX Previewer */}
-        {!loading && !error && docxBuffer && (
+        {!loading && !error && serverPreviewsEnabled === false && docxBuffer && (
           <Box 
             sx={{ 
               width: "100%", 
@@ -651,7 +680,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
         )}
 
         {/* PPTX Presentation Previewer */}
-        {!loading && !error && slides.length > 0 && (
+        {!loading && !error && serverPreviewsEnabled === false && slides.length > 0 && (
           <Box sx={{ display: "flex", width: "100%", height: "100%" }}>
             {/* Outline list */}
             {showSlideList && (
