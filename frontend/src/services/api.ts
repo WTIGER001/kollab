@@ -547,5 +547,55 @@ export const deleteAttachment = (id: string): Promise<void> => {
   });
 };
 
+export interface Tag {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  createdAt: string;
+  pageCount?: number;
+}
+
+export const fetchTags = (): Promise<Tag[]> => {
+  return request("/api/tags");
+};
+
+export const createTag = (name: string, description: string, color: string): Promise<Tag> => {
+  return request("/api/tags", {
+    method: "POST",
+    body: JSON.stringify({ name, description, color }),
+  });
+};
+
+export const updateTag = (id: string, name: string, description: string, color: string): Promise<Tag> => {
+  return request(`/api/tags/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ name, description, color }),
+  });
+};
+
+export const deleteTag = (id: string): Promise<void> => {
+  return request(`/api/tags/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+};
+
+export const fetchDocumentTags = (docId: string): Promise<Tag[]> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/tags`);
+};
+
+export const addTagToDocument = (docId: string, tagId: string): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/tags/${encodeURIComponent(tagId)}`, {
+    method: "POST",
+  });
+};
+
+export const removeTagFromDocument = (docId: string, tagId: string): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/tags/${encodeURIComponent(tagId)}`, {
+    method: "DELETE",
+  });
+};
+
+
 
 

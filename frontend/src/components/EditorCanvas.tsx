@@ -22,6 +22,7 @@ import { PresenceCursors } from "../editor/extensions/PresenceCursors";
 import { usePresence } from "../hooks/usePresence";
 import { uploadImage, fetchVersions, restoreVersion, createMilestone, fetchDocument, fetchDocumentAnalytics, autogenSummary, addFavorite, removeFavorite, isFavorite as checkIsFavorite, fetchComments, createComment, updateComment, deleteComment, fetchAttachments, fetchTeamUsers, API_BASE_URL } from "../services/api";
 import type { DocumentVersion, DocumentAnalytics, Comment, Attachment } from "../services/api";
+import { DocumentTags } from "./DocumentTags";
 import { UserAvatar } from "./UserAvatar";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
@@ -110,7 +111,8 @@ import {
   Paperclip,
   AlignLeft,
   AlignCenter,
-  AlignRight
+  AlignRight,
+  Tag
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -2797,6 +2799,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 Created by {createdBy || "System"}, last updated on {formatDate(updatedAt || createdAt)} by {updatedBy || "System"}
               </Typography>
             )}
+
           </Box>
 
           {/* Editor Body */}
@@ -2818,6 +2821,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 loading={attachmentsLoading}
               />
             </Box>
+          )}
+
+          {/* Page Tags Section */}
+          {activeDocId && (
+            <DocumentTags 
+              docId={activeDocId} 
+              readOnly={!!deletedAt} 
+            />
           )}
 
           {/* Page Comments Section */}

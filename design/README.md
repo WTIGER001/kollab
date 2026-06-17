@@ -33,3 +33,7 @@ This directory contains the hierarchical technical specifications of Project Ark
 ### 📋 [9. Task Synchronization & Dashboard](file:///Users/johnbauer/Dev/Personal/arkm/design/tasks.md)
 *Technical specifications of the AST parser, relational schema sync transactions, autocomplete input rules, and urgency layout.*
 
+### 🏷️ [10. Document Tagging & Labels](file:///Users/johnbauer/Dev/Personal/arkm/design/tags.md)
+*Technical specifications for global tag models, mapping structures, REST endpoints, and the React tags editor.*
+
+

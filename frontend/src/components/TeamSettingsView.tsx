@@ -4,20 +4,21 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Card, 
-  CardContent, 
   Avatar, 
   List, 
   ListItem, 
   ListItemAvatar, 
   ListItemText, 
   Divider,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab
 } from "@mui/material";
 import { Users, Save, ArrowLeft } from "lucide-react";
 import { fetchTeamUsers, updateTeamSettings } from "../services/api";
 import type { Team } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
+import { TagsManager } from "./TagsManager";
 
 interface TeamSettingsViewProps {
   team: Team;
@@ -38,6 +39,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
   const [members, setMembers] = useState<{ id: string; username: string }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     setName(team.name);
@@ -55,6 +57,10 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
         setLoadingMembers(false);
       });
   }, [team]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,132 +129,158 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "7fr 5fr" }, gap: 4 }}>
-        {/* Left Side: Settings Form */}
-        <Box>
-          <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', mb: 1 }}>
-              General Details
-            </Typography>
-            
-            <TextField
-              label="Team Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              fullWidth
-              required
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <TextField
-              label="Team Abbreviation / Slug"
-              value={abbreviation}
-              onChange={(e) => setAbbreviation(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
-              fullWidth
-              required
-              helperText="Used in URL paths (e.g. /teams/eng). Alphanumeric, hyphens and underscores only."
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <TextField
-              label="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              fullWidth
-              multiline
-              rows={4}
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={saving}
-                startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save size={14} />}
-                sx={{
-                  px: 3,
-                  py: 1,
-                  fontWeight: 700,
-                  textTransform: "none",
-                  fontFamily: '"Outfit", sans-serif',
-                  borderRadius: 2
-                }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Right Side: Members list */}
-        <Box>
-          <Box sx={{ 
-            height: "100%",
-            maxHeight: 500,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Users size={18} style={{ color: "var(--accent-blue)" }} />
-              <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
-                Team Members ({members.length})
-              </Typography>
-            </Box>
-            <Divider />
-
-            {loadingMembers ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : (
-              <List sx={{ flex: 1, overflowY: "auto" }} className="scrollbar-thin">
-                {members.map((member) => (
-                  <ListItem key={member.id} disableGutters sx={{ py: 1 }}>
-                    <ListItemAvatar sx={{ minWidth: 36 }}>
-                      <UserAvatar 
-                        displayName={member.username}
-                        sx={{ width: 28, height: 28, fontSize: "11px", fontWeight: 700, bgcolor: "primary.light" }}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText 
-                      primary={
-                        <Typography sx={{ fontSize: "13.5px", fontWeight: 600, color: "text.primary", fontFamily: '"Outfit", sans-serif' }}>
-                          {member.username}
-                        </Typography>
-                      } 
-                      secondary={
-                        <Typography sx={{ fontSize: "11px", color: "text.disabled" }}>
-                          {member.id === "sh4ag0cxowti" || member.id === "mock-user-id" ? "Team Admin" : "Member"}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </Box>
-        </Box>
+      {/* Tabs Selector */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontFamily: '"Outfit", sans-serif',
+              fontWeight: 600,
+              fontSize: "13.5px",
+              minWidth: 100
+            }
+          }}
+        >
+          <Tab label="General" />
+          <Tab label="Tags" />
+        </Tabs>
       </Box>
+
+      {tabValue === 0 && (
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "7fr 5fr" }, gap: 4 }}>
+          {/* Left Side: Settings Form */}
+          <Box>
+            <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', mb: 1 }}>
+                General Details
+              </Typography>
+              
+              <TextField
+                label="Team Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                fullWidth
+                required
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <TextField
+                label="Team Abbreviation / Slug"
+                value={abbreviation}
+                onChange={(e) => setAbbreviation(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
+                fullWidth
+                required
+                helperText="Used in URL paths (e.g. /teams/eng). Alphanumeric, hyphens and underscores only."
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <TextField
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                rows={4}
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save size={14} />}
+                  sx={{
+                    px: 3,
+                    py: 1,
+                    fontWeight: 700,
+                    textTransform: "none",
+                    fontFamily: '"Outfit", sans-serif',
+                    borderRadius: 2
+                  }}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Right Side: Members list */}
+          <Box>
+            <Box sx={{ 
+              height: "100%",
+              maxHeight: 500,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2
+            }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Users size={18} style={{ color: "var(--accent-blue)" }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+                  Team Members ({members.length})
+                </Typography>
+              </Box>
+              <Divider />
+
+              {loadingMembers ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <List sx={{ flex: 1, overflowY: "auto" }} className="scrollbar-thin">
+                  {members.map((member) => (
+                    <ListItem key={member.id} disableGutters sx={{ py: 1 }}>
+                      <ListItemAvatar sx={{ minWidth: 36 }}>
+                        <UserAvatar 
+                          displayName={member.username}
+                          sx={{ width: 28, height: 28, fontSize: "11px", fontWeight: 700, bgcolor: "primary.light" }}
+                        />
+                      </ListItemAvatar>
+                      <ListItemText 
+                        primary={
+                          <Typography sx={{ fontSize: "13.5px", fontWeight: 600, color: "text.primary", fontFamily: '"Outfit", sans-serif' }}>
+                            {member.username}
+                          </Typography>
+                        } 
+                        secondary={
+                          <Typography sx={{ fontSize: "11px", color: "text.disabled" }}>
+                            {member.id === "sh4ag0cxowti" || member.id === "mock-user-id" ? "Team Admin" : "Member"}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      {tabValue === 1 && (
+        <TagsManager />
+      )}
     </Box>
   );
 };

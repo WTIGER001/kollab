@@ -391,6 +391,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             </MenuItem>
           )}
 
+
+
           {onOpenSettings && (
             <>
               <Divider sx={{ my: 0.5 }} />

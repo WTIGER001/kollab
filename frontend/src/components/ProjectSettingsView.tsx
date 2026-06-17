@@ -4,14 +4,15 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Card, 
-  CardContent, 
   Avatar, 
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab
 } from "@mui/material";
 import { Save, ArrowLeft, Image } from "lucide-react";
 import { updateProjectSettings } from "../services/api";
 import type { Project } from "../services/api";
+import { TagsManager } from "./TagsManager";
 
 interface ProjectSettingsViewProps {
   project: Project;
@@ -33,6 +34,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
   const [logoUrl, setLogoUrl] = useState(project.logoUrl || "");
   const [description, setDescription] = useState(project.description || "");
   const [saving, setSaving] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     setName(project.name);
@@ -40,6 +42,10 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
     setLogoUrl(project.logoUrl || "");
     setDescription(project.description || "");
   }, [project]);
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,133 +114,159 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
         </Typography>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "8fr 4fr" }, gap: 4 }}>
-        {/* Left Side: Settings Form */}
-        <Box>
-          <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', mb: 1 }}>
-              General Details
-            </Typography>
-            
-            <TextField
-              label="Project Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              fullWidth
-              required
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
+      {/* Tabs Selector */}
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontFamily: '"Outfit", sans-serif',
+              fontWeight: 600,
+              fontSize: "13.5px",
+              minWidth: 100
+            }
+          }}
+        >
+          <Tab label="General" />
+          <Tab label="Tags" />
+        </Tabs>
+      </Box>
 
-            <TextField
-              label="Project Abbreviation / Slug"
-              value={abbreviation}
-              onChange={(e) => setAbbreviation(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
-              fullWidth
-              required
-              helperText="Used in URL paths (e.g. /teams/eng/wiki). Alphanumeric, hyphens and underscores only."
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <TextField
-              label="Logo Image URL"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              fullWidth
-              placeholder="https://example.com/logo.png"
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <TextField
-              label="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              fullWidth
-              multiline
-              rows={4}
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  fontFamily: '"Outfit", sans-serif'
-                }
-              }}
-            />
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={saving}
-                startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save size={14} />}
+      {tabValue === 0 && (
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "8fr 4fr" }, gap: 4 }}>
+          {/* Left Side: Settings Form */}
+          <Box>
+            <Box component="form" onSubmit={handleSave} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', mb: 1 }}>
+                General Details
+              </Typography>
+              
+              <TextField
+                label="Project Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                fullWidth
+                required
+                variant="outlined"
                 sx={{
-                  px: 3,
-                  py: 1,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <TextField
+                label="Project Abbreviation / Slug"
+                value={abbreviation}
+                onChange={(e) => setAbbreviation(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
+                fullWidth
+                required
+                helperText="Used in URL paths (e.g. /teams/eng/wiki). Alphanumeric, hyphens and underscores only."
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <TextField
+                label="Logo Image URL"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                fullWidth
+                placeholder="https://example.com/logo.png"
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <TextField
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                rows={4}
+                variant="outlined"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    fontFamily: '"Outfit", sans-serif'
+                  }
+                }}
+              />
+
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  startIcon={saving ? <CircularProgress size={14} color="inherit" /> : <Save size={14} />}
+                  sx={{
+                    px: 3,
+                    py: 1,
+                    fontWeight: 700,
+                    textTransform: "none",
+                    fontFamily: '"Outfit", sans-serif',
+                    borderRadius: 2
+                  }}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Right Side: Logo Preview Card */}
+          <Box>
+            <Box sx={{ 
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2
+            }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
+                Project Logo Preview
+              </Typography>
+              <Avatar 
+                src={logoUrl || undefined}
+                sx={{ 
+                  width: 100, 
+                  height: 100, 
+                  bgcolor: "secondary.main", 
+                  fontSize: "36px", 
                   fontWeight: 700,
-                  textTransform: "none",
-                  fontFamily: '"Outfit", sans-serif',
-                  borderRadius: 2
+                  border: "2px solid var(--border-color)",
+                  boxShadow: "var(--shadow-premium)"
                 }}
               >
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
+                {name.slice(0, 1).toUpperCase()}
+              </Avatar>
+              {!logoUrl && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.disabled" }}>
+                  <Image size={14} />
+                  <Typography variant="caption">Using default fallback initials</Typography>
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>
+      )}
 
-        {/* Right Side: Logo Preview Card */}
-        <Box>
-          <Box sx={{ 
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 2
-          }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
-              Project Logo Preview
-            </Typography>
-            <Avatar 
-              src={logoUrl || undefined}
-              sx={{ 
-                width: 100, 
-                height: 100, 
-                bgcolor: "secondary.main", 
-                fontSize: "36px", 
-                fontWeight: 700,
-                border: "2px solid var(--border-color)",
-                boxShadow: "var(--shadow-premium)"
-              }}
-            >
-              {name.slice(0, 1).toUpperCase()}
-            </Avatar>
-            {!logoUrl && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.disabled" }}>
-                <Image size={14} />
-                <Typography variant="caption">Using default fallback initials</Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
-      </Box>
+      {tabValue === 1 && (
+        <TagsManager />
+      )}
     </Box>
   );
 };

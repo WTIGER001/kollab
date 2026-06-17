@@ -29,13 +29,14 @@ import (
 	systemrepo "arkollab/api/internal/system"
 	commentrepo "arkollab/api/internal/comment"
 	attrepo "arkollab/api/internal/attachment"
+	tagrepo "arkollab/api/internal/tag"
 	"arkollab/api/internal/storage"
 	"arkollab/api/internal/ws"
 	"arkollab/api/internal/ai"
 )
 
 func loadLocalEnv() {
-	for _, filename := range []string{".env.local", ".local.env", ".env"} {
+	for _, filename := range []string{".env.local", ".local.env", ".env", "../.env.local", "../.local.env", "../.env"} {
 		file, err := os.Open(filename)
 		if err != nil {
 			continue // Skip if file does not exist
@@ -164,6 +165,7 @@ func main() {
 	commentRepo := pgrepo.NewPostgresCommentRepository(db)
 	attachmentRepo := pgrepo.NewPostgresAttachmentRepository(db)
 	taskRepo := pgrepo.NewPostgresTaskRepository(db)
+	tagRepo := pgrepo.NewPostgresTagRepository(db)
 
 	storageProvider, err := storage.NewLocalStorage("./uploads")
 	if err != nil {
@@ -179,6 +181,7 @@ func main() {
 	themeService := themerepo.NewThemeService(themeRepo)
 	commentService := commentrepo.NewCommentService(commentRepo)
 	attachmentService := attrepo.NewAttachmentService(attachmentRepo, storageProvider)
+	tagService := tagrepo.NewTagService(tagRepo)
 
 	// Run initial partition setup
 	if err := systemService.EnsurePartitions(ctx); err != nil {
@@ -217,6 +220,7 @@ func main() {
 	systemHandler := handler.NewSystemHandler(systemService)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
+	tagHandler := handler.NewTagHandler(tagService)
 
 	aiClient := ai.NewLLMClient()
 	aiHandler := handler.NewAIHandler(systemService, aiClient)
@@ -225,7 +229,7 @@ func main() {
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

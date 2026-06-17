@@ -7,6 +7,7 @@ import {
   Paper, 
   Typography, 
   IconButton, 
+  Button,
   Chip,
   Popover,
   FormControl,
@@ -160,7 +161,7 @@ const flattenTree = (list: DocumentItem[]): DocumentItem[] => {
   return result;
 };
 
-export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
+export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor, getPos }) => {
   const { type = "status-badge", config = {} } = node.attrs;
 
   const context = useContext(DocumentContext);
@@ -189,12 +190,15 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
     generateAIContent(prompt)
       .then((res) => {
-        updateAttributes({
-          config: {
-            ...config,
-            generatedText: res.text,
-          },
-        });
+        if (res && res.text) {
+          const pos = getPos();
+          editor.chain().focus()
+            .insertContentAt(pos, res.text)
+            .run();
+          deleteNode();
+        } else {
+          setGenerateError("Failed to generate content: empty response");
+        }
       })
       .catch((err) => {
         console.error("AI Generation failed:", err);

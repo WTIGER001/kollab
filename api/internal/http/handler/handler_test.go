@@ -24,6 +24,7 @@ import (
 	inmemdoc "arkollab/api/internal/document"
 	inmemcomment "arkollab/api/internal/comment"
 	inmemtask "arkollab/api/internal/task"
+	inmemtag "arkollab/api/internal/tag"
 	"arkollab/api/internal/domain"
 	apihttp "arkollab/api/internal/http"
 	"arkollab/api/internal/http/handler"
@@ -306,8 +307,12 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	aiClient := &mockLLMClient{generateTextVal: "Mock AI generated response"}
 	aiH := handler.NewAIHandler(systemService, aiClient)
 
+	tagRepo := inmemtag.NewInMemoryTagRepository()
+	tagService := inmemtag.NewTagService(tagRepo)
+	tagH := handler.NewTagHandler(tagService)
+
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {

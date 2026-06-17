@@ -22,8 +22,8 @@ This document organizes the requested features into prioritized, sequential impl
 - [x] **Breadcrumbs**: Top header indicator showing parent page ancestors (`Home > Engineering > Wiki`).
 - [x] **Move Page (Hierarchical)**: Drag-and-drop or select dialog to re-parent pages in the directory.
 - [x] **Trash / Undelete**: Soft-delete database query and a "Trash bin" sidebar view to restore documents.
-- [ ] **Children Display**: Automatic index block listing child pages under the current document.
-- [ ] **Page Index**: Alphabetical index of all pages within the active project.
+- [x] **Children Display**: Automatic index block listing child pages under the current document.
+- [x] **Page Index**: Alphabetical index of all pages within the active project.
 
 ### 📎 Phase 3: Assets & Collaboration (Mentions & Files)
 *Enriches collaboration by tying media files and team identity to pages.*
@@ -249,3 +249,6 @@ Highlights content as a warning note with a red background.
 
 ### Widget Connector
 Embed videos, slideshows, posts, and more from the web.
+
+### JIRA --> KOLLAB
+Create a way to grab a JIRA ISSUE, and extract the contents into a Kollab page. We do this to maintain the knowledge management capture for what was found and solved. THis means that we really tend not to care about the issue meta data more the description, contents and attachments. Care should be take to make this cohesive.

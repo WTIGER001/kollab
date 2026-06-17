@@ -178,6 +178,22 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee);
 
+CREATE TABLE IF NOT EXISTS tags (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    description TEXT,
+    color VARCHAR(50),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS document_tags (
+    document_id VARCHAR(255) REFERENCES documents(id) ON DELETE CASCADE,
+    tag_id VARCHAR(255) REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (document_id, tag_id)
+);
+CREATE INDEX IF NOT EXISTS idx_document_tags_doc_id ON document_tags(document_id);
+
+
 
 
 

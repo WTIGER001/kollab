@@ -1157,6 +1157,8 @@ function App({ isMockMode = false }: AppProps) {
       );
     }
 
+
+
     if (routeState.isTrashPage) {
       return (
         <TrashView

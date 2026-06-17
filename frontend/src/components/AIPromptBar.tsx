@@ -9,6 +9,7 @@ import {
   Button,
 } from "@mui/material";
 import { Sparkles, Send, RotateCcw, Check, Trash2, X } from "lucide-react";
+import { generateAIContent } from "../services/api";
 
 interface AIPromptBarProps {
   editor: any;
@@ -22,6 +23,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<AIStatus>("idle");
+  const [errorText, setErrorText] = useState("");
 
   // Selection caching states
   const [isRefineMode, setIsRefineMode] = useState(false);
@@ -88,6 +90,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
       updatePosition();
       setStatus("idle");
       setPrompt("");
+      setErrorText("");
 
       // Cache current selection details
       const { selection } = editor.state;
@@ -130,6 +133,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
     if (!activePrompt.trim()) return;
 
     setStatus("generating");
+    setErrorText("");
 
     // Retrieve selected range
     const { selection } = editor.state;
@@ -141,27 +145,35 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
       startPos = originalRange.from;
     }
 
-    const responseText = getResponseText(activePrompt);
-    const words = responseText.split(" ");
-    let currentWordIdx = 0;
+    generateAIContent(activePrompt)
+      .then((res) => {
+        const responseText = res.text;
+        const words = responseText.split(" ");
+        let currentWordIdx = 0;
 
-    // Streaming word interval simulation
-    streamTimerRef.current = setInterval(() => {
-      if (currentWordIdx < words.length) {
-        const nextWord = words[currentWordIdx] + " ";
-        editor.chain().focus().insertContent(nextWord).run();
-        currentWordIdx++;
-      } else {
-        // Stream completed
-        if (streamTimerRef.current) {
-          clearInterval(streamTimerRef.current);
-          streamTimerRef.current = null;
-        }
-        const endPos = editor.state.selection.from;
-        setGeneratedRange({ from: startPos, to: endPos });
-        setStatus("completed");
-      }
-    }, 45); // 45ms per word (~300 words/min streaming animation)
+        // Streaming word interval simulation
+        streamTimerRef.current = setInterval(() => {
+          if (currentWordIdx < words.length) {
+            const nextWord = words[currentWordIdx] + " ";
+            editor.chain().focus().insertContent(nextWord).run();
+            currentWordIdx++;
+          } else {
+            // Stream completed
+            if (streamTimerRef.current) {
+              clearInterval(streamTimerRef.current);
+              streamTimerRef.current = null;
+            }
+            const endPos = editor.state.selection.from;
+            setGeneratedRange({ from: startPos, to: endPos });
+            setStatus("completed");
+          }
+        }, 45); // 45ms per word (~300 words/min streaming animation)
+      })
+      .catch((err) => {
+        console.error("AI Generation failed:", err);
+        setErrorText(err.message || "Failed to generate content");
+        setStatus("idle");
+      });
   };
 
   const handleKeep = () => {
@@ -315,6 +327,11 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
               </>
             )}
           </Box>
+          {errorText && (
+            <Typography variant="caption" sx={{ color: "error.main", fontWeight: 600, mt: 0.5, display: "block" }}>
+              {errorText}
+            </Typography>
+          )}
         </>
       )}
 

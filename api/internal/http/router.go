@@ -14,7 +14,7 @@ import (
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,
 // and maps public/protected routes using JWT middleware.
-func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler) http.Handler {
+func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Standard middleware
@@ -84,6 +84,13 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Post("/ai/generate", aiH.Generate)
 
+		r.Get("/tags", tagH.List)
+		r.Post("/tags", tagH.Create)
+		r.Route("/tags/{id}", func(r chi.Router) {
+			r.Put("/", tagH.Update)
+			r.Delete("/", tagH.Delete)
+		})
+
 		r.Route("/documents", func(r chi.Router) {
 			r.Get("/", docH.List)
 			r.Get("/recent", docH.ListRecent)
@@ -109,6 +116,10 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 				r.Get("/attachments", attH.List)
 				r.Post("/attachments", attH.Upload)
+
+				r.Get("/tags", tagH.GetDocumentTags)
+				r.Post("/tags/{tagId}", tagH.AddTagToDocument)
+				r.Delete("/tags/{tagId}", tagH.RemoveTagFromDocument)
 			})
 		})
 

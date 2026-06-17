@@ -35,3 +35,18 @@ INSERT INTO documents (id, title, content, project_id, team_id, parent_id, creat
 ('doc_welcome_roadmap', 'Product Roadmap Overview', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Product Roadmap Q3/Q4"}]},{"type":"paragraph","content":[{"type":"text","text":"Below is our roadmap schedule mapping out critical features, database models, and target deployments."}]}]}', 'proj_roadmap', 'team_eng', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti'),
 ('doc_welcome_mkt', 'Summer Launch 2026', '{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Summer Launch Campaign Kickoff"}]},{"type":"paragraph","content":[{"type":"text","text":"Review our key assets, marketing target audiences, and press releases for the upcoming launch event."}]}]}', 'proj_campaign', 'team_mkt', NULL, NOW(), NOW(), 'sh4ag0cxowti', 'sh4ag0cxowti')
 ON CONFLICT (id) DO NOTHING;
+
+-- Seed Tags
+INSERT INTO tags (id, name, description, color) VALUES
+('tag_engineering', 'engineering', 'Technical designs and software engineering docs', '#3b82f6'),
+('tag_tutorial', 'tutorial', 'Step-by-step learning guides', '#10b981'),
+('tag_meeting', 'meeting-notes', 'Notes and action items from sync meetings', '#8b5cf6')
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Document Tags
+INSERT INTO document_tags (document_id, tag_id) VALUES
+('doc_guides_eng', 'tag_engineering'),
+('doc_guides_eng', 'tag_tutorial'),
+('doc_welcome_roadmap', 'tag_meeting')
+ON CONFLICT (document_id, tag_id) DO NOTHING;
+

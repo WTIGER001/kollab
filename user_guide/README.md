@@ -26,3 +26,7 @@ Explore the following help pages to learn how to use the wiki features:
 ### 📋 [6. My Tasks Dashboard](file:///Users/johnbauer/Dev/Personal/arkm/user_guide/tasks.md)
 *Learn how to review, track, and navigate checklist action items assigned to you across all documents.*
 
+### 🏷️ [7. Document Tagging & Labels](file:///Users/johnbauer/Dev/Personal/arkm/user_guide/tags.md)
+*Learn how to assign labels to pages and manage tag definitions globally.*
+
+
