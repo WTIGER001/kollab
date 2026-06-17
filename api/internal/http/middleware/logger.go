@@ -3,6 +3,7 @@ package middleware
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,6 +13,11 @@ import (
 // It automatically detects and redacts any "token" query parameter from the URL.
 func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" || strings.HasPrefix(r.URL.Path, "/api/ws") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 		t1 := time.Now()
 

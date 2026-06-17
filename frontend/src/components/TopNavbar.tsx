@@ -24,7 +24,8 @@ import {
   Star,
   Clock,
   ListTodo,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  AtSign
 } from "lucide-react";
 import type { Team } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
@@ -43,6 +44,7 @@ interface TopNavbarProps {
   onOpenFavorites?: () => void;
   onOpenRecents?: () => void;
   onOpenTasks?: () => void;
+  onOpenMentions?: () => void;
   activeUsers?: any[];
   developerMode?: boolean;
   onToggleDeveloperMode?: (enabled: boolean) => void;
@@ -65,6 +67,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenFavorites,
   onOpenRecents,
   onOpenTasks,
+  onOpenMentions,
   activeUsers = [],
   developerMode = false,
   onToggleDeveloperMode,
@@ -388,6 +391,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             >
               <ListItemIcon sx={{ minWidth: 28 }}><ListTodo size={14} style={{ color: "#10b981" }} /></ListItemIcon>
               <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>My Tasks</Typography>} />
+            </MenuItem>
+          )}
+
+          {onOpenMentions && (
+            <MenuItem 
+              onClick={() => {
+                handleCloseProfileMenu();
+                onOpenMentions();
+              }}
+              sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}><AtSign size={14} style={{ color: "#8b5cf6" }} /></ListItemIcon>
+              <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>My Mentions</Typography>} />
             </MenuItem>
           )}
 

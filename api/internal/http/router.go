@@ -58,6 +58,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Get("/search", docH.Search)
 		r.Get("/favorites", docH.ListFavorites)
 		r.Get("/tasks", docH.GetTasks)
+		r.Get("/mentions", docH.GetMentions)
 		r.Post("/favorites/{documentId}", docH.AddFavorite)
 		r.Delete("/favorites/{documentId}", docH.RemoveFavorite)
 		r.Get("/favorites/{documentId}/status", docH.IsFavorite)
@@ -97,8 +98,10 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 			r.Get("/recent", docH.ListRecent)
 			r.Get("/trash", docH.ListTrash)
 			r.Post("/", docH.Create)
+			r.Post("/import", docH.Import)
 			r.Route("/{id}", func(r chi.Router) {
 				r.Get("/", docH.GetByID)
+				r.Get("/export", docH.Export)
 				r.Put("/", docH.Update)
 				r.Put("/move", docH.Move)
 				r.Post("/restore", docH.Restore)

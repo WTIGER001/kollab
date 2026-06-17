@@ -36,9 +36,12 @@ import {
   Check,
   User,
   FolderInput,
-  X
+  X,
+  AtSign,
+  FileUp
 } from "lucide-react";
 import type { Team, Project } from "../services/api";
+import { ImportDialog } from "./ImportDialog";
 
 
 export interface RecentSpace {
@@ -228,7 +231,8 @@ interface SidebarProps {
     isRecentsPage?: boolean,
     isAuditPage?: boolean,
     isTrashPage?: boolean,
-    isTasksPage?: boolean
+    isTasksPage?: boolean,
+    isMentionsPage?: boolean
   ) => void;
   width?: number;
 
@@ -298,6 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [activeMoveDoc, setActiveMoveDoc] = useState<DocumentItem | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData("text/plain", id);
@@ -1076,6 +1081,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
         }}
       >
+        <MenuItem
+          onClick={() => {
+            handleCloseTemplates();
+            setImportDialogOpen(true);
+          }}
+          sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
+        >
+          <ListItemIcon sx={{ minWidth: 24 }}><FileUp size={12} /></ListItemIcon>
+          <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Import Hierarchy</Typography>} />
+        </MenuItem>
         <MenuItem disabled sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
           <ListItemIcon sx={{ minWidth: 24 }}><FileText size={12} /></ListItemIcon>
           <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Templates coming soon</Typography>} />
@@ -1162,7 +1177,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </ListItemButton>
         )}
+
+        {/* My Mentions Button */}
+        <ListItemButton
+          onClick={() => {
+            navigateTo(null, null, null, false, false, false, false, false, false, false, true);
+          }}
+          sx={{
+            py: 0.75,
+            px: 1.5,
+            borderRadius: "6px",
+            color: "text.secondary",
+            "&:hover": {
+              color: "var(--primary-color, #8b5cf6)",
+              bgcolor: "rgba(255, 255, 255, 0.04)",
+            },
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 28, color: "inherit" }}>
+            <AtSign size={16} />
+          </ListItemIcon>
+          <ListItemText
+            primary={
+              <Typography sx={{ fontSize: "13px", fontWeight: 600, fontFamily: '"Outfit", sans-serif' }}>
+                My Mentions
+              </Typography>
+            }
+          />
+        </ListItemButton>
       </Box>
+
+      {/* Import Hierarchy Dialog */}
+      {importDialogOpen && selectedTeamId && (
+        <ImportDialog
+          open={importDialogOpen}
+          onClose={() => setImportDialogOpen(false)}
+          teamId={selectedTeamId}
+          projectId={selectedProjectId}
+          parentId={activeDocId}
+          onImportSuccess={(newDocId) => {
+            onSelectDoc(newDocId);
+          }}
+        />
+      )}
     </Box>
   );
 };

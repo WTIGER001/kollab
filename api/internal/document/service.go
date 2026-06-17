@@ -745,5 +745,9 @@ func (s *DocumentService) GetTasksByAssignee(ctx context.Context, username strin
 	return s.taskRepo.GetTasksByAssignee(ctx, username)
 }
 
+func (s *DocumentService) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
+	return s.repo.GetDocumentsWithMention(ctx, username)
+}
+
 
 

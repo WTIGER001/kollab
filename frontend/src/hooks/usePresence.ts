@@ -65,6 +65,7 @@ export const usePresence = (
 
     const connect = () => {
       if (wsRef.current) {
+        wsRef.current.onclose = null;
         wsRef.current.close();
       }
 
@@ -148,6 +149,7 @@ export const usePresence = (
 
     return () => {
       if (wsRef.current) {
+        wsRef.current.onclose = null;
         wsRef.current.close();
       }
       if (reconnectTimeoutRef.current) {

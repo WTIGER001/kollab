@@ -692,4 +692,28 @@ func (r *InMemoryDocumentRepository) GetRecent(ctx context.Context, userID strin
 	return list, nil
 }
 
+func (r *InMemoryDocumentRepository) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var list []*domain.Document
+	mentionMarker := `"type":"mention"`
+	usernameMarker := `"username":"` + username + `"`
+
+	for _, doc := range r.documents {
+		if doc.DeletedAt == nil &&
+			strings.Contains(doc.Content, mentionMarker) &&
+			strings.Contains(doc.Content, usernameMarker) {
+			docCopy := *doc
+			list = append(list, &docCopy)
+		}
+	}
+
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].UpdatedAt.After(list[j].UpdatedAt)
+	})
+
+	return list, nil
+}
+
 

@@ -78,6 +78,7 @@ type DocumentRepository interface {
 	RemoveFavorite(ctx context.Context, userID string, documentID string) error
 	GetFavorites(ctx context.Context, userID string) ([]*Favorite, error)
 	IsFavorite(ctx context.Context, userID string, documentID string) (bool, error)
+	GetDocumentsWithMention(ctx context.Context, username string) ([]*Document, error)
 }
 
 type DocumentService interface {
@@ -116,6 +117,7 @@ type DocumentService interface {
 	ListFavorites(ctx context.Context, userID string) ([]*Favorite, error)
 	IsFavorite(ctx context.Context, userID string, documentID string) (bool, error)
 	GetTasksByAssignee(ctx context.Context, username string) ([]*Task, error)
+	GetDocumentsWithMention(ctx context.Context, username string) ([]*Document, error)
 }
 
 type AnalyticsDataPoint struct {

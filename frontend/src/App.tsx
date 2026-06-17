@@ -43,6 +43,7 @@ import { RecentPagesView } from "./components/RecentPagesView";
 import { PageAuditView } from "./components/PageAuditView";
 import { TrashView } from "./components/TrashView";
 import { TasksView } from "./components/TasksView";
+import { UserMentionsView } from "./components/UserMentionsView";
 
 
 // Helper to find a document recursively in the tree
@@ -107,6 +108,7 @@ const parseLocation = (pathname: string) => {
   let isAuditPage = false;
   let isTrashPage = false;
   let isTasksPage = false;
+  let isMentionsPage = false;
 
   if (parts[0] === "my" && parts[1] === "favorites") {
     isFavoritesPage = true;
@@ -114,6 +116,8 @@ const parseLocation = (pathname: string) => {
     isRecentsPage = true;
   } else if (parts[0] === "my" && parts[1] === "tasks") {
     isTasksPage = true;
+  } else if (parts[0] === "my" && parts[1] === "mentions") {
+    isMentionsPage = true;
   } else if (parts[0] === "teams" && parts[1]) {
     teamAbbrOrId = parts[1];
     
@@ -155,7 +159,7 @@ const parseLocation = (pathname: string) => {
     }
   }
 
-  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage };
+  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage, isMentionsPage };
 };
 
 const navigateTo = (
@@ -168,7 +172,8 @@ const navigateTo = (
   isRecentsPage = false,
   isAuditPage = false,
   isTrashPage = false,
-  isTasksPage = false
+  isTasksPage = false,
+  isMentionsPage = false
 ) => {
   let url = "/";
   if (isFavoritesPage) {
@@ -177,6 +182,8 @@ const navigateTo = (
     url = "/my/recents";
   } else if (isTasksPage) {
     url = "/my/tasks";
+  } else if (isMentionsPage) {
+    url = "/my/mentions";
   } else if (team) {
     if (team === "personal" || team.startsWith("personal_")) {
       if (isTrashPage) {
@@ -600,7 +607,7 @@ function App({ isMockMode = false }: AppProps) {
   useEffect(() => {
     if (teams.length === 0) return;
 
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) {
       if (!selectedTeamId) {
         const defaultTeam = teams[0];
         setSelectedTeamId(defaultTeam.id);
@@ -625,7 +632,7 @@ function App({ isMockMode = false }: AppProps) {
       const defaultTeam = teams[0];
       navigateTo(defaultTeam.abbreviation || defaultTeam.id, null, null);
     }
-  }, [teams, routeState.teamAbbrOrId, routeState.isFavoritesPage, routeState.isRecentsPage]);
+  }, [teams, routeState.teamAbbrOrId, routeState.isFavoritesPage, routeState.isRecentsPage, routeState.isTasksPage, routeState.isMentionsPage]);
 
   // Fetch all projects on successful authentication
   useEffect(() => {
@@ -642,7 +649,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active project based on routeState.projectAbbrOrId
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage) return;
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) return;
 
     if (!selectedTeamId) {
       setSelectedProjectId(null);
@@ -664,7 +671,7 @@ function App({ isMockMode = false }: AppProps) {
     } else {
       setSelectedProjectId(null);
     }
-  }, [projects, selectedTeamId, routeState.projectAbbrOrId, routeState.isFavoritesPage, routeState.isRecentsPage]);
+  }, [projects, selectedTeamId, routeState.projectAbbrOrId, routeState.isFavoritesPage, routeState.isRecentsPage, routeState.isTasksPage, routeState.isMentionsPage]);
 
   // Track recently accessed spaces
   useEffect(() => {
@@ -718,7 +725,8 @@ function App({ isMockMode = false }: AppProps) {
     if (isAuthenticated && (selectedProjectId || selectedTeamId)) {
       fetchDocuments(selectedProjectId, selectedTeamId)
         .then(flatDocs => {
-          const filteredDocs = flatDocs.filter((d: any) => d.id !== selectedTeamId && d.id !== selectedProjectId);
+          const docs = flatDocs || [];
+          const filteredDocs = docs.filter((d: any) => d.id !== selectedTeamId && d.id !== selectedProjectId);
           const tree = buildDocumentTree(filteredDocs);
           setDocuments(tree);
         })
@@ -770,7 +778,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active document based on routeState.pageId and selected project/team
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) {
       setActiveDocId(null);
       return;
     }
@@ -790,7 +798,7 @@ function App({ isMockMode = false }: AppProps) {
     } else {
       setActiveDocId(null);
     }
-  }, [selectedTeamId, selectedProjectId, routeState.pageId, routeState.isProjectSettings, routeState.isTeamSettings, routeState.isFavoritesPage, routeState.isRecentsPage, routeState.isTrashPage]);
+  }, [selectedTeamId, selectedProjectId, routeState.pageId, routeState.isProjectSettings, routeState.isTeamSettings, routeState.isFavoritesPage, routeState.isRecentsPage, routeState.isTasksPage, routeState.isMentionsPage, routeState.isTrashPage]);
 
   // Fetch active document details when activeDocId changes
   useEffect(() => {
@@ -1157,7 +1165,16 @@ function App({ isMockMode = false }: AppProps) {
       );
     }
 
-
+    if (routeState.isMentionsPage) {
+      return (
+        <UserMentionsView
+          username={username}
+          onNavigate={handleNavigateFromFavorites}
+          teams={teams}
+          projects={allProjects}
+        />
+      );
+    }
 
     if (routeState.isTrashPage) {
       return (
@@ -1461,6 +1478,7 @@ function App({ isMockMode = false }: AppProps) {
           onOpenFavorites={() => navigateTo(null, null, null, false, false, true)}
           onOpenRecents={() => navigateTo(null, null, null, false, false, false, true)}
           onOpenTasks={() => navigateTo(null, null, null, false, false, false, false, false, false, true)}
+          onOpenMentions={() => navigateTo(null, null, null, false, false, false, false, false, false, false, true)}
           developerMode={developerMode}
           onToggleDeveloperMode={handleToggleDeveloperMode}
           sidebarOpen={sidebarOpen}

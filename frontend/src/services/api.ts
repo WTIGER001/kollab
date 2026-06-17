@@ -600,6 +600,60 @@ export const fetchAllDocumentTags = (): Promise<Record<string, Tag[]>> => {
   return request("/api/tags/document-associations");
 };
 
+export const fetchUserMentions = (username: string): Promise<DocumentItem[]> => {
+  return request(`/api/mentions?username=${encodeURIComponent(username)}`);
+};
+
+export const downloadDocumentExport = async (documentId: string, format: string, hierarchy: boolean, title: string) => {
+  const headers = new Headers();
+  if (apiToken) {
+    headers.set("Authorization", `Bearer ${apiToken}`);
+  }
+
+  const res = await fetch(`${BASE_URL}/api/documents/${documentId}/export?format=${format}&hierarchy=${hierarchy ? "true" : "false"}`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Export failed with status ${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = window.document.createElement("a");
+  a.href = url;
+  
+  let extension = "json";
+  if (format === "html") {
+    extension = hierarchy ? "zip" : "html";
+  } else if (format === "pdf") {
+    extension = "pdf";
+  } else if (format === "word") {
+    extension = "docx";
+  }
+
+  const cleanTitle = title.replace(/[/\\?%*:|"<>.]/g, "_").trim() || "Untitled_Page";
+  a.download = `${cleanTitle}.${extension}`;
+  window.document.body.appendChild(a);
+  a.click();
+  window.document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+};
+
+export const importDocumentHierarchy = (teamId: string, projectId: string | null, parentId: string | null, tree: any): Promise<any> => {
+  return request("/api/documents/import", {
+    method: "POST",
+    body: JSON.stringify({
+      teamId,
+      projectId,
+      parentId,
+      tree,
+    }),
+  });
+};
+
 
 
 

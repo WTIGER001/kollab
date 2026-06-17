@@ -7,6 +7,7 @@ import { LayoutSection } from "../editor/extensions/LayoutSection";
 import { LayoutColumn } from "../editor/extensions/LayoutColumn";
 import { CalloutPanel } from "../editor/extensions/CalloutPanel";
 import { InlineStatus } from "../editor/extensions/InlineStatus";
+import { Mention } from "../editor/extensions/Mention";
 import { Details, DetailsSummary, DetailsContent } from "../editor/extensions/Details";
 import { InlineDate } from "../editor/extensions/InlineDate";
 import { NoFormatPanel } from "../editor/extensions/NoFormatPanel";
@@ -112,11 +113,13 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Tag
+  Tag,
+  AtSign
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
 import { PageAttachments } from "./PageAttachments";
+import { ExportDialog } from "./ExportDialog";
 
 import { DocumentContext } from "./DocumentContext";
 
@@ -339,6 +342,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const handleOpenMoreMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     setMoreMenuAnchor(e.currentTarget);
@@ -513,6 +517,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       LayoutColumn,
       CalloutPanel,
       InlineStatus,
+      Mention,
       Details,
       DetailsSummary,
       DetailsContent,
@@ -714,6 +719,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       LayoutColumn,
       CalloutPanel,
       InlineStatus,
+      Mention,
       Details,
       DetailsSummary,
       DetailsContent,
@@ -1184,6 +1190,28 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "advanced"
     },
     {
+      id: "mentions-list",
+      label: "Mentions List",
+      description: "List of all documents mentioning a user",
+      icon: <AtSign size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "mentions-list",
+              config: {
+                username: "current",
+                sortBy: "updated_at"
+              }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
       id: "table",
       label: "Table",
       description: "Insert an interactive data table",
@@ -1591,7 +1619,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       .chain()
       .focus()
       .deleteRange({ from: $from.pos - 1 - queryLength, to: $from.pos })
-      .insertContent(`@${user.username} `)
+      .insertContent({ type: "mention", attrs: { id: user.id, username: user.username } })
+      .insertContent(" ")
       .run();
     setMenuOpen(false);
   };
@@ -2262,6 +2291,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       <ListItemIcon sx={{ minWidth: 24 }}><FolderInput size={12} /></ListItemIcon>
                       <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Move Page</Typography>} />
                     </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseMoreMenu();
+                        setExportDialogOpen(true);
+                      }}
+                      sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 24 }}><FileUp size={12} /></ListItemIcon>
+                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Export Page</Typography>} />
+                    </MenuItem>
                     <MenuItem onClick={handleTriggerDelete} sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', color: "error.main" }}>
                       <ListItemIcon sx={{ minWidth: 24, color: "error.main" }}><Trash2 size={12} /></ListItemIcon>
                       <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', color: "error.main" }}>Delete Page</Typography>} />
@@ -2823,7 +2862,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
           {/* Editor Body */}
           <Box sx={{ flex: 1 }}>
-            <DocumentContext.Provider value={{ documents, activeDocId, onSelectDoc: onSelectDoc || (() => {}) }}>
+            <DocumentContext.Provider value={{ documents, activeDocId, onSelectDoc: onSelectDoc || (() => {}), selectedTeamId }}>
               <EditorContent editor={previewVersion ? previewEditor : editor} />
             </DocumentContext.Provider>
           </Box>
@@ -2870,6 +2909,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           documentTitle={title}
           documents={documents}
           onConfirm={onMoveDoc}
+        />
+      )}
+
+      {/* Export Page Dialog */}
+      {exportDialogOpen && (
+        <ExportDialog
+          open={exportDialogOpen}
+          onClose={() => setExportDialogOpen(false)}
+          documentId={activeDocId || ""}
+          documentTitle={title}
+          hasChildren={!!(documents && documents.some(d => d.parentId === activeDocId && !d.deletedAt))}
         />
       )}
 

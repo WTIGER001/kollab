@@ -24,7 +24,7 @@ func NewGeminiClient(apiKey string) *GeminiClient {
 	}
 	embedModel := os.Getenv("GEMINI_EMBED_MODEL")
 	if embedModel == "" {
-		embedModel = "text-embedding-004"
+		embedModel = "gemini-embedding-2"
 	}
 	return &GeminiClient{
 		apiKey:     apiKey,
@@ -102,7 +102,8 @@ func (c *GeminiClient) GenerateText(ctx context.Context, prompt string) (string,
 }
 
 type geminiEmbedRequest struct {
-	Content geminiContent `json:"content"`
+	Content              geminiContent `json:"content"`
+	OutputDimensionality int           `json:"outputDimensionality,omitempty"`
 }
 
 type geminiEmbeddingValues struct {
@@ -120,6 +121,7 @@ func (c *GeminiClient) GenerateTextEmbeddings(ctx context.Context, text string) 
 				{Text: text},
 			},
 		},
+		OutputDimensionality: 768,
 	}
 
 	buf := new(bytes.Buffer)

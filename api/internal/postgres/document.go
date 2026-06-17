@@ -755,4 +755,40 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 	return list, nil
 }
 
+func (r *PostgresDocumentRepository) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+		       COALESCE(u1.display_name, u1.username, ''),
+		       COALESCE(u2.display_name, u2.username, ''),
+		       d.deleted_at
+		FROM documents d
+		LEFT JOIN users u1 ON d.created_by = u1.id
+		LEFT JOIN users u2 ON d.updated_by = u2.id
+		WHERE d.content LIKE '%"type":"mention"%' 
+		  AND d.content LIKE '%' || $1 || '%' 
+		  AND d.deleted_at IS NULL
+		ORDER BY d.updated_at DESC
+	`, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []*domain.Document
+	for rows.Next() {
+		var doc domain.Document
+		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, &doc)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
 

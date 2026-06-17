@@ -5,6 +5,7 @@ export interface DocumentContextProps {
   documents: DocumentItem[];
   activeDocId: string | null;
   onSelectDoc: (id: string) => void;
+  selectedTeamId?: string | null;
 }
 
 export const DocumentContext = createContext<DocumentContextProps | null>(null);

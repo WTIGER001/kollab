@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useIsEditable } from "../hooks/useIsEditable";
+import { useAuth } from "react-oidc-context";
 import { 
   Box, 
   Paper, 
@@ -37,11 +38,12 @@ import {
   File,
   Image as ImageIcon,
   BookOpen,
-  Sparkles
+  Sparkles,
+  AtSign
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions } from "../services/api";
 import type { Attachment, Tag as TagType } from "../services/api";
 import { marked } from "marked";
 
@@ -166,6 +168,67 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const { type = "status-badge", config = {} } = node.attrs;
 
   const context = useContext(DocumentContext);
+  const isEditable = useIsEditable(editor);
+  const auth = useAuth();
+  const currentUsername = auth?.isAuthenticated
+    ? (auth?.user?.profile?.preferred_username || (auth?.user?.profile as any)?.username || "user")
+    : "dev_admin";
+
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const openSettings = Boolean(anchorEl);
+
+  const [mentionDocs, setMentionDocs] = useState<DocumentItem[]>([]);
+  const [mentionDocsLoading, setMentionDocsLoading] = useState(false);
+  const [usersList, setUsersList] = useState<{ id: string; username: string }[]>([]);
+
+  useEffect(() => {
+    if (type === "mentions-list" && !isEditable) {
+      const targetUser = config.username === "current" || !config.username
+        ? currentUsername
+        : config.username;
+
+      if (!targetUser) return;
+
+      setMentionDocsLoading(true);
+      fetchUserMentions(targetUser)
+        .then(data => {
+          setMentionDocs(data || []);
+        })
+        .catch(err => console.error("Macro failed to fetch user mentions:", err))
+        .finally(() => setMentionDocsLoading(false));
+    }
+  }, [type, config.username, currentUsername, isEditable]);
+
+  useEffect(() => {
+    if (type === "mentions-list" && openSettings) {
+      if (context?.selectedTeamId) {
+        fetchTeamUsers(context.selectedTeamId)
+          .then(data => setUsersList(data || []))
+          .catch(err => console.error("Failed to fetch team users:", err));
+      } else {
+        fetchTeams()
+          .then(async teamsData => {
+            const allUsers: { id: string; username: string }[] = [];
+            const userIds = new Set<string>();
+            for (const t of teamsData) {
+              try {
+                const users = await fetchTeamUsers(t.id);
+                for (const u of users) {
+                  if (!userIds.has(u.id)) {
+                    userIds.add(u.id);
+                    allUsers.push(u);
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+            setUsersList(allUsers);
+          })
+          .catch(err => console.error("Failed to fetch teams:", err));
+      }
+    }
+  }, [type, openSettings, context?.selectedTeamId]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
@@ -255,8 +318,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     return <File size={18} style={{ color: "#9ca3af" }} />;
   };
 
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
   const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -264,8 +325,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const handleSettingsClose = () => {
     setAnchorEl(null);
   };
-
-  const openSettings = Boolean(anchorEl);
 
   const updateConfig = (key: string, value: any) => {
     updateAttributes({
@@ -308,6 +367,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     switch (type) {
       case "status-badge":
         return <Smile size={14} color="#34d399" />;
+      case "mentions-list":
+        return <AtSign size={14} color="#a78bfa" />;
       case "chart-analytics":
         return <BarChart2 size={14} color="#c084fc" />;
       case "ai-content":
@@ -327,8 +388,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         return <Cpu size={14} color="#60a5fa" />;
     }
   };
-
-  const isEditable = useIsEditable(editor);
 
   const renderViewport = () => {
     const updateConfig = (key: string, val: any) => {
@@ -881,6 +940,102 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             return (
               <Box>
                 {renderChildrenList(rawChildren, 1)}
+              </Box>
+            );
+          })()}
+
+          {type === "mentions-list" && (() => {
+            if (isEditable) {
+              const targetUser = config.username === "current" || !config.username ? "Current Reader" : `@${config.username}`;
+              const sortOrder = config.sortBy === "title" ? "Page Title" : "Last Updated";
+              return (
+                <Box sx={{ p: 1.5, border: "1.5px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", bgcolor: "rgba(139, 92, 246, 0.03)" }}>
+                  <Typography variant="body2" sx={{ color: "var(--primary-color)", fontWeight: 600, fontSize: "12.5px", display: "flex", alignItems: "center", gap: 0.75, fontFamily: '"Outfit", sans-serif' }}>
+                    <AtSign size={14} /> Mentions List Macro
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5, fontFamily: '"Outfit", sans-serif' }}>
+                    Target User: {targetUser} • Sorting: {sortOrder} • (Full list hidden in Edit mode)
+                  </Typography>
+                </Box>
+              );
+            }
+
+            const getSortedMentionDocs = () => {
+              const sortBy = config.sortBy || "updated_at";
+              const sorted = [...mentionDocs];
+              if (sortBy === "title") {
+                return sorted.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+              }
+              return sorted.sort((a, b) => {
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return dateB - dateA;
+              });
+            };
+
+            const sortedDocs = getSortedMentionDocs();
+
+            if (mentionDocsLoading) {
+              return (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 2 }}>
+                  <CircularProgress size={16} sx={{ color: "var(--primary-color)" }} />
+                  <Typography variant="body2" sx={{ color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
+                    Loading mentions...
+                  </Typography>
+                </Box>
+              );
+            }
+
+            if (sortedDocs.length === 0) {
+              const displayTarget = config.username === "current" || !config.username ? "you" : `@${config.username}`;
+              return (
+                <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "13px", py: 1, fontFamily: '"Outfit", sans-serif' }}>
+                  No mentions found for {displayTarget}.
+                </Typography>
+              );
+            }
+
+            return (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
+                {sortedDocs.map((doc) => {
+                  return (
+                    <Box
+                      key={doc.id}
+                      onClick={() => {
+                        if (context?.onSelectDoc) {
+                          context.onSelectDoc(doc.id);
+                        }
+                      }}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 1.5,
+                        py: 1,
+                        borderRadius: "6px",
+                        border: "1px solid var(--border-color)",
+                        bgcolor: "rgba(255, 255, 255, 0.01)",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                        "&:hover": {
+                          borderColor: "rgba(139, 92, 246, 0.3)",
+                          bgcolor: "rgba(139, 92, 246, 0.02)",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                        }
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                        <AtSign size={14} style={{ color: "var(--primary-color)" }} />
+                        <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", fontFamily: '"Outfit", sans-serif' }} noWrap>
+                          {doc.title || "Untitled Page"}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: "11px", color: "text.disabled", fontFamily: '"Outfit", sans-serif' }}>
+                        {doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : ""}
+                      </Typography>
+                    </Box>
+                  );
+                })}
               </Box>
             );
           })()}
@@ -1562,6 +1717,38 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           </Typography>
           
           <Stack spacing={2.5}>
+            {type === "mentions-list" && (
+              <>
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase", fontFamily: '"Outfit", sans-serif' }}>Target User</FormLabel>
+                  <Select
+                    value={config.username || "current"}
+                    onChange={(e) => updateConfig("username", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36, fontFamily: '"Outfit", sans-serif' }}
+                  >
+                    <MenuItem value="current" sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Current Reader (You)</MenuItem>
+                    {usersList.map((u) => (
+                      <MenuItem key={u.id} value={u.username} sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>
+                        @{u.username}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase", fontFamily: '"Outfit", sans-serif' }}>Sort By</FormLabel>
+                  <Select
+                    value={config.sortBy || "updated_at"}
+                    onChange={(e) => updateConfig("sortBy", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36, fontFamily: '"Outfit", sans-serif' }}
+                  >
+                    <MenuItem value="updated_at" sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Last Updated</MenuItem>
+                    <MenuItem value="title" sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Page Title (A-Z)</MenuItem>
+                  </Select>
+                </FormControl>
+              </>
+            )}
+
             {type === "children-display" && (
               <>
                 <FormControl fullWidth variant="outlined" size="small">

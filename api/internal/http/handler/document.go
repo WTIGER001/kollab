@@ -1,10 +1,16 @@
 package handler
 
 import (
+	"archive/zip"
+	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	docExporter "arkollab/api/internal/document"
 	"arkollab/api/internal/domain"
 	"arkollab/api/internal/http/middleware"
 	"arkollab/api/internal/ws"
@@ -538,6 +544,211 @@ func (h *DocumentHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(tasks)
+}
+
+func (h *DocumentHandler) GetMentions(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		http.Error(w, "Bad Request: username query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	docs, err := h.docService.GetDocumentsWithMention(r.Context(), username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(docs)
+}
+
+func (h *DocumentHandler) Export(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	doc, err := h.docService.GetDocument(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Document not found", http.StatusNotFound)
+		return
+	}
+
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "json"
+	}
+	hierarchy := r.URL.Query().Get("hierarchy") == "true"
+
+	var allDocs []*domain.Document
+	if hierarchy {
+		if doc.ProjectID != "" {
+			allDocs, err = h.docService.ListDocumentsByProject(r.Context(), doc.ProjectID)
+		} else {
+			allDocs, err = h.docService.ListDocumentsByTeam(r.Context(), doc.TeamID)
+		}
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to fetch space documents: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	fileName := sanitizeFileName(doc.Title)
+
+	switch format {
+	case "json":
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.json\"", fileName))
+		if hierarchy {
+			tree := docExporter.BuildHierarchyJSON(doc, allDocs)
+			_ = json.NewEncoder(w).Encode(tree)
+		} else {
+			tree := docExporter.JSONTree{
+				Title:   doc.Title,
+				Content: doc.Content,
+			}
+			_ = json.NewEncoder(w).Encode(tree)
+		}
+
+	case "html":
+		if hierarchy {
+			w.Header().Set("Content-Type", "application/zip")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s_hierarchy.zip\"", fileName))
+
+			var buf bytes.Buffer
+			zw := zip.NewWriter(&buf)
+			if err := docExporter.WriteHTMLZip(zw, doc, allDocs, ""); err != nil {
+				http.Error(w, fmt.Sprintf("HTML ZIP generation failed: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			_ = zw.Close()
+			_, _ = w.Write(buf.Bytes())
+		} else {
+			htmlContent, err := docExporter.TiptapToHTML(doc.Title, doc.Content)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("HTML generation failed: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.html\"", fileName))
+			_, _ = w.Write([]byte(htmlContent))
+		}
+
+	case "pdf":
+		var htmlContent string
+		if hierarchy {
+			htmlContent, err = docExporter.BuildCombinedHTML(doc, allDocs)
+		} else {
+			htmlContent, err = docExporter.TiptapToHTML(doc.Title, doc.Content)
+		}
+		if err != nil {
+			http.Error(w, fmt.Sprintf("HTML translation failed: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		pdfBytes, err := docExporter.PrintPDF(r.Context(), htmlContent)
+		if err != nil {
+			// Fallback to html raw export on error/chromedp failure
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.html\"", fileName))
+			_, _ = w.Write([]byte(htmlContent))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.pdf\"", fileName))
+		_, _ = w.Write(pdfBytes)
+
+	case "word":
+		var docxBytes []byte
+		if hierarchy {
+			docxBytes, err = docExporter.BuildCombinedDOCX(doc, allDocs)
+		} else {
+			docxBytes, err = docExporter.BuildDOCX(doc.Title, doc.Content)
+		}
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Word DOCX generation failed: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.docx\"", fileName))
+		_, _ = w.Write(docxBytes)
+
+	default:
+		http.Error(w, "Unsupported export format", http.StatusBadRequest)
+	}
+}
+
+type importRequest struct {
+	TeamID    string               `json:"teamId"`
+	ProjectID string               `json:"projectId"`
+	ParentID  *string              `json:"parentId"`
+	Tree      docExporter.JSONTree `json:"tree"`
+}
+
+func (h *DocumentHandler) Import(w http.ResponseWriter, r *http.Request) {
+	var req importRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if req.TeamID == "" && req.ProjectID == "" {
+		http.Error(w, "Either teamId or projectId is required", http.StatusBadRequest)
+		return
+	}
+
+	userID, _ := middleware.GetUserID(r.Context())
+	doc, err := h.importTree(r.Context(), req.Tree, req.TeamID, req.ProjectID, req.ParentID, userID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Hierarchy import failed: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	if h.hub != nil {
+		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(doc)
+}
+
+func (h *DocumentHandler) importTree(ctx context.Context, node docExporter.JSONTree, teamID, projectID string, parentID *string, userID string) (*domain.Document, error) {
+	doc, err := h.docService.CreateDocument(ctx, node.Title, projectID, teamID, parentID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.docService.UpdateDocument(ctx, doc.ID, node.Title, node.Content, userID, "Imported from JSON")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, child := range node.Children {
+		_, err = h.importTree(ctx, child, teamID, projectID, &doc.ID, userID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return doc, nil
+}
+
+func sanitizeFileName(name string) string {
+	invalid := []string{"/", "\\", "?", "%", "*", ":", "|", "\"", "<", ">", "."}
+	res := name
+	for _, char := range invalid {
+		res = strings.ReplaceAll(res, char, "_")
+	}
+	res = strings.TrimSpace(res)
+	if res == "" {
+		res = "Untitled_Page"
+	}
+	return res
 }
 
 

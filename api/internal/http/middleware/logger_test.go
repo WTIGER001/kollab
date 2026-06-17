@@ -25,7 +25,7 @@ func TestRequestLoggerRedaction(t *testing.T) {
 	loggedHandler := RequestLogger(dummyHandler)
 
 	// Create a request with a token query parameter
-	req := httptest.NewRequest(http.MethodGet, "http://localhost:8080/api/ws?token=secret_bearer_token_123&docId=456", nil)
+	req := httptest.NewRequest(http.MethodGet, "http://localhost:8080/api/documents?token=secret_bearer_token_123&docId=456", nil)
 	rr := httptest.NewRecorder()
 
 	loggedHandler.ServeHTTP(rr, req)
