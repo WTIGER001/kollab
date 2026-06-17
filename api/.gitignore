@@ -1,5 +1,8 @@
 # Compiled binaries
 /server
+/tmp
+/tmp/main
+/tmp/main.exe
 
 # Local environment files
 .env

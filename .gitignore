@@ -15,6 +15,7 @@ frontend/dist/
 # Compiled Go binaries
 /server
 /api/server
+/api/tmp/
 
 # Local environment & config files
 .env
