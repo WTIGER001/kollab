@@ -41,8 +41,9 @@ import {
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent } from "../services/api";
-import type { Attachment } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags } from "../services/api";
+import type { Attachment, Tag as TagType } from "../services/api";
+import { marked } from "marked";
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
 const extractExplicitExcerpt = (contentStr: string): string | null => {
@@ -171,6 +172,23 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
 
+  const [allTags, setAllTags] = useState<TagType[]>([]);
+  const [docTagsMap, setDocTagsMap] = useState<Record<string, TagType[]>>({});
+  const [tagsLoading, setTagsLoading] = useState(false);
+
+  useEffect(() => {
+    if (type === "page-index") {
+      setTagsLoading(true);
+      Promise.all([fetchTags(), fetchAllDocumentTags()])
+        .then(([tagsData, assocData]) => {
+          setAllTags(tagsData || []);
+          setDocTagsMap(assocData || {});
+        })
+        .catch(err => console.error("Macro failed to fetch tags:", err))
+        .finally(() => setTagsLoading(false));
+    }
+  }, [type]);
+
   useEffect(() => {
     if (context?.activeDocId && (type === "attachments-list" || type === "single-attachment")) {
       setAttachmentsLoading(true);
@@ -267,6 +285,25 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     });
   };
 
+  const parseMarkdownToHtml = (markdown: string): string => {
+    try {
+      return marked.parse(markdown) as string;
+    } catch (e) {
+      console.error("Markdown parsing failed:", e);
+      return markdown.replace(/\n/g, "<br />");
+    }
+  };
+
+  const handleImportMarkdown = (markdown: string) => {
+    const htmlContent = parseMarkdownToHtml(markdown);
+    const pos = getPos();
+    editor.chain()
+      .focus()
+      .insertContentAt(pos, htmlContent)
+      .run();
+    deleteNode();
+  };
+
   const getMacroIcon = () => {
     switch (type) {
       case "status-badge":
@@ -284,6 +321,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       case "attachments-list":
       case "single-attachment":
         return <Paperclip size={14} color="#f472b6" />;
+      case "markdown-paste":
+        return <FileText size={14} color="#c084fc" />;
       default:
         return <Cpu size={14} color="#60a5fa" />;
     }
@@ -303,6 +342,126 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
     return (
       <>
+          {type === "markdown-paste" && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {isEditable && (!config.isBlockMode || !config.markdown) ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <TextField
+                    placeholder="# Heading 1\nSome text with **bold** and *italic*...\n- List item 1\n- List item 2"
+                    value={config.markdown || ""}
+                    onChange={(e) => updateConfig("markdown", e.target.value)}
+                    multiline
+                    minRows={4}
+                    fullWidth
+                    size="small"
+                    sx={{
+                      "& .MuiInputBase-root": {
+                        fontFamily: "monospace",
+                        fontSize: "12.5px"
+                      },
+                      "& textarea": {
+                        resize: "vertical",
+                        overflow: "auto"
+                      }
+                    }}
+                  />
+
+                  <Stack direction="row" spacing={1.5}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={!config.markdown?.trim()}
+                      onClick={() => handleImportMarkdown(config.markdown || "")}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        fontFamily: '"Outfit", sans-serif',
+                        backgroundColor: "var(--primary-color)",
+                        color: "#ffffff",
+                        "&:hover": { backgroundColor: "var(--primary-dark)" }
+                      }}
+                    >
+                      Import to Document
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={!config.markdown?.trim()}
+                      onClick={() => updateConfig("isBlockMode", true)}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        fontFamily: '"Outfit", sans-serif',
+                        borderColor: "var(--border-color)",
+                        color: "text.primary",
+                        "&:hover": { borderColor: "var(--primary-color)" }
+                      }}
+                    >
+                      Keep as Block
+                    </Button>
+                  </Stack>
+                </Box>
+              ) : (
+                <Box>
+                  {!config.markdown?.trim() ? (
+                    <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "12.5px" }}>
+                      No Markdown content pasted yet.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                      <Box 
+                        className="markdown-rendered-content"
+                        dangerouslySetInnerHTML={{ __html: parseMarkdownToHtml(config.markdown) }}
+                        sx={{
+                          fontSize: "13.5px",
+                          lineHeight: 1.6,
+                          color: "text.primary",
+                          "& h1, & h2, & h3, & h4": { fontFamily: '"Outfit", sans-serif', fontWeight: 700, mt: 1.5, mb: 1 },
+                          "& h1": { fontSize: "1.4em" },
+                          "& h2": { fontSize: "1.25em" },
+                          "& h3": { fontSize: "1.15em" },
+                          "& p": { my: 1 },
+                          "& ul, & ol": { pl: 2.5, my: 1 },
+                          "& li": { my: 0.5 },
+                          "& code": { bgcolor: "rgba(255, 255, 255, 0.05)", p: "2px 4px", borderRadius: "3px", fontSize: "0.9em", fontFamily: "monospace" },
+                          "& pre": { bgcolor: "rgba(0, 0, 0, 0.2)", p: 1.5, borderRadius: "6px", overflowX: "auto", my: 1.5 },
+                          "& pre code": { p: 0, bgcolor: "transparent", fontSize: "0.85em" },
+                          "& blockquote": { borderLeft: "3px solid var(--primary-color)", pl: 2, m: "1em 0", color: "text.secondary", fontStyle: "italic" },
+                          "& table": { width: "100%", borderCollapse: "collapse", my: 1.5 },
+                          "& th, & td": { border: "1px solid var(--border-color)", p: 1, textAlign: "left" },
+                          "& th": { bgcolor: "rgba(255, 255, 255, 0.02)", fontWeight: 700 }
+                        }}
+                      />
+                      
+                      {isEditable && config.isBlockMode && (
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={() => updateConfig("isBlockMode", false)}
+                          sx={{
+                            alignSelf: "flex-start",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            fontSize: "11.5px",
+                            fontFamily: '"Outfit", sans-serif',
+                            color: "var(--primary-color)",
+                            p: 0,
+                            minWidth: 0,
+                            "&:hover": { textDecoration: "underline", backgroundColor: "transparent" }
+                          }}
+                        >
+                          Edit Markdown
+                        </Button>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
+          )}
+
           {type === "ai-content" && (
             <Box sx={{ 
               display: "flex", 
@@ -727,6 +886,23 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           })()}
 
           {type === "page-index" && (() => {
+            if (isEditable) {
+              const filterTags = config.filterTags || [];
+              const activeFilters = filterTags.length > 0
+                ? allTags.filter(t => filterTags.includes(t.id)).map(t => t.name).join(", ")
+                : "None";
+              return (
+                <Box sx={{ p: 1.5, border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "8px", bgcolor: "rgba(255,255,255,0.01)" }}>
+                  <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "12.5px" }}>
+                    Page Index (Directory listing hidden in Edit mode)
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5 }}>
+                    Filters: {activeFilters} • Grouping: {config.groupBy === "tag" ? "By Tag" : "None"} • Sorting: {config.sortBy === "updated" ? "Last Updated" : "Name"}
+                  </Typography>
+                </Box>
+              );
+            }
+
             const context = useContext(DocumentContext);
             if (!context) return null;
             const flatDocs = flattenTree(context.documents);
@@ -739,36 +915,57 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               );
             }
 
-            // Sort alphabetically by title
-            const sortedDocs = [...flatDocs].sort((a, b) =>
-              a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
-            );
-
-            // Group by first letter
-            const groups: Record<string, DocumentItem[]> = {};
-            sortedDocs.forEach((doc) => {
-              let firstLetter = doc.title.trim().charAt(0).toUpperCase();
-              if (!/[A-Z]/.test(firstLetter)) {
-                firstLetter = "#";
-              }
-              if (!groups[firstLetter]) {
-                groups[firstLetter] = [];
-              }
-              groups[firstLetter].push(doc);
+            // Apply filter
+            const filterTags = config.filterTags || [];
+            const filteredDocs = flatDocs.filter(doc => {
+              if (filterTags.length === 0) return true;
+              const docTags = docTagsMap[doc.id] || [];
+              return docTags.some(tag => filterTags.includes(tag.id));
             });
 
-            // Get sorted group keys (A-Z, with # at the end)
-            const sortedKeys = Object.keys(groups).sort((a, b) => {
-              if (a === "#") return 1;
-              if (b === "#") return -1;
-              return a.localeCompare(b);
-            });
-
-            return (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>
-                  Page Directory Index:
+            if (filteredDocs.length === 0) {
+              return (
+                <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "13px" }}>
+                  No pages match the configured tag filters.
                 </Typography>
+              );
+            }
+
+            // Sort
+            const sortBy = config.sortBy || "name";
+            const sortedDocs = [...filteredDocs].sort((a, b) => {
+              if (sortBy === "updated") {
+                const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return timeB - timeA;
+              } else {
+                return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+              }
+            });
+
+            // Group
+            const groupBy = config.groupBy || "none";
+            if (groupBy === "tag") {
+              const grouped: Record<string, DocumentItem[]> = {};
+              const untagged: DocumentItem[] = [];
+
+              sortedDocs.forEach(doc => {
+                const docTags = docTagsMap[doc.id] || [];
+                if (docTags.length === 0) {
+                  untagged.push(doc);
+                } else {
+                  docTags.forEach(tag => {
+                    if (!grouped[tag.id]) {
+                      grouped[tag.id] = [];
+                    }
+                    grouped[tag.id].push(doc);
+                  });
+                }
+              });
+
+              const activeTags = allTags.filter(t => grouped[t.id] && grouped[t.id].length > 0);
+
+              return (
                 <Box
                   sx={{
                     display: "grid",
@@ -777,12 +974,12 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       sm: "1fr 1fr",
                       md: "1fr 1fr 1fr",
                     },
-                    gap: 2,
+                    gap: 2.5,
                   }}
                 >
-                  {sortedKeys.map((key) => (
+                  {activeTags.map((tag) => (
                     <Box
-                      key={key}
+                      key={tag.id}
                       sx={{
                         p: 1.5,
                         borderRadius: "8px",
@@ -790,23 +987,91 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         border: "1px solid rgba(255, 255, 255, 0.02)",
                       }}
                     >
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 800,
-                          fontSize: "16px",
-                          color: "var(--primary-color, #8b5cf6)",
-                          fontFamily: '"Outfit", sans-serif',
-                          borderBottom: "1.5px solid rgba(139, 92, 246, 0.15)",
-                          pb: 0.5,
-                          mb: 1,
-                        }}
-                      >
-                        {key}
-                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            bgcolor: tag.color || "var(--primary-color)",
+                          }}
+                        />
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "13px",
+                            fontFamily: '"Outfit", sans-serif',
+                            color: "text.primary",
+                          }}
+                        >
+                          {tag.name}
+                        </Typography>
+                      </Box>
                       <Box component="ul" sx={{ listStyleType: "none", p: 0, m: 0, display: "flex", flexDirection: "column", gap: 0.75 }}>
-                        {groups[key].map((doc) => (
-                          <Box component="li" key={doc.id} sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        {grouped[tag.id].map((doc) => (
+                          <Box component="li" key={doc.id} sx={{ display: "flex", flexDirection: "column" }}>
+                            <Typography
+                              variant="body2"
+                              onClick={() => context.onSelectDoc(doc.id)}
+                              sx={{
+                                cursor: "pointer",
+                                fontSize: "12.5px",
+                                fontWeight: 500,
+                                color: "text.secondary",
+                                transition: "all 0.15s ease",
+                                "&:hover": {
+                                  color: tag.color || "var(--primary-color, #8b5cf6)",
+                                  textDecoration: "underline",
+                                },
+                              }}
+                            >
+                              {doc.title}
+                            </Typography>
+                            {sortBy === "updated" && doc.updatedAt && (
+                              <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", mt: 0.25 }}>
+                                Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  ))}
+                  
+                  {untagged.length > 0 && filterTags.length === 0 && (
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "8px",
+                        bgcolor: "rgba(255, 255, 255, 0.01)",
+                        border: "1px solid rgba(255, 255, 255, 0.02)",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            bgcolor: "text.disabled",
+                          }}
+                        />
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "13px",
+                            fontFamily: '"Outfit", sans-serif',
+                            color: "text.secondary",
+                          }}
+                        >
+                          Untagged
+                        </Typography>
+                      </Box>
+                      <Box component="ul" sx={{ listStyleType: "none", p: 0, m: 0, display: "flex", flexDirection: "column", gap: 0.75 }}>
+                        {untagged.map((doc) => (
+                          <Box component="li" key={doc.id} sx={{ display: "flex", flexDirection: "column" }}>
                             <Typography
                               variant="body2"
                               onClick={() => context.onSelectDoc(doc.id)}
@@ -824,12 +1089,101 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             >
                               {doc.title}
                             </Typography>
+                            {sortBy === "updated" && doc.updatedAt && (
+                              <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", mt: 0.25 }}>
+                                Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                              </Typography>
+                            )}
                           </Box>
                         ))}
                       </Box>
                     </Box>
-                  ))}
+                  )}
                 </Box>
+              );
+            }
+
+            // Flat directory
+            return (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "1fr 1fr",
+                    md: "1fr 1fr 1fr",
+                  },
+                  gap: 2,
+                }}
+              >
+                {sortedDocs.map((doc) => {
+                  const docTags = docTagsMap[doc.id] || [];
+                  return (
+                    <Paper
+                      key={doc.id}
+                      elevation={0}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: "8px",
+                        bgcolor: "rgba(255, 255, 255, 0.01)",
+                        border: "1px solid rgba(255, 255, 255, 0.03)",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        gap: 1.5,
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          bgcolor: "rgba(255, 255, 255, 0.02)",
+                          borderColor: "rgba(139, 92, 246, 0.15)",
+                        }
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          onClick={() => context.onSelectDoc(doc.id)}
+                          sx={{
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "text.primary",
+                            transition: "all 0.15s ease",
+                            "&:hover": {
+                              color: "var(--primary-color, #8b5cf6)",
+                              textDecoration: "underline",
+                            },
+                          }}
+                        >
+                          {doc.title}
+                        </Typography>
+                        {sortBy === "updated" && doc.updatedAt && (
+                          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", display: "block", mt: 0.5 }}>
+                            Updated: {new Date(doc.updatedAt).toLocaleDateString()}
+                          </Typography>
+                        )}
+                      </Box>
+                      {docTags.length > 0 && (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
+                          {docTags.map(tag => (
+                            <Chip
+                              key={tag.id}
+                              label={tag.name}
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "9px",
+                                fontWeight: 700,
+                                bgcolor: `${tag.color}15`,
+                                color: tag.color,
+                                border: `1px solid ${tag.color}25`,
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                    </Paper>
+                  );
+                })}
               </Box>
             );
           })()}
@@ -1154,7 +1508,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               {getMacroIcon()}
             </Box>
             <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: "0.04em", color: "text.secondary", textTransform: "uppercase" }}>
-              UI Macro: {type.replace("-", " ")}
+              UI Macro: {type === "markdown-paste" ? "Markdown" : type.replace("-", " ")}
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -1330,6 +1684,77 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 </FormControl>
               );
             })()}
+
+            {type === "page-index" && (
+              <>
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Filter by Tag(s)</FormLabel>
+                  <Select
+                    multiple
+                    value={config.filterTags || []}
+                    onChange={(e) => updateConfig("filterTags", typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value)}
+                    renderValue={(selected) => (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {(selected as string[]).map((value) => {
+                          const tag = allTags.find(t => t.id === value);
+                          return (
+                            <Chip 
+                              key={value} 
+                              label={tag ? tag.name : value} 
+                              size="small" 
+                              sx={{ 
+                                height: 20, 
+                                fontSize: "10px", 
+                                bgcolor: tag ? `${tag.color}20` : undefined,
+                                color: tag ? tag.color : undefined
+                              }} 
+                            />
+                          );
+                        })}
+                      </Box>
+                    )}
+                    sx={{ fontSize: "13px", minHeight: 36 }}
+                    displayEmpty
+                  >
+                    {allTags.map((tag) => (
+                      <MenuItem key={tag.id} value={tag.id} sx={{ fontSize: "13px" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: tag.color }} />
+                          {tag.name}
+                        </Box>
+                      </MenuItem>
+                    ))}
+                    {allTags.length === 0 && (
+                      <MenuItem disabled sx={{ fontSize: "13px" }}>No tags available</MenuItem>
+                    )}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Group By</FormLabel>
+                  <Select
+                    value={config.groupBy || "none"}
+                    onChange={(e) => updateConfig("groupBy", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36 }}
+                  >
+                    <MenuItem value="none" sx={{ fontSize: "13px" }}>None (Flat List)</MenuItem>
+                    <MenuItem value="tag" sx={{ fontSize: "13px" }}>Tags</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Sort By</FormLabel>
+                  <Select
+                    value={config.sortBy || "name"}
+                    onChange={(e) => updateConfig("sortBy", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36 }}
+                  >
+                    <MenuItem value="name" sx={{ fontSize: "13px" }}>Name (Alphabetical)</MenuItem>
+                    <MenuItem value="updated" sx={{ fontSize: "13px" }}>Last Updated</MenuItem>
+                  </Select>
+                </FormControl>
+              </>
+            )}
 
             {type === "chart-analytics" && (
               <TextField

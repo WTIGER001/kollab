@@ -146,3 +146,14 @@ func (h *TagHandler) RemoveTagFromDocument(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *TagHandler) ListDocumentAssociations(w http.ResponseWriter, r *http.Request) {
+	associations, err := h.tagService.GetAllDocumentTags(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(associations)
+}

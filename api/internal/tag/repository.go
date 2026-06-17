@@ -150,3 +150,22 @@ func (r *InMemoryTagRepository) GetDocumentTags(ctx context.Context, docID strin
 	}
 	return result, nil
 }
+
+func (r *InMemoryTagRepository) GetAllDocumentTags(ctx context.Context) (map[string][]*domain.Tag, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make(map[string][]*domain.Tag)
+	for docID, tagIDs := range r.documentTags {
+		var tags []*domain.Tag
+		for _, tid := range tagIDs {
+			if tag, exists := r.tags[tid]; exists {
+				tags = append(tags, tag)
+			}
+		}
+		if len(tags) > 0 {
+			result[docID] = tags
+		}
+	}
+	return result, nil
+}

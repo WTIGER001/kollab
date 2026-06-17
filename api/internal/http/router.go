@@ -86,6 +86,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Get("/tags", tagH.List)
 		r.Post("/tags", tagH.Create)
+		r.Get("/tags/document-associations", tagH.ListDocumentAssociations)
 		r.Route("/tags/{id}", func(r chi.Router) {
 			r.Put("/", tagH.Update)
 			r.Delete("/", tagH.Delete)

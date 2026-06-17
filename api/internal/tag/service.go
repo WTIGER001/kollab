@@ -107,3 +107,7 @@ func (s *TagServiceImpl) RemoveTagFromDocument(ctx context.Context, docID string
 func (s *TagServiceImpl) GetDocumentTags(ctx context.Context, docID string) ([]*domain.Tag, error) {
 	return s.repo.GetDocumentTags(ctx, docID)
 }
+
+func (s *TagServiceImpl) GetAllDocumentTags(ctx context.Context) (map[string][]*domain.Tag, error) {
+	return s.repo.GetAllDocumentTags(ctx)
+}

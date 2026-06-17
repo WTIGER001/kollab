@@ -178,16 +178,29 @@ The Children Display macro automatically scans the workspace directory structure
 
 ## 📇 Page Index Macro (Site Directory)
 
-The Page Index macro generates a comprehensive, A-Z directory of all pages in the current workspace space.
+The Page Index macro generates a dynamic directory of all pages in the current workspace space, with flexible filtering, grouping, and sorting capabilities.
 
 ### How to Insert
-1. Type **`/index`** or **`/directory`** and press **`Enter`**.
-2. An index card with a database file icon is inserted.
+1. Type **`/index`** or **`/directory`** and press **`Enter`** (or select **Page Index** from the slash command menu).
+2. A Page Index macro block is inserted.
 
-### How to Use
-* **A-Z Columns**: The macro groups all pages in the current team/project space alphabetically by their first letter in a multi-column card layout.
-* **Instant Navigation**: Click on any page title in the alphabetical lists to open it.
-* **Delete Macro**: In edit mode, hover over the macro block and click the **Trash icon** in the top-right corner.
+### Edit Mode vs. Read Mode
+* **Edit Mode**: The page directory list is hidden to prevent canvas clutter. Instead, a clean placeholder box shows a summary of the macro's active configuration (Filters, Grouping, and Sorting).
+* **Read Mode**: Renders the dynamic directory list of pages according to the configured parameters.
+
+### Configuration Settings
+Click the **Gear icon** in the top-right corner of the macro box in edit mode to open the settings popover:
+* **Filter by Tag(s)**: Multi-select dropdown to filter pages by one or more attached tags. If no tags are selected, all pages are listed.
+* **Group By**: 
+  - **None (Flat List)**: Renders all matching pages in a clean, unified grid of cards.
+  - **Tags**: Groups matching pages into distinct tag-colored cards. Pages with multiple tags will appear under each corresponding group, and pages with no tags will appear under an "Untagged" section.
+* **Sort By**:
+  - **Name (Alphabetical)**: Orders pages alphabetically by title.
+  - **Last Updated**: Orders pages descending by their last modification timestamp (most recently updated first).
+
+### How to Navigate
+* **Instant Navigation**: Click on any page title in the directory lists to navigate directly to it.
+* **Delete Macro**: In edit mode, click the **Trash icon** in the top-right corner of the macro box.
 
 ---
 
@@ -214,3 +227,18 @@ For debugging, layout testing, or placeholder copywriting, you can insert multi-
 2. A premium placeholder generator dialog will open.
 3. Select how many paragraphs you want to generate (**1 to 5 paragraphs**).
 4. Click **Insert** to place the lorem ipsum text at your current cursor selection.
+
+---
+
+## 📄 Markdown Import Macro
+
+The Markdown Import macro allows you to easily paste raw Markdown text and choose how to handle it in your document.
+
+### How to Insert the Markdown Import Macro
+1. On an empty line, type **`/markdown`** or **`/paste`** and press **`Enter`**.
+2. Alternatively, click the **`+` (Plus icon)** in the formatting toolbar, go to the **Advanced Macros** tab, and select **Markdown Import**.
+
+### How to Use
+* **Import to Document**: Paste your Markdown text into the text box and click **Import to Document**. The Markdown will be instantly parsed to rich HTML, inserted directly into the editor canvas as native document elements (headings, bullet points, code blocks, etc.), and the macro block will delete itself.
+* **Keep as Block**: Paste your Markdown text and click **Keep as Block**. The macro will parse and render the formatted Markdown inside a styled panel, retaining the raw Markdown inside the block.
+* **Edit Kept Block**: If you kept it as a block, hover over the block in edit mode and click **Edit Markdown** to update the raw text at any time.

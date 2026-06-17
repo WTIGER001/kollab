@@ -596,6 +596,10 @@ export const removeTagFromDocument = (docId: string, tagId: string): Promise<voi
   });
 };
 
+export const fetchAllDocumentTags = (): Promise<Record<string, Tag[]>> => {
+  return request("/api/tags/document-associations");
+};
+
 
 
 

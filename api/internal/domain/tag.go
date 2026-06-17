@@ -25,6 +25,7 @@ type TagRepository interface {
 	AddTagToDocument(ctx context.Context, docID string, tagID string) error
 	RemoveTagFromDocument(ctx context.Context, docID string, tagID string) error
 	GetDocumentTags(ctx context.Context, docID string) ([]*Tag, error)
+	GetAllDocumentTags(ctx context.Context) (map[string][]*Tag, error)
 }
 
 type TagService interface {
@@ -37,4 +38,5 @@ type TagService interface {
 	AddTagToDocument(ctx context.Context, docID string, tagID string) error
 	RemoveTagFromDocument(ctx context.Context, docID string, tagID string) error
 	GetDocumentTags(ctx context.Context, docID string) ([]*Tag, error)
+	GetAllDocumentTags(ctx context.Context) (map[string][]*Tag, error)
 }

@@ -1016,6 +1016,25 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "advanced"
     },
     {
+      id: "markdown-paste",
+      label: "Markdown Import",
+      description: "Paste and parse Markdown content",
+      icon: <FileText size={16} style={{ color: "var(--accent-purple)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "markdown-paste",
+              config: { markdown: "", isBlockMode: false }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
       id: "ai-content",
       label: "AI Content Block",
       description: "Ask AI to generate text directly on the page",

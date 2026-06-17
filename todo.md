@@ -164,7 +164,7 @@ Inserts an interactive Microsoft Powerpoint presentation into the page.
 Inserts Microsoft Word content into the page.
 
 ### Page Index
-Creates an index of all pages within the space. Excerpts from each page are included when there are less than 200 pages.
+Creates a dynamic index of all pages within the space. Supports tag filtering, alphabetical or tag-based grouping, and sorting by name or last updated. Hides the list in edit mode for a clean canvas.
 
 ### Page properties
 Enter a table of summary information in this macro and display it on another page using a Page Properties Report macro. You will need to add a label to this page and specify it in the report macro.

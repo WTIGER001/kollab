@@ -9,6 +9,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   X,
@@ -34,6 +36,8 @@ interface HelpDialogProps {
 type HelpCategory = "overview" | "macros" | "modes" | "search" | "versions" | "analytics";
 
 export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [activeCategory, setActiveCategory] = useState<HelpCategory>("overview");
 
   const categories = [
@@ -90,7 +94,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
             <Typography variant="subtitle2" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, mb: 1 }}>
               Quick Keyboard Shortcuts
             </Typography>
-            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1, borderRadius: "4px", backgroundColor: "rgba(255, 255, 255, 0.01)", border: "1px solid var(--border-color)", px: 1.5 }}>
                 <Typography variant="caption" sx={{ fontWeight: 500 }}>Global Search</Typography>
                 <Typography component="kbd" sx={{ fontSize: "10px", px: 1, py: 0.25, backgroundColor: "var(--panel-color)", border: "1px solid var(--border-color)", borderRadius: 0.5, color: "text.secondary", fontFamily: "monospace" }}>⌘ + P</Typography>
@@ -165,7 +169,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
               </Box>
 
               {/* Inline Dates & Monospace Panels */}
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                 <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                     <Calendar size={14} style={{ color: "#ef4444" }} />
@@ -331,7 +335,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mb: 4 }}>
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                 <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2, textAlign: "center" }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "11px", textTransform: "uppercase" }}>Total Page Views</Typography>
                   <Typography variant="h4" sx={{ fontWeight: 700, my: 1, fontFamily: '"Outfit", sans-serif' }}>84</Typography>
@@ -365,14 +369,16 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      fullScreen={isMobile}
       sx={{
         "& .MuiDialog-paper": {
           backgroundColor: "var(--panel-color)",
           backgroundImage: "none",
-          border: "1px solid var(--border-color)",
-          borderRadius: "16px",
+          border: isMobile ? "none" : "1px solid var(--border-color)",
+          borderRadius: isMobile ? 0 : "16px",
           boxShadow: "var(--shadow-premium)",
-          maxHeight: "80vh",
+          maxHeight: isMobile ? "100%" : "80vh",
+          height: isMobile ? "100%" : "auto",
           overflow: "hidden",
         }
       }}
@@ -416,19 +422,41 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
       </Box>
 
       {/* Main Panel Content */}
-      <DialogContent sx={{ p: 0, display: "flex", height: "550px", overflow: "hidden" }}>
+      <DialogContent 
+        sx={{ 
+          p: 0, 
+          display: "flex", 
+          flexDirection: { xs: "column", sm: "row" }, 
+          height: { xs: "auto", sm: "550px" },
+          flexGrow: 1,
+          overflow: "hidden" 
+        }}
+      >
         {/* Navigation Sidebar */}
         <Box
           sx={{
-            width: "220px",
-            borderRight: "1px solid var(--border-color)",
+            width: { xs: "100%", sm: "220px" },
+            borderRight: { xs: "none", sm: "1px solid var(--border-color)" },
+            borderBottom: { xs: "1px solid var(--border-color)", sm: "none" },
             backgroundColor: "color-mix(in srgb, var(--text-primary) 1.5%, transparent)",
             flexShrink: 0,
-            overflowY: "auto",
+            overflowX: { xs: "auto", sm: "visible" },
+            overflowY: { xs: "visible", sm: "auto" },
             p: 1.5,
           }}
         >
-          <List disablePadding sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+          <List 
+            disablePadding 
+            sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "row", sm: "column" }, 
+              gap: 0.5,
+              overflowX: { xs: "auto", sm: "visible" },
+              whiteSpace: { xs: "nowrap", sm: "normal" },
+              pb: { xs: 0.5, sm: 0 },
+              "&::-webkit-scrollbar": { display: "none" }
+            }}
+          >
             {categories.map((c) => {
               const isActive = activeCategory === c.id;
               return (
@@ -439,6 +467,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                     borderRadius: "8px",
                     py: 1,
                     px: 1.5,
+                    flexShrink: 0,
                     color: isActive ? "var(--primary-color)" : "text.secondary",
                     backgroundColor: isActive ? "color-mix(in srgb, var(--primary-color) 8%, transparent)" : "transparent",
                     border: isActive ? "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)" : "1px solid transparent",
@@ -451,7 +480,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                     transition: "all 0.15s ease",
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 26, color: "inherit" }}>{c.icon}</ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: { xs: 22, sm: 26 }, color: "inherit", display: "flex", alignItems: "center" }}>{c.icon}</ListItemIcon>
                   <ListItemText
                     primary={
                       <Typography sx={{ fontSize: "12.5px", fontWeight: isActive ? 600 : 500, fontFamily: '"Outfit", sans-serif' }}>
@@ -466,7 +495,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
         </Box>
 
         {/* Content Viewer */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 4 }} className="scrollbar-thin">
+        <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2.5, sm: 4 } }} className="scrollbar-thin">
           {renderContent()}
         </Box>
       </DialogContent>

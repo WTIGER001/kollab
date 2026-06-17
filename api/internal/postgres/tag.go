@@ -182,3 +182,36 @@ func (r *PostgresTagRepository) GetDocumentTags(ctx context.Context, docID strin
 	}
 	return result, nil
 }
+
+func (r *PostgresTagRepository) GetAllDocumentTags(ctx context.Context) (map[string][]*domain.Tag, error) {
+	query := `
+		SELECT dt.document_id, t.id, t.name, t.description, t.color, t.created_at
+		FROM tags t
+		INNER JOIN document_tags dt ON t.id = dt.tag_id
+		ORDER BY t.name ASC
+	`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string][]*domain.Tag)
+	for rows.Next() {
+		var docID string
+		var t domain.Tag
+		err := rows.Scan(
+			&docID,
+			&t.ID,
+			&t.Name,
+			&t.Description,
+			&t.Color,
+			&t.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		result[docID] = append(result[docID], &t)
+	}
+	return result, nil
+}
