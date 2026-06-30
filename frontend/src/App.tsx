@@ -29,7 +29,7 @@ import {
   updateSystemSettings
 } from "./services/api";
 import type { Team, Project, ColorScheme, WorkspaceTheme, SystemSettings } from "./services/api";
-import { WorkspaceSettingsDialog } from "./components/WorkspaceSettingsDialog";
+import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TopNavbar } from "./components/TopNavbar";
@@ -109,6 +109,7 @@ const parseLocation = (pathname: string) => {
   let isTrashPage = false;
   let isTasksPage = false;
   let isMentionsPage = false;
+  let isAdminSettings = false;
 
   if (parts[0] === "my" && parts[1] === "favorites") {
     isFavoritesPage = true;
@@ -157,9 +158,11 @@ const parseLocation = (pathname: string) => {
         isAuditPage = true;
       }
     }
+  } else if (parts[0] === "_admin" && parts[1] === "settings") {
+    isAdminSettings = true;
   }
 
-  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage, isMentionsPage };
+  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage, isMentionsPage, isAdminSettings };
 };
 
 const navigateTo = (
@@ -176,7 +179,9 @@ const navigateTo = (
   isMentionsPage = false
 ) => {
   let url = "/";
-  if (isFavoritesPage) {
+  if (team === "_admin") {
+    url = "/_admin/settings";
+  } else if (isFavoritesPage) {
     url = "/my/favorites";
   } else if (isRecentsPage) {
     url = "/my/recents";
@@ -294,7 +299,6 @@ function App({ isMockMode = false }: AppProps) {
   // Theme & preferences states
   const [workspaceTheme, setWorkspaceTheme] = useState<WorkspaceTheme | null>(null);
   const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Arkollab");
   const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
@@ -397,7 +401,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Fetch system settings when settings panel is opened
   useEffect(() => {
-    if (settingsOpen && isAuthenticated) {
+    if (routeState.isAdminSettings && isAuthenticated) {
       fetchSystemSettings()
         .then((settings) => {
           setSystemSettings(settings);
@@ -406,7 +410,7 @@ function App({ isMockMode = false }: AppProps) {
           console.error("Failed to fetch system settings:", err);
         });
     }
-  }, [settingsOpen, isAuthenticated]);
+  }, [routeState.isAdminSettings, isAuthenticated]);
 
   // Global search keyboard shortcut (⌘P / Ctrl+P)
   useEffect(() => {
@@ -1135,6 +1139,27 @@ function App({ isMockMode = false }: AppProps) {
   };
 
   const renderMainContent = () => {
+    if (routeState.isAdminSettings) {
+      return (
+        <ServerSettingsPage
+          currentTheme={workspaceTheme}
+          onSave={handleSaveWorkspaceSettings}
+          systemSettings={systemSettings}
+          onSaveSettings={handleSaveSystemSettings}
+          onBack={() => {
+            if (activeTeam) {
+              navigateTo(activeTeam.abbreviation || activeTeam.id, null, null);
+            } else if (teams.length > 0) {
+              navigateTo(teams[0].abbreviation || teams[0].id, null, null);
+            } else {
+              window.history.pushState({}, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }
+          }}
+        />
+      );
+    }
+
     if (routeState.isFavoritesPage) {
       return (
         <FavoritesView
@@ -1474,7 +1499,7 @@ function App({ isMockMode = false }: AppProps) {
           onToggleThemeMode={handleToggleThemeMode}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenHelp={() => setHelpOpen(true)}
-          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenSettings={() => navigateTo("_admin", null, null)}
           onOpenFavorites={() => navigateTo(null, null, null, false, false, true)}
           onOpenRecents={() => navigateTo(null, null, null, false, false, false, true)}
           onOpenTasks={() => navigateTo(null, null, null, false, false, false, false, false, false, true)}
@@ -1591,14 +1616,6 @@ function App({ isMockMode = false }: AppProps) {
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       {renderContent()}
-      <WorkspaceSettingsDialog
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        currentTheme={workspaceTheme}
-        onSave={handleSaveWorkspaceSettings}
-        systemSettings={systemSettings}
-        onSaveSettings={handleSaveSystemSettings}
-      />
       <SearchModal
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
