@@ -15,7 +15,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Switch
+  Switch,
+  Divider
 } from "@mui/material";
 import { X, Sparkles } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
