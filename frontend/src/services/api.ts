@@ -427,6 +427,8 @@ export interface SystemSettings {
   aiRateLimit: number;
   welcomeTitle: string;
   welcomeText: string;
+  asposeEnabled: boolean;
+  asposeLicense: string;
 }
 
 export interface AuditLogEntry {

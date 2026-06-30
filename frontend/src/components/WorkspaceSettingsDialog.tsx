@@ -14,7 +14,8 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Switch
 } from "@mui/material";
 import { X, Sparkles } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
@@ -51,6 +52,8 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
   const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Arkollab");
   const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
   const [aiRateLimit, setAiRateLimit] = useState(10);
+  const [asposeEnabled, setAsposeEnabled] = useState(true);
+  const [asposeLicense, setAsposeLicense] = useState("");
 
   // Color scheme state defaults (based on Tailwind/harmony palettes)
   const [lightColors, setLightColors] = useState<ColorScheme>({
@@ -93,6 +96,8 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
         setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Arkollab");
         setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
         setAiRateLimit(systemSettings.aiRateLimit || 10);
+        setAsposeEnabled(systemSettings.asposeEnabled !== false);
+        setAsposeLicense(systemSettings.asposeLicense || "");
       }
     }
   }, [open, currentTheme, systemSettings]);
@@ -111,7 +116,9 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
       trashRetentionCustomDays: trashCustomDays,
       welcomeTitle: welcomeTitle,
       welcomeText: welcomeText,
-      aiRateLimit: aiRateLimit
+      aiRateLimit: aiRateLimit,
+      asposeEnabled: asposeEnabled,
+      asposeLicense: asposeLicense
     });
     onClose();
   };
@@ -226,6 +233,7 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
           <Tab label="Light Palette Editor" />
           <Tab label="Dark Palette Editor" />
           <Tab label="Audit & Retention" />
+          <Tab label="Aspose & Previews" />
         </Tabs>
 
         <Box sx={{ p: 4 }}>
@@ -496,6 +504,64 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
                   </Select>
                 </FormControl>
               </Box>
+            </Box>
+          )}
+
+          {tabIndex === 4 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  Aspose Media Preview Engine
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                  Enable or disable the high-fidelity Aspose conversion library for Office documents (Word, Excel, PowerPoint) and apply your commercial license key.
+                </Typography>
+
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 2, bgcolor: "action.hover", borderRadius: "6px", border: "1px solid var(--border-color)", mb: 3 }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Enable Aspose Office Previews
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      When disabled, Kollab falls back to basic LibreOffice PDF rendering.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={asposeEnabled}
+                    onChange={(e) => setAsposeEnabled(e.target.checked)}
+                    color="primary"
+                  />
+                </Box>
+              </Box>
+
+              {asposeEnabled && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                    Aspose License XML Key
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                    Paste your XML license file content or Base64 encoded string here. If blank, Aspose operates in evaluation mode with watermarks.
+                  </Typography>
+                  <TextField
+                    multiline
+                    rows={6}
+                    placeholder="<License>...</License>"
+                    value={asposeLicense}
+                    onChange={(e) => setAsposeLicense(e.target.value)}
+                    fullWidth
+                    slotProps={{
+                      htmlInput: { style: { fontFamily: "monospace", fontSize: "12px" } }
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        backgroundColor: "action.hover",
+                        "& fieldset": { borderColor: "var(--border-color)" },
+                        "&:hover fieldset": { borderColor: "primary.main" }
+                      }
+                    }}
+                  />
+                </Box>
+              )}
             </Box>
           )}
         </Box>
