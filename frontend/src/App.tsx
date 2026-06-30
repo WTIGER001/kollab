@@ -6,7 +6,7 @@ import { EditorCanvas } from "./components/EditorCanvas";
 import { SearchModal } from "./components/SearchModal";
 import { HelpDialog } from "./components/HelpDialog";
 import { Box, Typography, Button, Snackbar, Alert, CircularProgress, useMediaQuery } from "@mui/material";
-import { Layers, Sparkles, GripVertical, ChevronsLeftRight } from "lucide-react";
+import { Layers, Sparkles, GripVertical, ChevronsLeftRight, Lock } from "lucide-react";
 import { 
   fetchTeams, 
   fetchProjects, 
@@ -264,6 +264,7 @@ function App({ isMockMode = false }: AppProps) {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   // Resizable sidebar states
   const [sidebarWidth, setSidebarWidth] = useState(240);
@@ -414,12 +415,19 @@ function App({ isMockMode = false }: AppProps) {
   // Fetch system settings when settings panel is opened
   useEffect(() => {
     if (routeState.isAdminSettings && isAuthenticated) {
+      setSettingsError(null);
       fetchSystemSettings()
         .then((settings) => {
           setSystemSettings(settings);
         })
         .catch((err) => {
           console.error("Failed to fetch system settings:", err);
+          const errMsg = String(err.message || err);
+          if (errMsg.includes("403") || errMsg.toLowerCase().includes("forbidden") || errMsg.toLowerCase().includes("privileges required")) {
+            setSettingsError("forbidden");
+          } else {
+            setSettingsError(errMsg);
+          }
         });
     }
   }, [routeState.isAdminSettings, isAuthenticated]);
@@ -607,7 +615,7 @@ function App({ isMockMode = false }: AppProps) {
   useEffect(() => {
     if (teams.length === 0) return;
 
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) {
       if (!selectedTeamId) {
         const defaultTeam = teams[0];
         setSelectedTeamId(defaultTeam.id);
@@ -1136,6 +1144,71 @@ function App({ isMockMode = false }: AppProps) {
 
   const renderMainContent = () => {
     if (routeState.isAdminSettings) {
+      if (settingsError === "forbidden") {
+        return (
+          <Box sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 4,
+            bgcolor: "background.default",
+            color: "text.primary",
+            textAlign: "center"
+          }}>
+            <Box sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              bgcolor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 3,
+              boxShadow: "0 0 30px rgba(239, 68, 68, 0.15)"
+            }}>
+              <Lock size={36} color="#ef4444" />
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.01em" }}>
+              Access Denied
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 4, maxWidth: 360, lineHeight: 1.6 }}>
+              You do not have the required administrator privileges to view or modify server settings. Please contact your system administrator.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (activeTeam) {
+                  navigateTo(activeTeam.abbreviation || activeTeam.id, null, null);
+                } else if (teams.length > 0) {
+                  navigateTo(teams[0].abbreviation || teams[0].id, null, null);
+                } else {
+                  window.history.pushState({}, "", "/");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }
+              }}
+              sx={{
+                px: 4,
+                py: 1.2,
+                borderRadius: "8px",
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "0 4px 14px rgba(139, 92, 246, 0.4)",
+                bgcolor: "var(--primary-color)",
+                "&:hover": {
+                  bgcolor: "var(--primary-color)",
+                  opacity: 0.9
+                }
+              }}
+            >
+              Return to Workspace
+            </Button>
+          </Box>
+        );
+      }
+
       return (
         <ServerSettingsPage
           currentTheme={workspaceTheme}

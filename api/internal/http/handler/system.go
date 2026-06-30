@@ -13,8 +13,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	goperm "github.com/wtiger001/go-permissions"
 
 	"arkollab/api/internal/domain"
+	"arkollab/api/internal/http/middleware"
+	"arkollab/api/internal/permissions"
 )
 
 type SystemHandler struct {
@@ -30,6 +33,18 @@ func NewSystemHandler(systemService domain.SystemService, attachmentService doma
 }
 
 func (h *SystemHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	isAdmin, err := permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: userID, Perm: "system.admin"})
+	if err != nil || !isAdmin {
+		http.Error(w, "Forbidden: Server Admin privileges required", http.StatusForbidden)
+		return
+	}
+
 	settings, err := h.systemService.GetSettings(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -47,6 +62,18 @@ func (h *SystemHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	isAdmin, err := permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: userID, Perm: "system.admin"})
+	if err != nil || !isAdmin {
+		http.Error(w, "Forbidden: Server Admin privileges required", http.StatusForbidden)
+		return
+	}
+
 	var settings domain.SystemSettings
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
