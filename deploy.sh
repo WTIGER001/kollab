@@ -6,10 +6,27 @@ echo "🚀 Starting Kollab deployment..."
 
 # 1. Pull latest code from git (if inside a git repository)
 if [ -d .git ]; then
-  echo "📥 Pulling latest code from Git..."
+  echo "📥 Pulling latest code from Git (kollab)..."
   git pull
 else
   echo "ℹ️ Skipping Git pull (not a Git repository)..."
+fi
+
+# 1b. Pull or clone media-preview peer repository
+if [ -d "../media-preview" ]; then
+  echo "📥 Pulling latest code for media-preview..."
+  (cd ../media-preview && git pull)
+else
+  echo "📥 Cloning media-preview repository..."
+  REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+  if [[ $REMOTE_URL == *"github.com/WTIGER001/kollab"* ]]; then
+    git clone https://github.com/WTIGER001/media-preview.git ../media-preview
+  elif [[ $REMOTE_URL == *"git@github.com:WTIGER001/kollab"* ]]; then
+    git clone git@github.com:WTIGER001/media-preview.git ../media-preview
+  else
+    # Fallback to HTTPS clone
+    git clone https://github.com/WTIGER001/media-preview.git ../media-preview
+  fi
 fi
 
 # 2. Build is handled by Docker (no host npm/node needed)
