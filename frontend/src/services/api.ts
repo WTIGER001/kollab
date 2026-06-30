@@ -791,6 +791,82 @@ export const removeTeamMember = (teamId: string, userId: string): Promise<void> 
   });
 };
 
+export const downloadBackup = async (): Promise<Blob> => {
+  const headers = new Headers();
+  if (apiToken) {
+    headers.set("Authorization", `Bearer ${apiToken}`);
+  }
+  const res = await fetch(`${BASE_URL}/api/system/backup`, {
+    headers,
+  });
+  if (!res.ok) {
+    if (res.status === 401 && onUnauthorizedCallback) {
+      onUnauthorizedCallback();
+    }
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+  return res.blob();
+};
+
+export const downloadSyncExport = async (sinceId: string): Promise<Blob> => {
+  const headers = new Headers();
+  if (apiToken) {
+    headers.set("Authorization", `Bearer ${apiToken}`);
+  }
+  const res = await fetch(`${BASE_URL}/api/system/sync/export?since_id=${encodeURIComponent(sinceId)}`, {
+    headers,
+  });
+  if (!res.ok) {
+    if (res.status === 401 && onUnauthorizedCallback) {
+      onUnauthorizedCallback();
+    }
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+  return res.blob();
+};
+
+export const restoreBackup = async (formData: FormData): Promise<{ message: string }> => {
+  const headers = new Headers();
+  if (apiToken) {
+    headers.set("Authorization", `Bearer ${apiToken}`);
+  }
+  const res = await fetch(`${BASE_URL}/api/system/restore`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    if (res.status === 401 && onUnauthorizedCallback) {
+      onUnauthorizedCallback();
+    }
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+  return res.json();
+};
+
+export const importSyncPackage = async (formData: FormData): Promise<{ message: string; importedCount?: number }> => {
+  const headers = new Headers();
+  if (apiToken) {
+    headers.set("Authorization", `Bearer ${apiToken}`);
+  }
+  const res = await fetch(`${BASE_URL}/api/system/sync/import`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  if (!res.ok) {
+    if (res.status === 401 && onUnauthorizedCallback) {
+      onUnauthorizedCallback();
+    }
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+  return res.json();
+};
+
 
 
 

@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
-import { API_BASE_URL } from "../services/api";
+import { API_BASE_URL, downloadBackup, downloadSyncExport, restoreBackup, importSyncPackage } from "../services/api";
 
 interface ServerSettingsPageProps {
   currentTheme: WorkspaceTheme | null;
@@ -567,9 +567,22 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
                 <Button
                   variant="contained"
-                  component="a"
-                  href={`${API_BASE_URL}/api/system/backup`}
-                  download
+                  onClick={async () => {
+                    try {
+                      const blob = await downloadBackup();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `kollab_backup_${new Date().toISOString().slice(0, 10)}.zip`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error("Backup failed:", err);
+                      alert("Backup failed: " + (err instanceof Error ? err.message : String(err)));
+                    }
+                  }}
                   sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
                 >
                   Export Full Server Backup ZIP
@@ -587,11 +600,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                       const formData = new FormData();
                       formData.append("backup", file);
                       try {
-                        const res = await fetch(`${API_BASE_URL}/api/system/restore`, {
-                          method: "POST",
-                          body: formData
-                        });
-                        const data = await res.json();
+                        const data = await restoreBackup(formData);
                         alert(data.message || "Backup restored successfully!");
                       } catch (err) {
                         alert("Restore failed. Check backup ZIP formatting.");
@@ -627,9 +636,22 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 />
                 <Button
                   variant="contained"
-                  onClick={() => {
+                  onClick={async () => {
                     const idVal = (document.getElementById("sync-since-id") as HTMLInputElement)?.value || "0";
-                    window.location.href = `${API_BASE_URL}/api/system/sync/export?since_id=${idVal}`;
+                    try {
+                      const blob = await downloadSyncExport(idVal);
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `kollab_sync_since_${idVal}_${new Date().toISOString().slice(0, 10)}.zip`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error("Sync export failed:", err);
+                      alert("Sync export failed: " + (err instanceof Error ? err.message : String(err)));
+                    }
                   }}
                   sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
                 >
@@ -648,11 +670,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                       const formData = new FormData();
                       formData.append("sync", file);
                       try {
-                        const res = await fetch(`${API_BASE_URL}/api/system/sync/import`, {
-                          method: "POST",
-                          body: formData
-                        });
-                        const data = await res.json();
+                        const data = await importSyncPackage(formData);
                         alert(data.message || "Sync ZIP imported successfully!");
                       } catch (err) {
                         alert("Sync import failed.");
