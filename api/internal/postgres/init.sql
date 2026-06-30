@@ -237,7 +237,54 @@ CREATE TABLE IF NOT EXISTS user_security_attributes (
 );
 
 
+CREATE TABLE IF NOT EXISTS db_operations_log (
+    id SERIAL PRIMARY KEY,
+    table_name VARCHAR(100) NOT NULL,
+    action VARCHAR(20) NOT NULL,
+    row_id VARCHAR(100) NOT NULL,
+    row_data JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 
+CREATE OR REPLACE FUNCTION log_db_operation()
+RETURNS TRIGGER AS $$
+DECLARE
+    r_id VARCHAR(100);
+    r_data JSONB;
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        r_id := OLD.id::VARCHAR(100);
+        r_data := to_jsonb(OLD);
+    ELSIF (TG_OP = 'UPDATE') THEN
+        r_id := NEW.id::VARCHAR(100);
+        r_data := to_jsonb(NEW);
+    ELSE
+        r_id := NEW.id::VARCHAR(100);
+        r_data := to_jsonb(NEW);
+    END IF;
 
+    INSERT INTO db_operations_log (table_name, action, row_id, row_data)
+    VALUES (TG_TABLE_NAME, TG_OP, r_id, r_data);
 
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
 
+-- Apply triggers to key tables
+DROP TRIGGER IF EXISTS log_users ON users;
+CREATE TRIGGER log_users AFTER INSERT OR UPDATE OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DROP TRIGGER IF EXISTS log_teams ON teams;
+CREATE TRIGGER log_teams AFTER INSERT OR UPDATE OR DELETE ON teams FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DROP TRIGGER IF EXISTS log_projects ON projects;
+CREATE TRIGGER log_projects AFTER INSERT OR UPDATE OR DELETE ON projects FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DROP TRIGGER IF EXISTS log_documents ON documents;
+CREATE TRIGGER log_documents AFTER INSERT OR UPDATE OR DELETE ON documents FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DROP TRIGGER IF EXISTS log_comments ON comments;
+CREATE TRIGGER log_comments AFTER INSERT OR UPDATE OR DELETE ON comments FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DROP TRIGGER IF EXISTS log_tags ON tags;
+CREATE TRIGGER log_tags AFTER INSERT OR UPDATE OR DELETE ON tags FOR EACH ROW EXECUTE FUNCTION log_db_operation();

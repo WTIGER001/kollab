@@ -357,10 +357,6 @@ func (h *DocumentHandler) CreateMilestone(w http.ResponseWriter, r *http.Request
 func (h *DocumentHandler) Search(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	projectId := r.URL.Query().Get("projectId")
-	if projectId == "" {
-		http.Error(w, "Bad Request: projectId query parameter is required", http.StatusBadRequest)
-		return
-	}
 
 	docs, err := h.docService.SearchDocuments(r.Context(), query, projectId)
 	if err != nil {
@@ -368,8 +364,19 @@ func (h *DocumentHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+
+	// Filter docs that the user has permission to read
+	permittedDocs := make([]*domain.Document, 0)
+	for _, doc := range docs {
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, doc.ID, "read", "", "")
+		if err == nil && allowed {
+			permittedDocs = append(permittedDocs, doc)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(docs)
+	_ = json.NewEncoder(w).Encode(permittedDocs)
 }
 
 func (h *DocumentHandler) GetAnalytics(w http.ResponseWriter, r *http.Request) {

@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { X, Sparkles } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
+import { API_BASE_URL } from "../services/api";
 
 interface WorkspaceSettingsDialogProps {
   open: boolean;
@@ -234,6 +235,7 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
           <Tab label="Dark Palette Editor" />
           <Tab label="Audit & Retention" />
           <Tab label="Aspose & Previews" />
+          <Tab label="Backups & Air-Gap Sync" />
         </Tabs>
 
         <Box sx={{ p: 4 }}>
@@ -562,6 +564,121 @@ export const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = (
                   />
                 </Box>
               )}
+            </Box>
+          )}
+
+          {tabIndex === 5 && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  On-Demand Database & File Backups
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+                  Export the entire Kollab server state (including database seed JSON and all uploaded attachment media) as a single portable ZIP archive, or restore a previously saved backup file.
+                </Typography>
+
+                <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+                  <Button
+                    variant="contained"
+                    component="a"
+                    href={`${API_BASE_URL}/api/system/backup`}
+                    download
+                    sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+                  >
+                    Export Full Server Backup ZIP
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = ".zip";
+                      input.onchange = async (e: any) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append("backup", file);
+                        try {
+                          const res = await fetch(`${API_BASE_URL}/api/system/restore`, {
+                            method: "POST",
+                            body: formData
+                          });
+                          const data = await res.json();
+                          alert(data.message || "Backup restored successfully!");
+                        } catch (err) {
+                          alert("Restore failed. Check backup ZIP formatting.");
+                        }
+                      };
+                      input.click();
+                    }}
+                    sx={{ textTransform: "none" }}
+                  >
+                    Upload & Restore Backup ZIP
+                  </Button>
+                </Box>
+              </Box>
+
+              <Divider sx={{ borderColor: "var(--border-color)", borderStyle: "dashed" }} />
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+                  Diff-Based Air-Gap Sync
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+                  Generate an incremental update package containing only database rows and file uploads modified since a specific operation ID, suitable for transfer to an air-gapped target server.
+                </Typography>
+
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                  <TextField
+                    id="sync-since-id"
+                    label="Since Operation ID"
+                    size="small"
+                    defaultValue="0"
+                    type="number"
+                    sx={{ width: 150 }}
+                  />
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      const idVal = (document.getElementById("sync-since-id") as HTMLInputElement)?.value || "0";
+                      window.location.href = `${API_BASE_URL}/api/system/sync/export?since_id=${idVal}`;
+                    }}
+                    sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+                  >
+                    Export Sync ZIP
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = ".zip";
+                      input.onchange = async (e: any) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const formData = new FormData();
+                        formData.append("sync", file);
+                        try {
+                          const res = await fetch(`${API_BASE_URL}/api/system/sync/import`, {
+                            method: "POST",
+                            body: formData
+                          });
+                          const data = await res.json();
+                          alert(data.message || "Sync ZIP imported successfully!");
+                        } catch (err) {
+                          alert("Sync import failed.");
+                        }
+                      };
+                      input.click();
+                    }}
+                    sx={{ textTransform: "none" }}
+                  >
+                    Import Sync ZIP
+                  </Button>
+                </Box>
+              </Box>
             </Box>
           )}
         </Box>

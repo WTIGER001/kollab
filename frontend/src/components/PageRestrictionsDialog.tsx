@@ -77,7 +77,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
   const [granteeType, setGranteeType] = useState<"user" | "group">("group");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [selectedRoleId, setSelectedRoleId] = useState<string>("role.wiki.document.viewer");
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("builtin.wiki.document.viewer");
 
   // Directories list data
   const [teams, setTeams] = useState<TeamInfo[]>([]);
@@ -367,10 +367,10 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                             sx={{ fontSize: "12px" }}
                           >
                             <MenuItem value="inherit" sx={{ fontSize: "12px" }}>Inherit (View & Edit)</MenuItem>
-                            <MenuItem value="role.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
-                            <MenuItem value="role.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
-                            <MenuItem value="role.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
-                            <MenuItem value="role.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
+                            <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
+                            <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
+                            <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
+                            <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
                             <MenuItem value="none" sx={{ fontSize: "12px" }}>No Access (Restricted)</MenuItem>
                           </Select>
                         </FormControl>
@@ -407,11 +407,11 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                                 onChange={(e) => handleGrantRoleChange(g, e.target.value)}
                                 sx={{ fontSize: "12px" }}
                               >
-                                <MenuItem value="role.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
-                                <MenuItem value="role.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
-                                <MenuItem value="role.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
-                                <MenuItem value="role.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
-                                <MenuItem value="role.wiki.document.owner" sx={{ fontSize: "12px" }}>Owner (Full Owner)</MenuItem>
+                                <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
+                                <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
+                                <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
+                                <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
+                                <MenuItem value="builtin.wiki.document.owner" sx={{ fontSize: "12px" }}>Owner (Full Owner)</MenuItem>
                               </Select>
                             </FormControl>
                           </TableCell>
@@ -492,11 +492,11 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                     onChange={(e: any) => setSelectedRoleId(e.target.value)}
                     sx={{ fontSize: "13px" }}
                   >
-                    <MenuItem value="role.wiki.document.viewer" sx={{ fontSize: "13px" }}>Viewer (Can only read)</MenuItem>
-                    <MenuItem value="role.wiki.document.commenter" sx={{ fontSize: "13px" }}>Commenter (Can read and write comments)</MenuItem>
-                    <MenuItem value="role.wiki.document.editor" sx={{ fontSize: "13px" }}>Editor (Can read and write/edit)</MenuItem>
-                    <MenuItem value="role.wiki.document.manager" sx={{ fontSize: "13px" }}>Manager (Can edit, share, and delete)</MenuItem>
-                    <MenuItem value="role.wiki.document.owner" sx={{ fontSize: "13px" }}>Owner (Full admin ownership)</MenuItem>
+                    <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "13px" }}>Viewer (Can only read)</MenuItem>
+                    <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "13px" }}>Commenter (Can read and write comments)</MenuItem>
+                    <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "13px" }}>Editor (Can read and write/edit)</MenuItem>
+                    <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "13px" }}>Manager (Can edit, share, and delete)</MenuItem>
+                    <MenuItem value="builtin.wiki.document.owner" sx={{ fontSize: "13px" }}>Owner (Full admin ownership)</MenuItem>
                   </Select>
                 </FormControl>
 

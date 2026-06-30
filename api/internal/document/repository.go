@@ -427,10 +427,13 @@ func (r *InMemoryDocumentRepository) Search(ctx context.Context, query string, p
 
 	var list []*domain.Document
 	pattern := strings.ToLower(query)
-	isTeam := strings.HasPrefix(projectId, "team_") || strings.HasPrefix(projectId, "team-")
+	isAll := projectId == "" || projectId == "all" || projectId == "*"
+	isTeam := !isAll && (strings.HasPrefix(projectId, "team_") || strings.HasPrefix(projectId, "team-"))
 	for _, doc := range r.documents {
 		matchScope := false
-		if isTeam {
+		if isAll {
+			matchScope = true
+		} else if isTeam {
 			matchScope = doc.TeamID == projectId
 		} else {
 			matchScope = doc.ProjectID == projectId

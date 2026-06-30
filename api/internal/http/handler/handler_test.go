@@ -171,6 +171,12 @@ func (m *mockSystemRepo) PruneTrash(ctx context.Context) error {
 func (m *mockSystemRepo) Ping(ctx context.Context) error {
 	return m.pingErr
 }
+func (m *mockSystemRepo) ExportBackup(ctx context.Context) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
+}
+func (m *mockSystemRepo) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}
 
 type mockLLMClient struct {
 	generateTextVal string
@@ -191,7 +197,7 @@ func TestSystemHealthHandler(t *testing.T) {
 	// 1. Success case with Gemini
 	repoSuccess := &mockSystemRepo{pingErr: nil}
 	serviceSuccess := inmemsystem.NewSystemService(repoSuccess)
-	hSuccess := handler.NewSystemHandler(serviceSuccess)
+	hSuccess := handler.NewSystemHandler(serviceSuccess, nil)
 
 	req := httptest.NewRequest("GET", "/health", nil)
 	w := httptest.NewRecorder()
@@ -252,7 +258,7 @@ func TestSystemHealthHandler(t *testing.T) {
 	t.Setenv("GEMINI_KEY", "mock-gemini-key") // restore key so we only test db failure
 	repoFailure := &mockSystemRepo{pingErr: fmt.Errorf("db connection refused")}
 	serviceFailure := inmemsystem.NewSystemService(repoFailure)
-	hFailure := handler.NewSystemHandler(serviceFailure)
+	hFailure := handler.NewSystemHandler(serviceFailure, nil)
 
 	reqFail := httptest.NewRequest("GET", "/health", nil)
 	wFail := httptest.NewRecorder()
@@ -283,14 +289,14 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	evaluator := permissions.NewAccessEvaluator(db)
 
 	// Grant team roles to groups for testing fallback permissions
-	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_eng", "team_eng")
-	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_mkt", "team_mkt")
-	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_arkloud", "team_arkloud")
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "builtin.wiki.team.editor", goperm.PrincipalGroup, "team_eng", "team_eng")
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "builtin.wiki.team.editor", goperm.PrincipalGroup, "team_mkt", "team_mkt")
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "builtin.wiki.team.editor", goperm.PrincipalGroup, "team_arkloud", "team_arkloud")
 
 	// Grant project roles to groups
-	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_wiki")
-	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_roadmap")
-	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_mkt", "proj_campaign")
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "builtin.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_wiki")
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "builtin.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_roadmap")
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "builtin.wiki.project.editor", goperm.PrincipalGroup, "team_mkt", "proj_campaign")
 
 	// Services
 	authService := inmemuser.NewAuthService(userRepo, jwtSecret)
@@ -318,7 +324,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	imgH := handler.NewImageHandler(imageService)
 	themeH := handler.NewThemeHandler(themeService)
 	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub)
-	systemH := handler.NewSystemHandler(systemService)
+	systemH := handler.NewSystemHandler(systemService, attachmentService)
 	commentService := inmemcomment.NewCommentService(commentRepo)
 	commentH := handler.NewCommentHandler(commentService, userRepo)
 	attachmentH := handler.NewAttachmentHandler(attachmentService)

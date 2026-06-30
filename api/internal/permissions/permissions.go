@@ -82,7 +82,7 @@ func SeedDefaultPermissions(ctx context.Context) {
 		"doc_welcome_mkt",
 	}
 	for _, docID := range seededDocs {
-		_ = DocumentPermissions.GrantRole(ctx, "role.wiki.document.owner", goperm.PrincipalUser, "sh4ag0cxowti", docID)
+		_ = DocumentPermissions.GrantRole(ctx, "builtin.wiki.document.owner", goperm.PrincipalUser, "sh4ag0cxowti", docID)
 	}
 
 	seededProjs := []string{
@@ -92,7 +92,7 @@ func SeedDefaultPermissions(ctx context.Context) {
 		"proj_campaign",
 	}
 	for _, projID := range seededProjs {
-		_ = ProjectPermissions.GrantRole(ctx, "role.wiki.project.owner", goperm.PrincipalUser, "sh4ag0cxowti", projID)
+		_ = ProjectPermissions.GrantRole(ctx, "builtin.wiki.project.owner", goperm.PrincipalUser, "sh4ag0cxowti", projID)
 	}
 
 	seededTeams := []string{
@@ -101,6 +101,6 @@ func SeedDefaultPermissions(ctx context.Context) {
 		"team_mkt",
 	}
 	for _, teamID := range seededTeams {
-		_ = TeamPermissions.GrantRole(ctx, "role.wiki.team.owner", goperm.PrincipalUser, "sh4ag0cxowti", teamID)
+		_ = TeamPermissions.GrantRole(ctx, "builtin.wiki.team.owner", goperm.PrincipalUser, "sh4ag0cxowti", teamID)
 	}
 }

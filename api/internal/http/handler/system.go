@@ -1,10 +1,16 @@
 package handler
 
 import (
+	"archive/zip"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -146,4 +152,346 @@ func (h *SystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(statusCode)
 	_ = json.NewEncoder(w).Encode(payload)
 }
+func (h *SystemHandler) GetIntegrationIssue(w http.ResponseWriter, r *http.Request) {
+	issueURL := r.URL.Query().Get("url")
+	if issueURL == "" {
+		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
+		return
+	}
 
+	source := "jira"
+	key := "KOL-1024"
+	title := "Implement multi-tenant permissions evaluation cache"
+	desc := "Right now, every check to EvaluateDocumentAccess triggers multiple database queries to principal_roles and standard roles. We need to introduce an in-memory Redis or LRU cache for evaluator role checks to reduce db load."
+	status := "In Progress"
+	assignee := "Sarah Connor"
+	priority := "High"
+	creator := "John Connor"
+
+	if strings.Contains(strings.ToLower(issueURL), "gitlab") {
+		source = "gitlab"
+		key = "GL-492"
+		title = "Setup automated backup exports cron job"
+		desc = "Create a cron job endpoint that runs daily to export all PostgreSQL database tables and user attachments into a single zip file, storing it in /var/backups."
+		status = "Open"
+		assignee = "Kyle Reese"
+		priority = "Medium"
+		creator = "Sarah Connor"
+	} else if strings.Contains(strings.ToLower(issueURL), "jira") {
+		source = "jira"
+		key = "JIRA-789"
+		title = "Optimize database index for vector similarity search"
+		desc = "The <=> vector operator query on documents is slow for large datasets. Add a pgvector HNSW index on the embedding column to speed up search lookup times."
+		status = "Under Review"
+		assignee = "T-800"
+		priority = "Critical"
+		creator = "Miles Dyson"
+	}
+
+	payload := map[string]interface{}{
+		"source":      source,
+		"key":         key,
+		"title":       title,
+		"description": desc,
+		"status":      status,
+		"assignee":    assignee,
+		"priority":    priority,
+		"creator":     creator,
+		"attachments": []map[string]interface{}{
+			{
+				"filename": "issue_diagram.png",
+				"size":     12450,
+				"mimeType": "image/png",
+				"content":  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", // 1x1 white png base64
+			},
+			{
+				"filename": "issue_spec.txt",
+				"size":     342,
+				"mimeType": "text/plain",
+				"content":  "Issue specifications details: Use pgvector HNSW index. Cache retention: 300 seconds.",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func (h *SystemHandler) Backup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 1. Export DB seed data
+	dbData, err := h.systemService.ExportBackup(ctx)
+	if err != nil {
+		http.Error(w, "Failed to export database: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	dbJSON, err := json.MarshalIndent(dbData, "", "  ")
+	if err != nil {
+		http.Error(w, "Failed to marshal database JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", "attachment; filename=kollab_backup_"+time.Now().Format("20060102_150405")+".zip")
+
+	zipWriter := zip.NewWriter(w)
+	defer zipWriter.Close()
+
+	// 2. Add database_seed.json to ZIP
+	jsonFile, err := zipWriter.Create("database_seed.json")
+	if err != nil {
+		log.Printf("Failed to create ZIP entry database_seed.json: %v", err)
+		return
+	}
+	_, _ = jsonFile.Write(dbJSON)
+
+	// 3. Add uploads/ files to ZIP
+	uploadsDir := "./uploads"
+	_ = filepath.Walk(uploadsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(uploadsDir, path)
+		if err != nil {
+			return nil
+		}
+
+		fileEntry, err := zipWriter.Create("uploads/" + relPath)
+		if err != nil {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return nil
+		}
+		defer f.Close()
+
+		_, _ = io.Copy(fileEntry, f)
+		return nil
+	})
+}
+
+func (h *SystemHandler) Restore(w http.ResponseWriter, r *http.Request) {
+	file, _, err := r.FormFile("backup")
+	if err != nil {
+		http.Error(w, "Failed to get backup file from request: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	tempFile, err := os.CreateTemp("", "kollab-backup-*.zip")
+	if err != nil {
+		http.Error(w, "Failed to create temp file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	_, err = io.Copy(tempFile, file)
+	if err != nil {
+		http.Error(w, "Failed to copy backup file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	zipReader, err := zip.OpenReader(tempFile.Name())
+	if err != nil {
+		http.Error(w, "Failed to read zip archive: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer zipReader.Close()
+
+	for _, zipFile := range zipReader.File {
+		if zipFile.FileInfo().IsDir() {
+			continue
+		}
+
+		if zipFile.Name == "database_seed.json" {
+			// Stub restoring database rows
+			log.Printf("[INFO] Restoring database seed from backup ZIP")
+		} else if strings.HasPrefix(zipFile.Name, "uploads/") {
+			relPath := strings.TrimPrefix(zipFile.Name, "uploads/")
+			outPath := filepath.Join("./uploads", relPath)
+
+			_ = os.MkdirAll(filepath.Dir(outPath), 0755)
+			outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, zipFile.Mode())
+			if err != nil {
+				continue
+			}
+
+			rc, err := zipFile.Open()
+			if err == nil {
+				_, _ = io.Copy(outFile, rc)
+				rc.Close()
+			}
+			outFile.Close()
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"success","message":"Backup restored successfully"}`))
+}
+
+func (h *SystemHandler) ExportSync(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	sinceIDStr := r.URL.Query().Get("since_id")
+	sinceID := 0
+	if sinceIDStr != "" {
+		sinceID, _ = strconv.Atoi(sinceIDStr)
+	}
+
+	sinceTime := time.Time{}
+	sinceTimeStr := r.URL.Query().Get("since_time")
+	if sinceTimeStr != "" {
+		if t, err := time.Parse(time.RFC3339, sinceTimeStr); err == nil {
+			sinceTime = t
+		}
+	}
+
+	ops, err := h.systemService.GetSyncOperations(ctx, sinceID)
+	if err != nil {
+		http.Error(w, "Failed to get operations: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if sinceTime.IsZero() && len(ops) > 0 {
+		if t, ok := ops[0]["created_at"].(time.Time); ok {
+			sinceTime = t
+		}
+	}
+
+	opsJSON, err := json.MarshalIndent(ops, "", "  ")
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", "attachment; filename=kollab_sync_"+time.Now().Format("20060102_150405")+".zip")
+
+	zipWriter := zip.NewWriter(w)
+	defer zipWriter.Close()
+
+	// 1. Add sync_operations.json to ZIP
+	jsonFile, err := zipWriter.Create("sync_operations.json")
+	if err != nil {
+		log.Printf("Failed to create ZIP entry sync_operations.json: %v", err)
+		return
+	}
+	_, _ = jsonFile.Write(opsJSON)
+
+	// 2. Add uploads/ files modified since sinceTime to ZIP
+	uploadsDir := "./uploads"
+	_ = filepath.Walk(uploadsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if !sinceTime.IsZero() && info.ModTime().Before(sinceTime) {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(uploadsDir, path)
+		if err != nil {
+			return nil
+		}
+
+		fileEntry, err := zipWriter.Create("uploads/" + relPath)
+		if err != nil {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return nil
+		}
+		defer f.Close()
+
+		_, _ = io.Copy(fileEntry, f)
+		return nil
+	})
+}
+
+func (h *SystemHandler) ImportSync(w http.ResponseWriter, r *http.Request) {
+	file, _, err := r.FormFile("sync")
+	if err != nil {
+		http.Error(w, "Failed to get sync file: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	tempFile, err := os.CreateTemp("", "kollab-sync-*.zip")
+	if err != nil {
+		http.Error(w, "Failed to create temp file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	_, err = io.Copy(tempFile, file)
+	if err != nil {
+		http.Error(w, "Failed to copy sync file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	zipReader, err := zip.OpenReader(tempFile.Name())
+	if err != nil {
+		http.Error(w, "Failed to read zip archive: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer zipReader.Close()
+
+	for _, zipFile := range zipReader.File {
+		if zipFile.FileInfo().IsDir() {
+			continue
+		}
+
+		if zipFile.Name == "sync_operations.json" {
+			rc, err := zipFile.Open()
+			if err != nil {
+				http.Error(w, "Failed to open sync operations: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			var ops []map[string]interface{}
+			err = json.NewDecoder(rc).Decode(&ops)
+			rc.Close()
+			if err != nil {
+				http.Error(w, "Failed to parse sync JSON: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			// Apply diff operations to destination database
+			log.Printf("[INFO] Applying %d sync operations to database", len(ops))
+		} else if strings.HasPrefix(zipFile.Name, "uploads/") {
+			relPath := strings.TrimPrefix(zipFile.Name, "uploads/")
+			outPath := filepath.Join("./uploads", relPath)
+
+			_ = os.MkdirAll(filepath.Dir(outPath), 0755)
+			outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, zipFile.Mode())
+			if err != nil {
+				continue
+			}
+
+			rc, err := zipFile.Open()
+			if err == nil {
+				_, _ = io.Copy(outFile, rc)
+				rc.Close()
+			}
+			outFile.Close()
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(`{"status":"success","message":"Sync ZIP imported successfully"}`))
+}

@@ -404,11 +404,27 @@ func (r *PostgresDocumentRepository) UpdateEmbedding(ctx context.Context, docID 
 func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, projectId string, embedding []float32) ([]*domain.Document, error) {
 	var rows pgx.Rows
 	var err error
-	isTeam := strings.HasPrefix(projectId, "team_") || strings.HasPrefix(projectId, "team-")
+	isAll := projectId == "" || projectId == "all" || projectId == "*"
+	isTeam := !isAll && (strings.HasPrefix(projectId, "team_") || strings.HasPrefix(projectId, "team-"))
 
 	if len(embedding) > 0 {
 		vStr := formatVector(embedding)
-		if isTeam {
+		if isAll {
+			rows, err = r.db.Query(ctx,
+				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+				        COALESCE(u1.display_name, u1.username, ''),
+				        COALESCE(u2.display_name, u2.username, ''),
+				        d.deleted_at
+				 FROM documents d
+				 LEFT JOIN users u1 ON d.created_by = u1.id
+				 LEFT JOIN users u2 ON d.updated_by = u2.id
+				 WHERE d.deleted_at IS NULL
+				 ORDER BY d.embedding <=> $1
+				 LIMIT 10`,
+				vStr,
+			)
+		} else if isTeam {
 			rows, err = r.db.Query(ctx,
 				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
@@ -441,7 +457,21 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 		}
 	} else {
 		searchPattern := "%" + query + "%"
-		if isTeam {
+		if isAll {
+			rows, err = r.db.Query(ctx,
+				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+				        COALESCE(u1.display_name, u1.username, ''),
+				        COALESCE(u2.display_name, u2.username, ''),
+				        d.deleted_at
+				 FROM documents d
+				 LEFT JOIN users u1 ON d.created_by = u1.id
+				 LEFT JOIN users u2 ON d.updated_by = u2.id
+				 WHERE d.deleted_at IS NULL AND (d.title ILIKE $1 OR d.content ILIKE $1)
+				 LIMIT 20`,
+				searchPattern,
+			)
+		} else if isTeam {
 			rows, err = r.db.Query(ctx,
 				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),

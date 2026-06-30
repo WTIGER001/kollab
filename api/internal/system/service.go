@@ -114,3 +114,11 @@ func newUUID() string {
 func (s *SystemService) Ping(ctx context.Context) error {
 	return s.repo.Ping(ctx)
 }
+
+func (s *SystemService) ExportBackup(ctx context.Context) (map[string]interface{}, error) {
+	return s.repo.ExportBackup(ctx)
+}
+
+func (s *SystemService) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
+	return s.repo.GetSyncOperations(ctx, sinceID)
+}

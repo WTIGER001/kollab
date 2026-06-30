@@ -77,7 +77,7 @@ func NewObjectStandardPermissionsAndRoles(feature string, resourceName string, h
 	variableSpec := map[string]any{"id": "required"}
 
 	viewerRole := goperm.Role{
-		ID:           fmt.Sprintf("role.%s.viewer", prefix),
+		ID:           fmt.Sprintf("builtin.%s.viewer", prefix),
 		Name:         resourceName + " Viewer",
 		Description:  "Can view " + resourceName,
 		VariableSpec: variableSpec,
@@ -88,7 +88,7 @@ func NewObjectStandardPermissionsAndRoles(feature string, resourceName string, h
 	var commenterRole goperm.Role
 	if hasComment {
 		commenterRole = goperm.Role{
-			ID:           fmt.Sprintf("role.%s.commenter", prefix),
+			ID:           fmt.Sprintf("builtin.%s.commenter", prefix),
 			Name:         resourceName + " Commenter",
 			Description:  "Can view and comment on " + resourceName,
 			VariableSpec: variableSpec,
@@ -103,7 +103,7 @@ func NewObjectStandardPermissionsAndRoles(feature string, resourceName string, h
 	}
 
 	editorRole := goperm.Role{
-		ID:           fmt.Sprintf("role.%s.editor", prefix),
+		ID:           fmt.Sprintf("builtin.%s.editor", prefix),
 		Name:         resourceName + " Editor",
 		Description:  "Can view and edit " + resourceName,
 		VariableSpec: variableSpec,
@@ -117,7 +117,7 @@ func NewObjectStandardPermissionsAndRoles(feature string, resourceName string, h
 	}
 
 	managerRole := goperm.Role{
-		ID:           fmt.Sprintf("role.%s.manager", prefix),
+		ID:           fmt.Sprintf("builtin.%s.manager", prefix),
 		Name:         resourceName + " Manager",
 		Description:  "Can view, edit, delete, and share " + resourceName,
 		VariableSpec: variableSpec,
@@ -131,7 +131,7 @@ func NewObjectStandardPermissionsAndRoles(feature string, resourceName string, h
 	}
 
 	ownerRole := goperm.Role{
-		ID:           fmt.Sprintf("role.%s.owner", prefix),
+		ID:           fmt.Sprintf("builtin.%s.owner", prefix),
 		Name:         resourceName + " Owner",
 		Description:  "Full owner of " + resourceName,
 		VariableSpec: variableSpec,
@@ -169,27 +169,20 @@ func (s *ObjectStandardPermissionsAndRoles) Bootstrap(ctx context.Context) error
 		roles = append(roles, s.CommenterRole)
 	}
 
+	var grants []goperm.Grant
 	for _, role := range roles {
-		// Idempotently create or update role definitions in the store
-		existing, err := Service.GetStore().RoleDefinition(ctx, role.ID)
-		if err != nil {
-			if err := Service.GetStore().CreateRole(ctx, role); err != nil {
-				return fmt.Errorf("failed to create standard role %s: %w", role.ID, err)
-			}
-		} else {
-			existing.Name = role.Name
-			existing.Description = role.Description
-			existing.VariableSpec = role.VariableSpec
-			existing.BuiltIn = role.BuiltIn
-			if err := Service.GetStore().UpdateRole(ctx, existing); err != nil {
-				return fmt.Errorf("failed to update standard role %s: %w", role.ID, err)
-			}
+		// Define the role without inline permissions to prevent default unscoped grants
+		roleDef := role
+		roleDef.Permissions = nil
+
+		// Add built-in role to the service in-memory registry
+		if err := Service.AddBuiltInRole(ctx, roleDef); err != nil {
+			return fmt.Errorf("failed to register built-in role %s: %w", role.ID, err)
 		}
 
 		// Create standard grants targeting the "?id" object scope for this role template
-		var grants []goperm.Grant
+		scopeStr := "?id"
 		for _, permID := range role.Permissions {
-			scopeStr := "?id"
 			grants = append(grants, goperm.Grant{
 				OwnerKind:      goperm.PrincipalRole,
 				OwnerID:        role.ID,
@@ -200,10 +193,11 @@ func (s *ObjectStandardPermissionsAndRoles) Bootstrap(ctx context.Context) error
 				VariableSpec:   map[string]any{"id": "required"},
 			})
 		}
+	}
 
-		if err := Service.EnsureGrantsForOwners(ctx, grants); err != nil {
-			return fmt.Errorf("failed to save grants for role %s: %w", role.ID, err)
-		}
+	// Register all template grants in-memory
+	if err := Service.SaveBuiltIns(ctx, grants); err != nil {
+		return fmt.Errorf("failed to save standard grants: %w", err)
 	}
 
 	return nil
@@ -218,5 +212,5 @@ func (s *ObjectStandardPermissionsAndRoles) GrantRole(ctx context.Context, roleI
 		Kind: principalKind,
 		ID:   principalID,
 	}
-	return Service.GetStore().AssignRole(ctx, principal, roleID, bindingValues)
+	return Service.AssignRole(ctx, principal, roleID, bindingValues)
 }

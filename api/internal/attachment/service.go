@@ -372,7 +372,7 @@ func (s *AttachmentService) getStorageConfig(key string, isDest bool) StorageCon
 
 func isOfficeFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
-	return ext == ".docx" || ext == ".doc" || ext == ".pptx" || ext == ".ppt"
+	return ext == ".docx" || ext == ".doc" || ext == ".pptx" || ext == ".ppt" || ext == ".xlsx" || ext == ".xls"
 }
 
 func is3DFile(filename string) bool {

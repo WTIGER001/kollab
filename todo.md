@@ -28,27 +28,27 @@ This document organizes the requested features into prioritized, sequential impl
 ### 📎 Phase 3: Assets & Collaboration (Mentions & Files)
 *Enriches collaboration by tying media files and team identity to pages.*
 - [x] **Attachments**: List of files uploaded to the page with download/preview triggers.
-- [ ] **Multimedia (Widget Connector)**: Embed audio, video, or iframe widgets (YouTube, Vimeo, PDF presentation viewer).
-- [ ] **Image Gallery**: Grid gallery view of all image attachments on the page.
+- [ ] **Multimedia (Widget Connector)**: Embed audio, video, or iframe widgets (YouTube, Vimeo, PDF presentation viewer) (Consolidated in Phase 7).
+- [ ] **Image Gallery**: Grid gallery view of all image attachments on the page (Consolidated in Phase 7).
 - [x] **Mentions & Tagging**: Tiptap suggestions menu triggered by `@` to tag registered team members/emails.
 - [ ] **Watch**: "Watch" page toggle to subscribe to email or feed alerts on edit.
 
 ### 🏷️ Phase 4: Organization, Labels & Space Activity
 *Introduces tagging, metadata categorization, and audit logs.*
-- [ ] **Page Restrictions**: Read/write permissions per page (owner, team, or project level RBAC).
+- [ ] **Page Restrictions**: Read/write permissions per page (owner, team, or project level RBAC) (Consolidated in Phase 7).
 - [ ] **Labels List / Popular Labels**: Tag pages with labels, search by labels, and view label heatmaps.
 - [ ] **Content by Label / Reports**: Custom report macros pulling pages that share specific labels.
 - [ ] **Activity Page / Recently Updated**: Dashboard timeline feed displaying global edits across pages.
 - [ ] **Contributors Summary**: Listing authors, edit counts, and profile avatars.
 
 ### 📥 Phase 5: Import, Export & Archival
-- [ ] **Export to Word / PDF**: Client/Server side export wrappers.
-- [ ] **Export to HTML / JSON**: Schema download options.
-- [ ] **Backup / Restore**: Database seed extraction and import tools for space migration.
+- [x] **Export to Word / PDF**: Client/Server side export wrappers via ChromeDP/docx-builder.
+- [x] **Export to HTML / JSON**: Schema download and hierarchical JSON import/export.
+- [ ] **Backup / Restore**: Database seed extraction and import tools for space migration (Consolidated in Phase 7).
 
 ### 🔗 Phase 6: Integrations & Space Metrics
 *Advanced widgets connecting Arkollab to external tools and analytics.*
-- [ ] **Jira Issues Embed**: Direct OAuth/API integration to paste and render live Jira issue statuses.
+- [ ] **Jira Issues Embed**: Direct OAuth/API integration to paste and render live Jira issue statuses (Consolidated in Phase 7).
 - [ ] **Jira Charts**: Render charts from Jira filters on requirements pages.
 - [ ] **Advanced Roadmaps for Jira**: Embed epic roadmaps in planning pages.
 - [ ] **Dashboard / Metrics View**: Graphs tracking document popularity, space creation speed, and active user trends.
@@ -251,4 +251,50 @@ Highlights content as a warning note with a red background.
 Embed videos, slideshows, posts, and more from the web.
 
 ### JIRA --> KOLLAB
-Create a way to grab a JIRA ISSUE, and extract the contents into a Kollab page. We do this to maintain the knowledge management capture for what was found and solved. THis means that we really tend not to care about the issue meta data more the description, contents and attachments. Care should be take to make this cohesive.
+Create a way to grab a JIRA ISSUE, and extract the contents into a Kollab page. We do this to maintain the knowledge management capture for what was found and solved. This means that we really tend not to care about the issue metadata, more the description, contents and attachments. Care should be taken to make this cohesive.
+
+---
+
+## 🚀 Phase 7: Enterprise Permissions, Integrations & Previews (New Tasks)
+
+This phase covers the newly requested requirements, ordered logically by engineering dependencies (Security/Search -> Previews/UI -> Integrations/Backups -> Sync).
+
+### 🔐 7.1 Revisit Permissions (go-permissions Refactor)
+- [x] **Prefix Built-in Role IDs**: Update standard roles in `object_std_role.go` and `permissions.go` to use the `builtin.` prefix (e.g. `builtin.wiki.document.viewer`).
+- [x] **In-Memory Startup Seeding**: Refactor role initialization to register standard roles using `Service.AddBuiltInRole` entirely in memory (zero DB seeding).
+- [x] **Server, Team, and Project Roles**: Ensure clear hierarchy:
+  - **Server Admin**: `builtin.admin` synthetic role (full bypass).
+  - **Team Admin**: `builtin.wiki.team.owner` / `builtin.wiki.team.manager` roles.
+  - **Project Admin**: `builtin.wiki.project.owner` / `builtin.wiki.project.manager` roles.
+  - **Page Level Permissions**: Strict read/write page-level rules.
+- [x] **Clean Up Codebase**: Update test fixtures, evaluator logic, database check filters, and HTTP handlers to match.
+
+### 🔍 7.2 Secure Search & AI LLM RAG
+- [x] **Permissions Filtering in Site-Wide Search**: Update `SearchDocuments` and database query logic to only return documents for which the current user has `wiki.document.read` permissions.
+- [x] **Secure AI LLM RAG**: Ensure prompt context generation (retrieval of vector snippets or search results) validates permissions for the querying user, filtering out restricted contents.
+- [x] **Site-wide Cross-Project Search**: Allow searching across all projects/teams that the user has permission to access.
+
+### 🖥️ 7.3 Extended Document Previews & Media Players
+- [x] **Excel Preview Conversion**: Add `.xlsx` and `.xls` support to `isOfficeFile` in Go attachment service to queue them to `media-preview` service for HTML conversion.
+- [x] **Plain Text / Code File Preview**: Render `.go`, `.js`, `.py`, `.json`, `.txt`, `.md`, `.css`, `.yaml`, `.xml` files inline using client-side pre/Monaco editor syntax preview.
+- [x] **CSV Grid Previews**: Implement client-side parser to render `.csv` files as interactive HTML spreadsheet grid tables.
+- [x] **Video File Support**: Embed HTML5 `<video>` player in `DocumentPreviewer` to support playing `.mp4`, `.webm`, `.mov`, `.ogg`.
+- [x] **Audio File Support**: Embed HTML5 `<audio>` player in `DocumentPreviewer` to support playing `.mp3`, `.wav`, `.m4a`, `.ogg`.
+
+### 🖼️ 7.4 Image Gallery View
+- [x] **Image Grid Macro**: Create a block/macro widget in Tiptap/ProseMirror that queries and renders a grid thumbnail gallery of all image attachments on the page.
+- [x] **Lightbox Carousel**: Allow clicking any thumbnail in the gallery to open a fullscreen lightbox carousel/slideshow.
+
+### 🔌 7.5 JIRA & GitLab Issues Integration
+- [x] **Jira Issues Macro**: Implement Tiptap block/button to paste a Jira URL/ID and render a live card.
+- [x] **Jira to Kollab Description/Attachment Import**: Add a direct button on the issue card to import the description and download all attachments of a Jira issue to create a new Kollab wiki page.
+- [x] **GitLab Issues Macro**: Implement GitLab issues embed support and GitLab-to-Kollab description/attachment import.
+
+### 💾 7.6 Backups & On-Demand Exports
+- [x] **Server Backup/Restore API**: Endpoint to package/zip the entire PostgreSQL database seed (pg_dump or json seed) and uploads directory.
+- [x] **Team & Project Exports**: On-demand exports of entire Teams and Projects (including pages, attachments, settings, and structure) into a portable ZIP package.
+
+### 🔄 7.7 Diff-Based Synchronization (Air-Gap Sync)
+- [x] **Transaction Log / History Table**: Add a database log/audit table to track every create, update, delete operation with timestamps and payload.
+- [x] **Export Sync Payload**: Endpoint to generate an encrypted/compressed incremental ZIP file of all changes since a specific timestamp or transaction ID.
+- [x] **Import Sync Payload**: Endpoint on target server (in the air-gapped network) to consume the sync ZIP, verify signature, apply database diffs, and save attachments.

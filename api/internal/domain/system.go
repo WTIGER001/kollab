@@ -37,6 +37,8 @@ type SystemRepository interface {
 	PrunePartitions(ctx context.Context) error
 	PruneTrash(ctx context.Context) error
 	Ping(ctx context.Context) error
+	ExportBackup(ctx context.Context) (map[string]interface{}, error)
+	GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error)
 }
 
 type SystemService interface {
@@ -49,4 +51,6 @@ type SystemService interface {
 	PruneTrash(ctx context.Context) error
 	StartCleanupWorker(ctx context.Context, interval time.Duration)
 	Ping(ctx context.Context) error
+	ExportBackup(ctx context.Context) (map[string]interface{}, error)
+	GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error)
 }

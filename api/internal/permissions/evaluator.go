@@ -313,7 +313,7 @@ func (e *AccessEvaluator) isObjectRestricted(ctx context.Context, objectID strin
 		SELECT EXISTS (
 			SELECT 1 FROM principal_roles 
 			WHERE binding_values->>'id' = $1 
-			  AND role_id LIKE 'role.wiki.document.%'
+			  AND role_id LIKE 'builtin.wiki.document.%'
 		)
 	`
 	var exists bool
@@ -408,13 +408,13 @@ func (e *AccessEvaluator) evaluateShareLink(ctx context.Context, userID string, 
 	// Manager/Owner carries all.
 	roleAllowed := false
 	switch roleID {
-	case "role.wiki.document.owner", "role.wiki.document.manager":
+	case "builtin.wiki.document.owner", "builtin.wiki.document.manager":
 		roleAllowed = true
-	case "role.wiki.document.editor":
+	case "builtin.wiki.document.editor":
 		roleAllowed = docPerm == DocumentPermissions.Read.ID() || docPerm == DocumentPermissions.Comment.ID() || docPerm == DocumentPermissions.Write.ID()
-	case "role.wiki.document.commenter":
+	case "builtin.wiki.document.commenter":
 		roleAllowed = docPerm == DocumentPermissions.Read.ID() || docPerm == DocumentPermissions.Comment.ID()
-	case "role.wiki.document.viewer":
+	case "builtin.wiki.document.viewer":
 		roleAllowed = docPerm == DocumentPermissions.Read.ID()
 	}
 

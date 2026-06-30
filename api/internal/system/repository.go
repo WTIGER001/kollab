@@ -79,3 +79,19 @@ func (r *InMemorySystemRepository) PruneTrash(ctx context.Context) error {
 func (r *InMemorySystemRepository) Ping(ctx context.Context) error {
 	return nil
 }
+
+func (r *InMemorySystemRepository) ExportBackup(ctx context.Context) (map[string]interface{}, error) {
+	return map[string]interface{}{
+		"users":           []interface{}{},
+		"teams":           []interface{}{},
+		"projects":        []interface{}{},
+		"documents":       []interface{}{},
+		"comments":        []interface{}{},
+		"principal_roles": []interface{}{},
+		"tags":            []interface{}{},
+	}, nil
+}
+
+func (r *InMemorySystemRepository) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
+	return []map[string]interface{}{}, nil
+}

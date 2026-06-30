@@ -126,6 +126,7 @@ import { PageAttachments } from "./PageAttachments";
 import { ExportDialog } from "./ExportDialog";
 import { PageRestrictionsDialog } from "./PageRestrictionsDialog";
 import { SharingLinksDialog } from "./SharingLinksDialog";
+import { ImageGallery } from "./ImageGallery";
 
 import { DocumentContext } from "./DocumentContext";
 
@@ -1270,6 +1271,25 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: {
               type: "mermaid",
               config: { code: "graph TD\n  A --> B", svg: "" }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
+      id: "jira-gitlab-issue",
+      label: "Jira / GitLab Issue",
+      description: "Embed an interactive JIRA or GitLab issue card",
+      icon: <Cpu size={16} style={{ color: "#fca121" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "jira-gitlab-issue",
+              config: { url: "" }
             }
           })
           .run();
@@ -2981,6 +3001,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 attachments={attachments}
                 onRefresh={loadAttachments}
                 loading={attachmentsLoading}
+              />
+            </Box>
+          )}
+
+          {/* Image Gallery Section */}
+          {activeDocId && attachments.length > 0 && (
+            <Box id="page-image-gallery-section">
+              <ImageGallery
+                attachments={attachments}
+                apiBaseUrl={API_BASE_URL}
               />
             </Box>
           )}

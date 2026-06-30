@@ -76,7 +76,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 		return nil, err
 	}
 	if userID != "" && permissions.DocumentPermissions != nil {
-		_ = permissions.DocumentPermissions.GrantRole(ctx, "role.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID)
+		_ = permissions.DocumentPermissions.GrantRole(ctx, "builtin.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID)
 	}
 	if s.systemService != nil {
 		_ = s.systemService.RecordAuditLog(ctx, doc.ID, userID, "edit")
@@ -483,6 +483,9 @@ func (s *DocumentService) CreateManualMilestone(ctx context.Context, docID strin
 
 func (s *DocumentService) SearchDocuments(ctx context.Context, query string, projectId string) ([]*domain.Document, error) {
 	if query == "" {
+		if projectId == "" || projectId == "all" || projectId == "*" {
+			return []*domain.Document{}, nil
+		}
 		if strings.HasPrefix(projectId, "team_") || strings.HasPrefix(projectId, "team-") {
 			return s.repo.GetByTeamID(ctx, projectId)
 		}

@@ -2392,6 +2392,155 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               )}
             </Box>
           )}
+
+          {type === "jira-gitlab-issue" && (
+            <Box sx={{ width: "100%" }}>
+              {!config.url ? (
+                <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+                    JIRA / GitLab Issue Card Integration
+                  </Typography>
+                  <TextField
+                    placeholder="https://jira.company.com/browse/KOL-1024"
+                    fullWidth
+                    size="small"
+                    id="issue-url-input"
+                    sx={{ mb: 2 }}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={async () => {
+                      const input = document.getElementById("issue-url-input") as HTMLInputElement;
+                      if (!input || !input.value) return;
+                      const url = input.value;
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/api/integrations/issues?url=${encodeURIComponent(url)}`, {
+                          headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+                          }
+                        });
+                        const data = await res.json();
+                        updateAttributes({
+                          config: {
+                            ...config,
+                            url: url,
+                            source: data.source,
+                            key: data.key,
+                            title: data.title,
+                            description: data.description,
+                            status: data.status,
+                            assignee: data.assignee,
+                            priority: data.priority,
+                            creator: data.creator,
+                            attachments: data.attachments
+                          }
+                        });
+                      } catch (err) {
+                        console.error("Failed to fetch issue details", err);
+                        alert("Failed to load issue. Check URL or try again.");
+                      }
+                    }}
+                    sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+                  >
+                    Fetch Issue Details
+                  </Button>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    p: 2.5,
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "10px",
+                    bgcolor: "var(--paper-color)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    position: "relative",
+                    transition: "all 0.2s",
+                    "&:hover": { boxShadow: "0 6px 20px rgba(0,0,0,0.15)", borderColor: "var(--primary-color)" }
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip
+                        label={config.source?.toUpperCase() || "ISSUE"}
+                        size="small"
+                        sx={{
+                          bgcolor: config.source === "gitlab" ? "#fca121" : "#0052cc",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: "10px",
+                          borderRadius: "4px"
+                        }}
+                      />
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontFamily: "monospace" }}>
+                        {config.key}
+                      </Typography>
+                    </Box>
+
+                    <Chip
+                      label={config.status || "Open"}
+                      size="small"
+                      sx={{
+                        bgcolor: "rgba(139, 92, 246, 0.15)",
+                        color: "var(--primary-color)",
+                        fontWeight: 600,
+                        fontSize: "11px"
+                      }}
+                    />
+                  </Box>
+
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: "var(--text-primary)" }}>
+                    {config.title}
+                  </Typography>
+
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5, lineHeight: 1.5 }}>
+                    {config.description}
+                  </Typography>
+
+                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 2, mb: 2, p: 1.5, borderRadius: "6px", bgcolor: "rgba(0,0,0,0.02)", border: "1px solid var(--border-color)" }}>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "text.disabled", display: "block" }}>Assignee</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{config.assignee || "Unassigned"}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "text.disabled", display: "block" }}>Priority</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{config.priority || "Medium"}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "text.disabled", display: "block" }}>Creator</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{config.creator || "System"}</Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        updateAttributes({ config: { ...config, url: "" } });
+                      }}
+                      sx={{ textTransform: "none", fontSize: "11px" }}
+                    >
+                      Reset URL
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => {
+                        if (editor) {
+                          editor.chain().focus().insertContent(`<h3>Issue Description (${config.key})</h3><p>${config.description}</p>`).run();
+                          alert("Issue description imported into editor canvas!");
+                        }
+                      }}
+                      sx={{ textTransform: "none", fontSize: "11px", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+                    >
+                      Import to Page
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
       </>
     );
   };

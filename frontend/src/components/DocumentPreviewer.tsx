@@ -86,6 +86,8 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
   const [showSlideList, setShowSlideList] = useState(true);
 
   const [serverPreviewsEnabled, setServerPreviewsEnabled] = useState<boolean | null>(null);
+  const [textVal, setTextVal] = useState<string>("");
+  const [csvRows, setCsvRows] = useState<string[][]>([]);
 
   const objectUrlsRef = useRef<string[]>([]);
   const downloadUrl = `${apiBaseUrl}/api/attachments/${attachmentId}`;
@@ -144,7 +146,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
 
   // Check if server-side PDF/HTML conversion is available and poll progress
   useEffect(() => {
-    const isOffice = filename.endsWith(".docx") || filename.endsWith(".doc") || filename.endsWith(".pptx") || filename.endsWith(".ppt");
+    const isOffice = filename.endsWith(".docx") || filename.endsWith(".doc") || filename.endsWith(".pptx") || filename.endsWith(".ppt") || filename.endsWith(".xlsx") || filename.endsWith(".xls");
     const is3D = filename.toLowerCase().endsWith(".stl") || filename.toLowerCase().endsWith(".3mf");
     if ((!isOffice && !is3D) || serverPreviewsEnabled === false) {
       return;
@@ -186,6 +188,39 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
       if (intervalId) clearInterval(intervalId);
     };
   }, [attachmentId, filename, serverPreviewsEnabled]);
+
+  // Load text or CSV file content for client-side rendering
+  useEffect(() => {
+    const isCSV = mimeType === "text/csv" || /\.csv$/i.test(filename);
+    const isTextCode = mimeType.startsWith("text/") || /\.(go|js|ts|jsx|tsx|py|json|md|html|css|yaml|yml|sh|sql|log)$/i.test(filename);
+    if (!isCSV && !isTextCode) return;
+
+    setLoading(true);
+    fetch(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${getApiToken()}`
+      }
+    })
+    .then(r => r.text())
+    .then(text => {
+      setTextVal(text);
+      if (isCSV) {
+        const lines = text.split(/\r?\n/);
+        const rows = lines.map(line => {
+          return line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, "").trim());
+        }).filter(r => r.length > 0 && r.some(v => v !== ""));
+        setCsvRows(rows);
+      }
+      setError(null);
+    })
+    .catch(err => {
+      console.error("Failed to load text preview", err);
+      setError("Failed to load preview content.");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [attachmentId, mimeType, filename, downloadUrl]);
 
   // Fetch document data for DOCX/PPTX parsing
   useEffect(() => {
@@ -735,7 +770,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
           (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf")) ||
           // 2. Server converted preview
           (serverPreviewsEnabled === true && 
-           (mimeType.includes("word") || filename.endsWith(".docx") || filename.endsWith(".doc") || mimeType.includes("presentation") || filename.endsWith(".pptx") || filename.endsWith(".ppt")))
+           (mimeType.includes("word") || filename.endsWith(".docx") || filename.endsWith(".doc") || mimeType.includes("presentation") || filename.endsWith(".pptx") || filename.endsWith(".ppt") || mimeType.includes("sheet") || filename.endsWith(".xlsx") || filename.endsWith(".xls")))
         ) && (
           <iframe
             src={
@@ -752,6 +787,74 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
             allow="fullscreen"
             allowFullScreen={true}
           />
+        )}
+
+        {/* Image Previewer */}
+        {!loading && !error && (mimeType.startsWith("image/") || /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(filename)) && (
+          <Box sx={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "rgba(0,0,0,0.03)", p: 2 }}>
+            <img
+              src={downloadUrl}
+              alt={filename}
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: "4px" }}
+            />
+          </Box>
+        )}
+
+        {/* Video Player */}
+        {!loading && !error && (mimeType.startsWith("video/") || /\.(mp4|webm|mov|ogg)$/i.test(filename)) && (
+          <Box sx={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#000", p: 1 }}>
+            <video
+              src={downloadUrl}
+              controls
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </Box>
+        )}
+
+        {/* Audio Player */}
+        {!loading && !error && (mimeType.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(filename)) && (
+          <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", bgcolor: "rgba(0,0,0,0.03)", p: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 3, width: "80px", height: "80px", borderRadius: "50%", bgcolor: "rgba(139, 92, 246, 0.15)", color: "var(--primary-color)" }}>
+              <ChevronRight size={40} style={{ transform: "rotate(-90deg)" }} />
+            </Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "var(--text-primary)" }}>{filename}</Typography>
+            <audio
+              src={downloadUrl}
+              controls
+              style={{ width: "100%", maxWidth: "500px" }}
+            />
+          </Box>
+        )}
+
+        {/* CSV Grid Table */}
+        {!loading && !error && (mimeType === "text/csv" || /\.csv$/i.test(filename)) && csvRows.length > 0 && (
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto", p: 2, bgcolor: "var(--paper-color)" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid var(--border-color)", fontSize: "12px", fontFamily: "sans-serif" }}>
+              <thead>
+                <tr style={{ backgroundColor: "rgba(0,0,0,0.06)" }}>
+                  {csvRows[0].map((cell, cidx) => (
+                    <th key={cidx} style={{ padding: "10px", border: "1px solid var(--border-color)", textAlign: "left", fontWeight: 600 }}>{cell}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {csvRows.slice(1).map((row, ridx) => (
+                  <tr key={ridx} style={{ backgroundColor: ridx % 2 === 0 ? "transparent" : "rgba(0,0,0,0.02)" }}>
+                    {row.map((cell, cidx) => (
+                      <td key={cidx} style={{ padding: "8px 10px", border: "1px solid var(--border-color)" }}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Box>
+        )}
+
+        {/* Text/Code Editor Style Previewer */}
+        {!loading && !error && (mimeType.startsWith("text/") || /\.(go|js|ts|jsx|tsx|py|json|md|html|css|yaml|yml|sh|sql|log)$/i.test(filename)) && !(mimeType === "text/csv" || /\.csv$/i.test(filename)) && (
+          <Box sx={{ width: "100%", height: "100%", overflow: "auto", p: 2, bgcolor: "#1e1e24", color: "#d4d4d4", fontFamily: 'Consolas, Monaco, "Andale Mono", monospace', fontSize: "13px", lineHeight: 1.5, textAlign: "left" }}>
+            <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{textVal}</pre>
+          </Box>
         )}
 
         {/* 3D Model Previewer (static thumbnail or interactive Three.js viewport) */}

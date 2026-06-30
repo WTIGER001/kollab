@@ -50,7 +50,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
 
   // Form states
   const [scope, setScope] = useState<"anyone" | "organization">("anyone");
-  const [roleId, setRoleId] = useState<string>("role.wiki.document.viewer");
+  const [roleId, setRoleId] = useState<string>("builtin.wiki.document.viewer");
   const [expiresInDays, setExpiresInDays] = useState<number>(7);
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -233,9 +233,9 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                     onChange={(e: any) => setRoleId(e.target.value)}
                     sx={{ fontSize: "13px" }}
                   >
-                    <MenuItem value="role.wiki.document.viewer" sx={{ fontSize: "13px" }}>Viewer (Read only)</MenuItem>
-                    <MenuItem value="role.wiki.document.commenter" sx={{ fontSize: "13px" }}>Commenter (Read & Comment)</MenuItem>
-                    <MenuItem value="role.wiki.document.editor" sx={{ fontSize: "13px" }}>Editor (Read & Write)</MenuItem>
+                     <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "13px" }}>Viewer (Read only)</MenuItem>
+                     <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "13px" }}>Commenter (Read & Comment)</MenuItem>
+                     <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "13px" }}>Editor (Read & Write)</MenuItem>
                   </Select>
                 </FormControl>
               </Box>

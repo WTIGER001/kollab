@@ -324,3 +324,73 @@ func (r *PostgresSystemRepository) Ping(ctx context.Context) error {
 	return r.db.Ping(ctx)
 }
 
+func (r *PostgresSystemRepository) ExportBackup(ctx context.Context) (map[string]interface{}, error) {
+	tables := []string{"users", "teams", "projects", "documents", "comments", "principal_roles", "tags"}
+	result := make(map[string]interface{})
+
+	for _, table := range tables {
+		rows, err := r.db.Query(ctx, fmt.Sprintf("SELECT * FROM %s", table))
+		if err != nil {
+			// If table doesn't exist or query fails, just skip it or log it
+			log.Printf("[WARN] ExportBackup failed for table %s: %v", table, err)
+			result[table] = []interface{}{}
+			continue
+		}
+		
+		fieldDescriptions := rows.FieldDescriptions()
+		var list []map[string]interface{}
+		
+		for rows.Next() {
+			values, err := rows.Values()
+			if err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("failed to scan table %s row values: %w", table, err)
+			}
+			
+			rowMap := make(map[string]interface{})
+			for i, fd := range fieldDescriptions {
+				rowMap[fd.Name] = values[i]
+			}
+			list = append(list, rowMap)
+		}
+		rows.Close()
+		result[table] = list
+	}
+
+	return result, nil
+}
+
+func (r *PostgresSystemRepository) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, table_name, action, row_id, row_data, created_at FROM db_operations_log WHERE id > $1 ORDER BY id ASC", sinceID)
+	if err != nil {
+		// If table doesn't exist yet (e.g. fresh db or pre-trigger migration), return empty slice
+		log.Printf("[WARN] GetSyncOperations query failed: %v", err)
+		return []map[string]interface{}{}, nil
+	}
+	defer rows.Close()
+
+	var list []map[string]interface{}
+	for rows.Next() {
+		var id int
+		var tableName, action, rowID string
+		var rowData interface{}
+		var createdAt time.Time
+
+		err := rows.Scan(&id, &tableName, &action, &rowID, &rowData, &createdAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan db_operations_log row: %w", err)
+		}
+
+		op := map[string]interface{}{
+			"id":         id,
+			"table_name": tableName,
+			"action":     action,
+			"row_id":     rowID,
+			"row_data":   rowData,
+			"created_at": createdAt,
+		}
+		list = append(list, op)
+	}
+	return list, nil
+}
+

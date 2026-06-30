@@ -101,10 +101,15 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Get("/system/settings", systemH.GetSettings)
 		r.Put("/system/settings", systemH.UpdateSettings)
+		r.Get("/system/backup", systemH.Backup)
+		r.Post("/system/restore", systemH.Restore)
+		r.Get("/system/sync/export", systemH.ExportSync)
+		r.Post("/system/sync/import", systemH.ImportSync)
 		r.Get("/system/aspose", attH.GetAsposeConfig)
 		r.Put("/system/aspose", attH.UpdateAsposeConfig)
 
 		r.Post("/ai/generate", aiH.Generate)
+		r.Get("/integrations/issues", systemH.GetIntegrationIssue)
 
 		r.Get("/tags", tagH.List)
 		r.Post("/tags", tagH.Create)
