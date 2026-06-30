@@ -790,11 +790,21 @@ func (h *DocumentHandler) GetPermissions(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Query principal_roles assignments
-	rows, err := h.db.Query(r.Context(),
-		"SELECT id, principal_kind, principal_id, role_id FROM principal_roles WHERE binding_values->>'id' = $1",
-		id,
-	)
+	// Query principal_roles assignments and resolve usernames/team names
+	query := `
+		SELECT 
+			pr.id, 
+			pr.principal_kind, 
+			pr.principal_id, 
+			pr.role_id,
+			COALESCE(u.display_name, u.username, '') as user_name,
+			COALESCE(t.name, '') as team_name
+		FROM principal_roles pr
+		LEFT JOIN users u ON pr.principal_kind = 'user' AND pr.principal_id = u.id
+		LEFT JOIN teams t ON pr.principal_kind = 'group' AND pr.principal_id = t.id
+		WHERE pr.binding_values->>'id' = $1
+	`
+	rows, err := h.db.Query(r.Context(), query, id)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to query role assignments: %v", err), http.StatusInternalServerError)
 		return
@@ -805,15 +815,24 @@ func (h *DocumentHandler) GetPermissions(w http.ResponseWriter, r *http.Request)
 		ID          int64  `json:"id"`
 		GranteeType string `json:"granteeType"`
 		GranteeID   string `json:"granteeId"`
+		GranteeName string `json:"granteeName"`
 		RoleID      string `json:"roleId"`
 	}
 
 	var grants []Grant
 	for rows.Next() {
 		var g Grant
-		if err := rows.Scan(&g.ID, &g.GranteeType, &g.GranteeID, &g.RoleID); err != nil {
+		var userName, teamName string
+		if err := rows.Scan(&g.ID, &g.GranteeType, &g.GranteeID, &g.RoleID, &userName, &teamName); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to scan assignment: %v", err), http.StatusInternalServerError)
 			return
+		}
+		if g.GranteeType == "user" && userName != "" {
+			g.GranteeName = userName
+		} else if g.GranteeType == "group" && teamName != "" {
+			g.GranteeName = teamName
+		} else {
+			g.GranteeName = g.GranteeID
 		}
 		grants = append(grants, g)
 	}

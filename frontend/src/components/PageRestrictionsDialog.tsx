@@ -241,9 +241,9 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-          border: "1px solid var(--border-color, #e5e7eb)",
-          backgroundColor: "var(--panel-color, #ffffff)",
-          color: "var(--text-color, #1f2937)",
+          border: "1px solid var(--border-color)",
+          backgroundColor: "var(--panel-color)",
+          color: "var(--text-primary)",
           p: 1
         }
       }}
@@ -277,7 +277,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
             </Typography>
 
             {/* General settings & classification */}
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color, #e5e7eb)", bgcolor: "var(--paper-color, #fafafa)" }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, fontSize: "13px", display: "flex", alignItems: "center", gap: 0.5 }}>
                 <ShieldCheck size={16} /> Security Classification & Inheritance
               </Typography>
@@ -330,9 +330,9 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, fontSize: "13px" }}>
                 Who has access
               </Typography>
-              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: "var(--border-color, #e5e7eb)" }}>
+              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--paper-color, #fafafa)" }}>
+                  <TableHead sx={{ bgcolor: "rgba(255, 255, 255, 0.02)" }}>
                     <TableRow>
                       <TableCell sx={{ fontSize: "11px", fontWeight: 600 }}>Name / Group</TableCell>
                       <TableCell sx={{ fontSize: "11px", fontWeight: 600 }}>Type</TableCell>
@@ -393,7 +393,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                                 <Users size={16} style={{ color: "text.secondary" }} />
                               )}
                               <Typography variant="body2" sx={{ fontSize: "13px", fontWeight: 600 }}>
-                                {g.granteeId}
+                                {g.granteeName || g.granteeId}
                               </Typography>
                             </Stack>
                           </TableCell>
@@ -432,7 +432,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
             </Box>
 
             {/* Add direct grant */}
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color, #e5e7eb)" }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, fontSize: "13px", display: "flex", alignItems: "center", gap: 0.5 }}>
                 <UserPlus size={16} /> Grant Direct Access
               </Typography>
