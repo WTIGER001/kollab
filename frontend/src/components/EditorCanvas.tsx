@@ -1144,9 +1144,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "advanced"
     },
     {
-      id: "single-attachment",
-      label: "Single Attachment",
-      description: "Link a single page attachment as tile or hyperlink",
+      id: "file-preview",
+      label: "File Preview",
+      description: "Embed an interactive file preview (Word, PowerPoint, 3D model, PDF)",
       icon: <Paperclip size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
       action: (ed) => {
         ed.chain()
@@ -1155,7 +1155,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "single-attachment",
-              config: { attachmentId: "", layoutStyle: "tile" }
+              config: { attachmentId: "", layoutStyle: "preview" }
             }
           })
           .run();
