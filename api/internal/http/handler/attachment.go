@@ -9,9 +9,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	goperm "github.com/wtiger001/go-permissions"
 
 	"arkollab/api/internal/domain"
 	"arkollab/api/internal/http/middleware"
+	"arkollab/api/internal/permissions"
 )
 
 type AttachmentHandler struct {
@@ -223,5 +225,61 @@ func (h *AttachmentHandler) PreviewView(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
 	w.Header().Set("Cache-Control", "private, max-age=3600")
 	_, _ = w.Write(data)
+}
+
+func (h *AttachmentHandler) GetAsposeConfig(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	isAdmin, err := permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: userID, Perm: "system.admin"})
+	if err != nil || !isAdmin {
+		http.Error(w, "Forbidden: Admin privileges required", http.StatusForbidden)
+		return
+	}
+
+	config, err := h.attachmentService.GetAsposeConfig(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(config)
+}
+
+func (h *AttachmentHandler) UpdateAsposeConfig(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user not authenticated", http.StatusUnauthorized)
+		return
+	}
+
+	isAdmin, err := permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: userID, Perm: "system.admin"})
+	if err != nil || !isAdmin {
+		http.Error(w, "Forbidden: Admin privileges required", http.StatusForbidden)
+		return
+	}
+
+	var req struct {
+		AsposeEnabled bool   `json:"asposeEnabled"`
+		AsposeLicense string `json:"asposeLicense"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad Request: invalid payload", http.StatusBadRequest)
+		return
+	}
+
+	config, err := h.attachmentService.UpdateAsposeConfig(r.Context(), req.AsposeEnabled, req.AsposeLicense)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(config)
 }
 

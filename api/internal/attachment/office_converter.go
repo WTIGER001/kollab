@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"arkollab/api/internal/domain"
 )
 
 type StorageConfig struct {
@@ -73,4 +75,65 @@ func (c *OfficeConverterClient) Convert(ctx context.Context, jobId string, sourc
 	}
 
 	return nil
+}
+
+func (c *OfficeConverterClient) GetConfig(ctx context.Context) (*domain.AsposeConfig, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", c.BaseURL+"/config", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP GET: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("preview config service returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var config domain.AsposeConfig
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode preview config: %w", err)
+	}
+
+	return &config, nil
+}
+
+func (c *OfficeConverterClient) UpdateConfig(ctx context.Context, enabled bool, licenseXml string) (*domain.AsposeConfig, error) {
+	payload := map[string]interface{}{
+		"asposeEnabled": enabled,
+		"asposeLicense": licenseXml,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal preview config: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/config", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create http request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP POST: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("preview config service returned status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	var config domain.AsposeConfig
+	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
+		return nil, fmt.Errorf("failed to decode preview config: %w", err)
+	}
+
+	return &config, nil
 }

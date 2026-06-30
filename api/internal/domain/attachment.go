@@ -45,5 +45,15 @@ type AttachmentService interface {
 	GetPreviewStatus(ctx context.Context, id string) (*PreviewStatus, error)
 	RetryPreviewGeneration(ctx context.Context, id string) error
 	GetPreviewFile(ctx context.Context, id string, filepath string) ([]byte, string, error)
+
+	// Aspose Admin Settings
+	GetAsposeConfig(ctx context.Context) (*AsposeConfig, error)
+	UpdateAsposeConfig(ctx context.Context, enabled bool, licenseXml string) (*AsposeConfig, error)
+}
+
+type AsposeConfig struct {
+	AsposeEnabled  bool   `json:"asposeEnabled"`
+	AsposeLicensed bool   `json:"asposeLicensed"`
+	AsposeLicense  string `json:"asposeLicense,omitempty"`
 }
 
