@@ -48,6 +48,11 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 	Service = goperm.NewService(store, idProvider)
 	Service.SetSyntheticRoleIDs("builtin.public", "builtin.authenticated", "builtin.admin")
 	Service.SetAdminGroupID("group.admins")
+	Service.SetAdminRoleID("builtin.admin")
+
+	if err := Service.EnsureSyntheticRoles(ctx); err != nil {
+		return fmt.Errorf("failed to ensure synthetic roles: %w", err)
+	}
 
 	// Initialize our standard object-scoped permissions and roles
 	DocumentPermissions = NewObjectStandardPermissionsAndRoles("wiki", "document", true)
@@ -66,7 +71,11 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 	}
 
 	// Always assign system administrator role to john bauer (developer user) on startup
-	_ = Service.AssignRoleToUser(ctx, "sh4ag0cxowti", "builtin.admin", nil)
+	if err := Service.AssignRoleToUser(ctx, "sh4ag0cxowti", "builtin.admin", nil); err != nil {
+		fmt.Printf("WARNING: failed to assign builtin.admin to developer user: %v\n", err)
+	} else {
+		fmt.Println("SUCCESS: Assigned builtin.admin to developer user 'sh4ag0cxowti'")
+	}
 
 	return nil
 }
