@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -149,26 +148,80 @@ func (h *AttachmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 
 	data, att, err := h.attachmentService.GetAttachmentPreview(r.Context(), id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Preview generation failed: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Preview retrieval failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/pdf")
+	// Determine mime type from format status or serve index.html if HTML format
+	mimeType := "application/pdf"
+	if strings.HasSuffix(strings.ToLower(att.Filename), ".docx") || strings.HasSuffix(strings.ToLower(att.Filename), ".doc") ||
+		strings.HasSuffix(strings.ToLower(att.Filename), ".pptx") || strings.HasSuffix(strings.ToLower(att.Filename), ".ppt") {
+		status, err := h.attachmentService.GetPreviewStatus(r.Context(), id)
+		if err == nil && status.Format == "html" {
+			mimeType = "text/html"
+		}
+	}
+
+	w.Header().Set("Content-Type", mimeType)
 	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
-	w.Header().Set("Content-Disposition", "inline; filename=\""+att.Filename+".pdf\"")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+att.Filename+"\"")
 	_, _ = w.Write(data)
 }
 
 func (h *AttachmentHandler) PreviewStatus(w http.ResponseWriter, r *http.Request) {
-	macPath := "/Applications/LibreOffice.app/Contents/MacOS/soffice"
-	_, macErr := os.Stat(macPath)
-	_, sofficePathErr := exec.LookPath("soffice")
-	_, libreofficePathErr := exec.LookPath("libreoffice")
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
 
-	libreofficeInstalled := macErr == nil || sofficePathErr == nil || libreofficePathErr == nil
+	status, err := h.attachmentService.GetPreviewStatus(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]bool{
-		"libreofficeInstalled": libreofficeInstalled,
-	})
+	_ = json.NewEncoder(w).Encode(status)
 }
+
+func (h *AttachmentHandler) Retry(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.attachmentService.RetryPreviewGeneration(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *AttachmentHandler) PreviewView(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	filepathParam := chi.URLParam(r, "*")
+	if filepathParam == "" {
+		filepathParam = "index.html"
+	}
+
+	data, mimeType, err := h.attachmentService.GetPreviewFile(r.Context(), id, filepathParam)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Preview asset not found: %v", err), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", mimeType)
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.Header().Set("Cache-Control", "private, max-age=3600")
+	_, _ = w.Write(data)
+}
+

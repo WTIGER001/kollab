@@ -515,11 +515,27 @@ export const fetchAttachments = (docId: string): Promise<Attachment[]> => {
   return request(`/api/documents/${encodeURIComponent(docId)}/attachments`);
 };
 
-export const fetchPreviewStatus = (): Promise<{ libreofficeInstalled: boolean }> => {
-  return fetch(`${BASE_URL}/api/attachments/previews/status`).then((res) => {
-    if (!res.ok) throw new Error("Failed to fetch preview status");
-    return res.json();
+export interface PreviewStatus {
+  attachmentId: string;
+  status: 'pending' | 'converting_aspose' | 'converting_libreoffice' | 'completed' | 'failed';
+  progress: number;
+  format: 'html' | 'pdf' | '';
+  errorMessage?: string;
+  updatedAt: string;
+}
+
+export const fetchPreviewStatus = (attachmentId: string): Promise<PreviewStatus> => {
+  return request(`/api/attachments/${encodeURIComponent(attachmentId)}/preview/status`);
+};
+
+export const retryPreviewGeneration = (attachmentId: string): Promise<void> => {
+  return request(`/api/attachments/${encodeURIComponent(attachmentId)}/preview/retry`, {
+    method: "POST",
   });
+};
+
+export const getApiToken = (): string | null => {
+  return apiToken;
 };
 
 export const uploadAttachment = (docId: string, file: File): Promise<Attachment> => {
@@ -658,6 +674,118 @@ export const importDocumentHierarchy = (teamId: string, projectId: string | null
       parentId,
       tree,
     }),
+  });
+};
+
+export interface PermissionGrant {
+  id: number;
+  granteeType: "user" | "group";
+  granteeId: string;
+  roleId: string;
+}
+
+export interface DocumentPermissionsResponse {
+  documentId: string;
+  classification: "public" | "internal" | "confidential" | "pii";
+  inheritanceBroken: boolean;
+  projectId: string;
+  teamId: string;
+  grants: PermissionGrant[];
+}
+
+export interface ShareLink {
+  tokenHash: string;
+  roleId: string;
+  scope: "anyone" | "organization";
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface CreateShareLinkResponse {
+  token: string;
+  documentId: string;
+  roleId: string;
+  scope: string;
+  expiresAt: string | null;
+}
+
+export const fetchDocumentPermissions = (docId: string): Promise<DocumentPermissionsResponse> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions`);
+};
+
+export const addPermissionGrant = (
+  docId: string,
+  granteeType: "user" | "group",
+  granteeId: string,
+  roleId: string
+): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/grants`, {
+    method: "POST",
+    body: JSON.stringify({ granteeType, granteeId, roleId }),
+  });
+};
+
+export const deletePermissionGrant = (docId: string, grantId: number): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/grants/${encodeURIComponent(grantId)}`, {
+    method: "DELETE",
+  });
+};
+
+export const updatePermissionSettings = (
+  docId: string,
+  classification: "public" | "internal" | "confidential" | "pii",
+  inheritanceBroken: boolean
+): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/settings`, {
+    method: "PUT",
+    body: JSON.stringify({ classification, inheritanceBroken }),
+  });
+};
+
+export const createShareLink = (
+  docId: string,
+  roleId: string,
+  scope: "anyone" | "organization",
+  password?: string,
+  expiresInDays?: number
+): Promise<CreateShareLinkResponse> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/share-links`, {
+    method: "POST",
+    body: JSON.stringify({ roleId, scope, password, expiresInDays }),
+  });
+};
+
+export const fetchShareLinks = (docId: string): Promise<ShareLink[]> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/share-links`);
+};
+
+export const deleteShareLink = (docId: string, linkId: string): Promise<void> => {
+  return request(`/api/documents/${encodeURIComponent(docId)}/permissions/share-links/${encodeURIComponent(linkId)}`, {
+    method: "DELETE",
+  });
+};
+
+export interface UserDirectoryItem {
+  id: string;
+  username: string;
+  email?: string;
+  displayName?: string;
+}
+
+export const fetchAllUsers = (): Promise<UserDirectoryItem[]> => {
+  return request("/api/users");
+};
+
+export const addTeamMember = (teamId: string, userId: string): Promise<void> => {
+  return request(`/api/teams/${encodeURIComponent(teamId)}/users`, {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
+};
+
+export const removeTeamMember = (teamId: string, userId: string): Promise<void> => {
+  return request(`/api/teams/${encodeURIComponent(teamId)}/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
   });
 };
 

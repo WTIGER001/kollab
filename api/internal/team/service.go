@@ -127,6 +127,18 @@ func (s *TeamService) CreateProject(ctx context.Context, teamID string, name str
 	return project, nil
 }
 
+func (s *TeamService) AddTeamMember(ctx context.Context, teamID string, userID string) error {
+	return s.repo.AddTeamMember(ctx, teamID, userID)
+}
+
+func (s *TeamService) RemoveTeamMember(ctx context.Context, teamID string, userID string) error {
+	return s.repo.RemoveTeamMember(ctx, teamID, userID)
+}
+
+func (s *TeamService) ListAllUsers(ctx context.Context) ([]*domain.User, error) {
+	return s.repo.ListAllUsers(ctx)
+}
+
 func newUUID() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)

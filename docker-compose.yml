@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # No exposed ports to the internet for security. Internal network only.
+    ports:
+      - "5432:5432"
 
   go-backend:
     build:
@@ -22,10 +23,27 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
       PORT: 8080
+      OFFICE_CONVERTER_URL: http://media-preview:8082/api/v1/preview
+    ports:
+      - "8080:8080"
     volumes:
       - ./uploads:/app/uploads
     depends_on:
       - db
+      - media-preview
+
+  media-preview:
+    build:
+      context: ../media-preview
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      PORT: 8082
+      LIBREOFFICE_PATH: /usr/bin/soffice
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./uploads:/app/uploads
 
   caddy:
     build:

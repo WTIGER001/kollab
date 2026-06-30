@@ -7,6 +7,7 @@ import {
   ButtonGroup, 
   Stack, 
   CircularProgress, 
+  LinearProgress,
   IconButton,
   Alert,
   Tooltip,
@@ -25,12 +26,19 @@ import {
   ZoomOut, 
   ChevronLeft, 
   ChevronRight, 
-  List as ListIcon
+  List as ListIcon,
+  Package
 } from "lucide-react";
 import JSZip from "jszip";
 // @ts-ignore
 import { renderAsync } from "docx-preview";
-import { fetchPreviewStatus } from "../services/api";
+import { 
+  fetchPreviewStatus, 
+  retryPreviewGeneration, 
+  getApiToken
+} from "../services/api";
+import type { PreviewStatus } from "../services/api";
+import ThreeDViewer from "./ThreeDViewer";
 
 interface DocumentPreviewerProps {
   attachmentId: string;
@@ -61,6 +69,11 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [interactive3D, setInteractive3D] = useState(false);
+
+  useEffect(() => {
+    setInteractive3D(false);
+  }, [attachmentId]);
   
   // DOCX state
   const [docxBuffer, setDocxBuffer] = useState<ArrayBuffer | null>(null);
@@ -108,17 +121,71 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
     return Array.from(elements);
   };
 
-  // Check if server-side PDF conversion is available
-  useEffect(() => {
-    fetchPreviewStatus()
-      .then(status => {
-        setServerPreviewsEnabled(status.libreofficeInstalled);
+  const [previewStatus, setPreviewStatus] = useState<PreviewStatus | null>(null);
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    setPreviewStatus(null);
+    retryPreviewGeneration(attachmentId)
+      .then(() => {
+        setServerPreviewsEnabled(null);
       })
       .catch(err => {
-        console.warn("Failed to fetch server preview status, falling back to client-side:", err);
-        setServerPreviewsEnabled(false);
+        setError(`Failed to trigger retry: ${err.message || err}`);
+        setLoading(false);
       });
-  }, []);
+  };
+
+  const handleUseFallback = () => {
+    setError(null);
+    setServerPreviewsEnabled(false);
+  };
+
+  // Check if server-side PDF/HTML conversion is available and poll progress
+  useEffect(() => {
+    const isOffice = filename.endsWith(".docx") || filename.endsWith(".doc") || filename.endsWith(".pptx") || filename.endsWith(".ppt");
+    const is3D = filename.toLowerCase().endsWith(".stl") || filename.toLowerCase().endsWith(".3mf");
+    if ((!isOffice && !is3D) || serverPreviewsEnabled === false) {
+      return;
+    }
+
+    setLoading(true);
+    let intervalId: any = null;
+
+    const checkStatus = () => {
+      fetchPreviewStatus(attachmentId)
+        .then(status => {
+          setPreviewStatus(status);
+          setServerPreviewsEnabled(true);
+
+          if (status.status === "completed") {
+            setLoading(false);
+            setError(null);
+            clearInterval(intervalId);
+          } else if (status.status === "failed") {
+            setLoading(false);
+            setError(status.errorMessage || "Preview conversion failed on the server.");
+            clearInterval(intervalId);
+          } else {
+            setLoading(true);
+          }
+        })
+        .catch(err => {
+          console.warn("Failed to fetch server preview status, falling back to client-side:", err);
+          setServerPreviewsEnabled(false);
+          setLoading(false);
+          clearInterval(intervalId);
+        });
+    };
+
+    checkStatus();
+    intervalId = setInterval(checkStatus, 2000);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [attachmentId, filename, serverPreviewsEnabled]);
 
   // Fetch document data for DOCX/PPTX parsing
   useEffect(() => {
@@ -385,6 +452,9 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
     if (nameLower.endsWith(".pptx") || mimeType.includes("presentation")) {
       return { label: "PowerPoint", color: "#f97316", icon: <Presentation size={16} color="#f97316" /> };
     }
+    if (nameLower.endsWith(".stl") || nameLower.endsWith(".3mf")) {
+      return { label: "3D Model", color: "#10b981", icon: <Package size={16} color="#10b981" /> };
+    }
     return { label: "Attachment", color: "#a855f7", icon: <File size={16} color="#a855f7" /> };
   };
 
@@ -565,12 +635,36 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
       <Box sx={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", bgcolor: "rgba(0,0,0,0.15)" }}>
         {/* Loading Overlay */}
         {(loading || serverPreviewsEnabled === null) && (
-          <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(0,0,0,0.6)", zIndex: 5 }}>
-            <Stack spacing={2} sx={{ alignItems: "center" }}>
-              <CircularProgress size={32} sx={{ color: "var(--primary-color)" }} />
-              <Typography variant="body2" sx={{ color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
-                Loading preview content...
-              </Typography>
+          <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(0,0,0,0.65)", zIndex: 5 }}>
+            <Stack spacing={2} sx={{ alignItems: "center", width: "80%", maxWidth: "320px" }}>
+              <CircularProgress size={40} sx={{ color: "var(--primary-color)" }} />
+              {previewStatus && previewStatus.status !== "completed" && (
+                <Box sx={{ width: "100%", mt: 1 }}>
+                  <Typography variant="body2" align="center" sx={{ color: "#fff", mb: 1, fontFamily: '"Outfit", sans-serif' }}>
+                    {previewStatus.status === "pending" && "Queueing preview task..."}
+                    {previewStatus.status === "converting" && "Converting document on server..."}
+                    {previewStatus.status === "converting_aspose" && "Converting via Aspose Engine..."}
+                    {previewStatus.status === "converting_libreoffice" && "Running LibreOffice Fallback..."}
+                    {previewStatus.status === "completed" && "Loading preview..."}
+                    {` (${previewStatus.progress}%)`}
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={previewStatus.progress} 
+                    sx={{ 
+                      height: 6, 
+                      borderRadius: 3, 
+                      bgcolor: "rgba(255,255,255,0.15)",
+                      "& .MuiLinearProgress-bar": { bgcolor: "var(--primary-color)", borderRadius: 3 }
+                    }} 
+                  />
+                </Box>
+              )}
+              {(!previewStatus || previewStatus.status === "completed") && (
+                <Typography variant="body2" sx={{ color: "text.secondary", fontFamily: '"Outfit", sans-serif' }}>
+                  Loading preview content...
+                </Typography>
+              )}
             </Stack>
           </Box>
         )}
@@ -578,47 +672,135 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
         {/* Error Overlay */}
         {error && (
           <Box sx={{ p: 3, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", textAlign: "center" }}>
-            <Alert severity="warning" sx={{ maxWidth: "480px", borderRadius: "8px", bgcolor: "rgba(239, 83, 80, 0.1)", border: "1px solid rgba(239, 83, 80, 0.2)", color: "#fff", "& .MuiAlert-icon": { color: "#ef5350" } }}>
+            <Alert severity="warning" sx={{ mb: 3, maxWidth: "480px", borderRadius: "8px", bgcolor: "rgba(239, 83, 80, 0.1)", border: "1px solid rgba(239, 83, 80, 0.2)", color: "#fff", "& .MuiAlert-icon": { color: "#ef5350" } }}>
               {error}
             </Alert>
-            <Button
-              variant="outlined"
-              size="small"
-              component="a"
-              href={downloadUrl}
-              sx={{
-                mt: 3,
-                textTransform: "none",
-                borderRadius: "8px",
-                borderColor: "rgba(255,255,255,0.15)",
-                color: "text.primary",
-                "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
-              }}
-            >
-              Download Full File
-            </Button>
+            <Stack direction="row" spacing={2} justifyContent="center">
+              {serverPreviewsEnabled === true && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleRetry}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    bgcolor: "var(--primary-color)",
+                    fontFamily: '"Outfit", sans-serif',
+                    "&:hover": { bgcolor: "var(--primary-color)" }
+                  }}
+                >
+                  Retry Conversion
+                </Button>
+              )}
+              {serverPreviewsEnabled === true && (filename.endsWith(".docx") || filename.endsWith(".pptx")) && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleUseFallback}
+                  sx={{
+                    textTransform: "none",
+                    borderRadius: "8px",
+                    borderColor: "rgba(255,255,255,0.15)",
+                    color: "text.primary",
+                    fontFamily: '"Outfit", sans-serif',
+                    "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
+                  }}
+                >
+                  Local Fallback Viewer
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                component="a"
+                href={downloadUrl}
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  borderColor: "rgba(255,255,255,0.15)",
+                  color: "text.primary",
+                  fontFamily: '"Outfit", sans-serif',
+                  "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
+                }}
+              >
+                Download File
+              </Button>
+            </Stack>
           </Box>
         )}
 
-        {/* PDF Previewer (native iframe or server-converted PDF preview) */}
+        {/* PDF/HTML Previewer (native iframe or server-converted PDF/HTML preview) */}
         {!loading && !error && (
           // 1. Direct PDF file
           (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf")) ||
-          // 2. Server converted PDF preview
+          // 2. Server converted preview
           (serverPreviewsEnabled === true && 
-           (mimeType.includes("word") || filename.endsWith(".docx") || mimeType.includes("presentation") || filename.endsWith(".pptx")))
+           (mimeType.includes("word") || filename.endsWith(".docx") || filename.endsWith(".doc") || mimeType.includes("presentation") || filename.endsWith(".pptx") || filename.endsWith(".ppt")))
         ) && (
           <iframe
             src={
               (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf"))
                 ? downloadUrl
-                : `${apiBaseUrl}/api/attachments/${attachmentId}/preview`
+                : previewStatus?.format === "html"
+                  ? `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/index.html?token=${encodeURIComponent(getApiToken() || "")}`
+                  : `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/document.pdf?token=${encodeURIComponent(getApiToken() || "")}`
             }
             width="100%"
             height="100%"
             title="Document Preview"
             style={{ border: "none" }}
+            allow="fullscreen"
+            allowFullScreen={true}
           />
+        )}
+
+        {/* 3D Model Previewer (static thumbnail or interactive Three.js viewport) */}
+        {!loading && !error && (filename.toLowerCase().endsWith(".stl") || filename.toLowerCase().endsWith(".3mf")) && (
+          <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", position: "relative", bgcolor: "#0f0f13" }}>
+            {interactive3D ? (
+              <ThreeDViewer downloadUrl={downloadUrl} filename={filename} />
+            ) : (
+              <Box sx={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <img
+                  src={`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/thumbnail.png?token=${encodeURIComponent(getApiToken() || "")}`}
+                  alt="3D Model Thumbnail"
+                  style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain", borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(0, 0, 0, 0.2)",
+                    transition: "background-color 0.2s",
+                    "&:hover": { bgcolor: "rgba(0, 0, 0, 0.4)" }
+                  }}
+                >
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setInteractive3D(true)}
+                    startIcon={<Package size={18} />}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: "30px",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      boxShadow: "0 10px 20px rgba(0,0,0,0.3)"
+                    }}
+                  >
+                    Load Interactive 3D Model
+                  </Button>
+                </Box>
+              </Box>
+            )}
+          </Box>
         )}
 
         {/* DOCX Previewer */}

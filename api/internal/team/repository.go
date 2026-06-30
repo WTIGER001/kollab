@@ -216,3 +216,29 @@ func (r *InMemoryTeamRepository) AddTeamMember(ctx context.Context, teamID strin
 	r.teamMembers[teamID][userID] = true
 	return nil
 }
+
+func (r *InMemoryTeamRepository) RemoveTeamMember(ctx context.Context, teamID string, userID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if members, exists := r.teamMembers[teamID]; exists {
+		delete(members, userID)
+	}
+	return nil
+}
+
+func (r *InMemoryTeamRepository) ListAllUsers(ctx context.Context) ([]*domain.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var users []*domain.User
+	for _, u := range r.users {
+		users = append(users, u)
+	}
+
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Username < users[j].Username
+	})
+
+	return users, nil
+}

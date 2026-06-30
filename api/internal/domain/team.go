@@ -31,6 +31,8 @@ type TeamRepository interface {
 	CreateTeam(ctx context.Context, team *Team) error
 	CreateProject(ctx context.Context, project *Project) error
 	AddTeamMember(ctx context.Context, teamID string, userID string) error
+	RemoveTeamMember(ctx context.Context, teamID string, userID string) error
+	ListAllUsers(ctx context.Context) ([]*User, error)
 }
 
 type TeamService interface {
@@ -43,4 +45,7 @@ type TeamService interface {
 	GetTeamByAbbreviation(ctx context.Context, abbreviation string) (*Team, error)
 	CreateTeam(ctx context.Context, name string, abbreviation string, description string, userID string) (*Team, error)
 	CreateProject(ctx context.Context, teamID string, name string, logoURL string, abbreviation string, description string) (*Project, error)
+	AddTeamMember(ctx context.Context, teamID string, userID string) error
+	RemoveTeamMember(ctx context.Context, teamID string, userID string) error
+	ListAllUsers(ctx context.Context) ([]*User, error)
 }

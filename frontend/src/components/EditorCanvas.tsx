@@ -114,12 +114,18 @@ import {
   AlignCenter,
   AlignRight,
   Tag,
-  AtSign
+  AtSign,
+  Link2,
+  Palette,
+  Network,
+  PenTool
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
 import { PageAttachments } from "./PageAttachments";
 import { ExportDialog } from "./ExportDialog";
+import { PageRestrictionsDialog } from "./PageRestrictionsDialog";
+import { SharingLinksDialog } from "./SharingLinksDialog";
 
 import { DocumentContext } from "./DocumentContext";
 
@@ -343,6 +349,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [restrictionsDialogOpen, setRestrictionsDialogOpen] = useState(false);
+  const [sharingLinksDialogOpen, setSharingLinksDialogOpen] = useState(false);
 
   const handleOpenMoreMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     setMoreMenuAnchor(e.currentTarget);
@@ -1205,6 +1213,63 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 username: "current",
                 sortBy: "updated_at"
               }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
+      id: "drawio",
+      label: "Draw.io Diagram",
+      description: "Insert an offline Draw.io vector drawing canvas",
+      icon: <Palette size={16} style={{ color: "var(--accent-pink, #f472b6)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "drawio",
+              config: { xml: "", svg: "" }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
+      id: "excalidraw",
+      label: "Excalidraw Diagram",
+      description: "Insert an offline Excalidraw sketching canvas",
+      icon: <PenTool size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "excalidraw",
+              config: { elements: [], appState: {}, svg: "" }
+            }
+          })
+          .run();
+      },
+      category: "advanced"
+    },
+    {
+      id: "mermaid",
+      label: "Mermaid Diagram",
+      description: "Render flowcharts and sequence diagrams from text",
+      icon: <Network size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "mermaid",
+              config: { code: "graph TD\n  A --> B", svg: "" }
             }
           })
           .run();
@@ -2158,6 +2223,37 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     </Button>
                   </Tooltip>
 
+                  {/* Share Button */}
+                  <Tooltip title="Link Sharing" arrow>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={!!deletedAt}
+                      onClick={() => setSharingLinksDialogOpen(true)}
+                      sx={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        fontFamily: '"Outfit", sans-serif',
+                        height: 26,
+                        px: { xs: 1, sm: 1.25 },
+                        minWidth: { xs: 26, sm: "auto" },
+                        borderRadius: "5px",
+                        borderColor: "rgba(255, 255, 255, 0.08)",
+                        color: "text.secondary",
+                        textTransform: "none",
+                        "&:hover": {
+                          borderColor: "rgba(255, 255, 255, 0.15)",
+                          backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        }
+                      }}
+                    >
+                      <Link2 size={13} />
+                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
+                        Share
+                      </Box>
+                    </Button>
+                  </Tooltip>
+
                   <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 14, alignSelf: "center", borderColor: "rgba(255,255,255,0.06)" }} />
 
                   {/* Edit Button */}
@@ -2269,7 +2365,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     slotProps={{
                       paper: {
                         sx: {
-                          width: 150,
+                          minWidth: 160,
                           mt: 0.5,
                         }
                       }
@@ -2278,14 +2374,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <MenuItem
                       onClick={() => {
                         handleCloseMoreMenu();
-                        if (onNavigateToAudit) {
-                          onNavigateToAudit();
-                        }
+                        setRestrictionsDialogOpen(true);
                       }}
                       sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
                     >
                       <ListItemIcon sx={{ minWidth: 24 }}><Users size={12} /></ListItemIcon>
                       <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Viewers & Editors</Typography>} />
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseMoreMenu();
+                        setSharingLinksDialogOpen(true);
+                      }}
+                      sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 24 }}><Link2 size={12} /></ListItemIcon>
+                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Share Link</Typography>} />
                     </MenuItem>
                     <MenuItem onClick={handleTriggerMove} sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
                       <ListItemIcon sx={{ minWidth: 24 }}><FolderInput size={12} /></ListItemIcon>
@@ -2920,6 +3024,26 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           documentId={activeDocId || ""}
           documentTitle={title}
           hasChildren={!!(documents && documents.some(d => d.parentId === activeDocId && !d.deletedAt))}
+        />
+      )}
+
+      {/* Page Restrictions Dialog */}
+      {restrictionsDialogOpen && (
+        <PageRestrictionsDialog
+          open={restrictionsDialogOpen}
+          onClose={() => setRestrictionsDialogOpen(false)}
+          documentId={activeDocId || ""}
+          documentTitle={title}
+        />
+      )}
+
+      {/* Sharing Links Dialog */}
+      {sharingLinksDialogOpen && (
+        <SharingLinksDialog
+          open={sharingLinksDialogOpen}
+          onClose={() => setSharingLinksDialogOpen(false)}
+          documentId={activeDocId || ""}
+          documentTitle={title}
         />
       )}
 

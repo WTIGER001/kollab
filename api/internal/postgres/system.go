@@ -302,7 +302,7 @@ func (r *PostgresSystemRepository) PruneTrash(ctx context.Context) error {
 		WITH RECURSIVE descendants AS (
 			SELECT id FROM documents WHERE deleted_at IS NOT NULL AND deleted_at < $1
 			UNION ALL
-			SELECT d.id FROM documents d JOIN descendants desc ON d.parent_id = desc.id
+			SELECT d.id FROM documents d JOIN descendants des ON d.parent_id = des.id
 		)
 		DELETE FROM documents WHERE id IN (SELECT id FROM descendants)
 	`, cutoff)

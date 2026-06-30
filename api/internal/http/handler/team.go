@@ -210,3 +210,53 @@ func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(project)
 }
+
+func (h *TeamHandler) AddTeamMember(w http.ResponseWriter, r *http.Request) {
+	teamID := chi.URLParam(r, "teamId")
+	if teamID == "" {
+		http.Error(w, "Bad Request: teamId is required", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		UserID string `json:"userId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad Request: invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.teamService.AddTeamMember(r.Context(), teamID, req.UserID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *TeamHandler) RemoveTeamMember(w http.ResponseWriter, r *http.Request) {
+	teamID := chi.URLParam(r, "teamId")
+	userID := chi.URLParam(r, "userId")
+	if teamID == "" || userID == "" {
+		http.Error(w, "Bad Request: teamId and userId are required", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.teamService.RemoveTeamMember(r.Context(), teamID, userID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *TeamHandler) ListAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.teamService.ListAllUsers(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(users)
+}

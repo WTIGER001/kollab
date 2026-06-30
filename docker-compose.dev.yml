@@ -1,0 +1,51 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: arkollab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  go-backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://postgres:${DB_PASSWORD:-postgres}@db:5432/arkollab?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-change_me_to_a_secure_jwt_secret}
+      OIDC_AUTHORITY: ${OIDC_AUTHORITY:-https://h20g6c.logto.app/oidc}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-ckjs7u46o27bhrf0jepzg}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-http://localhost:5173}
+      PORT: 8080
+      OFFICE_CONVERTER_URL: http://media-preview:8082/api/v1/preview
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api:/app
+      - ./uploads:/app/uploads
+      - ../go-permissions:/Users/johnbauer/Dev/Personal/go-permissions
+    depends_on:
+      - db
+      - media-preview
+
+  media-preview:
+    build:
+      context: ../media-preview
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 8082
+      LIBREOFFICE_PATH: /usr/bin/soffice
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  pgdata_dev:

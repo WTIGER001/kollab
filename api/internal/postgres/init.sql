@@ -166,6 +166,16 @@ CREATE TABLE IF NOT EXISTS attachments (
 );
 CREATE INDEX IF NOT EXISTS idx_attachments_document_id ON attachments(document_id);
 
+CREATE TABLE IF NOT EXISTS attachment_previews (
+    attachment_id VARCHAR(255) PRIMARY KEY REFERENCES attachments(id) ON DELETE CASCADE,
+    status VARCHAR(50) NOT NULL,
+    progress INT NOT NULL DEFAULT 0,
+    format VARCHAR(10),
+    error_message TEXT,
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+
 CREATE TABLE IF NOT EXISTS tasks (
     id VARCHAR(255) PRIMARY KEY,
     document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
@@ -192,6 +202,40 @@ CREATE TABLE IF NOT EXISTS document_tags (
     PRIMARY KEY (document_id, tag_id)
 );
 CREATE INDEX IF NOT EXISTS idx_document_tags_doc_id ON document_tags(document_id);
+
+
+-- Security classifications for ABAC
+DO $$ BEGIN
+    CREATE TYPE classification_level AS ENUM ('public', 'internal', 'confidential', 'pii');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Extend documents table to track classification and inheritance status
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS classification classification_level NOT NULL DEFAULT 'internal';
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS inheritance_broken BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Document sharing links
+CREATE TABLE IF NOT EXISTS sharing_links (
+    token_hash VARCHAR(64) PRIMARY KEY,
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    role_id VARCHAR(50) NOT NULL, -- references roles(id) in go-permissions roles table
+    scope VARCHAR(50) NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    created_by VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_sharing_links_doc ON sharing_links(document_id);
+
+-- User security attributes for ABAC evaluation
+CREATE TABLE IF NOT EXISTS user_security_attributes (
+    user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    attribute_key VARCHAR(100) NOT NULL,
+    attribute_value VARCHAR(255) NOT NULL,
+    PRIMARY KEY (user_id, attribute_key)
+);
+
 
 
 

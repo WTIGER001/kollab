@@ -36,4 +36,8 @@ This directory contains the hierarchical technical specifications of Project Ark
 ### 🏷️ [10. Document Tagging & Labels](file:///Users/johnbauer/Dev/Personal/arkm/design/tags.md)
 *Technical specifications for global tag models, mapping structures, REST endpoints, and the React tags editor.*
 
+### 🔐 [11. Permissions & Access Control](file:///Users/johnbauer/Dev/Personal/arkm/design/permissions.md)
+*Technical specifications for the permissions model, go-permissions integration, role hierarchy inheritance, share link TTLs, ABAC tags, and Zero Trust security controls.*
+
+
 

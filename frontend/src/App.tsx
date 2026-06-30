@@ -242,7 +242,7 @@ function App({ isMockMode = false }: AppProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
   const [activeDoc, setActiveDoc] = useState<DocumentItem | null>(null);
-  const projects = allProjects.filter(p => p.teamId === selectedTeamId);
+  const projects = (allProjects || []).filter(p => p.teamId === selectedTeamId);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -639,7 +639,7 @@ function App({ isMockMode = false }: AppProps) {
     if (isAuthenticated) {
       fetchProjects()
         .then(data => {
-          setAllProjects(data);
+          setAllProjects(data || []);
         })
         .catch(err => console.error("Error fetching all projects:", err));
     } else {
@@ -881,7 +881,7 @@ function App({ isMockMode = false }: AppProps) {
   const handleCreateProject = async (teamId: string, name: string, abbreviation: string, description: string) => {
     try {
       const newProject = await createProject(teamId, name, abbreviation, description, "");
-      setAllProjects(prev => [...prev, newProject]);
+      setAllProjects(prev => [...(prev || []), newProject]);
       showToast("Project space created successfully.", "success");
       const parentTeam = teams.find(t => t.id === teamId);
       if (parentTeam) {
@@ -1207,7 +1207,7 @@ function App({ isMockMode = false }: AppProps) {
           project={activeProject}
           teamAbbreviationOrId={activeTeam.abbreviation || activeTeam.id}
           onUpdateProject={(updated) => {
-            setAllProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
+            setAllProjects(prev => (prev || []).map(p => p.id === updated.id ? updated : p));
           }}
           onBack={() => navigateTo(activeTeam.abbreviation || activeTeam.id, activeProject.abbreviation || activeProject.id, null)}
           showToast={showToast}

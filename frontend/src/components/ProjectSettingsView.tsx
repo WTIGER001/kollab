@@ -7,12 +7,18 @@ import {
   Avatar, 
   CircularProgress,
   Tabs,
-  Tab
+  Tab,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Divider
 } from "@mui/material";
-import { Save, ArrowLeft, Image } from "lucide-react";
-import { updateProjectSettings } from "../services/api";
+import { Save, ArrowLeft, Image, Users } from "lucide-react";
+import { updateProjectSettings, fetchTeamUsers } from "../services/api";
 import type { Project } from "../services/api";
 import { TagsManager } from "./TagsManager";
+import { UserAvatar } from "./UserAvatar";
 
 interface ProjectSettingsViewProps {
   project: Project;
@@ -36,11 +42,31 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
   const [saving, setSaving] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
+  // Members list states
+  const [members, setMembers] = useState<{ id: string; username: string }[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+
   useEffect(() => {
     setName(project.name);
     setAbbreviation(project.abbreviation || "");
     setLogoUrl(project.logoUrl || "");
     setDescription(project.description || "");
+
+    if (project.teamId) {
+      setLoadingMembers(true);
+      fetchTeamUsers(project.teamId)
+        .then(data => {
+          setMembers(data);
+          setLoadingMembers(false);
+        })
+        .catch(err => {
+          console.error("Error loading team members for project:", err);
+          setLoadingMembers(false);
+        });
+    } else {
+      setMembers([]);
+      setLoadingMembers(false);
+    }
   }, [project]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -130,6 +156,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
           }}
         >
           <Tab label="General" />
+          <Tab label="Members" />
           <Tab label="Tags" />
         </Tabs>
       </Box>
@@ -265,6 +292,64 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
       )}
 
       {tabValue === 1 && (
+        <Box sx={{ maxWidth: 650 }}>
+          <Box sx={{ 
+            display: "flex",
+            flexDirection: "column",
+            gap: 2
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Users size={18} style={{ color: "var(--accent-blue)" }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+                Project Members ({members.length})
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary", mt: -1, mb: 1 }}>
+              Project members are inherited from the parent team space.
+            </Typography>
+            <Divider />
+
+            {loadingMembers ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : members.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: "center", bgcolor: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color)", borderRadius: 2 }}>
+                <Typography variant="body2" sx={{ fontSize: "13.5px", color: "text.secondary" }}>
+                  No members found in the containing team space.
+                </Typography>
+              </Box>
+            ) : (
+              <List sx={{ maxHeight: 400, overflowY: "auto" }} className="scrollbar-thin">
+                {members.map((member) => (
+                  <ListItem key={member.id} disableGutters sx={{ py: 1 }}>
+                    <ListItemAvatar sx={{ minWidth: 36 }}>
+                      <UserAvatar 
+                        displayName={member.username}
+                        sx={{ width: 28, height: 28, fontSize: "11px", fontWeight: 700, bgcolor: "primary.light" }}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText 
+                      primary={
+                        <Typography sx={{ fontSize: "13.5px", fontWeight: 600, color: "text.primary", fontFamily: '"Outfit", sans-serif' }}>
+                          {member.username}
+                        </Typography>
+                      } 
+                      secondary={
+                        <Typography sx={{ fontSize: "11px", color: "text.disabled" }}>
+                          Member
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {tabValue === 2 && (
         <TagsManager />
       )}
     </Box>

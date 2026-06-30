@@ -21,7 +21,9 @@ import {
   Stack,
   Divider,
   CircularProgress,
-  Tooltip
+  Tooltip,
+  Dialog,
+  useTheme
 } from "@mui/material";
 import { 
   Settings, 
@@ -39,7 +41,10 @@ import {
   Image as ImageIcon,
   BookOpen,
   Sparkles,
-  AtSign
+  AtSign,
+  Palette,
+  Network,
+  PenTool
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
@@ -47,6 +52,9 @@ import type { DocumentItem } from "./Sidebar";
 import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions } from "../services/api";
 import type { Attachment, Tag as TagType } from "../services/api";
 import { marked } from "marked";
+import mermaid from "mermaid";
+import { Excalidraw, exportToSvg } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
 const extractExplicitExcerpt = (contentStr: string): string | null => {
@@ -170,6 +178,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
   const context = useContext(DocumentContext);
   const isEditable = useIsEditable(editor);
+  const theme = useTheme();
   const auth = useAuth();
   const currentUsername = auth?.isAuthenticated
     ? (auth?.user?.profile?.preferred_username || (auth?.user?.profile as any)?.username || "user")
@@ -177,6 +186,151 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const openSettings = Boolean(anchorEl);
+  const [uniqueId] = useState(() => `macro-uniq-${Math.random().toString(36).substring(2, 9)}`);
+
+  // Draw.io States & Effects
+  const [isDrawioEditing, setIsDrawioEditing] = useState(false);
+  const [isDrawioFullscreen, setIsDrawioFullscreen] = useState(false);
+
+  // Excalidraw States
+  const [isExcalidrawEditing, setIsExcalidrawEditing] = useState(false);
+  const [isExcalidrawFullscreen, setIsExcalidrawFullscreen] = useState(false);
+  const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
+
+  // Mermaid States & Effects
+  const [isMermaidEditing, setIsMermaidEditing] = useState(false);
+  const [mermaidError, setMermaidError] = useState("");
+  const [renderedMermaidSvg, setRenderedMermaidSvg] = useState(config.svg || "");
+
+  // Sync Mermaid SVG from collab changes when not editing locally
+  useEffect(() => {
+    if (!isMermaidEditing) {
+      setRenderedMermaidSvg(config.svg || "");
+    }
+  }, [config.svg, isMermaidEditing]);
+
+  // Initialize Mermaid
+  useEffect(() => {
+    if (type === "mermaid") {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "dark",
+          securityLevel: "loose",
+          themeVariables: {
+            background: "transparent",
+          }
+        });
+      } catch (e) {
+        console.error("Failed to initialize Mermaid:", e);
+      }
+    }
+  }, [type]);
+
+  // Mermaid live compile effect
+  useEffect(() => {
+    if (type !== "mermaid" || !isMermaidEditing) return;
+    const code = config.code || "";
+    if (!code.trim()) {
+      setRenderedMermaidSvg("");
+      setMermaidError("");
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setMermaidError("");
+        const { svg } = await mermaid.render(uniqueId, code);
+        setRenderedMermaidSvg(svg);
+        updateAttributes({
+          config: {
+            ...config,
+            svg: svg
+          }
+        });
+      } catch (err: any) {
+        const errEl = document.getElementById(`d${uniqueId}`);
+        if (errEl) errEl.remove();
+        setMermaidError(err.message || "Invalid Mermaid syntax");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [config.code, isMermaidEditing, type, uniqueId]);
+
+  // Draw.io iframe communication handler
+  useEffect(() => {
+    if (type !== "drawio" || !isDrawioEditing) return;
+
+    let latestXml = config.xml || "";
+    const drawioTheme = config.theme || "auto";
+    const isDrawioDark = drawioTheme === "auto" 
+      ? (theme.palette.mode === "dark") 
+      : (drawioTheme === "dark");
+
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== "string") return;
+
+      try {
+        const data = JSON.parse(event.data);
+        const iframe = document.getElementById(`drawio-iframe-${uniqueId}`) as HTMLIFrameElement;
+        if (!iframe || event.source !== iframe.contentWindow) return;
+
+        if (data.event === "init") {
+          iframe.contentWindow?.postMessage(
+            JSON.stringify({
+              action: "load",
+              xml: config.xml || ""
+            }),
+            "*"
+          );
+        } else if (data.event === "save") {
+          if (data.xml) {
+            latestXml = data.xml;
+          }
+          // Request vector SVG export matching the chosen theme scheme
+          iframe.contentWindow?.postMessage(
+            JSON.stringify({
+              action: "export",
+              format: "xmlsvg",
+              theme: isDrawioDark ? "dark" : "light"
+            }),
+            "*"
+          );
+        } else if (data.event === "export") {
+          let decodedSvg = "";
+          if (data.data && data.data.includes("base64,")) {
+            try {
+              const base64Data = data.data.split("base64,")[1];
+              decodedSvg = new TextDecoder().decode(
+                Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
+              );
+            } catch (e) {
+              console.error("Failed to decode Draw.io base64 SVG:", e);
+            }
+          }
+          
+          updateAttributes({
+            config: {
+              ...config,
+              xml: latestXml || data.xml || "",
+              svg: decodedSvg || data.data || ""
+            }
+          });
+          setIsDrawioEditing(false);
+        } else if (data.event === "exit") {
+          setIsDrawioEditing(false);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [isDrawioEditing, config.xml, type, uniqueId, config.theme, theme.palette.mode]);
 
   const [mentionDocs, setMentionDocs] = useState<DocumentItem[]>([]);
   const [mentionDocsLoading, setMentionDocsLoading] = useState(false);
@@ -385,12 +539,26 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         return <Paperclip size={14} color="#f472b6" />;
       case "markdown-paste":
         return <FileText size={14} color="#c084fc" />;
+      case "drawio":
+        return <Palette size={14} color="#f472b6" />;
+      case "excalidraw":
+        return <PenTool size={14} color="#a78bfa" />;
+      case "mermaid":
+        return <Network size={14} color="#60a5fa" />;
       default:
         return <Cpu size={14} color="#60a5fa" />;
     }
   };
 
   const renderViewport = () => {
+    const macroTheme = config.theme || "auto";
+    const isMacroDark = macroTheme === "auto" 
+      ? (theme.palette.mode === "dark") 
+      : (macroTheme === "dark");
+
+    const isDrawioDark = isMacroDark;
+    const isExcalidrawDark = isMacroDark;
+
     const updateConfig = (key: string, val: any) => {
       updateAttributes({
         config: {
@@ -1641,6 +1809,589 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               </Box>
             );
           })()}
+
+          {type === "drawio" && (
+            <Box onDoubleClick={() => isEditable && setIsDrawioEditing(true)} sx={{ position: "relative", width: "100%" }}>
+              {isEditable && (
+                <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 10, display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setIsDrawioEditing(true)}
+                    startIcon={<Palette size={14} />}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      bgcolor: "var(--primary-color)",
+                      color: "#fff",
+                      "&:hover": { bgcolor: "var(--primary-dark)" }
+                    }}
+                  >
+                    Edit Diagram
+                  </Button>
+                </Box>
+              )}
+
+              {config.svg ? (() => {
+                let processedSvg = config.svg;
+                if (isDrawioDark) {
+                  processedSvg = processedSvg.replace(/@media\s*\(prefers-color-scheme:\s*dark\)/gi, "@media all");
+                } else {
+                  processedSvg = processedSvg.replace(/@media\s*\(prefers-color-scheme:\s*dark\)/gi, "@media (max-width: 1px)");
+                }
+
+                return (
+                  <Box 
+                    onClick={() => !isEditable && setIsDrawioFullscreen(true)}
+                    dangerouslySetInnerHTML={{ __html: processedSvg }} 
+                    sx={{
+                      width: "100%",
+                      maxHeight: "500px",
+                      overflow: "auto",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      p: 2,
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "8px",
+                      bgcolor: isDrawioDark ? "#1e1e1e" : "#ffffff",
+                      cursor: !isEditable ? "zoom-in" : "default",
+                      "& svg": {
+                        maxWidth: "100%",
+                        height: "auto",
+                        display: "block"
+                      }
+                    }}
+                  />
+                );
+              })() : (
+                <Box 
+                  onClick={() => isEditable && setIsDrawioEditing(true)}
+                  sx={{
+                    p: 4,
+                    border: "2px dashed var(--border-color)",
+                    borderRadius: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: isEditable ? "pointer" : "default",
+                    bgcolor: isDrawioDark ? "#1e1e1e" : "#ffffff",
+                    transition: "all 0.2s ease",
+                    "&:hover": isEditable ? {
+                      bgcolor: isDrawioDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                      borderColor: "var(--primary-color)"
+                    } : {}
+                  }}
+                >
+                  <Palette size={32} style={{ color: "var(--text-secondary)", marginBottom: "8px" }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: isDrawioDark ? "#ffffff" : "text.primary" }}>
+                    Empty Draw.io Diagram
+                  </Typography>
+                  {isEditable && (
+                    <Typography variant="caption" sx={{ color: "text.disabled", mt: 0.5 }}>
+                      Double-click or click to start drawing
+                    </Typography>
+                  )}
+                </Box>
+              )}
+
+              <Dialog
+                fullScreen
+                open={isDrawioEditing}
+                onClose={() => setIsDrawioEditing(false)}
+                slotProps={{
+                  backdrop: {
+                    style: { backgroundColor: "rgba(0, 0, 0, 0.8)" }
+                  }
+                }}
+              >
+                <Box sx={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", bgcolor: isDrawioDark ? "#1e1e1e" : "#f5f5f5" }}>
+                  <Box sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isDrawioDark ? "1px solid #333" : "1px solid #ddd", bgcolor: isDrawioDark ? "#252526" : "#ffffff" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Palette size={16} style={{ color: "var(--accent-pink, #f472b6)" }} />
+                      <Typography sx={{ color: isDrawioDark ? "#fff" : "#000", fontWeight: 700, fontFamily: '"Outfit", sans-serif', fontSize: "14px" }}>
+                        Draw.io Diagram Editor ({isDrawioDark ? "Dark Theme" : "Light Theme"})
+                      </Typography>
+                    </Box>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={() => setIsDrawioEditing(false)}
+                      sx={{ color: isDrawioDark ? "#aaa" : "#555", borderColor: isDrawioDark ? "#444" : "#ccc", "&:hover": { color: isDrawioDark ? "#fff" : "#000", borderColor: isDrawioDark ? "#666" : "#999" } }}
+                    >
+                      Exit Editor
+                    </Button>
+                  </Box>
+                  <iframe
+                    id={`drawio-iframe-${uniqueId}`}
+                    src={`https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&dark=${isDrawioDark ? 1 : 0}`}
+                    style={{ width: "100%", height: "100%", border: "none", flex: 1 }}
+                  />
+                </Box>
+              </Dialog>
+
+              <Dialog
+                fullScreen
+                open={isDrawioFullscreen}
+                onClose={() => setIsDrawioFullscreen(false)}
+                slotProps={{
+                  backdrop: {
+                    style: { backgroundColor: "rgba(0, 0, 0, 0.95)" }
+                  }
+                }}
+              >
+                <Box sx={{ 
+                  width: "100vw", 
+                  height: "100vh", 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  bgcolor: isDrawioDark ? "#121212" : "#ffffff",
+                  position: "relative"
+                }}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center", 
+                    borderBottom: isDrawioDark ? "1px solid #222" : "1px solid #eee",
+                    bgcolor: isDrawioDark ? "#1e1e1e" : "#f8f9fa",
+                    zIndex: 10
+                  }}>
+                    <Typography sx={{ fontWeight: 700, color: isDrawioDark ? "#fff" : "#000", fontFamily: '"Outfit", sans-serif', fontSize: "14px" }}>
+                      Diagram Preview
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      onClick={() => setIsDrawioFullscreen(false)}
+                      sx={{ 
+                        textTransform: "none", 
+                        bgcolor: "var(--primary-color)", 
+                        color: "#fff",
+                        "&:hover": { bgcolor: "var(--primary-dark)" }
+                      }}
+                    >
+                      Close Preview
+                    </Button>
+                  </Box>
+
+                  <Box 
+                    onClick={() => setIsDrawioFullscreen(false)}
+                    dangerouslySetInnerHTML={{ 
+                      __html: (config.svg || "")
+                        .replace(
+                          /@media\s*\(prefers-color-scheme:\s*dark\)/gi, 
+                          isDrawioDark ? "@media all" : "@media (max-width: 1px)"
+                        )
+                    }}
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      p: 4,
+                      overflow: "auto",
+                      cursor: "zoom-out",
+                      bgcolor: isDrawioDark ? "#121212" : "#ffffff",
+                      "& svg": {
+                        maxWidth: "95vw",
+                        maxHeight: "85vh",
+                        width: "auto",
+                        height: "auto",
+                        display: "block",
+                        filter: "drop-shadow(0px 8px 24px rgba(0, 0, 0, 0.12))"
+                      }
+                    }}
+                  />
+                </Box>
+              </Dialog>
+            </Box>
+          )}
+
+          {type === "excalidraw" && (
+            <Box onDoubleClick={() => isEditable && setIsExcalidrawEditing(true)} sx={{ position: "relative", width: "100%" }}>
+              {isEditable && (
+                <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 10, display: "flex", gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setIsExcalidrawEditing(true)}
+                    startIcon={<PenTool size={14} />}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      bgcolor: "var(--primary-color)",
+                      color: "#fff",
+                      "&:hover": { bgcolor: "var(--primary-dark)" }
+                    }}
+                  >
+                    Edit Sketch
+                  </Button>
+                </Box>
+              )}
+
+              {config.svg ? (
+                <Box 
+                  onClick={() => !isEditable && setIsExcalidrawFullscreen(true)}
+                  dangerouslySetInnerHTML={{ __html: config.svg }} 
+                  sx={{
+                    width: "100%",
+                    maxHeight: "500px",
+                    overflow: "auto",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    p: 2,
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    bgcolor: isExcalidrawDark ? "#1e1e1e" : "#ffffff",
+                    cursor: !isEditable ? "zoom-in" : "default",
+                    "& svg": {
+                      maxWidth: "100%",
+                      height: "auto",
+                      display: "block"
+                    }
+                  }}
+                />
+              ) : (
+                <Box 
+                  onClick={() => isEditable && setIsExcalidrawEditing(true)}
+                  sx={{
+                    p: 4,
+                    border: "2px dashed var(--border-color)",
+                    borderRadius: "12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: isEditable ? "pointer" : "default",
+                    bgcolor: isExcalidrawDark ? "#1e1e1e" : "#ffffff",
+                    transition: "all 0.2s ease",
+                    "&:hover": isEditable ? {
+                      bgcolor: isExcalidrawDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                      borderColor: "var(--primary-color)"
+                    } : {}
+                  }}
+                >
+                  <PenTool size={32} style={{ color: "var(--text-secondary)", marginBottom: "8px" }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: isExcalidrawDark ? "#ffffff" : "text.primary" }}>
+                    Empty Excalidraw Sketch
+                  </Typography>
+                  {isEditable && (
+                    <Typography variant="caption" sx={{ color: "text.disabled", mt: 0.5 }}>
+                      Double-click or click to start sketching
+                    </Typography>
+                  )}
+                </Box>
+              )}
+
+              {/* Editor Dialog */}
+              <Dialog
+                fullScreen
+                open={isExcalidrawEditing}
+                onClose={() => setIsExcalidrawEditing(false)}
+                slotProps={{
+                  backdrop: {
+                    style: { backgroundColor: "rgba(0, 0, 0, 0.8)" }
+                  }
+                }}
+              >
+                <Box sx={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", bgcolor: isExcalidrawDark ? "#1e1e1e" : "#f5f5f5" }}>
+                  <Box sx={{ p: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: isExcalidrawDark ? "1px solid #333" : "1px solid #ddd", bgcolor: isExcalidrawDark ? "#252526" : "#ffffff" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <PenTool size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />
+                      <Typography sx={{ color: isExcalidrawDark ? "#fff" : "#000", fontWeight: 700, fontFamily: '"Outfit", sans-serif', fontSize: "14px" }}>
+                        Excalidraw Canvas Editor ({isExcalidrawDark ? "Dark Theme" : "Light Theme"})
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={async () => {
+                          if (!excalidrawAPI) return;
+                          try {
+                            const elements = excalidrawAPI.getSceneElements();
+                            const files = excalidrawAPI.getFiles();
+                            const appState = excalidrawAPI.getAppState();
+                            
+                            const svgEl = await exportToSvg({
+                              elements,
+                              appState: {
+                                ...appState,
+                                exportWithDarkMode: isExcalidrawDark
+                              },
+                              files
+                            });
+                            
+                            updateAttributes({
+                              config: {
+                                ...config,
+                                elements,
+                                svg: svgEl.outerHTML
+                              }
+                            });
+                            setIsExcalidrawEditing(false);
+                          } catch (err) {
+                            console.error("Excalidraw export failed:", err);
+                          }
+                        }}
+                        sx={{ 
+                          textTransform: "none", 
+                          fontSize: "12px",
+                          bgcolor: "var(--primary-color)", 
+                          color: "#fff",
+                          "&:hover": { bgcolor: "var(--primary-dark)" }
+                        }}
+                      >
+                        Save & Close
+                      </Button>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        onClick={() => setIsExcalidrawEditing(false)}
+                        sx={{ color: isExcalidrawDark ? "#aaa" : "#555", borderColor: isExcalidrawDark ? "#444" : "#ccc", "&:hover": { color: isExcalidrawDark ? "#fff" : "#000", borderColor: isExcalidrawDark ? "#666" : "#999" } }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                  
+                  {/* Local Excalidraw Component */}
+                  <Box sx={{ flex: 1, position: "relative", width: "100%", height: "100%" }}>
+                    {isExcalidrawEditing && (
+                      <Excalidraw
+                        excalidrawAPI={(api) => setExcalidrawAPI(api)}
+                        initialData={{
+                          elements: config.elements || [],
+                          appState: {
+                            theme: isExcalidrawDark ? "dark" : "light"
+                          }
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Dialog>
+
+              {/* Fullscreen Lightbox Preview */}
+              <Dialog
+                fullScreen
+                open={isExcalidrawFullscreen}
+                onClose={() => setIsExcalidrawFullscreen(false)}
+                slotProps={{
+                  backdrop: {
+                    style: { backgroundColor: "rgba(0, 0, 0, 0.95)" }
+                  }
+                }}
+              >
+                <Box sx={{ 
+                  width: "100vw", 
+                  height: "100vh", 
+                  display: "flex", 
+                  flexDirection: "column", 
+                  bgcolor: isExcalidrawDark ? "#121212" : "#ffffff",
+                  position: "relative"
+                }}>
+                  <Box sx={{ 
+                    p: 1.5, 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center", 
+                    borderBottom: isExcalidrawDark ? "1px solid #222" : "1px solid #eee",
+                    bgcolor: isExcalidrawDark ? "#1e1e1e" : "#f8f9fa",
+                    zIndex: 10
+                  }}>
+                    <Typography sx={{ fontWeight: 700, color: isExcalidrawDark ? "#fff" : "#000", fontFamily: '"Outfit", sans-serif', fontSize: "14px" }}>
+                      Excalidraw Preview
+                    </Typography>
+                    <Button 
+                      variant="contained" 
+                      size="small"
+                      onClick={() => setIsExcalidrawFullscreen(false)}
+                      sx={{ 
+                        textTransform: "none", 
+                        bgcolor: "var(--primary-color)", 
+                        color: "#fff",
+                        "&:hover": { bgcolor: "var(--primary-dark)" }
+                      }}
+                    >
+                      Close Preview
+                    </Button>
+                  </Box>
+
+                  <Box 
+                    onClick={() => setIsExcalidrawFullscreen(false)}
+                    dangerouslySetInnerHTML={{ __html: config.svg || "" }}
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      p: 4,
+                      overflow: "auto",
+                      cursor: "zoom-out",
+                      bgcolor: isExcalidrawDark ? "#121212" : "#ffffff",
+                      "& svg": {
+                        maxWidth: "95vw",
+                        maxHeight: "85vh",
+                        width: "auto",
+                        height: "auto",
+                        display: "block",
+                        filter: "drop-shadow(0px 8px 24px rgba(0, 0, 0, 0.12))"
+                      }
+                    }}
+                  />
+                </Box>
+              </Dialog>
+            </Box>
+          )}
+
+          {type === "mermaid" && (
+            <Box onDoubleClick={() => isEditable && !isMermaidEditing && setIsMermaidEditing(true)} sx={{ width: "100%" }}>
+              {isMermaidEditing ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, width: "100%" }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                      <Network size={16} style={{ color: "var(--accent-blue)" }} />
+                      <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', fontSize: "13px" }}>
+                        Mermaid Diagram Editor
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setIsMermaidEditing(false)}
+                      sx={{ textTransform: "none", fontSize: "11px" }}
+                    >
+                      Close Editor
+                    </Button>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 2, minHeight: "300px", flexDirection: { xs: "column", md: "row" } }}>
+                    {/* Code Editor Panel */}
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                      <TextField
+                        multiline
+                        fullWidth
+                        minRows={8}
+                        value={config.code || ""}
+                        onChange={(e) => updateConfig("code", e.target.value)}
+                        placeholder="graph TD\n  A --> B"
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            fontFamily: "monospace",
+                            fontSize: "12.5px"
+                          }
+                        }}
+                      />
+                      {mermaidError && (
+                        <Typography variant="caption" sx={{ color: "error.main", fontWeight: 600, mt: 0.5 }}>
+                          {mermaidError}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Live Preview Panel */}
+                    <Box sx={{ 
+                      flex: 1, 
+                      border: "1px solid var(--border-color)", 
+                      borderRadius: "4px", 
+                      p: 2, 
+                      display: "flex", 
+                      justifyContent: "center", 
+                      alignItems: "center",
+                      bgcolor: "rgba(255, 255, 255, 0.01)",
+                      overflow: "auto"
+                    }}>
+                      {renderedMermaidSvg ? (
+                        <Box 
+                          dangerouslySetInnerHTML={{ __html: renderedMermaidSvg }} 
+                          sx={{
+                            width: "100%",
+                            "& svg": {
+                              maxWidth: "100%",
+                              height: "auto",
+                              bgcolor: "transparent !important"
+                            }
+                          }}
+                        />
+                      ) : (
+                        <Typography variant="caption" sx={{ color: "text.disabled" }}>
+                          Preview will render here
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              ) : (
+                <Box sx={{ position: "relative", width: "100%" }}>
+                  {isEditable && (
+                    <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 10 }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => setIsMermaidEditing(true)}
+                        startIcon={<Network size={14} />}
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          bgcolor: "var(--primary-color)",
+                          color: "#fff",
+                          "&:hover": { bgcolor: "var(--primary-dark)" }
+                        }}
+                      >
+                        Edit Diagram
+                      </Button>
+                    </Box>
+                  )}
+                  
+                  <Box 
+                    sx={{ 
+                      p: 2, 
+                      border: "1px solid var(--border-color)", 
+                      borderRadius: "8px", 
+                      display: "flex", 
+                      justifyContent: "center", 
+                      alignItems: "center",
+                      bgcolor: "rgba(255, 255, 255, 0.01)",
+                      overflow: "auto",
+                      minHeight: "100px"
+                    }}
+                  >
+                    {renderedMermaidSvg ? (
+                      <Box 
+                        dangerouslySetInnerHTML={{ __html: renderedMermaidSvg }} 
+                        sx={{
+                          width: "100%",
+                          "& svg": {
+                            maxWidth: "100%",
+                            height: "auto",
+                            bgcolor: "transparent !important"
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{ textAlign: "center", py: 2 }}>
+                        <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic" }}>
+                          Empty Mermaid Diagram
+                        </Typography>
+                        {isEditable && (
+                          <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 0.5 }}>
+                            Double-click or click Edit Diagram to add content
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
       </>
     );
   };
@@ -2050,6 +2801,54 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   </FormControl>
                 )}
               </>
+            )}
+
+            {type === "drawio" && (
+              <>
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Diagram Theme</FormLabel>
+                  <Select
+                    value={config.theme || "auto"}
+                    onChange={(e) => updateConfig("theme", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36 }}
+                  >
+                    <MenuItem value="auto" sx={{ fontSize: "13px" }}>Auto (Follow System)</MenuItem>
+                    <MenuItem value="light" sx={{ fontSize: "13px" }}>Light</MenuItem>
+                    <MenuItem value="dark" sx={{ fontSize: "13px" }}>Dark</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Typography variant="body2" sx={{ fontSize: "12px", color: "text.secondary", fontStyle: "italic", mt: 1 }}>
+                  Double-click the diagram or click "Edit Diagram" on the block itself to launch the editor.
+                </Typography>
+              </>
+            )}
+
+            {type === "excalidraw" && (
+              <>
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Sketch Theme</FormLabel>
+                  <Select
+                    value={config.theme || "auto"}
+                    onChange={(e) => updateConfig("theme", e.target.value)}
+                    sx={{ fontSize: "13px", height: 36 }}
+                  >
+                    <MenuItem value="auto" sx={{ fontSize: "13px" }}>Auto (Follow System)</MenuItem>
+                    <MenuItem value="light" sx={{ fontSize: "13px" }}>Light</MenuItem>
+                    <MenuItem value="dark" sx={{ fontSize: "13px" }}>Dark</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Typography variant="body2" sx={{ fontSize: "12px", color: "text.secondary", fontStyle: "italic", mt: 1 }}>
+                  Double-click the canvas or click "Edit Sketch" on the block itself to launch the editor.
+                </Typography>
+              </>
+            )}
+
+            {type === "mermaid" && (
+              <Typography variant="body2" sx={{ fontSize: "12.5px", color: "text.secondary", fontStyle: "italic" }}>
+                Double-click the block or click "Edit Diagram" on the block itself to open the split code editor.
+              </Typography>
             )}
           </Stack>
         </Popover>

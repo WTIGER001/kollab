@@ -85,3 +85,43 @@ func (r *PostgresAttachmentRepository) Delete(ctx context.Context, id string) er
 	_, err := r.db.Exec(ctx, "DELETE FROM attachments WHERE id = $1", id)
 	return err
 }
+
+func (r *PostgresAttachmentRepository) SavePreviewStatus(ctx context.Context, status *domain.PreviewStatus) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO attachment_previews (attachment_id, status, progress, format, error_message, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (attachment_id) DO UPDATE SET
+			status = EXCLUDED.status,
+			progress = EXCLUDED.progress,
+			format = EXCLUDED.format,
+			error_message = EXCLUDED.error_message,
+			updated_at = EXCLUDED.updated_at
+	`, status.AttachmentID, status.Status, status.Progress, status.Format, status.ErrorMessage, status.UpdatedAt)
+	return err
+}
+
+func (r *PostgresAttachmentRepository) GetPreviewStatus(ctx context.Context, attachmentID string) (*domain.PreviewStatus, error) {
+	row := r.db.QueryRow(ctx, `
+		SELECT attachment_id, status, progress, format, error_message, updated_at
+		FROM attachment_previews
+		WHERE attachment_id = $1
+	`, attachmentID)
+
+	var status domain.PreviewStatus
+	var format, errMsg *string
+	err := row.Scan(&status.AttachmentID, &status.Status, &status.Progress, &format, &errMsg, &status.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("preview status not found")
+		}
+		return nil, err
+	}
+	if format != nil {
+		status.Format = *format
+	}
+	if errMsg != nil {
+		status.ErrorMessage = *errMsg
+	}
+	return &status, nil
+}
+

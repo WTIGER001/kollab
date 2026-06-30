@@ -4,27 +4,39 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	cryptoRand "crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	docExporter "arkollab/api/internal/document"
 	"arkollab/api/internal/domain"
 	"arkollab/api/internal/http/middleware"
+	"arkollab/api/internal/permissions"
 	"arkollab/api/internal/ws"
+	goperm "github.com/wtiger001/go-permissions"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DocumentHandler struct {
 	docService domain.DocumentService
 	hub        *ws.Hub
+	db         *pgxpool.Pool
+	evaluator  *permissions.AccessEvaluator
 }
 
-func NewDocumentHandler(docService domain.DocumentService, hub *ws.Hub) *DocumentHandler {
+func NewDocumentHandler(docService domain.DocumentService, hub *ws.Hub, db *pgxpool.Pool, evaluator *permissions.AccessEvaluator) *DocumentHandler {
 	return &DocumentHandler{
 		docService: docService,
 		hub:        hub,
+		db:         db,
+		evaluator:  evaluator,
 	}
 }
 
@@ -749,6 +761,278 @@ func sanitizeFileName(name string) string {
 		res = "Untitled_Page"
 	}
 	return res
+}
+
+func (h *DocumentHandler) GetPermissions(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var classification string
+	var inheritanceBroken bool
+	var projectId string
+	var teamId string
+	err := h.db.QueryRow(r.Context(),
+		"SELECT classification::text, inheritance_broken, COALESCE(project_id, ''), team_id FROM documents WHERE id = $1",
+		id,
+	).Scan(&classification, &inheritanceBroken, &projectId, &teamId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to query document: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Query principal_roles assignments
+	rows, err := h.db.Query(r.Context(),
+		"SELECT id, principal_kind, principal_id, role_id FROM principal_roles WHERE binding_values->>'id' = $1",
+		id,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to query role assignments: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type Grant struct {
+		ID          int64  `json:"id"`
+		GranteeType string `json:"granteeType"`
+		GranteeID   string `json:"granteeId"`
+		RoleID      string `json:"roleId"`
+	}
+
+	var grants []Grant
+	for rows.Next() {
+		var g Grant
+		if err := rows.Scan(&g.ID, &g.GranteeType, &g.GranteeID, &g.RoleID); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to scan assignment: %v", err), http.StatusInternalServerError)
+			return
+		}
+		grants = append(grants, g)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"documentId":        id,
+		"classification":    classification,
+		"inheritanceBroken": inheritanceBroken,
+		"projectId":         projectId,
+		"teamId":            teamId,
+		"grants":            grants,
+	})
+}
+
+func (h *DocumentHandler) AddPermissionGrant(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		GranteeType string `json:"granteeType"`
+		GranteeID   string `json:"granteeId"`
+		RoleID      string `json:"roleId"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	var kind goperm.PrincipalKind
+	switch req.GranteeType {
+	case "user":
+		kind = goperm.PrincipalUser
+	case "group":
+		kind = goperm.PrincipalGroup
+	default:
+		http.Error(w, "Invalid granteeType", http.StatusBadRequest)
+		return
+	}
+
+	err := permissions.DocumentPermissions.GrantRole(r.Context(), req.RoleID, kind, req.GranteeID, id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to grant role: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *DocumentHandler) DeletePermissionGrant(w http.ResponseWriter, r *http.Request) {
+	grantId := chi.URLParam(r, "grantId")
+	if grantId == "" {
+		http.Error(w, "Grant ID is required", http.StatusBadRequest)
+		return
+	}
+
+	_, err := h.db.Exec(r.Context(), "DELETE FROM principal_roles WHERE id = $1", grantId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete grant: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *DocumentHandler) UpdatePermissionSettings(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Classification    string `json:"classification"`
+		InheritanceBroken bool   `json:"inheritanceBroken"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	_, err := h.db.Exec(r.Context(),
+		"UPDATE documents SET classification = $1, inheritance_broken = $2 WHERE id = $3",
+		req.Classification, req.InheritanceBroken, id,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update document permissions settings: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *DocumentHandler) CreateShareLink(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		RoleID        string `json:"roleId"`
+		Scope         string `json:"scope"`
+		Password      string `json:"password"`
+		ExpiresInDays int    `json:"expiresInDays"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Generate plain token
+	rawBytes := make([]byte, 16)
+	if _, err := cryptoRand.Read(rawBytes); err != nil {
+		http.Error(w, "Failed to generate sharing token", http.StatusInternalServerError)
+		return
+	}
+	plainToken := hex.EncodeToString(rawBytes)
+
+	// Hash token
+	hash := sha256.Sum256([]byte(plainToken))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	// Hash password if set
+	var passwordHash *string
+	if req.Password != "" {
+		pHashBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+			return
+		}
+		pHashStr := string(pHashBytes)
+		passwordHash = &pHashStr
+	}
+
+	var expiresAt *time.Time
+	if req.ExpiresInDays > 0 {
+		exp := time.Now().AddDate(0, 0, req.ExpiresInDays)
+		expiresAt = &exp
+	}
+
+	userID, _ := middleware.GetUserID(r.Context())
+
+	_, err := h.db.Exec(r.Context(),
+		`INSERT INTO sharing_links (token_hash, document_id, role_id, scope, password_hash, created_by, expires_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		tokenHash, id, req.RoleID, req.Scope, passwordHash, userID, expiresAt,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create sharing link: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"token":      plainToken,
+		"documentId": id,
+		"roleId":     req.RoleID,
+		"scope":      req.Scope,
+		"expiresAt":  expiresAt,
+	})
+}
+
+func (h *DocumentHandler) ListShareLinks(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "Document ID is required", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := h.db.Query(r.Context(),
+		`SELECT token_hash, role_id, scope, expires_at, created_at
+		 FROM sharing_links
+		 WHERE document_id = $1`,
+		id,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to query sharing links: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type ShareLink struct {
+		TokenHash string     `json:"tokenHash"`
+		RoleID    string     `json:"roleId"`
+		Scope     string     `json:"scope"`
+		ExpiresAt *time.Time `json:"expiresAt"`
+		CreatedAt time.Time  `json:"createdAt"`
+	}
+
+	var links []ShareLink
+	for rows.Next() {
+		var l ShareLink
+		if err := rows.Scan(&l.TokenHash, &l.RoleID, &l.Scope, &l.ExpiresAt, &l.CreatedAt); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to scan share link: %v", err), http.StatusInternalServerError)
+			return
+		}
+		links = append(links, l)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(links)
+}
+
+func (h *DocumentHandler) DeleteShareLink(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	linkId := chi.URLParam(r, "linkId")
+	if id == "" || linkId == "" {
+		http.Error(w, "Document ID and linkId token hash are required", http.StatusBadRequest)
+		return
+	}
+
+	_, err := h.db.Exec(r.Context(),
+		"DELETE FROM sharing_links WHERE token_hash = $1 AND document_id = $2",
+		linkId, id,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete sharing link: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 

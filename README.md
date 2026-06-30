@@ -73,6 +73,25 @@ npm run dev
 ```
 Open `http://localhost:5173` in your web browser.
 
+### 🐳 Docker Development Workflow (Alternative)
+
+If you want to run the database and the Go backend inside Docker (which includes LibreOffice out-of-the-box for high-fidelity document previews) while still using Go `air` for hot-reloading:
+
+1. **Start the Docker development environment**:
+   Run the dev compose setup from the repository root:
+   ```bash
+   docker compose -f docker-compose.dev.yml up --build
+   ```
+   This builds the development Go image, installs LibreOffice and fonts, mounts the `./api` directory for live syncing, starts the `pgvector` database, and runs the API under `air` on `localhost:8080`.
+
+2. **Run the React Frontend Application locally**:
+   In another terminal, start your local Vite development server:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   Vite will proxy all `/api` and websocket requests to the hot-reloading Docker container on `http://localhost:8080`.
+
 ---
 
 ## 🧪 Verification & Linting

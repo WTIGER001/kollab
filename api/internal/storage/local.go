@@ -42,3 +42,12 @@ func (s *LocalStorage) Delete(ctx context.Context, key string) error {
 	}
 	return nil
 }
+
+func (s *LocalStorage) DeleteFolder(ctx context.Context, folderKey string) error {
+	dirPath := filepath.Join(s.basePath, folderKey)
+	if err := os.RemoveAll(dirPath); err != nil {
+		return err
+	}
+	return nil
+}
+

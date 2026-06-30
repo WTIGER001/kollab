@@ -38,7 +38,7 @@ func (r *PostgresTeamRepository) GetTeamsByUserID(ctx context.Context, userID st
 	}
 	defer rows.Close()
 
-	var list []*domain.Team
+	list := []*domain.Team{}
 	for rows.Next() {
 		var t domain.Team
 		if err := rows.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description); err != nil {
@@ -62,7 +62,7 @@ func (r *PostgresTeamRepository) GetProjectsByTeamID(ctx context.Context, teamID
 	}
 	defer rows.Close()
 
-	var list []*domain.Project
+	list := []*domain.Project{}
 	for rows.Next() {
 		var p domain.Project
 		if err := rows.Scan(&p.ID, &p.Name, &p.TeamID, &p.LogoURL, &p.Abbreviation, &p.Description); err != nil {
@@ -98,7 +98,7 @@ func (r *PostgresTeamRepository) GetUsersByTeamID(ctx context.Context, teamID st
 	}
 	defer rows.Close()
 
-	var list []*domain.User
+	list := []*domain.User{}
 	for rows.Next() {
 		var u domain.User
 		if err := rows.Scan(&u.ID, &u.Username); err != nil {
@@ -200,4 +200,30 @@ func (r *PostgresTeamRepository) AddTeamMember(ctx context.Context, teamID strin
 		ON CONFLICT (team_id, user_id) DO NOTHING
 	`, teamID, userID)
 	return err
+}
+
+func (r *PostgresTeamRepository) RemoveTeamMember(ctx context.Context, teamID string, userID string) error {
+	_, err := r.db.Exec(ctx, `
+		DELETE FROM team_members
+		WHERE team_id = $1 AND user_id = $2
+	`, teamID, userID)
+	return err
+}
+
+func (r *PostgresTeamRepository) ListAllUsers(ctx context.Context) ([]*domain.User, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, username, COALESCE(email, ''), COALESCE(display_name, '') FROM users ORDER BY username ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		var u domain.User
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.DisplayName); err != nil {
+			return nil, err
+		}
+		users = append(users, &u)
+	}
+	return users, nil
 }

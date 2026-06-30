@@ -30,6 +30,7 @@ import (
 	commentrepo "arkollab/api/internal/comment"
 	attrepo "arkollab/api/internal/attachment"
 	tagrepo "arkollab/api/internal/tag"
+	"arkollab/api/internal/permissions"
 	"arkollab/api/internal/storage"
 	"arkollab/api/internal/ws"
 	"arkollab/api/internal/ai"
@@ -136,6 +137,14 @@ func main() {
 	}
 	log.Println("Database schema initialized successfully.")
 
+	// Initialize permissions schema and standard roles
+	if err := permissions.InitPermissions(ctx, db); err != nil {
+		log.Fatalf("Failed to initialize permissions system: %v", err)
+	}
+	log.Println("Permissions system initialized successfully.")
+
+	evaluator := permissions.NewAccessEvaluator(db)
+
 	// Determine if we should seed mock data
 	shouldSeed := false
 	if dbURL == "" {
@@ -152,6 +161,9 @@ func main() {
 			log.Fatalf("Failed to seed database: %v", err)
 		}
 		log.Println("Database seeded successfully.")
+
+		log.Println("Seeding default permissions assignments...")
+		permissions.SeedDefaultPermissions(ctx)
 	}
 
 
@@ -214,7 +226,7 @@ func main() {
 	// Instantiate handlers
 	userHandler := handler.NewUserHandler(authService, themeService, systemService, oidcConfig)
 	teamHandler := handler.NewTeamHandler(teamService)
-	docHandler := handler.NewDocumentHandler(docService, wsHub)
+	docHandler := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imageHandler := handler.NewImageHandler(imageService)
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService)
@@ -229,7 +241,7 @@ func main() {
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, evaluator)
 
 	port := os.Getenv("PORT")
 	if port == "" {

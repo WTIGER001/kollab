@@ -16,11 +16,22 @@ type Attachment struct {
 	UploadedAt time.Time `json:"uploadedAt"`
 }
 
+type PreviewStatus struct {
+	AttachmentID string    `json:"attachmentId"`
+	Status       string    `json:"status"` // pending, converting_aspose, converting_libreoffice, completed, failed
+	Progress     int       `json:"progress"`
+	Format       string    `json:"format"` // html, pdf
+	ErrorMessage string    `json:"errorMessage,omitempty"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
 type AttachmentRepository interface {
 	Save(ctx context.Context, att *Attachment) error
 	GetByID(ctx context.Context, id string) (*Attachment, error)
 	ListByDocumentID(ctx context.Context, docID string) ([]*Attachment, error)
 	Delete(ctx context.Context, id string) error
+	SavePreviewStatus(ctx context.Context, status *PreviewStatus) error
+	GetPreviewStatus(ctx context.Context, attachmentID string) (*PreviewStatus, error)
 }
 
 type AttachmentService interface {
@@ -29,4 +40,10 @@ type AttachmentService interface {
 	GetAttachmentPreview(ctx context.Context, id string) ([]byte, *Attachment, error)
 	ListAttachments(ctx context.Context, docID string) ([]*Attachment, error)
 	DeleteAttachment(ctx context.Context, id string) error
+
+	// New Preview Operations
+	GetPreviewStatus(ctx context.Context, id string) (*PreviewStatus, error)
+	RetryPreviewGeneration(ctx context.Context, id string) error
+	GetPreviewFile(ctx context.Context, id string, filepath string) ([]byte, string, error)
 }
+

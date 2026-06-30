@@ -13,6 +13,8 @@ import (
 
 	"arkollab/api/internal/ai"
 	"arkollab/api/internal/domain"
+	"arkollab/api/internal/permissions"
+	goperm "github.com/wtiger001/go-permissions"
 )
 
 type DocumentService struct {
@@ -72,6 +74,9 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 
 	if err := s.repo.Create(ctx, doc); err != nil {
 		return nil, err
+	}
+	if userID != "" && permissions.DocumentPermissions != nil {
+		_ = permissions.DocumentPermissions.GrantRole(ctx, "role.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID)
 	}
 	if s.systemService != nil {
 		_ = s.systemService.RecordAuditLog(ctx, doc.ID, userID, "edit")

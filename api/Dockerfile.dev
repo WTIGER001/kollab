@@ -1,0 +1,20 @@
+FROM golang:1.26-alpine
+
+# Install development and system dependencies (git, gcc, musl-dev for compilation)
+RUN apk add --no-cache \
+    git \
+    gcc \
+    musl-dev \
+    ca-certificates \
+    tzdata
+
+# Install Air for hot-reloading
+RUN go install github.com/air-verse/air@latest
+
+WORKDIR /app
+
+# Expose the Go server port
+EXPOSE 8080
+
+# Start the container with air
+CMD ["air", "-c", ".air.toml"]

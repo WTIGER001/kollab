@@ -11,11 +11,13 @@ import (
 type InMemoryAttachmentRepository struct {
 	mu          sync.RWMutex
 	attachments map[string]*domain.Attachment
+	previews    map[string]*domain.PreviewStatus
 }
 
 func NewInMemoryAttachmentRepository() *InMemoryAttachmentRepository {
 	return &InMemoryAttachmentRepository{
 		attachments: make(map[string]*domain.Attachment),
+		previews:    make(map[string]*domain.PreviewStatus),
 	}
 }
 
@@ -52,5 +54,27 @@ func (r *InMemoryAttachmentRepository) Delete(ctx context.Context, id string) er
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.attachments, id)
+	delete(r.previews, id)
 	return nil
 }
+
+func (r *InMemoryAttachmentRepository) SavePreviewStatus(ctx context.Context, status *domain.PreviewStatus) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.previews == nil {
+		r.previews = make(map[string]*domain.PreviewStatus)
+	}
+	r.previews[status.AttachmentID] = status
+	return nil
+}
+
+func (r *InMemoryAttachmentRepository) GetPreviewStatus(ctx context.Context, attachmentID string) (*domain.PreviewStatus, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	status, ok := r.previews[attachmentID]
+	if !ok {
+		return nil, errors.New("preview status not found")
+	}
+	return status, nil
+}
+

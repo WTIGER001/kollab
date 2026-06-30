@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,6 +30,8 @@ import (
 	apihttp "arkollab/api/internal/http"
 	"arkollab/api/internal/http/handler"
 	imgservice "arkollab/api/internal/image"
+	"arkollab/api/internal/permissions"
+	goperm "github.com/wtiger001/go-permissions"
 	pgrepo "arkollab/api/internal/postgres"
 	"arkollab/api/internal/storage"
 	inmemsystem "arkollab/api/internal/system"
@@ -65,7 +68,7 @@ func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
 
-	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
+	runIntegrationTests(t, nil, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
 }
 
 func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
@@ -137,7 +140,7 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
-	runIntegrationTests(t, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
+	runIntegrationTests(t, db, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
 }
 
 type mockSystemRepo struct {
@@ -272,7 +275,23 @@ func TestSystemHealthHandler(t *testing.T) {
 	}
 }
 
-func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, systemRepo domain.SystemRepository, commentRepo domain.CommentRepository, attachmentRepo domain.AttachmentRepository, taskRepo domain.TaskRepository, storageProvider domain.FileStorage, jwtSecret string) {
+func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, systemRepo domain.SystemRepository, commentRepo domain.CommentRepository, attachmentRepo domain.AttachmentRepository, taskRepo domain.TaskRepository, storageProvider domain.FileStorage, jwtSecret string) {
+	// Initialize permissions
+	if err := permissions.InitPermissions(context.Background(), db); err != nil {
+		t.Fatalf("failed to initialize permissions: %v", err)
+	}
+	evaluator := permissions.NewAccessEvaluator(db)
+
+	// Grant team roles to groups for testing fallback permissions
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_eng", "team_eng")
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_mkt", "team_mkt")
+	_ = permissions.TeamPermissions.GrantRole(context.Background(), "role.wiki.team.editor", goperm.PrincipalGroup, "team_arkloud", "team_arkloud")
+
+	// Grant project roles to groups
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_wiki")
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_eng", "proj_roadmap")
+	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "role.wiki.project.editor", goperm.PrincipalGroup, "team_mkt", "proj_campaign")
+
 	// Services
 	authService := inmemuser.NewAuthService(userRepo, jwtSecret)
 	teamService := inmemteam.NewTeamService(teamRepo)
@@ -295,7 +314,7 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	}
 	userH := handler.NewUserHandler(authService, themeService, systemService, mockOidcConfig)
 	teamH := handler.NewTeamHandler(teamService)
-	docH := handler.NewDocumentHandler(docService, wsHub)
+	docH := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imgH := handler.NewImageHandler(imageService)
 	themeH := handler.NewThemeHandler(themeService)
 	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub)
@@ -312,7 +331,7 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	tagH := handler.NewTagHandler(tagService)
 
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, evaluator)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {
@@ -328,10 +347,22 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 
 	// 1. Test register user
 	regPayload := `{"username": "testuser", "password": "password123"}`
-	_, code := sendReq("POST", "/api/auth/register", []byte(regPayload), "")
+	wReg, code := sendReq("POST", "/api/auth/register", []byte(regPayload), "")
 	if code != http.StatusCreated {
 		t.Fatalf("expected register code 201, got %d", code)
 	}
+
+	var regRes struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(wReg.Body.Bytes(), &regRes); err != nil {
+		t.Fatalf("failed to decode register response: %v", err)
+	}
+
+	// Add testuser to all seeded teams so they have proper access under the permissions model
+	_ = teamRepo.AddTeamMember(context.Background(), "team_eng", regRes.ID)
+	_ = teamRepo.AddTeamMember(context.Background(), "team_mkt", regRes.ID)
+	_ = teamRepo.AddTeamMember(context.Background(), "team_arkloud", regRes.ID)
 
 	// 1b. Test GET /api/auth/config (unprotected config endpoint)
 	wConfig, codeConfig := sendReq("GET", "/api/auth/config", nil, "")
@@ -673,11 +704,21 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	if err := json.Unmarshal(w.Body.Bytes(), &teamUsers); err != nil {
 		t.Fatalf("failed to parse team users: %v", err)
 	}
-	if len(teamUsers) != 1 {
-		t.Errorf("expected 1 user in team_eng, got %d", len(teamUsers))
+	if len(teamUsers) != 2 {
+		t.Errorf("expected 2 users in team_eng, got %d", len(teamUsers))
 	} else {
-		if teamUsers[0].ID != "mock-user-id" || teamUsers[0].Username != "mock-user" {
-			t.Errorf("unexpected user in team_eng: %+v", teamUsers[0])
+		hasMock := false
+		hasTest := false
+		for _, u := range teamUsers {
+			if u.ID == "mock-user-id" || u.Username == "mock-user" {
+				hasMock = true
+			}
+			if u.ID == regRes.ID || u.Username == "testuser" {
+				hasTest = true
+			}
+		}
+		if !hasMock || !hasTest {
+			t.Errorf("unexpected user list in team_eng: %+v", teamUsers)
 		}
 	}
 
@@ -982,10 +1023,22 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	// I. Verify user privacy boundary checks:
 	// Register and login second user
 	regPayload2 := `{"username": "otheruser", "password": "password123"}`
-	_, code = sendReq("POST", "/api/auth/register", []byte(regPayload2), "")
+	wReg2, code := sendReq("POST", "/api/auth/register", []byte(regPayload2), "")
 	if code != http.StatusCreated {
 		t.Fatalf("expected registration of user 2 to succeed, got %d", code)
 	}
+
+	var regRes2 struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(wReg2.Body.Bytes(), &regRes2); err != nil {
+		t.Fatalf("failed to decode register response 2: %v", err)
+	}
+
+	// Add user 2 to all seeded teams so they have proper access under the permissions model
+	_ = teamRepo.AddTeamMember(context.Background(), "team_eng", regRes2.ID)
+	_ = teamRepo.AddTeamMember(context.Background(), "team_mkt", regRes2.ID)
+	_ = teamRepo.AddTeamMember(context.Background(), "team_arkloud", regRes2.ID)
 
 	loginPayload2 := `{"username": "otheruser", "password": "password123"}`
 	wLogin2, code := sendReq("POST", "/api/auth/login", []byte(loginPayload2), "")
@@ -1090,8 +1143,17 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 	if len(anal1.History) != 7 {
 		t.Errorf("expected 7 history data points, got %d", len(anal1.History))
 	} else {
-		todayPt := anal1.History[6]
-		if todayPt.Views != 1 || todayPt.UniqueVisitors != 1 {
+		todayDateStr := time.Now().Format("2006-01-02")
+		var todayPt *domain.AnalyticsDataPoint
+		for i := range anal1.History {
+			if anal1.History[i].Date == todayDateStr {
+				todayPt = &anal1.History[i]
+				break
+			}
+		}
+		if todayPt == nil {
+			t.Errorf("today's date %q not found in anal1 history", todayDateStr)
+		} else if todayPt.Views != 1 || todayPt.UniqueVisitors != 1 {
 			t.Errorf("expected today to have 1 view and 1 visitor, got views=%d, visitors=%d", todayPt.Views, todayPt.UniqueVisitors)
 		}
 	}
@@ -1111,8 +1173,17 @@ func runIntegrationTests(t *testing.T, userRepo domain.UserRepository, teamRepo 
 		t.Errorf("expected 3 views and 2 visitors, got views=%d, visitors=%d", anal2.TotalViews, anal2.TotalVisitors)
 	}
 	if len(anal2.History) == 7 {
-		todayPt := anal2.History[6]
-		if todayPt.Views != 3 || todayPt.UniqueVisitors != 2 {
+		todayDateStr := time.Now().Format("2006-01-02")
+		var todayPt *domain.AnalyticsDataPoint
+		for i := range anal2.History {
+			if anal2.History[i].Date == todayDateStr {
+				todayPt = &anal2.History[i]
+				break
+			}
+		}
+		if todayPt == nil {
+			t.Errorf("today's date %q not found in anal2 history", todayDateStr)
+		} else if todayPt.Views != 3 || todayPt.UniqueVisitors != 2 {
 			t.Errorf("expected today to have 3 views and 2 visitors in history, got views=%d, visitors=%d", todayPt.Views, todayPt.UniqueVisitors)
 		}
 	}
