@@ -241,6 +241,7 @@ function App({ isMockMode = false }: AppProps) {
   const displayName = isMockMode ? "Developer Admin" : auth?.user?.profile.name || auth?.user?.profile.preferred_username || "User";
   const username = isMockMode ? "dev_admin" : auth?.user?.profile.preferred_username || auth?.user?.profile.username || "user";
   const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
+  setApiToken(userToken);
 
   // Routing state
   const [routeState, setRouteState] = useState(() => parseLocation(window.location.pathname));
@@ -580,14 +581,7 @@ function App({ isMockMode = false }: AppProps) {
     }
   });
 
-  // Sync token to API client
-  useEffect(() => {
-    if (isAuthenticated && userToken) {
-      setApiToken(userToken);
-    } else {
-      setApiToken(null);
-    }
-  }, [isAuthenticated, userToken]);
+
 
 
 
@@ -1613,6 +1607,17 @@ function App({ isMockMode = false }: AppProps) {
       </Box>
     );
   };
+
+  if (!isMockMode && auth?.isLoading) {
+    return (
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <Box sx={{ display: "flex", height: "100vh", width: "100vw", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
+          <CircularProgress size={40} />
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={muiTheme}>
