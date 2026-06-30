@@ -14,6 +14,8 @@ type SystemSettings struct {
 	AIRateLimit              int    `json:"aiRateLimit"`
 	WelcomeTitle             string `json:"welcomeTitle"`
 	WelcomeText              string `json:"welcomeText"`
+	AsposeEnabled            bool   `json:"asposeEnabled"`
+	AsposeLicense            string `json:"asposeLicense"`
 }
 
 type AuditLog struct {

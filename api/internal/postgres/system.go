@@ -37,6 +37,7 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 		AIRateLimit:              10,
 		WelcomeTitle:             "Welcome to Arkollab",
 		WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
+		AsposeEnabled:            true,
 	}
 
 	for rows.Next() {
@@ -67,6 +68,10 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 			settings.WelcomeTitle = val
 		case "welcome_text":
 			settings.WelcomeText = val
+		case "aspose_enabled":
+			settings.AsposeEnabled = val == "true"
+		case "aspose_license":
+			settings.AsposeLicense = val
 		}
 	}
 
@@ -91,6 +96,8 @@ func (r *PostgresSystemRepository) UpdateSettings(ctx context.Context, settings 
 		{"ai_rate_limit", strconv.Itoa(settings.AIRateLimit)},
 		{"welcome_title", settings.WelcomeTitle},
 		{"welcome_text", settings.WelcomeText},
+		{"aspose_enabled", strconv.FormatBool(settings.AsposeEnabled)},
+		{"aspose_license", settings.AsposeLicense},
 	}
 
 	for _, q := range queries {

@@ -24,6 +24,7 @@ func NewInMemorySystemRepository() *InMemorySystemRepository {
 			AIRateLimit:              10,
 			WelcomeTitle:             "Welcome to Arkollab",
 			WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
+			AsposeEnabled:            true,
 		},
 		auditLogs: make([]*domain.AuditLog, 0),
 	}

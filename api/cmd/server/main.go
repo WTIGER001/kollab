@@ -229,7 +229,7 @@ func main() {
 	docHandler := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imageHandler := handler.NewImageHandler(imageService)
 	themeHandler := handler.NewThemeHandler(themeService)
-	systemHandler := handler.NewSystemHandler(systemService)
+	systemHandler := handler.NewSystemHandler(systemService, attachmentService)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 	tagHandler := handler.NewTagHandler(tagService)

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 
@@ -11,12 +12,14 @@ import (
 )
 
 type SystemHandler struct {
-	systemService domain.SystemService
+	systemService     domain.SystemService
+	attachmentService domain.AttachmentService
 }
 
-func NewSystemHandler(systemService domain.SystemService) *SystemHandler {
+func NewSystemHandler(systemService domain.SystemService, attachmentService domain.AttachmentService) *SystemHandler {
 	return &SystemHandler{
-		systemService: systemService,
+		systemService:     systemService,
+		attachmentService: attachmentService,
 	}
 }
 
@@ -25,6 +28,12 @@ func (h *SystemHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Fetch Aspose settings from media-preview container (if available)
+	if config, err := h.attachmentService.GetAsposeConfig(r.Context()); err == nil && config != nil {
+		settings.AsposeEnabled = config.AsposeEnabled
+		settings.AsposeLicense = config.AsposeLicense
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -70,6 +79,14 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	if err := h.systemService.UpdateSettings(r.Context(), &settings); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Update Aspose settings on the media-preview container
+	if config, err := h.attachmentService.UpdateAsposeConfig(r.Context(), settings.AsposeEnabled, settings.AsposeLicense); err != nil {
+		log.Printf("[WARN] Failed to sync Aspose settings to media-preview: %v", err)
+	} else if config != nil {
+		settings.AsposeEnabled = config.AsposeEnabled
+		settings.AsposeLicense = config.AsposeLicense
 	}
 
 	w.Header().Set("Content-Type", "application/json")
