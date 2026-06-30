@@ -54,6 +54,9 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 		return fmt.Errorf("failed to ensure synthetic roles: %w", err)
 	}
 
+	// Register default grant so that builtin.admin role possesses system.admin permission
+	Service.AddDefaultGrant("builtin.admin", "system.admin", "*")
+
 	// Initialize our standard object-scoped permissions and roles
 	DocumentPermissions = NewObjectStandardPermissionsAndRoles("wiki", "document", true)
 	ProjectPermissions = NewObjectStandardPermissionsAndRoles("wiki", "project", false)
