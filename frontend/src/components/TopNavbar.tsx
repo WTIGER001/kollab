@@ -25,7 +25,8 @@ import {
   Clock,
   ListTodo,
   Menu as MenuIcon,
-  AtSign
+  AtSign,
+  BookOpen
 } from "lucide-react";
 import type { Team } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
@@ -41,6 +42,7 @@ interface TopNavbarProps {
   onOpenSearch: () => void;
   onOpenHelp: () => void;
   onOpenSettings?: () => void;
+  onOpenAdminHelp?: () => void;
   onOpenFavorites?: () => void;
   onOpenRecents?: () => void;
   onOpenTasks?: () => void;
@@ -64,6 +66,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenSearch,
   onOpenHelp,
   onOpenSettings,
+  onOpenAdminHelp,
   onOpenFavorites,
   onOpenRecents,
   onOpenTasks,
@@ -421,6 +424,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               >
                 <ListItemIcon sx={{ minWidth: 28 }}><Settings size={14} /></ListItemIcon>
                 <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Server Settings</Typography>} />
+              </MenuItem>
+              <MenuItem 
+                onClick={() => {
+                  handleCloseProfileMenu();
+                  if (onOpenAdminHelp) onOpenAdminHelp();
+                }}
+                sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}
+              >
+                <ListItemIcon sx={{ minWidth: 28 }}><BookOpen size={14} /></ListItemIcon>
+                <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Server Admin Guide</Typography>} />
               </MenuItem>
             </>
           )}

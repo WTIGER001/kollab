@@ -30,6 +30,7 @@ import {
 } from "./services/api";
 import type { Team, Project, ColorScheme, WorkspaceTheme, SystemSettings } from "./services/api";
 import { ServerSettingsPage } from "./components/ServerSettingsPage";
+import { AdminHelpPage } from "./components/AdminHelpPage";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { TopNavbar } from "./components/TopNavbar";
@@ -110,6 +111,7 @@ const parseLocation = (pathname: string) => {
   let isTasksPage = false;
   let isMentionsPage = false;
   let isAdminSettings = false;
+  let isAdminHelp = false;
 
   if (parts[0] === "my" && parts[1] === "favorites") {
     isFavoritesPage = true;
@@ -160,9 +162,11 @@ const parseLocation = (pathname: string) => {
     }
   } else if (parts[0] === "_admin" && parts[1] === "settings") {
     isAdminSettings = true;
+  } else if (parts[0] === "_admin" && parts[1] === "help") {
+    isAdminHelp = true;
   }
 
-  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage, isMentionsPage, isAdminSettings };
+  return { teamAbbrOrId, projectAbbrOrId, pageId, isTeamSettings, isProjectSettings, isPersonalSettings, isFavoritesPage, isRecentsPage, isAuditPage, isTrashPage, isTasksPage, isMentionsPage, isAdminSettings, isAdminHelp };
 };
 
 const navigateTo = (
@@ -181,6 +185,8 @@ const navigateTo = (
   let url = "/";
   if (team === "_admin") {
     url = "/_admin/settings";
+  } else if (team === "_admin_help") {
+    url = "/_admin/help";
   } else if (isFavoritesPage) {
     url = "/my/favorites";
   } else if (isRecentsPage) {
@@ -615,7 +621,7 @@ function App({ isMockMode = false }: AppProps) {
   useEffect(() => {
     if (teams.length === 0) return;
 
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings || routeState.isAdminHelp) {
       if (!selectedTeamId) {
         const defaultTeam = teams[0];
         setSelectedTeamId(defaultTeam.id);
@@ -657,7 +663,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active project based on routeState.projectAbbrOrId
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) return;
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings || routeState.isAdminHelp) return;
 
     if (!selectedTeamId) {
       setSelectedProjectId(null);
@@ -786,7 +792,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active document based on routeState.pageId and selected project/team
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings || routeState.isAdminHelp) {
       setActiveDocId(null);
       return;
     }
@@ -1229,6 +1235,23 @@ function App({ isMockMode = false }: AppProps) {
       );
     }
 
+    if (routeState.isAdminHelp) {
+      return (
+        <AdminHelpPage
+          onBack={() => {
+            if (activeTeam) {
+              navigateTo(activeTeam.abbreviation || activeTeam.id, null, null);
+            } else if (teams.length > 0) {
+              navigateTo(teams[0].abbreviation || teams[0].id, null, null);
+            } else {
+              window.history.pushState({}, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }
+          }}
+        />
+      );
+    }
+
     if (routeState.isFavoritesPage) {
       return (
         <FavoritesView
@@ -1569,6 +1592,7 @@ function App({ isMockMode = false }: AppProps) {
           onOpenSearch={() => setSearchOpen(true)}
           onOpenHelp={() => setHelpOpen(true)}
           onOpenSettings={() => navigateTo("_admin", null, null)}
+          onOpenAdminHelp={() => navigateTo("_admin_help", null, null)}
           onOpenFavorites={() => navigateTo(null, null, null, false, false, true)}
           onOpenRecents={() => navigateTo(null, null, null, false, false, false, true)}
           onOpenTasks={() => navigateTo(null, null, null, false, false, false, false, false, false, true)}
