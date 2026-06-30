@@ -52,6 +52,7 @@ Here is how Arkollab replaces and improves upon the most popular enterprise Conf
 | Confluence Add-on / Macro | Arkollab Equivalent Plugin | Tech Model | Key UX Advantage in Arkollab |
 | :--- | :--- | :--- | :--- |
 | **Draw.io Diagrams** | `arkollab-drawio` | Frontend-Only | Fully offline drawing canvas, storing raw vectors directly inside the block JSON. |
+| **Excalidraw Sketching** | `arkollab-excalidraw` | Frontend-Only | Hand-drawn sketching canvas, running 100% locally with high performance and zero network dependency. |
 | **Mermaid.js** | `arkollab-mermaid` | Frontend-Only | Edit code on the left, watch live SVG re-renders on the right in real time. |
 | **Jira Issues Macro** | `arkollab-jira-sync` | Full-Stack | Fully integrated with LLM: write *"List open P0 bugs"* and let the AI trigger the Wasm tool to render the table. |
 | **Chart / Table Filter** | `arkollab-charts` | Frontend-Only | Connect charts directly to Arkollab tables via block IDs. As you edit the table, the chart updates instantly. |
@@ -126,6 +127,14 @@ Here is how Arkollab replaces and improves upon the most popular enterprise Conf
     FROM document_blocks 
     WHERE content->'properties'->>'release' = 'Q3';
     ```
+
+### 4.9 Excalidraw Sketching (`arkollab-excalidraw`)
+- **Category**: Visual Collaboration
+- **Type**: Frontend-Only
+- **UX Flow**:
+  - Hitting `/excalidraw` inserts an offline hand-drawn sketching widget.
+  - Clicking the **Edit Sketch** button opens a fullscreen Dialog mounting the local Excalidraw React canvas library.
+  - On save, it compiles the sketch elements, generates a vector SVG (respecting light/dark modes), and stores the vector content and elements array in the block attributes. In read-only mode, the document renders the cached vector SVG with support for fullscreen lightbox zoom-in click previews.
 
 ---
 

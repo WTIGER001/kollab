@@ -242,3 +242,67 @@ The Markdown Import macro allows you to easily paste raw Markdown text and choos
 * **Import to Document**: Paste your Markdown text into the text box and click **Import to Document**. The Markdown will be instantly parsed to rich HTML, inserted directly into the editor canvas as native document elements (headings, bullet points, code blocks, etc.), and the macro block will delete itself.
 * **Keep as Block**: Paste your Markdown text and click **Keep as Block**. The macro will parse and render the formatted Markdown inside a styled panel, retaining the raw Markdown inside the block.
 * **Edit Kept Block**: If you kept it as a block, hover over the block in edit mode and click **Edit Markdown** to update the raw text at any time.
+
+---
+
+## 🎨 Draw.io Diagram Macro
+
+The Draw.io Diagram macro embeds an offline vector drawing canvas directly inside your document. It enables you to create and edit flowcharts, wireframes, network topology diagrams, and database schemas with a full suite of shape libraries.
+
+### How to Insert
+1. On an empty line, type **`/drawio`** or **`/diagram`** and press **`Enter`** (or select **Draw.io Diagram** from the slash command menu).
+2. An empty Draw.io diagram placeholder card is inserted.
+
+### Drawing and Editing
+1. **Launch Editor**: Double-click the placeholder card, or hover over the block and click **Edit Diagram** to open the fullscreen Draw.io workspace.
+2. **Offline Mode**: The editor runs in a fullscreen sandboxed frame using the embed API, saving data entirely client-side.
+3. **Saving Changes**: Click **Save** in the top-right corner of the editor to export the diagram. The editor will automatically convert the drawing into a vector SVG and save the underlying XML diagram nodes to the document.
+4. **Exiting**: Click **Exit** to discard unsaved changes and return to the document.
+
+### Theme Configuration
+Click the **Gear icon** in the top-right corner of the block in edit mode to adjust the **Diagram Theme**:
+* **Auto (Follow System)**: Matches the editor theme and background wrapper to the user's host application theme (light or dark).
+* **Light**: Forces a white canvas background (`#ffffff`) and loads the Draw.io editor in light theme.
+* **Dark**: Forces a dark canvas background (`#1e1e1e`) and loads the Draw.io editor in dark theme (automatically drawing shapes and text in white/light colors).
+
+### Fullscreen Preview (Lightbox)
+* In **Read mode**, clicking anywhere on the Draw.io diagram opens a full-screen high-fidelity lightbox preview.
+* The preview viewport background matches the selected diagram theme and features a subtle drop shadow to maximize legibility. Click anywhere on the preview to exit the lightbox.
+
+---
+
+## ✏️ Excalidraw Sketching Macro
+
+The Excalidraw macro embeds a local hand-drawn style whiteboarding canvas. It is perfect for drawing quick sketches, mind maps, mockups, or scribbling notes.
+
+### How to Insert
+1. Type **`/excalidraw`** or **`/sketch`** and press **`Enter`** (or select **Excalidraw Diagram** from the slash command menu).
+2. An empty Excalidraw sketching card is inserted.
+
+### Sketching and Editing
+1. **Launch Editor**: Double-click the card or click **Edit Sketch** to open the fullscreen Excalidraw editor modal.
+2. **Local Component**: The editor runs 100% locally with high performance and zero network dependencies.
+3. **Saving Changes**: Click **Save & Close** to export. The editor compiles the sketch nodes and exports them to a vector SVG, storing both the elements array and the raw SVG vector markup in the document.
+4. **Cancelling**: Click **Cancel** to exit without saving.
+
+### Theme Configuration
+Click the **Gear icon** in the top-right corner of the block in edit mode to configure the **Sketch Theme** (Auto, Light, or Dark). This synchronizes the Excalidraw whiteboarding palette scheme and sets the card background color dynamically.
+
+### Fullscreen Preview (Lightbox)
+* In **Read mode**, click the Excalidraw sketch to launch the fullscreen lightbox preview. Click again anywhere on the screen to close it.
+
+---
+
+## 🧬 Mermaid.js Diagramming Macro
+
+The Mermaid macro compiles textual diagram definitions (like flowcharts, sequence diagrams, state diagrams, or Gantt charts) into live vector drawings.
+
+### How to Insert
+1. Type **`/mermaid`** and press **`Enter`** (or select **Mermaid Diagram** from the slash command menu).
+2. A split-panel Mermaid editor block is inserted with default flowchart code.
+
+### Writing Code & Real-time Compilation
+1. **Edit Code**: Type or paste any valid Mermaid diagram syntax in the left text panel.
+2. **Live Compiler**: As you type, the right panel compiles the syntax in real time with a 500ms debounce.
+3. **Syntax Errors**: If the compiler encounters a syntax error, a red error alert details the mistake, keeping the previous valid SVG render intact.
+4. **Finish Editing**: Click **Exit Editor** (or press escape) to hide the code editor panel. The block collapses to render only the compiled vector SVG drawing.
