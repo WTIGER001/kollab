@@ -137,9 +137,9 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-          border: "1px solid var(--border-color, #e5e7eb)",
-          backgroundColor: "var(--panel-color, #ffffff)",
-          color: "var(--text-color, #1f2937)",
+          border: "1px solid var(--border-color)",
+          backgroundColor: "var(--panel-color)",
+          color: "var(--text-primary)",
           p: 1
         }
       }}
@@ -204,7 +204,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
           )}
 
           {/* Form to create new link */}
-          <Box sx={{ p: 2.5, borderRadius: 2, border: "1px solid var(--border-color, #e5e7eb)", bgcolor: "var(--paper-color, #fafafa)" }}>
+          <Box sx={{ p: 2.5, borderRadius: 2, border: "1px solid var(--border-color)", bgcolor: "var(--bg-color)" }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, fontSize: "13px", display: "flex", alignItems: "center", gap: 0.5 }}>
               <Plus size={16} /> Generate New Sharing Link
             </Typography>
@@ -299,13 +299,13 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                 <CircularProgress size={20} />
               </Box>
             ) : links.length === 0 ? (
-              <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color, #e5e7eb)", textAlign: "center" }}>
+              <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(255,255,255,0.01)", border: "1px dashed var(--border-color)", textAlign: "center" }}>
                 <Typography variant="body2" sx={{ fontSize: "12px", color: "text.secondary" }}>
                   No active share links. Generate a link above to share this document.
                 </Typography>
               </Box>
             ) : (
-              <List dense sx={{ width: "100%", bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color, #e5e7eb)" }}>
+              <List dense sx={{ width: "100%", bgcolor: "var(--bg-color)", borderRadius: 2, border: "1px solid var(--border-color)" }}>
                 {links.map((link) => (
                   <ListItem key={link.tokenHash} sx={{ py: 1 }}>
                     <ListItemText
