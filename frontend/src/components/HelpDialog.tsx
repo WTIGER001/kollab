@@ -25,7 +25,12 @@ import {
   Layers,
   ChevronRight,
   Code,
-  List as ListIcon
+  List as ListIcon,
+  Palette,
+  PenTool,
+  FileText,
+  Presentation,
+  Package
 } from "lucide-react";
 
 interface HelpDialogProps {
@@ -33,7 +38,7 @@ interface HelpDialogProps {
   onClose: () => void;
 }
 
-type HelpCategory = "overview" | "macros" | "modes" | "search" | "versions" | "analytics";
+type HelpCategory = "overview" | "macros" | "previews" | "modes" | "search" | "versions" | "analytics";
 
 export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
   const theme = useTheme();
@@ -42,7 +47,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
 
   const categories = [
     { id: "overview" as HelpCategory, label: "Getting Started", icon: <BookOpen size={16} /> },
-    { id: "macros" as HelpCategory, label: "Editor Macros (/) ", icon: <Sparkles size={16} /> },
+    { id: "macros" as HelpCategory, label: "Drawing & Macros (/) ", icon: <Sparkles size={16} /> },
+    { id: "previews" as HelpCategory, label: "Media & Previews", icon: <Layers size={16} /> },
     { id: "modes" as HelpCategory, label: "Editing Modes", icon: <Edit3 size={16} /> },
     { id: "search" as HelpCategory, label: "Search & Navigation", icon: <Search size={16} /> },
     { id: "versions" as HelpCategory, label: "Version Control", icon: <Clock size={16} /> },
@@ -198,6 +204,99 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
                   Auto-generate a clickable, nested outline directory of the page's headings. Updates in real-time and supports smooth-scrolling to section headers.
+                </Typography>
+              </Box>
+
+              {/* Drawing Types */}
+              <Typography variant="subtitle2" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, mt: 1.5 }}>
+                Drawing & Sketching Blocks
+              </Typography>
+
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Palette size={15} style={{ color: "var(--accent-pink, #f472b6)" }} />
+                  Draw.io Diagram Macro (/drawio)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Embed offline vector drawing sheets for flowcharts, wireframes, database schemas, and network topologies. Features local light/dark editor themes and click-to-zoom fullscreen lightbox previews.
+                </Typography>
+              </Box>
+
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <PenTool size={15} style={{ color: "var(--accent-purple, #a78bfa)" }} />
+                  Excalidraw Sketching Macro (/excalidraw)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Sketch mockups, mind maps, or hand-drawn doodles directly in the editor using the offline Excalidraw whiteboarding component. Updates compile to vector SVGs automatically and support fullscreen preview overlays.
+                </Typography>
+              </Box>
+
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Code size={15} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+                  Mermaid.js Diagram Macro (/mermaid)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Render sequence diagrams, flowcharts, timelines, and Git graphs declaratively from code syntax. Features a live split-screen editor, error parsing, and instant debounced rendering.
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        );
+
+      case "previews":
+        return (
+          <Box>
+            <Typography variant="h5" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 700, mb: 1.5 }}>
+              Media Previews & Attachment Types
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 3 }}>
+              Arkollab features a high-fidelity inline document and asset previewing suite. Upload files using the page attachment sidebar or the slash command to view them natively in the document:
+            </Typography>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mb: 2 }}>
+              {/* Word Documents */}
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <FileText size={15} style={{ color: "#3b82f6" }} />
+                  Word Document Previews (.docx)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  View text, paragraphs, structured lists, and tables compiled from Microsoft Word files directly inside the page view wrapper.
+                </Typography>
+              </Box>
+
+              {/* PowerPoint presentations */}
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Presentation size={15} style={{ color: "#f97316" }} />
+                  PowerPoint Presentations (.pptx)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Browse slide decks with slide navigation controllers, sidebar slide outlines, text bullets extraction, and images previews.
+                </Typography>
+              </Box>
+
+              {/* 3D Engineering Models */}
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Package size={15} style={{ color: "#10b981" }} />
+                  3D Engineering Models (.stl, .3mf)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Interact with three-dimensional engineering models in a WebGL workspace. Supports panning, orbiting, zooming, grid scales measurement, and wireframe views.
+                </Typography>
+              </Box>
+
+              {/* PDF Documents */}
+              <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <Info size={15} style={{ color: "#ef4444" }} />
+                  PDF Documents (.pdf)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+                  Scroll, zoom, and inspect PDF attachments using our unified inline frame viewer.
                 </Typography>
               </Box>
             </Box>
