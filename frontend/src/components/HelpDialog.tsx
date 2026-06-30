@@ -21,7 +21,8 @@ import {
   Clock,
   Search,
   BarChart3,
-  Layers
+  Layers,
+  Settings
 } from "lucide-react";
 
 import { HelpOverview } from "./help/HelpOverview";
@@ -31,13 +32,14 @@ import { HelpModes } from "./help/HelpModes";
 import { HelpSearch } from "./help/HelpSearch";
 import { HelpVersions } from "./help/HelpVersions";
 import { HelpAnalytics } from "./help/HelpAnalytics";
+import { HelpAdmin } from "./help/HelpAdmin";
 
 interface HelpDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-type HelpCategory = "overview" | "macros" | "previews" | "modes" | "search" | "versions" | "analytics";
+type HelpCategory = "overview" | "macros" | "previews" | "modes" | "search" | "versions" | "analytics" | "admin";
 
 export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
   const theme = useTheme();
@@ -54,6 +56,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
     { id: "search" as HelpCategory, label: "Search & Navigation", icon: <Search size={16} /> },
     { id: "versions" as HelpCategory, label: "Version Control", icon: <Clock size={16} /> },
     { id: "analytics" as HelpCategory, label: "Page Analytics", icon: <BarChart3 size={16} /> },
+    { id: "admin" as HelpCategory, label: "Server Administration", icon: <Settings size={16} /> },
   ];
 
   const allHelpTopics = [
@@ -189,6 +192,27 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
       categoryLabel: "Page Analytics",
       description: "Inspect total page views count, unique visitors, and view statistics over the last 7 days using sparklines.",
       keywords: ["analytics", "views", "views count", "visitors", "sparkline", "traffic", "metric"]
+    },
+    {
+      title: "Server Administration Settings",
+      category: "admin",
+      categoryLabel: "Server Administration",
+      description: "How to configure global welcome screen, logo, AI rate limits, and preview engines.",
+      keywords: ["admin", "settings", "server", "branding", "welcome", "logo", "aspose", "libreoffice"]
+    },
+    {
+      title: "Server Backup & Restoration",
+      category: "admin",
+      categoryLabel: "Server Administration",
+      description: "How to export the entire server state as a single portable ZIP archive or restore backups.",
+      keywords: ["backup", "restore", "zip", "export", "import", "admin", "server"]
+    },
+    {
+      title: "Diff-Based Sync (Air-Gap Sync)",
+      category: "admin",
+      categoryLabel: "Server Administration",
+      description: "How to generate incremental sync delta packages since an operation ID and import them on air-gapped targets.",
+      keywords: ["sync", "export", "import", "air-gap", "diff", "delta", "incremental"]
     }
   ];
 
@@ -276,6 +300,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
         return <HelpVersions />;
       case "analytics":
         return <HelpAnalytics />;
+      case "admin":
+        return <HelpAdmin />;
       default:
         return null;
     }
