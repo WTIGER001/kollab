@@ -242,6 +242,17 @@ function App({ isMockMode = false }: AppProps) {
   const username = isMockMode ? "dev_admin" : auth?.user?.profile.preferred_username || auth?.user?.profile.username || "user";
   const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
 
+  // Routing state
+  const [routeState, setRouteState] = useState(() => parseLocation(window.location.pathname));
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setRouteState(parseLocation(window.location.pathname));
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -578,16 +589,7 @@ function App({ isMockMode = false }: AppProps) {
     }
   }, [isAuthenticated, userToken]);
 
-  // Routing state
-  const [routeState, setRouteState] = useState(() => parseLocation(window.location.pathname));
 
-  useEffect(() => {
-    const handlePopState = () => {
-      setRouteState(parseLocation(window.location.pathname));
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
 
   // Close sidebar on mobile whenever routeState updates
   useEffect(() => {
