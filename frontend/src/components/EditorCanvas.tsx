@@ -118,7 +118,8 @@ import {
   Link2,
   Palette,
   Network,
-  PenTool
+  PenTool,
+  Cpu
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
