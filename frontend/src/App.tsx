@@ -655,7 +655,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active project based on routeState.projectAbbrOrId
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) return;
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) return;
 
     if (!selectedTeamId) {
       setSelectedProjectId(null);
@@ -784,7 +784,7 @@ function App({ isMockMode = false }: AppProps) {
 
   // Resolve active document based on routeState.pageId and selected project/team
   useEffect(() => {
-    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage) {
+    if (routeState.isFavoritesPage || routeState.isRecentsPage || routeState.isTasksPage || routeState.isMentionsPage || routeState.isAdminSettings) {
       setActiveDocId(null);
       return;
     }

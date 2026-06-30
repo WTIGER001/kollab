@@ -420,7 +420,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}
               >
                 <ListItemIcon sx={{ minWidth: 28 }}><Settings size={14} /></ListItemIcon>
-                <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Workspace Settings</Typography>} />
+                <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Server Settings</Typography>} />
               </MenuItem>
             </>
           )}
