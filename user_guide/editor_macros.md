@@ -204,6 +204,31 @@ Click the **Gear icon** in the top-right corner of the macro box in edit mode to
 
 ---
 
+## 🎨 Hero / Banner Component
+
+The Hero macro allows you to create premium, full-width headers for team homepages, campaign hubs, or special announcements.
+
+### How to Insert
+1. Type **`/hero`** and press **`Enter`** (or select **Hero Component** from the slash command menu).
+2. A large Hero block will instantly appear in the editor.
+
+### Configuration Settings
+Click the **Gear icon** in the top-right corner of the Hero block to open the settings popover:
+* **Core Text & Colors**: 
+  - Edit the `Title` and `Subtitle`.
+  - Click the tiny color swatch next to the text fields to open a native color picker. Your custom color will instantly override the default theme font color, ensuring readability against any background.
+* **Backgrounds & Overlays**:
+  - Select any image file (JPEG, PNG, AVIF) that you've attached to the page from the convenient dropdown menu to set it as a background.
+  - Enable the **Dark Overlay (Scrim)** toggle to instantly darken the image, guaranteeing that white text remains legible regardless of how bright or busy the background photo is.
+* **Layout & Alignment**:
+  - Use the dropdowns to switch between a massive `Large Hero` layout or a shorter `Small Banner`.
+  - Align text to the Top-Left, Center, or anywhere else within the block.
+* **Action Buttons**:
+  - Provide a label and URL to add a primary call-to-action button (e.g. "Get Started"). 
+  - To remove a button, simply delete its label text and it will automatically hide!
+
+---
+
 ## ↕️ Text Alignment Options
 
 You can customize the alignment of paragraphs and headings within the document.

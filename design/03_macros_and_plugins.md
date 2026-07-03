@@ -117,7 +117,18 @@ A suite of interactive layout tools designed to transform standard documentation
   - **Standard Buttons**: Solid or outlined buttons with text (e.g., "Submit Ticket").
   - **Icon Buttons**: Circular or square buttons displaying only a standard icon (e.g., a Github or Slack logo).
   - **Icons with Labels**: A hybrid button pairing a leading icon with text.
-- **Hero / Banner Sections**: Full-width container blocks that accept a background color or uploaded image, with overlay text elements perfectly formatted for team homepages or campaign hubs.
+- **Hero / Banner Sections**: A premium, full-width container macro specifically designed for team homepages or campaign hubs. It features extensive customization:
+  - **Core Content**: 
+    - `Color Controls`: Native color pickers to customize the font color of the Title and Subtitle, automatically overriding default editor typography.
+    - `Primary CTA`: An action button to drive user engagement. Supports optional subtitle text below the main label (e.g. "Get Started \n Free for 30 days"). The button will automatically hide if the label field is left blank.
+    - `Secondary CTA`: An optional secondary ghost button.
+  - **Backgrounds & Overlays**:
+    - `Background Image`: Users can choose from a dropdown of images (including optimized formats like AVIF) uploaded as page attachments, which generates a direct download URL (`/api/attachments/:id`), or manually enter a custom external URL.
+    - `Legibility Scrim`: When an image is used, authors can enable a semi-transparent dark overlay to ensure text remains readable regardless of image complexity.
+    - `Gradients`: Fallback to theme-aware linear or radial gradients if no image is provided.
+  - **Layout & Alignment**: 
+    - `Size Variants`: Toggle between massive full-screen blocks or smaller banner strips.
+    - `Text Alignment`: Granular control over the content block's vertical and horizontal alignment (e.g., Top-Left, Center-Middle, Bottom-Right).
 - **Cards / Panels**: Interactive tile layouts for grouping content or surfacing child-pages in a responsive grid.
 - **Content Slider / Carousel**: An interactive block that allows readers to swipe or click through multiple panels of content (text or images) sequentially, maximizing space on the page.
 - **Organizational Chart**: A visual builder that automatically generates a hierarchical org chart from a simple text list or CSV upload, making it easy to map out team structures on HR or team pages.

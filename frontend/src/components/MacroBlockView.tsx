@@ -424,7 +424,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   }, [type]);
 
   useEffect(() => {
-    if (context?.activeDocId && (type === "attachments-list" || type === "single-attachment")) {
+    if (context?.activeDocId && (type === "attachments-list" || type === "single-attachment" || type === "hero")) {
       setAttachmentsLoading(true);
       fetchAttachments(context.activeDocId)
         .then(data => setAttachments(data || []))
@@ -561,6 +561,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         return <PenTool size={14} color="#a78bfa" />;
       case "mermaid":
         return <Network size={14} color="#60a5fa" />;
+      case "hero":
+        return <ImageIcon size={14} color="#f43f5e" />;
       default:
         return <Cpu size={14} color="#60a5fa" />;
     }
@@ -586,6 +588,79 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
     return (
       <>
+          {type === "hero" && (
+            <Box
+              sx={{
+                position: "relative",
+                width: "100%",
+                minHeight: config.layoutVariant === "banner" ? "200px" : "400px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: config.alignment?.includes("Top") ? "flex-start" : config.alignment?.includes("Bottom") ? "flex-end" : "center",
+                alignItems: config.alignment?.includes("Left") ? "flex-start" : config.alignment?.includes("Right") ? "flex-end" : "center",
+                textAlign: config.alignment?.includes("Left") ? "left" : config.alignment?.includes("Right") ? "right" : "center",
+                backgroundImage: config.backgroundImage ? `url(${config.backgroundImage})` : "linear-gradient(135deg, var(--primary-color) 0%, var(--accent-purple) 100%)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                borderRadius: "12px",
+                overflow: "hidden",
+                p: 4
+              }}
+            >
+              {config.enableScrim && (
+                <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1 }} />
+              )}
+              <Box sx={{ position: "relative", zIndex: 2, maxWidth: "800px" }}>
+                <Typography variant={config.layoutVariant === "banner" ? "h3" : "h2"} sx={{ color: `${config.titleColor || "#fff"} !important`, fontWeight: 800, mb: 1, fontFamily: '"Outfit", sans-serif' }}>
+                  {config.title || "Hero Title"}
+                </Typography>
+                <Typography variant="h6" sx={{ color: `${config.subtitleColor || "rgba(255,255,255,0.85)"} !important`, mb: 3, fontWeight: 400 }}>
+                  {config.subtitle || "Add a catchy description here..."}
+                </Typography>
+                <Stack direction="row" spacing={2} sx={{ justifyContent: config.alignment?.includes("Left") ? "flex-start" : config.alignment?.includes("Right") ? "flex-end" : "center" }}>
+                  {config.primaryCtaLabel && (
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={() => window.open(config.primaryCtaUrl || "#", "_blank")}
+                      sx={{
+                        backgroundColor: "#fff",
+                        color: "#000",
+                        display: "flex",
+                        flexDirection: "column",
+                        px: 3,
+                        py: config.primaryCtaSubtitle ? 1 : 1.5,
+                        borderRadius: "8px",
+                        "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" }
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 700, fontSize: "14px" }}>{config.primaryCtaLabel || "Primary Action"}</Typography>
+                      {config.primaryCtaSubtitle && (
+                        <Typography sx={{ fontSize: "11px", opacity: 0.7, fontWeight: 500, mt: -0.5 }}>{config.primaryCtaSubtitle}</Typography>
+                      )}
+                    </Button>
+                  )}
+                  {config.secondaryCtaLabel && (
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      onClick={() => window.open(config.secondaryCtaUrl || "#", "_blank")}
+                      sx={{
+                        borderColor: "rgba(255,255,255,0.5)",
+                        color: "#fff",
+                        px: 3,
+                        borderRadius: "8px",
+                        "&:hover": { borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.1)" }
+                      }}
+                    >
+                      <Typography sx={{ fontWeight: 600, fontSize: "14px" }}>{config.secondaryCtaLabel}</Typography>
+                    </Button>
+                  )}
+                </Stack>
+              </Box>
+            </Box>
+          )}
+
           {type === "markdown-paste" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               {isEditable && (!config.isBlockMode || !config.markdown) ? (
@@ -2873,6 +2948,73 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   </Select>
                 </FormControl>
               </>
+            )}
+
+            {type === "hero" && (
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <TextField fullWidth label="Title" size="small" value={config.title || ""} onChange={(e) => updateConfig("title", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                  <TextField label="Color" size="small" type="color" value={config.titleColor || "#ffffff"} onChange={(e) => updateConfig("titleColor", e.target.value)} sx={{ width: 70 }} slotProps={{ inputLabel: { shrink: true }, input: { sx: { height: 36, p: 0, cursor: "pointer" } } }} />
+                </Stack>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <TextField fullWidth label="Subtitle" size="small" multiline minRows={2} value={config.subtitle || ""} onChange={(e) => updateConfig("subtitle", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                  <TextField label="Color" size="small" type="color" value={config.subtitleColor || "#ffffff"} onChange={(e) => updateConfig("subtitleColor", e.target.value)} sx={{ width: 70 }} slotProps={{ inputLabel: { shrink: true }, input: { sx: { height: 36, p: 0, cursor: "pointer" } } }} />
+                </Stack>
+                
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase" }}>Background & Layout</Typography>
+                
+                <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 1.5, mt: 1 }}>
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75 }}>Select Image Attachment</FormLabel>
+                  <Select value={config.backgroundImage || ""} onChange={(e) => updateConfig("backgroundImage", e.target.value)} displayEmpty sx={{ fontSize: "13px", height: 36 }}>
+                    <MenuItem value="" sx={{ fontSize: "13px", fontStyle: "italic", color: "text.disabled" }}>None (Or use custom URL below)</MenuItem>
+                    {attachments.filter(a => a.mimeType.startsWith("image/")).map(a => (
+                      <MenuItem key={a.id} value={`${API_BASE_URL}/api/attachments/${a.id}`} sx={{ fontSize: "13px" }}>
+                        {a.filename}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <TextField fullWidth label="Custom Image URL" size="small" value={config.backgroundImage || ""} onChange={(e) => updateConfig("backgroundImage", e.target.value)} placeholder="https://..." slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                
+                <FormControlLabel
+                  control={<Switch size="small" checked={!!config.enableScrim} onChange={(e) => updateConfig("enableScrim", e.target.checked)} />}
+                  label={<Typography sx={{ fontSize: "13px" }}>Enable Dark Overlay (Scrim)</Typography>}
+                />
+
+
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75 }}>Layout Variant</FormLabel>
+                  <Select value={config.layoutVariant || "hero"} onChange={(e) => updateConfig("layoutVariant", e.target.value)} sx={{ fontSize: "13px", height: 36 }}>
+                    <MenuItem value="hero" sx={{ fontSize: "13px" }}>Large Hero</MenuItem>
+                    <MenuItem value="banner" sx={{ fontSize: "13px" }}>Small Banner</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75 }}>Text Alignment</FormLabel>
+                  <Select value={config.alignment || "Center"} onChange={(e) => updateConfig("alignment", e.target.value)} sx={{ fontSize: "13px", height: 36 }}>
+                    <MenuItem value="Top-Left" sx={{ fontSize: "13px" }}>Top Left</MenuItem>
+                    <MenuItem value="Center-Left" sx={{ fontSize: "13px" }}>Center Left</MenuItem>
+                    <MenuItem value="Bottom-Left" sx={{ fontSize: "13px" }}>Bottom Left</MenuItem>
+                    <MenuItem value="Center" sx={{ fontSize: "13px" }}>Center Middle</MenuItem>
+                    <MenuItem value="Center-Right" sx={{ fontSize: "13px" }}>Center Right</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase" }}>Primary Action</Typography>
+                <TextField fullWidth label="Button Label" size="small" value={config.primaryCtaLabel || ""} onChange={(e) => updateConfig("primaryCtaLabel", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                <TextField fullWidth label="Button Subtitle" size="small" value={config.primaryCtaSubtitle || ""} onChange={(e) => updateConfig("primaryCtaSubtitle", e.target.value)} placeholder="e.g. Free for 30 days" slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                <TextField fullWidth label="URL Destination" size="small" value={config.primaryCtaUrl || ""} onChange={(e) => updateConfig("primaryCtaUrl", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                
+                <Divider sx={{ my: 1 }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase" }}>Secondary Action</Typography>
+                <TextField fullWidth label="Ghost Button Label" size="small" value={config.secondaryCtaLabel || ""} onChange={(e) => updateConfig("secondaryCtaLabel", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+                <TextField fullWidth label="URL Destination" size="small" value={config.secondaryCtaUrl || ""} onChange={(e) => updateConfig("secondaryCtaUrl", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
+
+              </Stack>
             )}
 
             {type === "children-display" && (

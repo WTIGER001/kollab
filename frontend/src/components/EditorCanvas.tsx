@@ -1537,6 +1537,31 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "layout",
     },
     {
+      id: "hero",
+      label: "Hero / Banner",
+      description: "A large landing-page style banner with text and buttons",
+      icon: <Layout size={16} style={{ color: "#f43f5e" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "hero",
+              config: {
+                title: "Welcome to the Hub",
+                subtitle: "Discover our roadmaps and team directory.",
+                primaryCtaLabel: "Get Started",
+                layoutVariant: "hero",
+                alignment: "Center"
+              },
+            },
+          })
+          .run();
+      },
+      category: "layout",
+    },
+    {
       id: "cards-grid",
       label: "Cards Grid",
       description: "A responsive grid of cards",
