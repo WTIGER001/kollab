@@ -92,7 +92,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     try {
       const parent = parentId || (projectId ? projectId : actualTeamId);
       if (!parent) return; // Cannot create document without a team or project context
-      const newDoc = await createDocument("Untitled Document", "", projectId || "", parent);
+      const newDoc = await createDocument("Untitled Document", projectId || null, actualTeamId, parent);
       refetchDocs();
       legacyNavigate(actualTeamId, projectId || null, newDoc.id);
     } catch (e) {

@@ -5,6 +5,7 @@ import { MacroBlock } from "../editor/extensions/MacroBlock";
 import { Excerpt } from "../editor/extensions/Excerpt";
 import { LayoutSection } from "../editor/extensions/LayoutSection";
 import { LayoutColumn } from "../editor/extensions/LayoutColumn";
+import { CardsGrid, CardItem, TabsContainer, TabItem } from "../editor/extensions/LayoutNodes";
 import { CalloutPanel } from "../editor/extensions/CalloutPanel";
 import { InlineStatus } from "../editor/extensions/InlineStatus";
 import { Mention } from "../editor/extensions/Mention";
@@ -594,6 +595,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       Excerpt,
       LayoutSection,
       LayoutColumn,
+      CardsGrid,
+      CardItem,
+      TabsContainer,
+      TabItem,
       CalloutPanel,
       InlineStatus,
       Mention,
@@ -813,6 +818,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       Excerpt,
       LayoutSection,
       LayoutColumn,
+      CardsGrid,
+      CardItem,
+      TabsContainer,
+      TabItem,
       CalloutPanel,
       InlineStatus,
       Mention,
@@ -859,12 +868,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   }, [editor, isEditing]);
 
+  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   const saveDocument = (customTitle?: string, customDescription?: string) => {
     const activeTitle = customTitle !== undefined ? customTitle : title;
     const titleToSave =
       activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
     if (editor && !editor.isDestroyed) {
-      onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription);
+      }, 1000);
     }
   };
 
@@ -1519,6 +1533,38 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       icon: <Grid3X3 size={16} style={{ color: "var(--accent-blue)" }} />,
       action: () => {
         setTableCreatorOpen(true);
+      },
+      category: "layout",
+    },
+    {
+      id: "cards-grid",
+      label: "Cards Grid",
+      description: "A responsive grid of cards",
+      icon: <Layout size={16} style={{ color: "var(--accent-pink)" }} />,
+      action: (ed) => {
+        ed.chain().focus().insertContent({
+          type: "cardsGrid",
+          content: [
+            { type: "cardItem", content: [{ type: "paragraph" }] },
+            { type: "cardItem", content: [{ type: "paragraph" }] },
+          ]
+        }).run();
+      },
+      category: "layout",
+    },
+    {
+      id: "tabs",
+      label: "Tabs",
+      description: "Interactive tabbed content",
+      icon: <FolderInput size={16} style={{ color: "var(--accent-blue)" }} />,
+      action: (ed) => {
+        ed.chain().focus().insertContent({
+          type: "tabsContainer",
+          content: [
+            { type: "tabItem", attrs: { label: "Tab 1", tabId: Math.random().toString(36).substr(2, 9) }, content: [{ type: "paragraph", content: [{ type: "text", text: "Content 1" }] }] },
+            { type: "tabItem", attrs: { label: "Tab 2", tabId: Math.random().toString(36).substr(2, 9) }, content: [{ type: "paragraph", content: [{ type: "text", text: "Content 2" }] }] },
+          ]
+        }).run();
       },
       category: "layout",
     },

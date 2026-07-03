@@ -89,7 +89,7 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
       initialContent={activeDoc.content || ""}
       initialEditMode={false}
       developerMode={developerMode}
-      onSave={handleSaveDoc}
+      onSave={(title, content) => handleSaveDoc(activeDoc.id, title, content)}
       isSaving={isSaving}
       documents={documents}
       selectedTeamName={activeTeam?.name}

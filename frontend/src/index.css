@@ -551,6 +551,39 @@ h7, h8 {
 }
 
 /* ==========================================================================
+   Cards and Tabs Layout Macros
+   ========================================================================== */
+
+.ProseMirror .cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 1rem 0;
+}
+
+.ProseMirror .card-item {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  min-height: 100px;
+  transition: all 0.2s ease;
+}
+
+.ProseMirror .card-item:hover,
+.ProseMirror .card-item.has-focus,
+.ProseMirror .card-item:focus-within {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tabs-macro-wrapper {
+  display: block;
+  width: 100%;
+}
+
+/* ==========================================================================
    Tiptap Document Tables (Modern Dark Glassmorphism)
    ========================================================================== */
 
