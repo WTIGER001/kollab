@@ -2,15 +2,15 @@ package user
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 
-	"arkollab/api/internal/domain"
+	"github.com/google/uuid"
+
+	"kollab/api/internal/domain"
 )
 
 type AuthService struct {
@@ -36,7 +36,7 @@ func (s *AuthService) Register(ctx context.Context, username, password string) (
 	}
 
 	user := &domain.User{
-		ID:           newUUID(),
+		ID:           uuid.New().String(),
 		Username:     username,
 		PasswordHash: string(hashed),
 	}
@@ -65,10 +65,4 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 	})
 
 	return token.SignedString(s.jwtSecret)
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

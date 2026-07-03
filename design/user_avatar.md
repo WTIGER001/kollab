@@ -6,7 +6,7 @@ This document specifies the technical design, properties, and initials calculati
 
 ## 🎨 1. Component Overview
 
-The `UserAvatar` component is a wrapper around the Material UI `<Avatar>` component. It is designed to ensure a consistent, premium display of user profiles throughout the Arkollab UI (e.g. comments, presence indicators, member lists, and dropdown menus).
+The `UserAvatar` component is a wrapper around the Material UI `<Avatar>` component. It is designed to ensure a consistent, premium display of user profiles throughout the Kollab UI (e.g. comments, presence indicators, member lists, and dropdown menus).
 
 ---
 

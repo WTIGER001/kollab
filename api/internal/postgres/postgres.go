@@ -24,4 +24,3 @@ func InitSeeds(ctx context.Context, db *pgxpool.Pool) error {
 	_, err := db.Exec(ctx, seedSQL)
 	return err
 }
-

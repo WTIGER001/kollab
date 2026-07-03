@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type UserHandler struct {
@@ -26,7 +26,7 @@ func NewUserHandler(authService domain.AuthService, themeService domain.ThemeSer
 func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	theme, _ := h.themeService.GetDefaultTheme(r.Context())
 
-	welcomeTitle := "Welcome to Arkollab"
+	welcomeTitle := "Welcome to Kollab"
 	welcomeText := "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces."
 	if settings, err := h.systemService.GetSettings(r.Context()); err == nil && settings != nil {
 		welcomeTitle = settings.WelcomeTitle

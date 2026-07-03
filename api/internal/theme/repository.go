@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryThemeRepository struct {

@@ -1,6 +1,6 @@
 # User Guide: Searching Documents
 
-Arkollab features a hybrid search engine that combines **AI-powered semantic (conceptual) search** with traditional **keyword matching**. This allows you to find documents not just by typing exact words, but by typing general concepts or ideas.
+Kollab features a hybrid search engine that combines **AI-powered semantic (conceptual) search** with traditional **keyword matching**. This allows you to find documents not just by typing exact words, but by typing general concepts or ideas.
 
 ---
 
@@ -28,5 +28,5 @@ Once the search panel is open:
 ## 💡 Pro-Tips & FAQ
 
 *   **Active Project Isolation**: The search results are filtered to show only pages belonging to your *currently active project* to prevent unrelated clutter.
-*   **Automatic Backup Search**: If the local AI model server is offline or loading, Arkollab will automatically fall back to standard text matching. You will still get fast, accurate results based on exact matches in page titles or content paragraphs.
+*   **Automatic Backup Search**: If the local AI model server is offline or loading, Kollab will automatically fall back to standard text matching. You will still get fast, accurate results based on exact matches in page titles or content paragraphs.
 *   **Plain-text Previews**: Each search result displays a snippet matching your text query to give you quick context before opening the page.

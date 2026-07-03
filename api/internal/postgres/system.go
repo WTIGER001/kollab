@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type PostgresSystemRepository struct {
@@ -35,7 +35,7 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 		TrashRetentionPolicy:     "forever",
 		TrashRetentionCustomDays: 30,
 		AIRateLimit:              10,
-		WelcomeTitle:             "Welcome to Arkollab",
+		WelcomeTitle:             "Welcome to Kollab",
 		WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
 		AsposeEnabled:            true,
 	}
@@ -336,17 +336,17 @@ func (r *PostgresSystemRepository) ExportBackup(ctx context.Context) (map[string
 			result[table] = []interface{}{}
 			continue
 		}
-		
+
 		fieldDescriptions := rows.FieldDescriptions()
 		var list []map[string]interface{}
-		
+
 		for rows.Next() {
 			values, err := rows.Values()
 			if err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("failed to scan table %s row values: %w", table, err)
 			}
-			
+
 			rowMap := make(map[string]interface{})
 			for i, fd := range fieldDescriptions {
 				rowMap[fd.Name] = values[i]
@@ -393,4 +393,3 @@ func (r *PostgresSystemRepository) GetSyncOperations(ctx context.Context, sinceI
 	}
 	return list, nil
 }
-

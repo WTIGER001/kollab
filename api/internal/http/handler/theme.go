@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
 )
 
 type ThemeHandler struct {

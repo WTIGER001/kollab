@@ -1,6 +1,6 @@
-# Arkollab User Guide
+# Kollab User Guide
 
-Welcome to the Project Arkollab user guide! This manual describes how to use all the collaborative editing and knowledge base features.
+Welcome to the Project Kollab user guide! This manual describes how to use all the collaborative editing and knowledge base features.
 
 ---
 

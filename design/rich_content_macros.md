@@ -1,6 +1,6 @@
 # Technical Design: Rich Content Macros
 
-This document specifies the schemas, serialization behaviors, and rendering models of Arkollab's rich content macro extensions: **Callout Panels**, **Inline Status Badges**, **Task Lists**, **Expandable Accordions**, **Inline Dates**, **Symbols**, and **No Format Panels**.
+This document specifies the schemas, serialization behaviors, and rendering models of Kollab's rich content macro extensions: **Callout Panels**, **Inline Status Badges**, **Task Lists**, **Expandable Accordions**, **Inline Dates**, **Symbols**, and **No Format Panels**.
 
 ---
 
@@ -211,7 +211,7 @@ Children Display and Page Index macros dynamically render lists of document stru
 
 ## 9. Macro Organizer Dialog & Toolbar Favorites System
 
-To streamline the formatting toolbar, Arkollab utilizes a dynamic, user-configurable macros dialog that allows users to pin and unpin formatting elements.
+To streamline the formatting toolbar, Kollab utilizes a dynamic, user-configurable macros dialog that allows users to pin and unpin formatting elements.
 
 ### 9.1 Category Taxonomy & Data Schema
 Each command item inside the editor's command array matches the `SlashCommandItem` interface, extended with an optional `category` classifier:
@@ -229,7 +229,7 @@ interface SlashCommandItem {
 ### 9.2 Local Storage Favorites State Sync
 - **State Initialization**: Upon mounting the `EditorCanvas`, the component reads the user's preferred layout favorites:
   ```typescript
-  const stored = localStorage.getItem("arkollab_favorite_macros");
+  const stored = localStorage.getItem("kollab_favorite_macros");
   const initialFavorites = stored ? JSON.parse(stored) : DEFAULT_FAVORITES;
   ```
 - **State Mutation**: Click events on the star icons invoke a toggle function which updates the React state and writes the serialized JSON array back to `localStorage`.

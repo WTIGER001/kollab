@@ -1,6 +1,6 @@
 # Developer & AI Agent Guidelines
 
-To maintain documentation integrity as Project Arkollab expands, all developers and AI agents must follow this dual-documentation mandate for **every feature modification or code change**.
+To maintain documentation integrity as Project Kollab expands, all developers and AI agents must follow this dual-documentation mandate for **every feature modification or code change**.
 
 ---
 

@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
+	docExporter "kollab/api/internal/document"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
+	"kollab/api/internal/ws"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	docExporter "arkollab/api/internal/document"
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
-	"arkollab/api/internal/permissions"
-	"arkollab/api/internal/ws"
 	goperm "github.com/wtiger001/go-permissions"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -477,7 +478,6 @@ func (h *DocumentHandler) ListRecent(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(docs)
 }
-
 
 func (h *DocumentHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
@@ -1060,5 +1060,3 @@ func (h *DocumentHandler) DeleteShareLink(w http.ResponseWriter, r *http.Request
 
 	w.WriteHeader(http.StatusNoContent)
 }
-
-

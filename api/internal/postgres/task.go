@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type PostgresTaskRepository struct {

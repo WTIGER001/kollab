@@ -1,16 +1,16 @@
 # Technical Design: Editor Canvas, Collaboration, & Presence
 
-This document details the architecture, configurations, and collaborative sync loop of the Tiptap/ProseMirror editor canvas in Project Arkollab.
+This document details the architecture, configurations, and collaborative sync loop of the Tiptap/ProseMirror editor canvas in Project Kollab.
 
 ---
 
 ## 1. Tiptap & ProseMirror Core Architecture
 
-Arkollab utilizes a headless editor model where the DOM is managed React-declaratively, while the underlying document model is tracked as a ProseMirror Abstract Syntax Tree (AST).
+Kollab utilizes a headless editor model where the DOM is managed React-declaratively, while the underlying document model is tracked as a ProseMirror Abstract Syntax Tree (AST).
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│             Arkollab Main App (React Container)        │
+│             Kollab Main App (React Container)        │
 │  - App Shell, Sidebar, Navigation, Dialogs, Theme      │
 └────────────────────────────────────────────────────────┘
                             │
@@ -122,7 +122,7 @@ WebSockets handle Yjs syncing and presence messages. The Go backend router accep
 
 ## 3. Remote Cursor & Selection Presence
 
-To track cursor positions and selections in real-time, Arkollab implements a custom ProseMirror plugin: [PresenceCursors](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/editor/extensions/PresenceCursors.ts).
+To track cursor positions and selections in real-time, Kollab implements a custom ProseMirror plugin: [PresenceCursors](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/editor/extensions/PresenceCursors.ts).
 
 ### 3.1 Cursors Coordination Flow
 1. **Local Selection Listener**: The client tracks cursor changes via `onSelectionUpdate` or keyboard/pointer interactions.
@@ -148,7 +148,7 @@ To track cursor positions and selections in real-time, Arkollab implements a cus
 
 ## 4. Shadow DOM UI Macro Plugin Architecture
 
-Arkollab allows runtime loading of dynamic macros and custom widgets via a **Shadow DOM Web Components** model. This provides complete isolation, ensuring CSS stylesheets from plugins cannot pollute the core application design.
+Kollab allows runtime loading of dynamic macros and custom widgets via a **Shadow DOM Web Components** model. This provides complete isolation, ensuring CSS stylesheets from plugins cannot pollute the core application design.
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -168,7 +168,7 @@ Arkollab allows runtime loading of dynamic macros and custom widgets via a **Sha
 2. **Client Script Mounting**: When loading a document, active script elements are injected:
    ```javascript
    const script = document.createElement("script");
-   script.src = "https://cdn.arkollab.internal/plugins/status-badge.js";
+   script.src = "https://cdn.kollab.internal/plugins/status-badge.js";
    document.head.appendChild(script);
    ```
 3. **Web Component Definition**: The custom plugin script registers a standard Custom Element:

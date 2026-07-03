@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
 )
 
 type CommentHandler struct {

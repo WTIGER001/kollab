@@ -55,6 +55,8 @@ import { EditorHeader } from "./editor/EditorHeader";
 import { EditorAnalyticsDialog } from "./editor/EditorAnalyticsDialog";
 import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
 import { EditorMacroDialog } from "./editor/EditorMacroDialog";
+import { EditorToolbar } from "./editor/EditorToolbar";
+import { EditorFloatingMenus } from "./editor/EditorFloatingMenus";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
 import { TableCreatorDialog } from "./TableCreatorDialog";
@@ -1208,6 +1210,63 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: {
               type: "chart-analytics",
               config: { tableId: "table_metrics_01" },
+            },
+          })
+          .run();
+      },
+      category: "advanced",
+    },
+    {
+      id: "roadmap-planner",
+      label: "Roadmap Planner",
+      description: "Insert a Gantt-style project roadmap",
+      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "roadmap-planner",
+              config: {},
+            },
+          })
+          .run();
+      },
+      category: "advanced",
+    },
+    {
+      id: "team-calendars",
+      label: "Team Calendars",
+      description: "Embed a team event calendar",
+      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "team-calendars",
+              config: {},
+            },
+          })
+          .run();
+      },
+      category: "advanced",
+    },
+    {
+      id: "popular-labels",
+      label: "Popular Labels",
+      description: "Generate a word cloud of popular labels",
+      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "popular-labels",
+              config: {},
             },
           })
           .run();

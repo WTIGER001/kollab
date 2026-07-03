@@ -2,7 +2,6 @@ package document
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,9 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"arkollab/api/internal/ai"
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/permissions"
+	"kollab/api/internal/ai"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/permissions"
+
+	"github.com/google/uuid"
 	goperm "github.com/wtiger001/go-permissions"
 )
 
@@ -21,14 +22,16 @@ type DocumentService struct {
 	repo          domain.DocumentRepository
 	systemService domain.SystemService
 	taskRepo      domain.TaskRepository
+	teamRepo      domain.TeamRepository
 	aiClient      domain.LLMClient
 }
 
-func NewDocumentService(repo domain.DocumentRepository, systemService domain.SystemService, taskRepo domain.TaskRepository) *DocumentService {
+func NewDocumentService(repo domain.DocumentRepository, systemService domain.SystemService, taskRepo domain.TaskRepository, teamRepo domain.TeamRepository) *DocumentService {
 	return &DocumentService{
 		repo:          repo,
 		systemService: systemService,
 		taskRepo:      taskRepo,
+		teamRepo:      teamRepo,
 		aiClient:      ai.NewLLMClient(),
 	}
 }
@@ -59,8 +62,37 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 		return nil, errors.New("either teamId or projectId is required")
 	}
 
+	if s.teamRepo != nil && userID != "" {
+		teams, err := s.teamRepo.GetTeamsByUserID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check team membership: %w", err)
+		}
+
+		targetTeam := teamId
+		if targetTeam == "" && projectId != "" {
+			// If only projectId is provided, we need to find its team.
+			// But for simplicity here if they pass projectId, we check if they have access to the project's team.
+			proj, err := s.teamRepo.GetProjectByID(ctx, projectId)
+			if err != nil {
+				return nil, fmt.Errorf("invalid project: %w", err)
+			}
+			targetTeam = proj.TeamID
+		}
+
+		isMember := false
+		for _, t := range teams {
+			if t.ID == targetTeam {
+				isMember = true
+				break
+			}
+		}
+		if !isMember {
+			return nil, errors.New("unauthorized: must be a member of the team to create a document")
+		}
+	}
+
 	doc := &domain.Document{
-		ID:          newUUID(),
+		ID:          uuid.New().String(),
 		Title:       title,
 		Content:     `{"type":"doc","content":[{"type":"paragraph"}]}`, // Default blank content
 		ProjectID:   projectId,
@@ -76,7 +108,10 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 		return nil, err
 	}
 	if userID != "" && permissions.DocumentPermissions != nil {
-		_ = permissions.DocumentPermissions.GrantRole(ctx, "builtin.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID)
+		if err := permissions.DocumentPermissions.GrantRole(ctx, "builtin.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID); err != nil {
+			_ = s.repo.DeletePermanently(ctx, doc.ID) // rollback
+			return nil, fmt.Errorf("failed to grant permissions: %w", err)
+		}
 	}
 	if s.systemService != nil {
 		_ = s.systemService.RecordAuditLog(ctx, doc.ID, userID, "edit")
@@ -121,7 +156,7 @@ func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title s
 		} else {
 			// Force save a snapshot of the *new* content (checkpoint)
 			version := &domain.DocumentVersion{
-				ID:            newUUID(),
+				ID:            uuid.New().String(),
 				DocumentID:    id,
 				Content:       content,
 				VersionNumber: versionNum,
@@ -157,7 +192,7 @@ func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title s
 				}
 			} else {
 				version := &domain.DocumentVersion{
-					ID:            newUUID(),
+					ID:            uuid.New().String(),
 					DocumentID:    id,
 					Content:       doc.Content, // Save the PREVIOUS content
 					VersionNumber: versionNum,
@@ -302,15 +337,15 @@ func (s *DocumentService) RestoreDocumentVersion(ctx context.Context, docID stri
 	if latest != nil {
 		versionNum = latest.VersionNumber + 1
 	}
-	
+
 	var createdBy *string
 	if userID != "" {
 		createdBy = &userID
 	}
-	
+
 	snapshotSummary := "Snapshot before restore"
 	currentSnapshot := &domain.DocumentVersion{
-		ID:            newUUID(),
+		ID:            uuid.New().String(),
 		DocumentID:    docID,
 		Content:       doc.Content,
 		VersionNumber: versionNum,
@@ -465,7 +500,7 @@ func (s *DocumentService) CreateManualMilestone(ctx context.Context, docID strin
 	}
 
 	version := &domain.DocumentVersion{
-		ID:            newUUID(),
+		ID:            uuid.New().String(),
 		DocumentID:    docID,
 		Content:       doc.Content,
 		VersionNumber: versionNum,
@@ -559,7 +594,7 @@ func (s *DocumentService) RecordView(ctx context.Context, documentID string, use
 	if documentID == "" || userID == "" {
 		return errors.New("document ID and user ID are required to record view")
 	}
-	id := newUUID()
+	id := uuid.New().String()
 	err := s.repo.RecordView(ctx, id, documentID, userID, time.Now())
 	if err != nil {
 		return err
@@ -583,9 +618,9 @@ func (s *DocumentService) GenerateSummary(ctx context.Context, title string, old
 
 	prompt := fmt.Sprintf(
 		"Analyze the following changes made to the document titled \"%s\".\n\n"+
-		"Original Text:\n\"\"\"\n%s\n\"\"\"\n\n"+
-		"New Text:\n\"\"\"\n%s\n\"\"\"\n\n"+
-		"Write a concise, active-voice summary of the changes in a single sentence (maximum 15 words). Do not include any prefix or explanations, just output the summary directly.",
+			"Original Text:\n\"\"\"\n%s\n\"\"\"\n\n"+
+			"New Text:\n\"\"\"\n%s\n\"\"\"\n\n"+
+			"Write a concise, active-voice summary of the changes in a single sentence (maximum 15 words). Do not include any prefix or explanations, just output the summary directly.",
 		title, oldText, newText,
 	)
 
@@ -605,12 +640,6 @@ func (s *DocumentService) GenerateSummary(ctx context.Context, title string, old
 	}
 
 	return strings.TrimSpace(summary), nil
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func (s *DocumentService) AddFavorite(ctx context.Context, userID string, documentID string) error {
@@ -699,7 +728,7 @@ func (s *DocumentService) syncTasks(ctx context.Context, docID string, contentJS
 			content := strings.TrimSpace(fullText)
 
 			tasks = append(tasks, &domain.Task{
-				ID:         newUUID(),
+				ID:         uuid.New().String(),
 				DocumentID: docID,
 				Content:    content,
 				Assignee:   assignee,
@@ -756,6 +785,3 @@ func (s *DocumentService) GetTasksByAssignee(ctx context.Context, username strin
 func (s *DocumentService) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
 	return s.repo.GetDocumentsWithMention(ctx, username)
 }
-
-
-

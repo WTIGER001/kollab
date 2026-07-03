@@ -164,9 +164,9 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
             size="small"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
+            slotProps={{ input: {
               startAdornment: <Search size={14} style={{ marginRight: 8, color: "var(--text-disabled)" }} />
-            }}
+            } }}
             sx={{
               width: 220,
               "& .MuiOutlinedInput-root": {

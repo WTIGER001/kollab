@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 
-	"arkollab/api/internal/http/middleware"
-	"arkollab/api/internal/ws"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/ws"
 )
 
 var upgrader = websocket.Upgrader{

@@ -45,7 +45,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   const [trashCustomDays, setTrashCustomDays] = useState(30);
 
   // New settings states
-  const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Arkollab");
+  const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Kollab");
   const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
   const [aiRateLimit, setAiRateLimit] = useState(10);
   const [asposeEnabled, setAsposeEnabled] = useState(true);
@@ -88,7 +88,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setDestination(systemSettings.auditLogDestination);
       setTrashPolicy(systemSettings.trashRetentionPolicy || "forever");
       setTrashCustomDays(systemSettings.trashRetentionCustomDays || 30);
-      setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Arkollab");
+      setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Kollab");
       setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
       setAiRateLimit(systemSettings.aiRateLimit || 10);
       setAsposeEnabled(systemSettings.asposeEnabled !== false);
@@ -288,7 +288,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
 
             <TextField
               label="Welcome Screen Title"
-              placeholder="Welcome to Arkollab"
+              placeholder="Welcome to Kollab"
               value={welcomeTitle}
               onChange={(e) => setWelcomeTitle(e.target.value)}
               fullWidth

@@ -104,7 +104,7 @@ func SeedDefaultPermissions(ctx context.Context) {
 	}
 
 	seededProjs := []string{
-		"proj_arkollab_test",
+		"proj_kollab_test",
 		"proj_wiki",
 		"proj_roadmap",
 		"proj_campaign",

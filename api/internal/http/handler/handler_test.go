@@ -22,24 +22,25 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	inmemdoc "arkollab/api/internal/document"
-	inmemcomment "arkollab/api/internal/comment"
-	inmemtask "arkollab/api/internal/task"
-	inmemtag "arkollab/api/internal/tag"
-	"arkollab/api/internal/domain"
-	apihttp "arkollab/api/internal/http"
-	"arkollab/api/internal/http/handler"
-	imgservice "arkollab/api/internal/image"
-	"arkollab/api/internal/permissions"
+	inmematt "kollab/api/internal/attachment"
+	inmemcomment "kollab/api/internal/comment"
+	inmemdoc "kollab/api/internal/document"
+	"kollab/api/internal/domain"
+	apihttp "kollab/api/internal/http"
+	"kollab/api/internal/http/handler"
+	imgservice "kollab/api/internal/image"
+	"kollab/api/internal/permissions"
+	pgrepo "kollab/api/internal/postgres"
+	"kollab/api/internal/storage"
+	inmemsystem "kollab/api/internal/system"
+	inmemtag "kollab/api/internal/tag"
+	inmemtask "kollab/api/internal/task"
+	inmemteam "kollab/api/internal/team"
+	themepkg "kollab/api/internal/theme"
+	inmemuser "kollab/api/internal/user"
+	"kollab/api/internal/ws"
+
 	goperm "github.com/wtiger001/go-permissions"
-	pgrepo "arkollab/api/internal/postgres"
-	"arkollab/api/internal/storage"
-	inmemsystem "arkollab/api/internal/system"
-	inmemteam "arkollab/api/internal/team"
-	themepkg "arkollab/api/internal/theme"
-	inmemuser "arkollab/api/internal/user"
-	inmematt "arkollab/api/internal/attachment"
-	"arkollab/api/internal/ws"
 )
 
 func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
@@ -57,7 +58,7 @@ func TestInMemoryAuthAndProtectedEndpoints(t *testing.T) {
 	attachmentRepo := inmematt.NewInMemoryAttachmentRepository()
 	taskRepo := inmemtask.NewInMemoryTaskRepository()
 
-	tmpDir, err := os.MkdirTemp("", "arkollab-image-test-*")
+	tmpDir, err := os.MkdirTemp("", "kollab-image-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -83,7 +84,7 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	// Start PostgreSQL container via testcontainers-go
 	pgContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage("pgvector/pgvector:pg16"),
-		postgres.WithDatabase("arkollab_test"),
+		postgres.WithDatabase("kollab_test"),
 		postgres.WithUsername("postgres"),
 		postgres.WithPassword("postgres"),
 		testcontainers.WithWaitStrategy(
@@ -130,7 +131,7 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	attachmentRepo := pgrepo.NewPostgresAttachmentRepository(db)
 	taskRepo := pgrepo.NewPostgresTaskRepository(db)
 
-	tmpDir, err := os.MkdirTemp("", "arkollab-postgres-image-test-*")
+	tmpDir, err := os.MkdirTemp("", "kollab-postgres-image-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -600,8 +601,12 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = json.Unmarshal(wNormal.Body.Bytes(), &normalDocs)
 	foundParent, foundChild := false, false
 	for _, nd := range normalDocs {
-		if nd.ID == trashParent.ID { foundParent = true }
-		if nd.ID == trashChild.ID { foundChild = true }
+		if nd.ID == trashParent.ID {
+			foundParent = true
+		}
+		if nd.ID == trashChild.ID {
+			foundChild = true
+		}
 	}
 	if !foundParent || !foundChild {
 		t.Errorf("expected both parent and child in normal doc list, got parent=%t, child=%t", foundParent, foundChild)
@@ -635,8 +640,12 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = json.Unmarshal(wTrash.Body.Bytes(), &trashDocs)
 	foundParentTrash, foundChildTrash := false, false
 	for _, td := range trashDocs {
-		if td.ID == trashParent.ID { foundParentTrash = true }
-		if td.ID == trashChild.ID { foundChildTrash = true }
+		if td.ID == trashParent.ID {
+			foundParentTrash = true
+		}
+		if td.ID == trashChild.ID {
+			foundChildTrash = true
+		}
 	}
 	if !foundParentTrash || !foundChildTrash {
 		t.Errorf("expected parent and child in trash list, got parent=%t, child=%t", foundParentTrash, foundChildTrash)
@@ -659,8 +668,12 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = json.Unmarshal(wNormal3.Body.Bytes(), &normalDocs3)
 	foundParent3, foundChild3 := false, false
 	for _, nd := range normalDocs3 {
-		if nd.ID == trashParent.ID { foundParent3 = true }
-		if nd.ID == trashChild.ID { foundChild3 = true }
+		if nd.ID == trashParent.ID {
+			foundParent3 = true
+		}
+		if nd.ID == trashChild.ID {
+			foundChild3 = true
+		}
 	}
 	if !foundParent3 || foundChild3 {
 		t.Errorf("expected parent restored and child still in trash, got parent=%t, child=%t", foundParent3, foundChild3)
@@ -1517,4 +1530,3 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 		t.Errorf("expected request 3 to fail with 429 Too Many Requests, got status %d. Body: %s", codeAI3, wAI3.Body.String())
 	}
 }
-

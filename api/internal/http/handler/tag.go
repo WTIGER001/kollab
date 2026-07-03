@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type TagHandler struct {

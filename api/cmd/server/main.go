@@ -12,28 +12,28 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	apihttp "arkollab/api/internal/http"
-	"arkollab/api/internal/http/handler"
-	"arkollab/api/internal/http/middleware"
-	pgrepo "arkollab/api/internal/postgres"
-	teamrepo "arkollab/api/internal/team"
-	themerepo "arkollab/api/internal/theme"
-	userrepo "arkollab/api/internal/user"
-	docrepo "arkollab/api/internal/document"
-	imgrepo "arkollab/api/internal/image"
-	systemrepo "arkollab/api/internal/system"
-	commentrepo "arkollab/api/internal/comment"
-	attrepo "arkollab/api/internal/attachment"
-	tagrepo "arkollab/api/internal/tag"
-	"arkollab/api/internal/permissions"
-	"arkollab/api/internal/storage"
-	"arkollab/api/internal/ws"
-	"arkollab/api/internal/ai"
+	"kollab/api/internal/ai"
+	attrepo "kollab/api/internal/attachment"
+	commentrepo "kollab/api/internal/comment"
+	docrepo "kollab/api/internal/document"
+	apihttp "kollab/api/internal/http"
+	"kollab/api/internal/http/handler"
+	"kollab/api/internal/http/middleware"
+	imgrepo "kollab/api/internal/image"
+	"kollab/api/internal/permissions"
+	pgrepo "kollab/api/internal/postgres"
+	"kollab/api/internal/storage"
+	systemrepo "kollab/api/internal/system"
+	tagrepo "kollab/api/internal/tag"
+	teamrepo "kollab/api/internal/team"
+	themerepo "kollab/api/internal/theme"
+	userrepo "kollab/api/internal/user"
+	"kollab/api/internal/ws"
 )
 
 func loadLocalEnv() {
@@ -81,7 +81,7 @@ func main() {
 	// Retrieve secret key from environment, fallback to development default
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		jwtSecret = "arkollab-dev-secret-key-change-in-production"
+		jwtSecret = "kollab-dev-secret-key-change-in-production"
 		log.Println("WARNING: JWT_SECRET environment variable not set. Using development default.")
 	}
 
@@ -102,7 +102,7 @@ func main() {
 		log.Println("DATABASE_URL not set. Initializing PostgreSQL container via testcontainers-go...")
 		pgContainer, err = postgres.RunContainer(ctx,
 			testcontainers.WithImage("pgvector/pgvector:pg16"),
-			postgres.WithDatabase("arkollab"),
+			postgres.WithDatabase("kollab"),
 			postgres.WithUsername("postgres"),
 			postgres.WithPassword("postgres"),
 			testcontainers.WithWaitStrategy(
@@ -166,7 +166,6 @@ func main() {
 		permissions.SeedDefaultPermissions(ctx)
 	}
 
-
 	// Instantiate repositories with Postgres backend
 	userRepo := pgrepo.NewPostgresUserRepository(db)
 	teamRepo := pgrepo.NewPostgresTeamRepository(db)
@@ -188,7 +187,7 @@ func main() {
 	authService := userrepo.NewAuthService(userRepo, jwtSecret)
 	teamService := teamrepo.NewTeamService(teamRepo)
 	systemService := systemrepo.NewSystemService(systemRepo)
-	docService := docrepo.NewDocumentService(docRepo, systemService, taskRepo)
+	docService := docrepo.NewDocumentService(docRepo, systemService, taskRepo, teamRepo)
 	imageService := imgrepo.NewImageService(imageRepo, storageProvider)
 	themeService := themerepo.NewThemeService(themeRepo)
 	commentService := commentrepo.NewCommentService(commentRepo)

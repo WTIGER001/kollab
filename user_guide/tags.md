@@ -1,6 +1,6 @@
 # User Guide: Document Tagging (Labels)
 
-This guide describes how to use and manage tags (labels) in Project Arkollab to categorize and search documents.
+This guide describes how to use and manage tags (labels) in Project Kollab to categorize and search documents.
 
 ---
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type TagServiceImpl struct {

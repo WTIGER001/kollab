@@ -91,7 +91,7 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 				}
 			}
 
-			if strings.HasPrefix(docID, "proj_") || docID == "proj-1" || docID == "proj_wiki" || docID == "proj_roadmap" || docID == "proj_campaign" || docID == "proj_arkollab_test" {
+			if strings.HasPrefix(docID, "proj_") || docID == "proj-1" || docID == "proj_wiki" || docID == "proj_roadmap" || docID == "proj_campaign" || docID == "proj_kollab_test" {
 				var exists bool
 				errProj := e.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1)", docID).Scan(&exists)
 				if errProj == nil && exists {
@@ -328,7 +328,7 @@ func (e *AccessEvaluator) evaluateABAC(ctx context.Context, userID string, class
 
 	// Query user clearance level
 	var clearance string
-	err := e.db.QueryRow(ctx, 
+	err := e.db.QueryRow(ctx,
 		"SELECT attribute_value FROM user_security_attributes WHERE user_id = $1 AND attribute_key = 'clearance_level'",
 		userID,
 	).Scan(&clearance)

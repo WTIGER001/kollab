@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryTaskRepository struct {

@@ -56,4 +56,3 @@ type AsposeConfig struct {
 	AsposeLicensed bool   `json:"asposeLicensed"`
 	AsposeLicense  string `json:"asposeLicense,omitempty"`
 }
-

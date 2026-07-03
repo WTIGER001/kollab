@@ -1,12 +1,12 @@
 # Technical Design: Hybrid Search Engine
 
-This document specifies the technical design, database indexing, and AI client configurations powering Arkollab's semantic and keyword search engine.
+This document specifies the technical design, database indexing, and AI client configurations powering Kollab's semantic and keyword search engine.
 
 ---
 
 ## 1. Vector Database Schema & pgvector Setup
 
-Arkollab stores documents as block-based ProseMirror AST structures in a PostgreSQL database. To support Retrieval-Augmented Generation (RAG) and semantic searches, we leverage the `pgvector` extension.
+Kollab stores documents as block-based ProseMirror AST structures in a PostgreSQL database. To support Retrieval-Augmented Generation (RAG) and semantic searches, we leverage the `pgvector` extension.
 
 ```
                   ┌──────────────────────┐
@@ -53,7 +53,7 @@ ON documents USING hnsw (embedding vector_cosine_ops);
 ```
 
 ### 1.2 Cosine Distance Metric
-Arkollab uses **Cosine Distance** (`<=>`) for vector similarity, measuring the cosine of the angle between two multi-dimensional documents:
+Kollab uses **Cosine Distance** (`<=>`) for vector similarity, measuring the cosine of the angle between two multi-dimensional documents:
 $$Distance(A, B) = 1 - \frac{A \cdot B}{\|A\| \|B\|}$$
 
 A distance of `0.0` represents absolute identity, while `2.0` represents diametric opposition.
@@ -96,7 +96,7 @@ Go communicates with Ollama via HTTP POST request to `/api/embeddings`.
 
 ## 3. Search Coordination & Offline Fallback Logic
 
-To ensure the application remains functional even if Ollama is offline or vector generation fails, Arkollab implements a hybrid fallback pipeline.
+To ensure the application remains functional even if Ollama is offline or vector generation fails, Kollab implements a hybrid fallback pipeline.
 
 ### 3.1 Flow Control in `postgres/document.go`
 

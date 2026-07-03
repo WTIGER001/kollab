@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryView struct {
@@ -124,8 +124,8 @@ func (r *InMemoryDocumentRepository) GetByID(ctx context.Context, id string) (*d
 			docCopy := *newDoc
 			return &docCopy, nil
 		}
-		
-		if strings.HasPrefix(id, "proj_") || id == "proj-1" || id == "proj_wiki" || id == "proj_roadmap" || id == "proj_campaign" || id == "proj_arkollab_test" {
+
+		if strings.HasPrefix(id, "proj_") || id == "proj-1" || id == "proj_wiki" || id == "proj_roadmap" || id == "proj_campaign" || id == "proj_kollab_test" {
 			title := "Project Space Home"
 			if id == "proj-1" {
 				title = "Design Project"
@@ -135,8 +135,8 @@ func (r *InMemoryDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				title = "Product Roadmap"
 			} else if id == "proj_campaign" {
 				title = "Summer Launch 2026"
-			} else if id == "proj_arkollab_test" {
-				title = "Arkollab Test"
+			} else if id == "proj_kollab_test" {
+				title = "Kollab Test"
 			}
 			newDoc := &domain.Document{
 				ID:        id,
@@ -151,7 +151,7 @@ func (r *InMemoryDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				newDoc.TeamID = "team_eng"
 			} else if id == "proj_campaign" {
 				newDoc.TeamID = "team_mkt"
-			} else if id == "proj_arkollab_test" {
+			} else if id == "proj_kollab_test" {
 				newDoc.TeamID = "team_arkloud"
 			} else if id == "proj-1" {
 				newDoc.TeamID = "team-1"
@@ -208,7 +208,7 @@ func (r *InMemoryDocumentRepository) Create(ctx context.Context, doc *domain.Doc
 			doc.TeamID = "team_eng"
 		} else if doc.ProjectID == "proj_campaign" {
 			doc.TeamID = "team_mkt"
-		} else if doc.ProjectID == "proj_arkollab_test" {
+		} else if doc.ProjectID == "proj_kollab_test" {
 			doc.TeamID = "team_arkloud"
 		} else if doc.ProjectID == "proj-1" {
 			doc.TeamID = "team-1"
@@ -486,12 +486,12 @@ func (r *InMemoryDocumentRepository) GetAnalytics(ctx context.Context, documentI
 		if v.DocumentID != documentID {
 			continue
 		}
-		
+
 		diff := now.Sub(v.ViewedAt)
 		if diff >= 0 && diff <= 7*24*time.Hour {
 			viewsThisWeek++
 			uniqueVisitorsThisWeek[v.UserID] = true
-			
+
 			for i := 0; i < 7; i++ {
 				vDay := v.ViewedAt.Format("2006-01-02")
 				if vDay == history[i].Date {
@@ -718,5 +718,3 @@ func (r *InMemoryDocumentRepository) GetDocumentsWithMention(ctx context.Context
 
 	return list, nil
 }
-
-

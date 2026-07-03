@@ -36,15 +36,15 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
 
   const MOCK_RESPONSES: Record<string, string> = {
     summarize:
-      "Here is a summary of the key highlights:\n\n• Project Arkollab is designed as a modular, block-based, collaborative wiki alternative.\n• Built using React + Tiptap for a premium distraction-free frontend, backed by a Go service architecture.\n• Embeds pgvector-powered semantic search and agentic Wasm tools directly inside editor canvases.",
+      "Here is a summary of the key highlights:\n\n• Project Kollab is designed as a modular, block-based, collaborative wiki alternative.\n• Built using React + Tiptap for a premium distraction-free frontend, backed by a Go service architecture.\n• Embeds pgvector-powered semantic search and agentic Wasm tools directly inside editor canvases.",
     spelling:
       "This version has been refined for grammatical correctness, sentence flow, and consistent professional formatting.",
     longer:
-      "Arkollab shifts away from traditional document editing toward a block-based modular canvas. Features include a distraction-free slate where selection and floating context menus replace heavy persistent toolbars. It integrates search-as-you-type command interfaces to insert layouts or macros, and provides inline AI prompt shortcuts to summarize or rewrite text. This context-aware generation ensures that edits blend seamlessly into the existing page structures.",
+      "Kollab shifts away from traditional document editing toward a block-based modular canvas. Features include a distraction-free slate where selection and floating context menus replace heavy persistent toolbars. It integrates search-as-you-type command interfaces to insert layouts or macros, and provides inline AI prompt shortcuts to summarize or rewrite text. This context-aware generation ensures that edits blend seamlessly into the existing page structures.",
     shorter:
-      "Arkollab is a block-based collaborative canvas. It features a clean distraction-free editor, slash commands for modular plugins, and inline context-aware AI text generation.",
+      "Kollab is a block-based collaborative canvas. It features a clean distraction-free editor, slash commands for modular plugins, and inline context-aware AI text generation.",
     write:
-      "Certainly! Here is a drafted section based on your prompt:\n\n### Overview & Vision\nArkollab serves as a developer-friendly wiki replacement. By combining structured ProseMirror state management with a local AI vector indexing pipeline, documents are automatically indexed on save. Users can run semantic search queries to find matching documents instantly.",
+      "Certainly! Here is a drafted section based on your prompt:\n\n### Overview & Vision\nKollab serves as a developer-friendly wiki replacement. By combining structured ProseMirror state management with a local AI vector indexing pipeline, documents are automatically indexed on save. Users can run semantic search queries to find matching documents instantly.",
   };
 
   const getResponseText = (userPrompt: string): string => {

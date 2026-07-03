@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 func NewLLMClient() domain.LLMClient {

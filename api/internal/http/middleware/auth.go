@@ -8,15 +8,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"strings"
 	"sync"
-	"log"
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type contextKey string

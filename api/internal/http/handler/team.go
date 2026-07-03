@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
 )
 
 type TeamHandler struct {
@@ -68,6 +68,12 @@ func (h *TeamHandler) ListTeamUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: User context not found", http.StatusUnauthorized)
+		return
+	}
+
 	teamID := chi.URLParam(r, "id")
 	if teamID == "" {
 		http.Error(w, "Bad Request: id is required", http.StatusBadRequest)
@@ -91,7 +97,7 @@ func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		Description:  req.Description,
 	}
 
-	if err := h.teamService.UpdateTeam(r.Context(), team); err != nil {
+	if err := h.teamService.UpdateTeam(r.Context(), userID, team); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -101,6 +107,12 @@ func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TeamHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: User context not found", http.StatusUnauthorized)
+		return
+	}
+
 	projectID := chi.URLParam(r, "id")
 	if projectID == "" {
 		http.Error(w, "Bad Request: id is required", http.StatusBadRequest)
@@ -133,7 +145,7 @@ func (h *TeamHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		Description:  req.Description,
 	}
 
-	if err := h.teamService.UpdateProject(r.Context(), project); err != nil {
+	if err := h.teamService.UpdateProject(r.Context(), userID, project); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -188,6 +200,12 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: User context not found", http.StatusUnauthorized)
+		return
+	}
+
 	var req struct {
 		TeamID       string `json:"teamId"`
 		Name         string `json:"name"`
@@ -200,7 +218,7 @@ func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.teamService.CreateProject(r.Context(), req.TeamID, req.Name, req.LogoURL, req.Abbreviation, req.Description)
+	project, err := h.teamService.CreateProject(r.Context(), userID, req.TeamID, req.Name, req.LogoURL, req.Abbreviation, req.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -212,6 +230,12 @@ func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TeamHandler) AddTeamMember(w http.ResponseWriter, r *http.Request) {
+	actorID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: User context not found", http.StatusUnauthorized)
+		return
+	}
+
 	teamID := chi.URLParam(r, "teamId")
 	if teamID == "" {
 		http.Error(w, "Bad Request: teamId is required", http.StatusBadRequest)
@@ -226,7 +250,7 @@ func (h *TeamHandler) AddTeamMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.teamService.AddTeamMember(r.Context(), teamID, req.UserID); err != nil {
+	if err := h.teamService.AddTeamMember(r.Context(), actorID, teamID, req.UserID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -235,6 +259,12 @@ func (h *TeamHandler) AddTeamMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TeamHandler) RemoveTeamMember(w http.ResponseWriter, r *http.Request) {
+	actorID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized: User context not found", http.StatusUnauthorized)
+		return
+	}
+
 	teamID := chi.URLParam(r, "teamId")
 	userID := chi.URLParam(r, "userId")
 	if teamID == "" || userID == "" {
@@ -242,7 +272,7 @@ func (h *TeamHandler) RemoveTeamMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.teamService.RemoveTeamMember(r.Context(), teamID, userID); err != nil {
+	if err := h.teamService.RemoveTeamMember(r.Context(), actorID, teamID, userID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

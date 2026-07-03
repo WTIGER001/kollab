@@ -11,9 +11,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	goperm "github.com/wtiger001/go-permissions"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
-	"arkollab/api/internal/permissions"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type AttachmentHandler struct {
@@ -282,4 +282,3 @@ func (h *AttachmentHandler) UpdateAsposeConfig(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(config)
 }
-

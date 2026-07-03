@@ -2,14 +2,15 @@ package attachment
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"github.com/google/uuid"
+
+	"kollab/api/internal/domain"
 )
 
 type AttachmentService struct {
@@ -36,7 +37,7 @@ func NewAttachmentService(repo domain.AttachmentRepository, storage domain.FileS
 }
 
 func (s *AttachmentService) UploadAttachment(ctx context.Context, docID string, filename string, mimeType string, data []byte, userID string) (*domain.Attachment, error) {
-	id := newUUID()
+	id := uuid.New().String()
 	storageKey := fmt.Sprintf("attachments/%s_%s", id, filename)
 
 	if err := s.storage.Save(ctx, storageKey, data); err != nil {
@@ -356,12 +357,12 @@ func (s *AttachmentService) getStorageConfig(key string, isDest bool) StorageCon
 		if basePath == "" {
 			basePath = "./uploads"
 		}
-		
+
 		// If running in docker, resolve base path inside the container
 		if _, err := os.Stat("/app/uploads"); err == nil {
 			basePath = "/app/uploads"
 		}
-		
+
 		fullPath := filepath.Join(basePath, key)
 		return StorageConfig{
 			Type: "local",
@@ -402,12 +403,6 @@ func getMimeTypeFromExtension(filename string) string {
 	default:
 		return "application/octet-stream"
 	}
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func (s *AttachmentService) GetAsposeConfig(ctx context.Context) (*domain.AsposeConfig, error) {

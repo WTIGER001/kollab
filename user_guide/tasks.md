@@ -33,4 +33,4 @@ The dashboard automatically calculates deadline urgency and styles due dates wit
 ### 3. Click-to-Navigate Redirects
 Task IDs and checklist checkboxes are synced via document saves. To view or check off a task:
 - Click anywhere on the task row in the dashboard.
-- Arkollab will instantly load the correct workspace space, open the target document, and scroll directly to the task list so you can view it in context and mark it complete.
+- Kollab will instantly load the correct workspace space, open the target document, and scroll directly to the task list so you can view it in context and mark it complete.

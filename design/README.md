@@ -1,6 +1,6 @@
-# Arkollab System Design & Specifications
+# Kollab System Design & Specifications
 
-This directory contains the hierarchical technical specifications of Project Arkollab. It details the data schemas, DOM models, API endpoints, and WebSocket relays designed for developers and AI agents.
+This directory contains the hierarchical technical specifications of Project Kollab. It details the data schemas, DOM models, API endpoints, and WebSocket relays designed for developers and AI agents.
 
 ---
 

@@ -55,7 +55,7 @@ Kollab is a premium, real-time collaborative block-based document workspace and 
 ### 1. Database Setup
 Create a PostgreSQL database and run the schema setup:
 ```bash
-psql -d arkollab -f api/internal/postgres/init.sql
+psql -d kollab -f api/internal/postgres/init.sql
 ```
 
 ### 2. Run the Go Backend Server

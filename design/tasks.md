@@ -1,6 +1,6 @@
 # Technical Design: Task Synchronization & Dashboard
 
-This document specifies the technical design, database schemas, AST parsing pipeline, and UI routing mechanisms for Arkollab's task management system.
+This document specifies the technical design, database schemas, AST parsing pipeline, and UI routing mechanisms for Kollab's task management system.
 
 ---
 

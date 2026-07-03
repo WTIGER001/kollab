@@ -6,7 +6,7 @@ import (
 	"sort"
 	"sync"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryTeamRepository struct {
@@ -33,7 +33,7 @@ func (r *InMemoryTeamRepository) seed() {
 	r.teams["team_eng"] = &domain.Team{ID: "team_eng", Name: "Engineering", Abbreviation: "eng", Description: "Engineering & Development department"}
 	r.teams["team_mkt"] = &domain.Team{ID: "team_mkt", Name: "Marketing", Abbreviation: "mkt", Description: "Brand & Launch campaign team"}
 
-	r.projects["proj_arkollab_test"] = &domain.Project{ID: "proj_arkollab_test", Name: "Arkollab Test", TeamID: "team_arkloud", Abbreviation: "arkollab", Description: "Arkollab team collaborative testing sandbox"}
+	r.projects["proj_kollab_test"] = &domain.Project{ID: "proj_kollab_test", Name: "Kollab Test", TeamID: "team_arkloud", Abbreviation: "kollab", Description: "Kollab team collaborative testing sandbox"}
 	r.projects["proj_wiki"] = &domain.Project{ID: "proj_wiki", Name: "Engineering Wiki", TeamID: "team_eng", Abbreviation: "wiki", Description: "Technical specifications and style guides"}
 	r.projects["proj_roadmap"] = &domain.Project{ID: "proj_roadmap", Name: "Product Roadmap", TeamID: "team_eng", Abbreviation: "roadmap", Description: "Product roadmap timeline and schedule"}
 	r.projects["proj_campaign"] = &domain.Project{ID: "proj_campaign", Name: "Summer Launch 2026", TeamID: "team_mkt", Abbreviation: "campaign", Description: "Summer launch assets and press releases"}
@@ -55,13 +55,6 @@ func (r *InMemoryTeamRepository) GetTeamsByUserID(ctx context.Context, userID st
 			if members[userID] {
 				list = append(list, t)
 			}
-		}
-	}
-
-	// Fallback if user is not explicitly mapped to any team: return all teams
-	if len(list) == 0 {
-		for _, t := range r.teams {
-			list = append(list, t)
 		}
 	}
 

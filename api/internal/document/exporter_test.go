@@ -189,4 +189,3 @@ func TestBuildDOCX_LocalImageEmbedding(t *testing.T) {
 		t.Errorf("Expected document.xml.rels internal media relationship NOT to define TargetMode, got: %s", documentRelsContent)
 	}
 }
-

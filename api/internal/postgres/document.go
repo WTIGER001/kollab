@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type PostgresDocumentRepository struct {
@@ -57,7 +57,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				)
 				return &doc, nil
 			}
-			
+
 			// Check if ID is a Project ID
 			var projName string
 			var teamID string
@@ -78,7 +78,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				)
 				return &doc, nil
 			}
-			
+
 			return nil, errors.New("document not found")
 		}
 		return nil, err
@@ -613,7 +613,7 @@ func (r *PostgresDocumentRepository) GetAnalytics(ctx context.Context, documentI
 }
 
 func (r *PostgresDocumentRepository) AddFavorite(ctx context.Context, userID string, documentID string) error {
-	_, err := r.db.Exec(ctx, 
+	_, err := r.db.Exec(ctx,
 		"INSERT INTO user_favorites (user_id, document_id, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (user_id, document_id) DO NOTHING",
 		userID, documentID,
 	)
@@ -820,5 +820,3 @@ func (r *PostgresDocumentRepository) GetDocumentsWithMention(ctx context.Context
 	}
 	return list, nil
 }
-
-

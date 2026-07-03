@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type PostgresTagRepository struct {

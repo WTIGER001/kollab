@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type PostgresTeamRepository struct {
@@ -20,17 +20,11 @@ func NewPostgresTeamRepository(db *pgxpool.Pool) *PostgresTeamRepository {
 
 func (r *PostgresTeamRepository) GetTeamsByUserID(ctx context.Context, userID string) ([]*domain.Team, error) {
 	query := `
-		WITH user_teams AS (
-			SELECT t.id, t.name, COALESCE(t.abbreviation, '') AS abbreviation, COALESCE(t.description, '') AS description
-			FROM teams t
-			JOIN team_members tm ON t.id = tm.team_id
-			WHERE tm.user_id = $1
-		)
-		SELECT id, name, abbreviation, description FROM user_teams
-		UNION ALL
-		SELECT id, name, COALESCE(abbreviation, ''), COALESCE(description, '') FROM teams
-		WHERE NOT EXISTS (SELECT 1 FROM user_teams)
-		ORDER BY id
+		SELECT t.id, t.name, COALESCE(t.abbreviation, '') AS abbreviation, COALESCE(t.description, '') AS description
+		FROM teams t
+		JOIN team_members tm ON t.id = tm.team_id
+		WHERE tm.user_id = $1
+		ORDER BY t.id
 	`
 	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {

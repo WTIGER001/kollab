@@ -1,6 +1,6 @@
 # User Guide: Version History & Checkpoints
 
-Arkollab automatically tracks page history and protects your work from accidental changes without cluttering your timeline with every single keystroke.
+Kollab automatically tracks page history and protects your work from accidental changes without cluttering your timeline with every single keystroke.
 
 ---
 

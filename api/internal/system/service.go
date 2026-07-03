@@ -2,12 +2,12 @@ package system
 
 import (
 	"context"
-	"crypto/rand"
-	"fmt"
 	"log"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"github.com/google/uuid"
+
+	"kollab/api/internal/domain"
 )
 
 type SystemService struct {
@@ -50,7 +50,7 @@ func (s *SystemService) UpdateSettings(ctx context.Context, settings *domain.Sys
 
 func (s *SystemService) RecordAuditLog(ctx context.Context, documentID string, userID string, action string) error {
 	auditLog := &domain.AuditLog{
-		ID:         newUUID(),
+		ID:         uuid.New().String(),
 		DocumentID: documentID,
 		UserID:     userID,
 		Action:     action,
@@ -87,7 +87,7 @@ func (s *SystemService) StartCleanupWorker(ctx context.Context, interval time.Du
 			case <-ticker.C:
 				log.Println("Running System Settings maintenance worker...")
 				workerCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-				
+
 				if err := s.repo.EnsurePartitions(workerCtx); err != nil {
 					log.Printf("Worker EnsurePartitions failed: %v", err)
 				}
@@ -97,18 +97,12 @@ func (s *SystemService) StartCleanupWorker(ctx context.Context, interval time.Du
 				if err := s.repo.PruneTrash(workerCtx); err != nil {
 					log.Printf("Worker PruneTrash failed: %v", err)
 				}
-				
+
 				cancel()
 			}
 		}
 	}()
 	log.Printf("System settings cleanup worker started with interval: %v", interval)
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 func (s *SystemService) Ping(ctx context.Context) error {

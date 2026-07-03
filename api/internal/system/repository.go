@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemorySystemRepository struct {
@@ -22,7 +22,7 @@ func NewInMemorySystemRepository() *InMemorySystemRepository {
 			TrashRetentionPolicy:     "forever",
 			TrashRetentionCustomDays: 30,
 			AIRateLimit:              10,
-			WelcomeTitle:             "Welcome to Arkollab",
+			WelcomeTitle:             "Welcome to Kollab",
 			WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
 			AsposeEnabled:            true,
 		},

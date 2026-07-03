@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -25,11 +25,11 @@ import (
 
 // TiptapNode represents a parsed node from Tiptap's ProseMirror JSON AST.
 type TiptapNode struct {
-	Type    string            `json:"type"`
-	Attrs   map[string]any    `json:"attrs,omitempty"`
-	Content []TiptapNode      `json:"content,omitempty"`
-	Text    string            `json:"text,omitempty"`
-	Marks   []TiptapMark      `json:"marks,omitempty"`
+	Type    string         `json:"type"`
+	Attrs   map[string]any `json:"attrs,omitempty"`
+	Content []TiptapNode   `json:"content,omitempty"`
+	Text    string         `json:"text,omitempty"`
+	Marks   []TiptapMark   `json:"marks,omitempty"`
 }
 
 // TiptapMark represents styling marks applied to text nodes.
@@ -1216,7 +1216,7 @@ func renderListItem(zw *zip.Writer, n TiptapNode, prefix string, title string, c
 	sb.WriteString("<w:p>")
 	sb.WriteString("<w:pPr><w:ind w:left=\"360\"/><w:spacing w:after=\"60\"/></w:pPr>")
 	sb.WriteString(fmt.Sprintf("<w:r><w:rPr><w:rFonts w:ascii=\"Inter\" w:hAnsi=\"Inter\"/></w:rPr><w:t xml:space=\"preserve\">%s</w:t></w:r>", html.EscapeString(prefix)))
-	
+
 	oldInParagraph := ctx.InParagraph
 	ctx.InParagraph = true
 

@@ -72,7 +72,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
 
   const processFile = (selectedFile: File) => {
     if (selectedFile.type !== "application/json" && !selectedFile.name.endsWith(".json")) {
-      setError("Please select a valid JSON (.json) file exported from Arkollab.");
+      setError("Please select a valid JSON (.json) file exported from Kollab.");
       return;
     }
 

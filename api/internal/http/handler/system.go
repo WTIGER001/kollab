@@ -15,9 +15,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	goperm "github.com/wtiger001/go-permissions"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/middleware"
-	"arkollab/api/internal/permissions"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type SystemHandler struct {
@@ -106,7 +106,7 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if settings.WelcomeTitle == "" {
-		settings.WelcomeTitle = "Welcome to Arkollab"
+		settings.WelcomeTitle = "Welcome to Kollab"
 	}
 
 	if err := h.systemService.UpdateSettings(r.Context(), &settings); err != nil {

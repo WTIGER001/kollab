@@ -1,12 +1,12 @@
 # User Guide: Rich Editor Blocks & Macros
 
-Arkollab includes powerful widgets to structure, format, and annotate your documentation content. This guide covers how to insert and configure all active macro blocks and inline elements.
+Kollab includes powerful widgets to structure, format, and annotate your documentation content. This guide covers how to insert and configure all active macro blocks and inline elements.
 
 ---
 
 ## ➕ Inserting Macros & Managing Favorites (The Plus Dialog)
 
-To keep the editing toolbar clean and focused, Arkollab groups all document macros, widgets, and layout sections into a single, organized **Insert Macro** dialog. You can access all blocks from this dialog and pin/favorite your most frequently used macros directly to the formatting toolbar.
+To keep the editing toolbar clean and focused, Kollab groups all document macros, widgets, and layout sections into a single, organized **Insert Macro** dialog. You can access all blocks from this dialog and pin/favorite your most frequently used macros directly to the formatting toolbar.
 
 ### How to Open the Insert Dialog
 1. In the editor toolbar, locate the **`+` (Plus icon)**. The plus button is always visible.
@@ -27,7 +27,7 @@ The Insert Dialog is divided into 5 vertical tabs on the left:
 - **Pin a Macro**: Open the Insert Dialog, find the macro card you want to keep handy, and click the **Star icon** on the right side of the card. The macro icon will instantly appear in your editor toolbar.
 - **Unpin a Macro**: Click the star icon again to unpin it from the toolbar.
 - **Persistence**: Your favorites list is saved directly in your web browser, ensuring it persists across page reloads.
-- **Responsive Width Hiding**: If you favorite a large number of macros, Arkollab will automatically hide overflowing icons when the browser window is narrowed, ensuring the toolbar never wraps or breaks page layouts.
+- **Responsive Width Hiding**: If you favorite a large number of macros, Kollab will automatically hide overflowing icons when the browser window is narrowed, ensuring the toolbar never wraps or breaks page layouts.
 
 ---
 

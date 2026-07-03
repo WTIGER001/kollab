@@ -11,7 +11,7 @@ type Task struct {
 	DocTitle   string    `json:"docTitle,omitempty"` // populated during joins for tasks list
 	Content    string    `json:"content"`
 	Assignee   string    `json:"assignee"` // username without @ prefix
-	DueDate    *string   `json:"dueDate"`   // YYYY-MM-DD format
+	DueDate    *string   `json:"dueDate"`  // YYYY-MM-DD format
 	Completed  bool      `json:"completed"`
 	ProjectID  *string   `json:"projectId,omitempty"`
 	TeamID     string    `json:"teamId,omitempty"`

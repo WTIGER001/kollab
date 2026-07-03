@@ -2,11 +2,11 @@ package team
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
-	"fmt"
 
-	"arkollab/api/internal/domain"
+	"github.com/google/uuid"
+
+	"kollab/api/internal/domain"
 )
 
 type TeamService struct {
@@ -63,11 +63,30 @@ func (s *TeamService) ListTeamUsers(ctx context.Context, teamID string) ([]*doma
 	return s.repo.GetUsersByTeamID(ctx, teamID)
 }
 
-func (s *TeamService) UpdateTeam(ctx context.Context, team *domain.Team) error {
+func (s *TeamService) isTeamMember(ctx context.Context, teamID string, userID string) bool {
+	teams, err := s.repo.GetTeamsByUserID(ctx, userID)
+	if err != nil {
+		return false
+	}
+	for _, t := range teams {
+		if t.ID == teamID {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *TeamService) UpdateTeam(ctx context.Context, userID string, team *domain.Team) error {
+	if !s.isTeamMember(ctx, team.ID, userID) {
+		return errors.New("unauthorized: must be a team member to update team")
+	}
 	return s.repo.UpdateTeam(ctx, team)
 }
 
-func (s *TeamService) UpdateProject(ctx context.Context, project *domain.Project) error {
+func (s *TeamService) UpdateProject(ctx context.Context, userID string, project *domain.Project) error {
+	if !s.isTeamMember(ctx, project.TeamID, userID) {
+		return errors.New("unauthorized: must be a team member to update project")
+	}
 	return s.repo.UpdateProject(ctx, project)
 }
 
@@ -84,7 +103,7 @@ func (s *TeamService) CreateTeam(ctx context.Context, name string, abbreviation 
 	}
 
 	team := &domain.Team{
-		ID:           "team_" + newUUID(),
+		ID:           "team_" + uuid.New().String(),
 		Name:         name,
 		Abbreviation: abbreviation,
 		Description:  description,
@@ -100,7 +119,10 @@ func (s *TeamService) CreateTeam(ctx context.Context, name string, abbreviation 
 	return team, nil
 }
 
-func (s *TeamService) CreateProject(ctx context.Context, teamID string, name string, logoURL string, abbreviation string, description string) (*domain.Project, error) {
+func (s *TeamService) CreateProject(ctx context.Context, userID string, teamID string, name string, logoURL string, abbreviation string, description string) (*domain.Project, error) {
+	if !s.isTeamMember(ctx, teamID, userID) {
+		return nil, errors.New("unauthorized: must be a team member to create project in team")
+	}
 	if teamID == "" {
 		return nil, errors.New("teamID is required")
 	}
@@ -112,7 +134,7 @@ func (s *TeamService) CreateProject(ctx context.Context, teamID string, name str
 	}
 
 	project := &domain.Project{
-		ID:           "proj_" + newUUID(),
+		ID:           "proj_" + uuid.New().String(),
 		Name:         name,
 		TeamID:       teamID,
 		LogoURL:      logoURL,
@@ -127,20 +149,20 @@ func (s *TeamService) CreateProject(ctx context.Context, teamID string, name str
 	return project, nil
 }
 
-func (s *TeamService) AddTeamMember(ctx context.Context, teamID string, userID string) error {
+func (s *TeamService) AddTeamMember(ctx context.Context, actorID string, teamID string, userID string) error {
+	if !s.isTeamMember(ctx, teamID, actorID) {
+		return errors.New("unauthorized: must be a team member to add users")
+	}
 	return s.repo.AddTeamMember(ctx, teamID, userID)
 }
 
-func (s *TeamService) RemoveTeamMember(ctx context.Context, teamID string, userID string) error {
+func (s *TeamService) RemoveTeamMember(ctx context.Context, actorID string, teamID string, userID string) error {
+	if !s.isTeamMember(ctx, teamID, actorID) {
+		return errors.New("unauthorized: must be a team member to remove users")
+	}
 	return s.repo.RemoveTeamMember(ctx, teamID, userID)
 }
 
 func (s *TeamService) ListAllUsers(ctx context.Context) ([]*domain.User, error) {
 	return s.repo.ListAllUsers(ctx)
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

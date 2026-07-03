@@ -55,6 +55,22 @@ import { marked } from "marked";
 import mermaid from "mermaid";
 import { Excalidraw, exportToSvg } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, Cell } from "recharts";
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { enUS } from 'date-fns/locale';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+const locales = {
+  'en-US': enUS,
+};
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
 const extractExplicitExcerpt = (contentStr: string): string | null => {
@@ -830,16 +846,209 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             </Box>
           )}
 
-          {type === "chart-analytics" && (
-            <Box sx={{ py: 1, textAlign: "center", color: "text.disabled", border: "1px dashed rgba(255,255,255,0.05)", borderRadius: 1.5 }}>
-              <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic", mb: 0.5, fontSize: "13px" }}>
-                Analytics Chart Placeholder
-              </Typography>
-              <Typography variant="caption" sx={{ fontSize: "10px" }}>
-                Linked to Table ID: {config.tableId || "Not connected"}
-              </Typography>
-            </Box>
-          )}
+          {type === "chart-analytics" && (() => {
+            const chartType = config.chartType || "bar";
+            let data = [];
+            try {
+              data = typeof config.data === "string" ? JSON.parse(config.data) : (config.data || []);
+            } catch (e) {
+              data = [];
+            }
+            if (!Array.isArray(data) || data.length === 0) {
+              data = [
+                { name: 'Jan', value: 400 },
+                { name: 'Feb', value: 300 },
+                { name: 'Mar', value: 200 },
+                { name: 'Apr', value: 278 },
+                { name: 'May', value: 189 },
+              ];
+            }
+
+            const COLORS = ['#818cf8', '#c084fc', '#ec4899', '#34d399', '#fbbf24', '#f87171'];
+
+            return (
+              <Box sx={{ width: "100%", height: 360, my: 2, p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color)" }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
+                  {config.title || "Analytics Chart"}
+                </Typography>
+                <Box sx={{ width: "100%", height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    {chartType === "line" ? (
+                      <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                        <Line type="monotone" dataKey="value" stroke="#818cf8" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    ) : chartType === "pie" ? (
+                      <PieChart>
+                        <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} label>
+                          {data.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(255,255,255,0.05)" />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                      </PieChart>
+                    ) : (
+                      <BarChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <RechartsTooltip cursor={{ fill: "rgba(255,255,255,0.05)" }} contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                        <Bar dataKey="value" fill="#818cf8" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+            );
+          })()}
+
+          {type === "roadmap-planner" && (() => {
+            let epics: any[] = [];
+            try {
+              epics = typeof config.epics === "string" ? JSON.parse(config.epics) : (config.epics || []);
+            } catch (e) {
+              epics = [];
+            }
+            if (!Array.isArray(epics) || epics.length === 0) {
+              epics = [
+                { id: "1", title: "Phase 1: Foundations", start: 0, duration: 2, color: "#818cf8" },
+                { id: "2", title: "Phase 2: Backend", start: 1, duration: 3, color: "#34d399" },
+                { id: "3", title: "Phase 3: Frontend UI", start: 3, duration: 2, color: "#c084fc" }
+              ];
+            }
+
+            const totalDuration = Math.max(...epics.map(e => e.start + e.duration), 6);
+
+            return (
+              <Box sx={{ width: "100%", my: 2, p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color)", overflowX: "auto" }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
+                  {config.title || "Project Roadmap"}
+                </Typography>
+                <Box sx={{ minWidth: 600, display: "flex", flexDirection: "column", gap: 1 }}>
+                  {/* Timeline Header */}
+                  <Box sx={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.1)", pb: 1, mb: 1 }}>
+                    <Box sx={{ width: 150, flexShrink: 0 }} />
+                    {Array.from({ length: totalDuration }).map((_, i) => (
+                      <Box key={i} sx={{ flex: 1, textAlign: "center", color: "text.secondary", fontSize: "11px", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                        Month {i + 1}
+                      </Box>
+                    ))}
+                  </Box>
+                  {/* Timeline Rows */}
+                  {epics.map((epic, idx) => (
+                    <Box key={epic.id || idx} sx={{ display: "flex", alignItems: "center", position: "relative", height: 32 }}>
+                      <Box sx={{ width: 150, flexShrink: 0, pr: 2, typography: "body2", fontSize: "13px", color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {epic.title}
+                      </Box>
+                      <Box sx={{ flex: 1, display: "flex", position: "relative", height: "100%" }}>
+                        {Array.from({ length: totalDuration }).map((_, i) => (
+                          <Box key={i} sx={{ flex: 1, borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.02)" : "none" }} />
+                        ))}
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 4,
+                            bottom: 4,
+                            left: `${(epic.start / totalDuration) * 100}%`,
+                            width: `${(epic.duration / totalDuration) * 100}%`,
+                            bgcolor: epic.color || "primary.main",
+                            borderRadius: 1,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                            transition: "all 0.2s"
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            );
+          })()}
+
+          {type === "team-calendars" && (() => {
+            let events: any[] = [];
+            try {
+              events = typeof config.events === "string" ? JSON.parse(config.events) : (config.events || []);
+            } catch (e) {
+              events = [];
+            }
+            if (!Array.isArray(events) || events.length === 0) {
+              const today = new Date();
+              events = [
+                { title: 'Project Kickoff', start: new Date(today.getFullYear(), today.getMonth(), 2, 10, 0), end: new Date(today.getFullYear(), today.getMonth(), 2, 12, 0) },
+                { title: 'Milestone 1', start: new Date(today.getFullYear(), today.getMonth(), 10), end: new Date(today.getFullYear(), today.getMonth(), 12) },
+                { title: 'Launch', start: new Date(today.getFullYear(), today.getMonth(), 28, 9, 0), end: new Date(today.getFullYear(), today.getMonth(), 28, 17, 0) }
+              ];
+            } else {
+              events = events.map(e => ({
+                ...e,
+                start: new Date(e.start),
+                end: new Date(e.end)
+              }));
+            }
+
+            return (
+              <Box sx={{ width: "100%", my: 2, p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color)" }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
+                  {config.title || "Team Calendar"}
+                </Typography>
+                <Box sx={{ height: 500, ".rbc-toolbar": { mb: 2 }, ".rbc-event": { bgcolor: "var(--accent-blue)" }, ".rbc-today": { bgcolor: "rgba(255,255,255,0.05)" }, ".rbc-header": { color: "text.secondary", py: 1, fontWeight: 600 } }}>
+                  <Calendar
+                    localizer={localizer}
+                    events={events}
+                    startAccessor="start"
+                    endAccessor="end"
+                    style={{ height: '100%', color: "inherit" }}
+                    views={['month', 'week', 'day']}
+                  />
+                </Box>
+              </Box>
+            );
+          })()}
+
+          {type === "popular-labels" && (() => {
+            const labels = [
+              { text: "documentation", weight: 24, color: "#818cf8" },
+              { text: "api", weight: 18, color: "#c084fc" },
+              { text: "frontend", weight: 14, color: "#34d399" },
+              { text: "backend", weight: 12, color: "#fbbf24" },
+              { text: "design", weight: 10, color: "#f87171" },
+              { text: "sprint-planning", weight: 8, color: "#60a5fa" },
+              { text: "bug", weight: 5, color: "#a78bfa" },
+            ];
+
+            return (
+              <Box sx={{ width: "100%", my: 2, p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color)" }}>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
+                  Popular Labels Heatmap
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", minHeight: 120 }}>
+                  {labels.map((label, idx) => (
+                    <Typography
+                      key={idx}
+                      sx={{
+                        fontSize: `${Math.max(12, label.weight * 1.5)}px`,
+                        color: label.color,
+                        fontWeight: label.weight > 15 ? 700 : 500,
+                        opacity: 0.7 + (label.weight / 100),
+                        transition: "all 0.2s",
+                        cursor: "pointer",
+                        "&:hover": { opacity: 1, transform: "scale(1.1)" }
+                      }}
+                    >
+                      #{label.text}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            );
+          })()}
 
           {type === "excerpt-include" && (() => {
             const context = useContext(DocumentContext);
@@ -2861,16 +3070,116 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             )}
 
             {type === "chart-analytics" && (
-              <TextField
-                fullWidth
-                label="Linked Table ID"
-                variant="outlined"
-                size="small"
-                value={config.tableId || ""}
-                onChange={(e) => updateConfig("tableId", e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                InputProps={{ sx: { fontSize: "13px", height: 36 } }}
-              />
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Chart Title"
+                  variant="outlined"
+                  size="small"
+                  value={config.title || ""}
+                  onChange={(e) => updateConfig("title", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <FormControl fullWidth variant="outlined" size="small">
+                  <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Chart Type</FormLabel>
+                  <Select
+                    value={config.chartType || "bar"}
+                    onChange={(e) => updateConfig("chartType", e.target.value)}
+                  >
+                    <MenuItem value="bar">Bar Chart</MenuItem>
+                    <MenuItem value="line">Line Chart</MenuItem>
+                    <MenuItem value="pie">Pie Chart</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  label="Chart Data (JSON)"
+                  variant="outlined"
+                  size="small"
+                  value={config.data || ""}
+                  onChange={(e) => updateConfig("data", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  placeholder='[{"name": "Jan", "value": 400}]'
+                  sx={{ 
+                    "& .MuiInputBase-input": { 
+                      fontFamily: "monospace", 
+                      fontSize: "12px" 
+                    } 
+                  }}
+                />
+              </Stack>
+            )}
+
+            {type === "roadmap-planner" && (
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Roadmap Title"
+                  variant="outlined"
+                  size="small"
+                  value={config.title || ""}
+                  onChange={(e) => updateConfig("title", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  label="Epics Configuration (JSON)"
+                  variant="outlined"
+                  size="small"
+                  value={config.epics || ""}
+                  onChange={(e) => updateConfig("epics", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  placeholder='[{"title": "Phase 1", "start": 0, "duration": 2, "color": "#818cf8"}]'
+                  sx={{ 
+                    "& .MuiInputBase-input": { 
+                      fontFamily: "monospace", 
+                      fontSize: "12px" 
+                    } 
+                  }}
+                />
+              </Stack>
+            )}
+
+            {type === "team-calendars" && (
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Calendar Title"
+                  variant="outlined"
+                  size="small"
+                  value={config.title || ""}
+                  onChange={(e) => updateConfig("title", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  label="Events Configuration (JSON)"
+                  variant="outlined"
+                  size="small"
+                  value={config.events || ""}
+                  onChange={(e) => updateConfig("events", e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  placeholder='[{"title": "Event 1", "start": "2026-07-10T10:00:00Z", "end": "2026-07-10T11:00:00Z"}]'
+                  sx={{ 
+                    "& .MuiInputBase-input": { 
+                      fontFamily: "monospace", 
+                      fontSize: "12px" 
+                    } 
+                  }}
+                />
+              </Stack>
+            )}
+
+            {type === "popular-labels" && (
+              <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "13px", p: 1, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1 }}>
+                This macro automatically aggregates all labels used across the current project and displays them as a word cloud. No manual configuration is required.
+              </Typography>
             )}
 
             {type === "status-badge" && (

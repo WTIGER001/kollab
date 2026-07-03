@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryAttachmentRepository struct {
@@ -77,4 +77,3 @@ func (r *InMemoryAttachmentRepository) GetPreviewStatus(ctx context.Context, att
 	}
 	return status, nil
 }
-

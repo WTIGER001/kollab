@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type InMemoryImageRepository struct {

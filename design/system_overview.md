@@ -1,6 +1,6 @@
 # Technical Design: System Architecture Overview
 
-Arkollab is a lightweight knowledge management platform featuring a block-based collaborative canvas, a backend plugin engine, and semantic search capabilities.
+Kollab is a lightweight knowledge management platform featuring a block-based collaborative canvas, a backend plugin engine, and semantic search capabilities.
 
 ---
 

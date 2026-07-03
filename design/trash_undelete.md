@@ -1,6 +1,6 @@
 # Soft Delete & Trash Restoration Specification
 
-This document details the design and implementation of soft-deletes, cascading page deletions, and space-level undelete operations in the Arkollab collaborative text editor.
+This document details the design and implementation of soft-deletes, cascading page deletions, and space-level undelete operations in the Kollab collaborative text editor.
 
 ---
 

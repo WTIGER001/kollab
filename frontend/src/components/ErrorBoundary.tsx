@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Box, Typography, Button, Paper, Collapse } from "@mui/material";
-import { AlertOctagon, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { AlertOctagon, ChevronDown, ChevronUp, RefreshCw, Copy } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -36,6 +36,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private toggleDetails = () => {
     this.setState(prev => ({ showDetails: !prev.showDetails }));
+  };
+
+  private handleCopy = () => {
+    const errorText = `${this.state.error?.toString()}\n\nComponent Stack:\n${this.state.errorInfo?.componentStack}`;
+    navigator.clipboard.writeText(errorText);
   };
 
   public render() {
@@ -161,10 +166,26 @@ export class ErrorBoundary extends Component<Props, State> {
                   textAlign: "left",
                   overflowX: "auto",
                   maxHeight: 250,
-                  overflowY: "auto"
+                  overflowY: "auto",
+                  position: "relative"
                 }}
                 className="scrollbar-thin"
               >
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, position: 'sticky', top: 0 }}>
+                  <Button
+                    size="small"
+                    onClick={this.handleCopy}
+                    startIcon={<Copy size={12} />}
+                    sx={{
+                      color: "rgba(255, 255, 255, 0.5)",
+                      textTransform: "none",
+                      fontSize: "11px",
+                      "&:hover": { color: "#fff", backgroundColor: "rgba(255, 255, 255, 0.1)" }
+                    }}
+                  >
+                    Copy Stack Trace
+                  </Button>
+                </Box>
                 <Typography
                   variant="caption"
                   component="pre"

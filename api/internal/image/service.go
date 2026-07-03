@@ -3,17 +3,18 @@ package image
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"fmt"
 	"image"
+	_ "image/gif" // register GIF decoder
 	"image/jpeg"
 	"image/png"
-	_ "image/gif" // register GIF decoder
 	"time"
 
 	"golang.org/x/image/draw"
 
-	"arkollab/api/internal/domain"
+	"github.com/google/uuid"
+
+	"kollab/api/internal/domain"
 )
 
 type ImageService struct {
@@ -39,7 +40,7 @@ func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeTyp
 	origWidth := bounds.Dx()
 	origHeight := bounds.Dy()
 
-	id := newUUID()
+	id := uuid.New().String()
 	ext := getExtension(mimeType)
 	originalKey := fmt.Sprintf("%s_original.%s", id, ext)
 
@@ -172,10 +173,4 @@ func resizeImage(img image.Image, format string, targetWidth int) ([]byte, error
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-func newUUID() string {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

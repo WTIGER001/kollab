@@ -1,4 +1,4 @@
-# Arkollab Feature Roadmap & Todo List
+# Kollab Feature Roadmap & Todo List
 
 This document organizes the requested features into prioritized, sequential implementation phases based on architectural dependency, visual impact, and engineering complexity.
 
@@ -47,7 +47,7 @@ This document organizes the requested features into prioritized, sequential impl
 - [ ] **Backup / Restore**: Database seed extraction and import tools for space migration (Consolidated in Phase 7).
 
 ### 🔗 Phase 6: Integrations & Space Metrics
-*Advanced widgets connecting Arkollab to external tools and analytics.*
+*Advanced widgets connecting Kollab to external tools and analytics.*
 - [ ] **Jira Issues Embed**: Direct OAuth/API integration to paste and render live Jira issue statuses (Consolidated in Phase 7).
 - [ ] **Jira Charts**: Render charts from Jira filters on requirements pages.
 - [ ] **Advanced Roadmaps for Jira**: Embed epic roadmaps in planning pages.
@@ -298,3 +298,17 @@ This phase covers the newly requested requirements, ordered logically by enginee
 - [x] **Transaction Log / History Table**: Add a database log/audit table to track every create, update, delete operation with timestamps and payload.
 - [x] **Export Sync Payload**: Endpoint to generate an encrypted/compressed incremental ZIP file of all changes since a specific timestamp or transaction ID.
 - [x] **Import Sync Payload**: Endpoint on target server (in the air-gapped network) to consume the sync ZIP, verify signature, apply database diffs, and save attachments.
+
+---
+
+## 🛠️ Phase 8: Tech Debt & Refactoring
+
+This phase focuses on addressing architectural feedback and technical debt accumulated during the earlier phases.
+
+### 🧹 8.1 Frontend Architecture
+- [ ] **Refactor `Sidebar.tsx`**: Break down the monolithic 1,200+ line `Sidebar.tsx` component into smaller, manageable subcomponents (e.g., TreeView, Action Modals, Drag-and-Drop handlers).
+
+### 🔒 8.2 Backend Security & API Integrity
+- [ ] **Enforce Creation Boundaries**: Fix the `POST /documents` endpoint so it strictly verifies if the user has permission to create content in the specified `teamId` or `projectId`.
+- [ ] **Decouple Repositories**: Remove side-effecting business logic (e.g., creating default documents inside `GetByID`) from data-access repositories like `PostgresDocumentRepository` and move it to the service layer.
+- [ ] **Secure Error Handling**: Sanitize API responses to prevent exposing raw internal database errors (`http.StatusInternalServerError`) to the client.

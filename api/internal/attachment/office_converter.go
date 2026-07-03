@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type StorageConfig struct {

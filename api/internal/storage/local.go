@@ -50,4 +50,3 @@ func (s *LocalStorage) DeleteFolder(ctx context.Context, folderKey string) error
 	}
 	return nil
 }
-

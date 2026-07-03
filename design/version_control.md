@@ -1,6 +1,6 @@
 # Technical Design: Version Control & Restorations
 
-This document specifies the technical design, database schemas, auto-snapshot rules, and front-end uncoupling mechanisms of Arkollab's document version control system.
+This document specifies the technical design, database schemas, auto-snapshot rules, and front-end uncoupling mechanisms of Kollab's document version control system.
 
 ---
 
@@ -92,11 +92,11 @@ To prevent data loss, the restore operation performs a double-snapshot transacti
 
 ## 4. Frontend Uncoupling & Preview Canvas
 
-To allow users to browse and compare historical versions without interrupting active co-authors, Arkollab decouples the editor canvases.
+To allow users to browse and compare historical versions without interrupting active co-authors, Kollab decouples the editor canvases.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        Arkollab Editor Shell                           │
+│                        Kollab Editor Shell                           │
 │                                                                        │
 │  ┌──────────────────────────────┐    ┌──────────────────────────────┐  │
 │  │    Collaborative Canvas      │    │    Preview Canvas (Drawer)   │  │
@@ -115,7 +115,7 @@ To allow users to browse and compare historical versions without interrupting ac
 
 ## 5. Multi-Provider LLM & AI Summary Autogeneration
 
-To support both cloud-hosted APIs and local model options, Arkollab decouples text generation and embedding logic via a unified provider gateway.
+To support both cloud-hosted APIs and local model options, Kollab decouples text generation and embedding logic via a unified provider gateway.
 
 ### 5.1 LLM Client Interface
 The Go backend defines a single interface for all AI interactions:

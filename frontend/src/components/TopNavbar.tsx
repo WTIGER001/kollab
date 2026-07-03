@@ -135,15 +135,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           }}
         >
           <Box sx={{ 
-            backgroundColor: "rgba(139, 92, 246, 0.1)", 
-            border: "1px solid rgba(139, 92, 246, 0.2)",
-            p: 0.5, 
-            borderRadius: 1.5, 
             display: "flex", 
             alignItems: "center", 
             justifyContent: "center" 
           }}>
-            <Layers size={16} style={{ color: "var(--accent-purple)" }} />
+            <img src="/kollab.svg" alt="Kollab Logo" style={{ width: 22, height: 22, objectFit: 'contain' }} />
           </Box>
           <Typography 
             variant="subtitle1" 
@@ -155,7 +151,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               display: { xs: "none", sm: "block" }
             }}
           >
-            Arkollab
+            Kollab
           </Typography>
         </Box>
       </Box>

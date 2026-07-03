@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"arkollab/api/internal/domain"
-	"arkollab/api/internal/http/handler"
-	mid "arkollab/api/internal/http/middleware"
-	"arkollab/api/internal/permissions"
+	"kollab/api/internal/domain"
+	"kollab/api/internal/http/handler"
+	mid "kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,

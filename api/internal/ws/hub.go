@@ -9,7 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type Client struct {

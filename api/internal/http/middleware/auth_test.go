@@ -10,7 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"arkollab/api/internal/domain"
+	"kollab/api/internal/domain"
 )
 
 type mockUserRepository struct {

@@ -1,6 +1,6 @@
 # Reading, Editing, and Page Analytics
 
-To ensure an optimal viewing experience and protect documents from accidental edits, Arkollab separates document interactions into a clean **Read-Only Mode** and a comprehensive **Edit Mode**.
+To ensure an optimal viewing experience and protect documents from accidental edits, Kollab separates document interactions into a clean **Read-Only Mode** and a comprehensive **Edit Mode**.
 
 ---
 

@@ -12,7 +12,7 @@ For JSON export and import, the page hierarchy is represented as a recursive tre
 ```json
 {
   "title": "Engineering Handbook",
-  "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Welcome to Arkollab Engineering...\"}]}]}",
+  "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Welcome to Kollab Engineering...\"}]}]}",
   "children": [
     {
       "title": "Onboarding Guide",

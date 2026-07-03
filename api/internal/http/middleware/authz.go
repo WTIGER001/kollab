@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"kollab/api/internal/permissions"
+
 	"github.com/go-chi/chi/v5"
-	"arkollab/api/internal/permissions"
 )
 
 // DocumentAccessMiddleware checks if the user has permissions to perform the action on the document

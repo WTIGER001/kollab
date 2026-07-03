@@ -8,6 +8,18 @@ import './index.css'
 import App from './App.tsx'
 import { fetchOIDCConfig } from './services/api.ts'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
 
 interface OidcConfig {
   authority: string;
@@ -63,19 +75,27 @@ function Root() {
 
   if (isMock) {
     return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <App isMockMode={true} />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <App isMockMode={true} />
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
     );
   }
 
   return (
     <AuthProvider {...oidcConfig}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <App isMockMode={false} />
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <App isMockMode={false} />
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
     </AuthProvider>
   );
 }

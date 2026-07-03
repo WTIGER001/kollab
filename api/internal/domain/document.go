@@ -50,7 +50,7 @@ type DocumentRepository interface {
 	Create(ctx context.Context, doc *Document) error
 	Update(ctx context.Context, doc *Document) error
 	Delete(ctx context.Context, id string) error
-	
+
 	// Trash & Permanent Deletion
 	GetTrashByProjectID(ctx context.Context, projectId string) ([]*Document, error)
 	GetTrashByTeamID(ctx context.Context, teamId string) ([]*Document, error)
