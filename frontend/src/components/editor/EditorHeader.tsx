@@ -1,0 +1,838 @@
+import React from "react";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Tooltip,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+  Chip,
+  CircularProgress,
+  Button,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
+import {
+  MoreHorizontal,
+  History,
+  BarChart2,
+  Share2,
+  Star,
+  Check,
+  Cloud,
+  Edit,
+  FileUp,
+  FolderInput,
+  Download,
+  Lock,
+  Link2,
+  Trash2,
+  Code,
+  ChevronRight,
+  Paperclip,
+  Users,
+} from "lucide-react";
+import { UserAvatar } from "../UserAvatar";
+
+export interface EditorHeaderProps {
+  editor: any;
+  activeDocId: string | null;
+  developerMode: boolean;
+  isSaving: boolean;
+  previewVersion: any;
+  isFavorite: boolean;
+  setIsFavorite: (val: boolean) => void;
+  selectedProjectName: string;
+  selectedTeamName: string;
+  breadcrumbsList: any[];
+  isEditing: boolean;
+  setIsEditing: (val: boolean) => void;
+  uniqueActiveUsers: any[];
+  moreMenuAnchor: HTMLElement | null;
+  historyOpen: boolean;
+  attachments: any[];
+  deletedAt?: string | null;
+  handleToggleHistory: () => void;
+  handleOpenMoreMenu: (e: React.MouseEvent<any>) => void;
+  handleCloseMoreMenu: () => void;
+  handleTriggerMove: () => void;
+  handleTriggerDelete: () => void;
+  setAnalyticsOpen: (val: boolean) => void;
+  setCommitDescription: (val: string) => void;
+  setCommitModalOpen: (val: boolean) => void;
+  setExportDialogOpen: (val: boolean) => void;
+  setJsonDialogOpen: (val: boolean) => void;
+  setRestrictionsDialogOpen: (val: boolean) => void;
+  setSharingLinksDialogOpen: (val: boolean) => void;
+  addFavorite: (id: string) => Promise<any>;
+  removeFavorite: (id: string) => Promise<any>;
+}
+
+export const EditorHeader: React.FC<EditorHeaderProps> = ({
+  editor,
+  activeDocId,
+  developerMode,
+  isSaving,
+  previewVersion,
+  isFavorite,
+  setIsFavorite,
+  selectedProjectName,
+  selectedTeamName,
+  breadcrumbsList,
+  isEditing,
+  setIsEditing,
+  uniqueActiveUsers,
+  moreMenuAnchor,
+  historyOpen,
+  attachments,
+  deletedAt,
+  handleToggleHistory,
+  handleOpenMoreMenu,
+  handleCloseMoreMenu,
+  handleTriggerMove,
+  handleTriggerDelete,
+  setAnalyticsOpen,
+  setCommitDescription,
+  setCommitModalOpen,
+  setExportDialogOpen,
+  setJsonDialogOpen,
+  setRestrictionsDialogOpen,
+  setSharingLinksDialogOpen,
+  addFavorite,
+  removeFavorite,
+}) => {
+  return (
+    <>
+      {editor && !previewVersion && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: "space-between",
+            color: "text.secondary",
+            px: { xs: 2, sm: 3, md: 4 },
+            pt: 2,
+            pb: 1.5,
+            borderBottom: "1px solid var(--border-color)",
+            borderColor: "rgba(255, 255, 255, 0.04)",
+            gap: { xs: 1.5, sm: 2 },
+          }}
+        >
+          {/* Left: Breadcrumbs in Readonly, Mode/Save in Edit */}
+          {!isEditing ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                flexWrap: "wrap",
+                color: "text.secondary",
+                userSelect: "none",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                {selectedTeamName && (
+                  <>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "11px",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {selectedTeamName}
+                    </Typography>
+                    <ChevronRight size={11} style={{ opacity: 0.4 }} />
+                  </>
+                )}
+                {selectedProjectName && (
+                  <>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "11px",
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {selectedProjectName}
+                    </Typography>
+                    <ChevronRight size={11} style={{ opacity: 0.4 }} />
+                  </>
+                )}
+                {breadcrumbsList.map((crumb, idx) => (
+                  <React.Fragment key={crumb.id}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: "11px",
+                        color:
+                          idx === breadcrumbsList.length - 1
+                            ? "text.primary"
+                            : "text.secondary",
+                        fontWeight:
+                          idx === breadcrumbsList.length - 1 ? 600 : 500,
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {crumb.title}
+                    </Typography>
+                    {idx < breadcrumbsList.length - 1 && (
+                      <ChevronRight size={11} style={{ opacity: 0.4 }} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </Box>
+              {attachments.length > 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    ml: 2,
+                    borderLeft: "1px solid rgba(255,255,255,0.08)",
+                    pl: 2,
+                  }}
+                >
+                  <Tooltip title="Jump to attachments at bottom">
+                    <Button
+                      size="small"
+                      startIcon={<Paperclip size={12} />}
+                      onClick={() => {
+                        document
+                          .getElementById("page-attachments-section")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      sx={{
+                        p: "2px 8px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "var(--primary-color, #8b5cf6)",
+                        textTransform: "none",
+                        fontFamily: '"Outfit", sans-serif',
+                        minWidth: 0,
+                        backgroundColor: "rgba(139, 92, 246, 0.05)",
+                        borderRadius: "4px",
+                        border: "1px solid rgba(139, 92, 246, 0.15)",
+                        "&:hover": {
+                          backgroundColor: "rgba(139, 92, 246, 0.12)",
+                        },
+                      }}
+                    >
+                      Attachments ({attachments.length})
+                    </Button>
+                  </Tooltip>
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Chip
+                label="EDIT MODE"
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  fontFamily: '"Outfit", sans-serif',
+                  letterSpacing: "0.05em",
+                  backgroundColor: "rgba(139, 92, 246, 0.12)",
+                  color: "var(--primary-color)",
+                  border: "1px solid rgba(139, 92, 246, 0.25)",
+                  borderColor: "rgba(139, 92, 246, 0.25)",
+                  borderRadius: "4px",
+                }}
+              />
+
+              {attachments.length > 0 && (
+                <Tooltip title="Jump to attachments at bottom">
+                  <Button
+                    size="small"
+                    startIcon={<Paperclip size={12} />}
+                    onClick={() => {
+                      document
+                        .getElementById("page-attachments-section")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    sx={{
+                      p: "2px 8px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "var(--primary-color, #8b5cf6)",
+                      textTransform: "none",
+                      fontFamily: '"Outfit", sans-serif',
+                      minWidth: 0,
+                      backgroundColor: "rgba(139, 92, 246, 0.05)",
+                      borderRadius: "4px",
+                      border: "1px solid rgba(139, 92, 246, 0.15)",
+                      "&:hover": {
+                        backgroundColor: "rgba(139, 92, 246, 0.12)",
+                      },
+                    }}
+                  >
+                    Attachments ({attachments.length})
+                  </Button>
+                </Tooltip>
+              )}
+
+              {/* Saving Indicator */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                {isSaving ? (
+                  <>
+                    <CircularProgress
+                      size={10}
+                      sx={{ color: "text.secondary", opacity: 0.7 }}
+                      thickness={6}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        opacity: 0.6,
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        userSelect: "none",
+                      }}
+                    >
+                      Saving...
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Cloud
+                      size={12}
+                      style={{ color: "rgba(16, 185, 129, 0.6)" }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        opacity: 0.6,
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.25,
+                        userSelect: "none",
+                      }}
+                    >
+                      Saved{" "}
+                      <Check
+                        size={10}
+                        style={{ color: "rgba(16, 185, 129, 0.7)" }}
+                      />
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            </Box>
+          )}
+
+          {/* Right: Actions Toolbar */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            {/* Active Users */}
+            {uniqueActiveUsers.length > 0 && (
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 0.5, mr: 1 }}
+              >
+                {uniqueActiveUsers.map((user) => {
+                  const initials = user.username
+                    ? user.username
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .substring(0, 2)
+                        .toUpperCase()
+                    : "??";
+                  return (
+                    <Tooltip
+                      key={user.userId}
+                      title={`${user.username} (Online)`}
+                      arrow
+                    >
+                      <Box
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          backgroundColor: user.color,
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "8.5px",
+                          fontWeight: 700,
+                          border: "1.5px solid var(--panel-color)",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                          userSelect: "none",
+                        }}
+                      >
+                        {initials}
+                      </Box>
+                    </Tooltip>
+                  );
+                })}
+              </Box>
+            )}
+
+            {/* Favorite */}
+            <Tooltip
+              title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={async () => {
+                  if (!activeDocId) return;
+                  try {
+                    if (isFavorite) {
+                      await removeFavorite(activeDocId);
+                      setIsFavorite(false);
+                    } else {
+                      await addFavorite(activeDocId);
+                      setIsFavorite(true);
+                    }
+                  } catch (err) {
+                    console.error("Failed to toggle favorite status:", err);
+                  }
+                }}
+                sx={{
+                  color: isFavorite ? "#fbbf24" : "text.secondary",
+                  "&:hover": {
+                    color: "#fbbf24",
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <Star size={14} fill={isFavorite ? "#fbbf24" : "none"} />
+              </IconButton>
+            </Tooltip>
+
+            {/* Developer Mode: View JSON Button */}
+            {developerMode && (
+              <Tooltip title="View JSON Representation" arrow>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setJsonDialogOpen(true)}
+                  sx={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    fontFamily: '"Outfit", sans-serif',
+                    height: 26,
+                    px: { xs: 1, sm: 1.25 },
+                    minWidth: { xs: 26, sm: "auto" },
+                    borderRadius: "5px",
+                    borderColor: "rgba(255, 255, 255, 0.08)",
+                    color: "text.secondary",
+                    textTransform: "none",
+                    "&:hover": {
+                      borderColor: "rgba(255, 255, 255, 0.15)",
+                      backgroundColor: "rgba(255, 255, 255, 0.03)",
+                    },
+                  }}
+                >
+                  <Code size={13} />
+                  <Box
+                    component="span"
+                    sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                  >
+                    View JSON
+                  </Box>
+                </Button>
+              </Tooltip>
+            )}
+
+            {!isEditing ? (
+              <>
+                {/* Analytics Button */}
+                <Tooltip title="View Page Analytics" arrow>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setAnalyticsOpen(true)}
+                    sx={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      fontFamily: '"Outfit", sans-serif',
+                      height: 26,
+                      px: { xs: 1, sm: 1.25 },
+                      minWidth: { xs: 26, sm: "auto" },
+                      borderRadius: "5px",
+                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      color: "text.secondary",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "rgba(255, 255, 255, 0.15)",
+                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                      },
+                    }}
+                  >
+                    <BarChart2 size={13} />
+                    <Box
+                      component="span"
+                      sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                    >
+                      Analytics
+                    </Box>
+                  </Button>
+                </Tooltip>
+
+                {/* History Button */}
+                <Tooltip title="Version History" arrow>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleToggleHistory}
+                    sx={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      fontFamily: '"Outfit", sans-serif',
+                      height: 26,
+                      px: { xs: 1, sm: 1.25 },
+                      minWidth: { xs: 26, sm: "auto" },
+                      borderRadius: "5px",
+                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      color: "text.secondary",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "rgba(255, 255, 255, 0.15)",
+                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                      },
+                    }}
+                  >
+                    <History size={13} />
+                    <Box
+                      component="span"
+                      sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                    >
+                      History
+                    </Box>
+                  </Button>
+                </Tooltip>
+
+                {/* Share Button */}
+                <Tooltip title="Link Sharing" arrow>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={!!deletedAt}
+                    onClick={() => setSharingLinksDialogOpen(true)}
+                    sx={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      fontFamily: '"Outfit", sans-serif',
+                      height: 26,
+                      px: { xs: 1, sm: 1.25 },
+                      minWidth: { xs: 26, sm: "auto" },
+                      borderRadius: "5px",
+                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      color: "text.secondary",
+                      textTransform: "none",
+                      "&:hover": {
+                        borderColor: "rgba(255, 255, 255, 0.15)",
+                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                      },
+                    }}
+                  >
+                    <Link2 size={13} />
+                    <Box
+                      component="span"
+                      sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                    >
+                      Share
+                    </Box>
+                  </Button>
+                </Tooltip>
+
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    mx: 0.5,
+                    height: 14,
+                    alignSelf: "center",
+                    borderColor: "rgba(255,255,255,0.06)",
+                  }}
+                />
+
+                {/* Edit Button */}
+                <Button
+                  variant="contained"
+                  size="small"
+                  disabled={!!deletedAt}
+                  onClick={() => setIsEditing(true)}
+                  sx={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    fontFamily: '"Outfit", sans-serif',
+                    height: 26,
+                    px: { xs: 1, sm: 1.5 },
+                    minWidth: { xs: 26, sm: "auto" },
+                    borderRadius: "5px",
+                    backgroundColor: "var(--primary-color)",
+                    color: "#ffffff",
+                    boxShadow: "none",
+                    textTransform: "none",
+                    "&:hover": {
+                      backgroundColor: "var(--primary-dark)",
+                      boxShadow: "none",
+                    },
+                  }}
+                >
+                  <Edit size={12} />
+                  <Box
+                    component="span"
+                    sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                  >
+                    Edit
+                  </Box>
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* History Button (icon only in edit mode to save space) */}
+                <Tooltip title="Version History" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={handleToggleHistory}
+                    sx={{
+                      color: historyOpen ? "primary.light" : "text.secondary",
+                      "&:hover": {
+                        color: "primary.light",
+                        backgroundColor: "action.hover",
+                      },
+                    }}
+                  >
+                    <History size={14} />
+                  </IconButton>
+                </Tooltip>
+
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    mx: 0.5,
+                    height: 14,
+                    alignSelf: "center",
+                    borderColor: "rgba(255,255,255,0.06)",
+                  }}
+                />
+
+                {/* Done Button */}
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => {
+                    setCommitDescription("");
+                    setCommitModalOpen(true);
+                  }}
+                  sx={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    fontFamily: '"Outfit", sans-serif',
+                    height: 26,
+                    px: { xs: 1, sm: 1.5 },
+                    minWidth: { xs: 26, sm: "auto" },
+                    borderRadius: "5px",
+                    backgroundColor: "rgba(16, 185, 129, 0.12)",
+                    color: "#10b981",
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                    borderColor: "rgba(16, 185, 129, 0.25)",
+                    boxShadow: "none",
+                    textTransform: "none",
+                    "&:hover": {
+                      backgroundColor: "rgba(16, 185, 129, 0.2)",
+                      boxShadow: "none",
+                    },
+                  }}
+                >
+                  <Check size={12} />
+                  <Box
+                    component="span"
+                    sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                  >
+                    Done
+                  </Box>
+                </Button>
+              </>
+            )}
+
+            {/* More Actions Menu */}
+            {activeDocId && (
+              <>
+                <Tooltip
+                  title={
+                    deletedAt
+                      ? "Actions disabled for deleted page"
+                      : "More Actions"
+                  }
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    disabled={!!deletedAt}
+                    onClick={handleOpenMoreMenu}
+                    sx={{
+                      color: "text.secondary",
+                      width: 26,
+                      height: 26,
+                      "&:hover": { backgroundColor: "action.hover" },
+                    }}
+                  >
+                    <MoreHorizontal size={14} />
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  anchorEl={moreMenuAnchor}
+                  open={Boolean(moreMenuAnchor)}
+                  onClose={handleCloseMoreMenu}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        minWidth: 160,
+                        mt: 0.5,
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMoreMenu();
+                      setRestrictionsDialogOpen(true);
+                    }}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <Users size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                          }}
+                        >
+                          Viewers & Editors
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMoreMenu();
+                      setSharingLinksDialogOpen(true);
+                    }}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <Link2 size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                          }}
+                        >
+                          Share Link
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    onClick={handleTriggerMove}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <FolderInput size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                          }}
+                        >
+                          Move Page
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMoreMenu();
+                      setExportDialogOpen(true);
+                    }}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <FileUp size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                          }}
+                        >
+                          Export Page
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    onClick={handleTriggerDelete}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                      color: "error.main",
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24, color: "error.main" }}>
+                      <Trash2 size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                            color: "error.main",
+                          }}
+                        >
+                          Delete Page
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Box>
+        </Box>
+      )}
+    </>
+  );
+};

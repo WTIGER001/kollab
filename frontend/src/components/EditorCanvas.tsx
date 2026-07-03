@@ -8,7 +8,11 @@ import { LayoutColumn } from "../editor/extensions/LayoutColumn";
 import { CalloutPanel } from "../editor/extensions/CalloutPanel";
 import { InlineStatus } from "../editor/extensions/InlineStatus";
 import { Mention } from "../editor/extensions/Mention";
-import { Details, DetailsSummary, DetailsContent } from "../editor/extensions/Details";
+import {
+  Details,
+  DetailsSummary,
+  DetailsContent,
+} from "../editor/extensions/Details";
 import { InlineDate } from "../editor/extensions/InlineDate";
 import { NoFormatPanel } from "../editor/extensions/NoFormatPanel";
 import { TableOfContents } from "../editor/extensions/TableOfContents";
@@ -17,24 +21,50 @@ import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
-import { CustomTableCell, CustomTableHeader } from "../editor/extensions/CustomTableExtensions";
+import {
+  CustomTableCell,
+  CustomTableHeader,
+} from "../editor/extensions/CustomTableExtensions";
 import { CustomImage } from "../editor/extensions/CustomImage";
 import { PresenceCursors } from "../editor/extensions/PresenceCursors";
 import { usePresence } from "../hooks/usePresence";
-import { uploadImage, fetchVersions, restoreVersion, createMilestone, fetchDocument, fetchDocumentAnalytics, autogenSummary, addFavorite, removeFavorite, isFavorite as checkIsFavorite, fetchComments, createComment, updateComment, deleteComment, fetchAttachments, fetchTeamUsers, API_BASE_URL } from "../services/api";
-import type { DocumentVersion, DocumentAnalytics, Comment, Attachment } from "../services/api";
+import {
+  uploadImage,
+  fetchVersions,
+  restoreVersion,
+  createMilestone,
+  fetchDocument,
+  fetchDocumentAnalytics,
+  autogenSummary,
+  addFavorite,
+  removeFavorite,
+  isFavorite as checkIsFavorite,
+  fetchAttachments,
+  fetchTeamUsers,
+  API_BASE_URL,
+} from "../services/api";
+import type {
+  DocumentVersion,
+  DocumentAnalytics,
+  Attachment,
+} from "../services/api";
 import { DocumentTags } from "./DocumentTags";
 import { UserAvatar } from "./UserAvatar";
+import { PageComments } from "./editor/PageComments";
+import { EditorHeader } from "./editor/EditorHeader";
+import { EditorAnalyticsDialog } from "./editor/EditorAnalyticsDialog";
+import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
+import { EditorMacroDialog } from "./editor/EditorMacroDialog";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
 import { TableCreatorDialog } from "./TableCreatorDialog";
 import { TableBubbleToolbar } from "./TableBubbleToolbar";
 import { AIPromptBar } from "./AIPromptBar";
-import { 
-  Box, 
-  Paper, 
-  IconButton, 
-  Typography, 
+import {
+  Box,
+  Paper,
+  IconButton,
+  Typography,
   Tooltip,
   Divider,
   InputBase,
@@ -56,25 +86,25 @@ import {
   Tab,
   Chip,
   Select,
-  Avatar
+  Avatar,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
-import { 
+import {
   Plus,
   Search,
-  Heading1, 
-  Heading2, 
+  Heading1,
+  Heading2,
   Heading3,
   Heading4,
   Heading5,
   Heading6,
   Heading,
-  List, 
-  ListOrdered, 
-  Code, 
-  Sparkles, 
-  BadgeAlert, 
-  Bold, 
+  List,
+  ListOrdered,
+  Code,
+  Sparkles,
+  BadgeAlert,
+  Bold,
   Italic,
   Strikethrough,
   Columns2,
@@ -119,7 +149,7 @@ import {
   Palette,
   Network,
   PenTool,
-  Cpu
+  Cpu,
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -172,7 +202,7 @@ interface SlashCommandItem {
 const findBreadcrumbPath = (
   items: DocumentItem[],
   targetId: string,
-  currentPath: DocumentItem[] = []
+  currentPath: DocumentItem[] = [],
 ): DocumentItem[] | null => {
   for (const item of items) {
     const newPath = [...currentPath, item];
@@ -188,19 +218,35 @@ const findBreadcrumbPath = (
 };
 
 // Helper component for Page Analytics block breakdown legend
-const LegendItem = ({ color, label, count }: { color: string; label: string; count: number }) => {
+const LegendItem = ({
+  color,
+  label,
+  count,
+}: {
+  color: string;
+  label: string;
+  count: number;
+}) => {
   if (count === 0) return null;
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-      <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
-      <Typography 
-        variant="caption" 
-        sx={{ 
-          fontSize: "10px", 
-          color: "text.secondary", 
-          textOverflow: "ellipsis", 
-          overflow: "hidden", 
-          whiteSpace: "nowrap" 
+      <Box
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          backgroundColor: color,
+          flexShrink: 0,
+        }}
+      />
+      <Typography
+        variant="caption"
+        sx={{
+          fontSize: "10px",
+          color: "text.secondary",
+          textOverflow: "ellipsis",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
         }}
       >
         {label}: <strong>{count}</strong>
@@ -216,7 +262,7 @@ const formatDate = (dateStr?: string) => {
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric"
+    year: "numeric",
   });
 };
 
@@ -245,7 +291,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onNavigateToAudit,
   onNavigateToNormal,
   developerMode = false,
-  selectedTeamId
+  selectedTeamId,
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const lastNonEmptyTitle = React.useRef(initialTitle || "Untitled Document");
@@ -255,8 +301,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [tableCreatorOpen, setTableCreatorOpen] = useState(false);
   const [loremDialogOpen, setLoremDialogOpen] = useState(false);
-  const [layoutMenuAnchor, setLayoutMenuAnchor] = useState<null | HTMLElement>(null);
-  const [symbolMenuAnchorEl, setSymbolMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [layoutMenuAnchor, setLayoutMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
+  const [symbolMenuAnchorEl, setSymbolMenuAnchorEl] =
+    useState<null | HTMLElement>(null);
   const [isEditing, setIsEditing] = useState(initialEditMode && !deletedAt);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [macroSelectorOpen, setMacroSelectorOpen] = useState(false);
@@ -269,16 +318,24 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     } catch (e) {
       console.error(e);
     }
-    return ["inline-status", "callout-info", "task-list", "details-summary", "inline-date", "table", "image"];
+    return [
+      "inline-status",
+      "callout-info",
+      "task-list",
+      "details-summary",
+      "inline-date",
+      "table",
+      "image",
+    ];
   });
 
   const toggleFavorite = (commandId: string, event?: React.MouseEvent) => {
     if (event) {
       event.stopPropagation();
     }
-    setFavorites(prev => {
+    setFavorites((prev) => {
       const next = prev.includes(commandId)
-        ? prev.filter(id => id !== commandId)
+        ? prev.filter((id) => id !== commandId)
         : [...prev, commandId];
       try {
         localStorage.setItem("arkollab_favorite_macros", JSON.stringify(next));
@@ -290,32 +347,34 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   };
 
   const [menuMode, setMenuMode] = useState<"slash" | "mention">("slash");
-  const [teamUsers, setTeamUsers] = useState<{ id: string; username: string }[]>([]);
+  const [teamUsers, setTeamUsers] = useState<
+    { id: string; username: string }[]
+  >([]);
 
   useEffect(() => {
     if (!selectedTeamId) {
       setTeamUsers([
         { id: "dev_admin", username: "dev_admin" },
-        { id: "jbauer", username: "jbauer" }
+        { id: "jbauer", username: "jbauer" },
       ]);
       return;
     }
     fetchTeamUsers(selectedTeamId)
-      .then(users => {
+      .then((users) => {
         if (users && users.length > 0) {
           setTeamUsers(users);
         } else {
           setTeamUsers([
             { id: "dev_admin", username: "dev_admin" },
-            { id: "jbauer", username: "jbauer" }
+            { id: "jbauer", username: "jbauer" },
           ]);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to fetch team users:", err);
         setTeamUsers([
           { id: "dev_admin", username: "dev_admin" },
-          { id: "jbauer", username: "jbauer" }
+          { id: "jbauer", username: "jbauer" },
         ]);
       });
   }, [selectedTeamId]);
@@ -348,7 +407,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     loadAttachments();
   }, [activeDocId]);
 
-  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(null);
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [restrictionsDialogOpen, setRestrictionsDialogOpen] = useState(false);
@@ -378,7 +439,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
-  const [previewVersion, setPreviewVersion] = useState<DocumentVersion | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<DocumentVersion | null>(
+    null,
+  );
   const [milestoneSummary, setMilestoneSummary] = useState("");
   const [isSavingMilestone, setIsSavingMilestone] = useState(false);
 
@@ -389,7 +452,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [idleToastOpen, setIdleToastOpen] = useState(false);
 
   // Page Analytics live state
-  const [analyticsData, setAnalyticsData] = useState<DocumentAnalytics | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<DocumentAnalytics | null>(
+    null,
+  );
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // Trigger a page view record when activeDocId is retrieved/mounted
@@ -409,10 +474,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
 
     checkIsFavorite(activeDocId)
-      .then(status => {
+      .then((status) => {
         setIsFavorite(status);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to check favorite status:", err);
       });
   }, [activeDocId]);
@@ -460,17 +525,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
       try {
         const meta = await uploadImage(file);
-        targetEditor.chain().focus().insertContent({
-          type: "customImage",
-          attrs: {
-            imageId: meta.id,
-            src: `${API_BASE_URL}/api/images/${meta.id}/O`,
-            size: "O",
-            alignment: "center",
-            originalWidth: meta.originalWidth,
-            originalHeight: meta.originalHeight
-          }
-        }).run();
+        targetEditor
+          .chain()
+          .focus()
+          .insertContent({
+            type: "customImage",
+            attrs: {
+              imageId: meta.id,
+              src: `${API_BASE_URL}/api/images/${meta.id}/O`,
+              size: "O",
+              alignment: "center",
+              originalWidth: meta.originalWidth,
+              originalHeight: meta.originalHeight,
+            },
+          })
+          .run();
       } catch (err) {
         console.error("Failed to upload image:", err);
         alert("Failed to upload image. Please try again.");
@@ -487,8 +556,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   }, [initialTitle]);
 
-
-
   const menuStateRef = React.useRef<{
     menuOpen: boolean;
     menuMode: "slash" | "mention";
@@ -504,7 +571,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     filteredCommands: [],
     filteredUsers: [],
     executeCommand: () => {},
-    executeUserSelect: () => {}
+    executeUserSelect: () => {},
   });
 
   const [ydoc] = useState(() => new Y.Doc());
@@ -558,7 +625,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       },
       handleKeyDown: (_, event) => {
         // Intercept Cmd+K or Ctrl+K to open AI Assistant prompt bar
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        if (
+          (event.metaKey || event.ctrlKey) &&
+          event.key.toLowerCase() === "k"
+        ) {
           event.preventDefault();
           setAiPromptOpen(true);
           return true;
@@ -568,9 +638,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           return false;
         }
 
-        const itemsLength = menuStateRef.current.menuMode === "slash" 
-          ? menuStateRef.current.filteredCommands.length 
-          : menuStateRef.current.filteredUsers.length;
+        const itemsLength =
+          menuStateRef.current.menuMode === "slash"
+            ? menuStateRef.current.filteredCommands.length
+            : menuStateRef.current.filteredUsers.length;
 
         if (itemsLength === 0) {
           return false;
@@ -578,25 +649,31 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
         if (event.key === "ArrowDown") {
           event.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % itemsLength);
+          setSelectedIndex((prev) => (prev + 1) % itemsLength);
           return true;
         }
 
         if (event.key === "ArrowUp") {
           event.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + itemsLength) % itemsLength);
+          setSelectedIndex((prev) => (prev - 1 + itemsLength) % itemsLength);
           return true;
         }
 
         if (event.key === "Enter") {
           event.preventDefault();
           if (menuStateRef.current.menuMode === "slash") {
-            const cmd = menuStateRef.current.filteredCommands[menuStateRef.current.selectedIndex];
+            const cmd =
+              menuStateRef.current.filteredCommands[
+                menuStateRef.current.selectedIndex
+              ];
             if (cmd) {
               menuStateRef.current.executeCommand(cmd);
             }
           } else {
-            const user = menuStateRef.current.filteredUsers[menuStateRef.current.selectedIndex];
+            const user =
+              menuStateRef.current.filteredUsers[
+                menuStateRef.current.selectedIndex
+              ];
             if (user) {
               menuStateRef.current.executeUserSelect(user);
             }
@@ -630,7 +707,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 view.state.tr.setNodeMarkup(nodePos, undefined, {
                   ...node.attrs,
                   open: !node.attrs.open,
-                })
+                }),
               );
               event.preventDefault();
               event.stopPropagation();
@@ -640,8 +717,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             console.error("Error toggling details block:", err);
           }
           return false;
-        }
-      }
+        },
+      },
     },
     onUpdate: ({ editor, transaction }) => {
       // Prevent duplicate save requests by only saving locally-initiated updates
@@ -654,7 +731,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     // Triggers when selection changes
     onSelectionUpdate: ({ editor }) => {
       checkSlashCommand(editor);
-    }
+    },
   });
 
   const handleForceCheckout = async (isTimeout: boolean) => {
@@ -662,7 +739,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     let description = "Auto-saved snapshot";
     if (isTimeout) {
       try {
-        const res = await autogenSummary(activeDocId || "", JSON.stringify(editor.getJSON()), title);
+        const res = await autogenSummary(
+          activeDocId || "",
+          JSON.stringify(editor.getJSON()),
+          title,
+        );
         description = res.summary + " (Idle Timeout)";
       } catch (err) {
         description = "Auto-saved snapshot (Idle Timeout)";
@@ -684,9 +765,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const resetTimer = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        handleForceCheckout(true);
-      }, 10 * 60 * 1000); // 10 minutes
+      timeoutId = setTimeout(
+        () => {
+          handleForceCheckout(true);
+        },
+        10 * 60 * 1000,
+      ); // 10 minutes
     };
 
     // Initialize timer
@@ -775,7 +859,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const saveDocument = (customTitle?: string, customDescription?: string) => {
     const activeTitle = customTitle !== undefined ? customTitle : title;
-    const titleToSave = activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
+    const titleToSave =
+      activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
     if (editor && !editor.isDestroyed) {
       onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription);
     }
@@ -810,20 +895,44 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       const match = val.match(/^h(\d)$/);
       if (match) {
         const level = parseInt(match[1], 10);
-        editor.chain().focus().toggleHeading({ level: level as any }).run();
+        editor
+          .chain()
+          .focus()
+          .toggleHeading({ level: level as any })
+          .run();
       }
     }
   };
 
   // Breadcrumb path computation
-  const path = documents && activeDocId ? findBreadcrumbPath(documents, activeDocId) : null;
+  const path =
+    documents && activeDocId
+      ? findBreadcrumbPath(documents, activeDocId)
+      : null;
   const breadcrumbsList = path
-    ? path.map((item, idx) => idx === path.length - 1 ? { ...item, title } : item)
+    ? path.map((item, idx) =>
+        idx === path.length - 1 ? { ...item, title } : item,
+      )
     : [{ id: activeDocId || "root", title }];
 
   // Page Analytics statistics computation
   const getDocumentStats = () => {
-    if (!editor) return { words: 0, characters: 0, readTime: 0, blocks: { paragraphs: 0, headings: 0, tables: 0, images: 0, callouts: 0, statuses: 0, dates: 0, tasks: 0 } };
+    if (!editor)
+      return {
+        words: 0,
+        characters: 0,
+        readTime: 0,
+        blocks: {
+          paragraphs: 0,
+          headings: 0,
+          tables: 0,
+          images: 0,
+          callouts: 0,
+          statuses: 0,
+          dates: 0,
+          tasks: 0,
+        },
+      };
     const text = editor.getText();
     const characters = text.length;
     const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
@@ -847,7 +956,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       else if (node.type === "inlineStatus") statuses++;
       else if (node.type === "inlineDate") dates++;
       else if (node.type === "taskItem") tasks++;
-      
+
       if (node.content) {
         node.content.forEach(visit);
       }
@@ -867,8 +976,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         callouts,
         statuses,
         dates,
-        tasks
-      }
+        tasks,
+      },
     };
   };
 
@@ -886,31 +995,38 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             } catch {
               return initialContent;
             }
-          })()
+          })(),
         );
       }
     }, 5000);
     return () => clearTimeout(timer);
   }, [editor, initialContent]);
 
-  const { activeUsers } = usePresence(activeDocId, authToken, editor, ydoc, (isFirst) => {
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
-    if (isFirst && editor && !editor.isDestroyed) {
-      editor.commands.setContent(
-        (() => {
-          try {
-            return JSON.parse(initialContent);
-          } catch {
-            return initialContent;
-          }
-        })()
-      );
-    }
-  });
+  const { activeUsers } = usePresence(
+    activeDocId,
+    authToken,
+    editor,
+    ydoc,
+    (isFirst) => {
+      if (isInitializedRef.current) return;
+      isInitializedRef.current = true;
+      if (isFirst && editor && !editor.isDestroyed) {
+        editor.commands.setContent(
+          (() => {
+            try {
+              return JSON.parse(initialContent);
+            } catch {
+              return initialContent;
+            }
+          })(),
+        );
+      }
+    },
+  );
 
   const uniqueActiveUsers = activeUsers.filter(
-    (user, index, self) => self.findIndex((u) => u.userId === user.userId) === index
+    (user, index, self) =>
+      self.findIndex((u) => u.userId === user.userId) === index,
   );
 
   const commands: SlashCommandItem[] = [
@@ -920,7 +1036,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Big section title",
       icon: <Heading1 size={16} style={{ color: "var(--accent-blue)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 1 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h2",
@@ -928,7 +1044,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Medium section subtitle",
       icon: <Heading2 size={16} style={{ color: "var(--accent-purple)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 2 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h3",
@@ -936,7 +1052,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Small section heading",
       icon: <Heading3 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 3 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h4",
@@ -944,7 +1060,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 4",
       icon: <Heading4 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 4 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h5",
@@ -952,7 +1068,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 5",
       icon: <Heading5 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 5 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h6",
@@ -960,23 +1076,33 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 6",
       icon: <Heading6 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 6 }).run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "h7",
       label: "Heading 7",
       description: "Heading level 7",
       icon: <Heading size={16} style={{ color: "var(--accent-pink)" }} />,
-      action: (ed) => ed.chain().focus().toggleHeading({ level: 7 as any }).run(),
-      category: "text"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .toggleHeading({ level: 7 as any })
+          .run(),
+      category: "text",
     },
     {
       id: "h8",
       label: "Heading 8",
       description: "Heading level 8",
       icon: <Heading size={16} style={{ color: "var(--accent-pink)" }} />,
-      action: (ed) => ed.chain().focus().toggleHeading({ level: 8 as any }).run(),
-      category: "text"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .toggleHeading({ level: 8 as any })
+          .run(),
+      category: "text",
     },
     {
       id: "bullet",
@@ -984,7 +1110,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Simple bulleted list",
       icon: <List size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleBulletList().run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "number",
@@ -992,7 +1118,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Ordered sequential list",
       icon: <ListOrdered size={16} style={{ color: "#fbbf24" }} />,
       action: (ed) => ed.chain().focus().toggleOrderedList().run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "code",
@@ -1000,7 +1126,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Syntax highlighted code block",
       icon: <Code size={16} style={{ color: "#2dd4bf" }} />,
       action: (ed) => ed.chain().focus().toggleCodeBlock().run(),
-      category: "text"
+      category: "text",
     },
     {
       id: "ai-prompt",
@@ -1010,7 +1136,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setAiPromptOpen(true);
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "status-badge",
@@ -1024,12 +1150,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "status-badge",
-              config: { status: "Active" }
-            }
+              config: { status: "Active" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "markdown-paste",
@@ -1043,12 +1169,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "markdown-paste",
-              config: { markdown: "", isBlockMode: false }
-            }
+              config: { markdown: "", isBlockMode: false },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "ai-content",
@@ -1062,12 +1188,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "ai-content",
-              config: { prompt: "", generatedText: "" }
-            }
+              config: { prompt: "", generatedText: "" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "chart-analytics",
@@ -1081,18 +1207,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "chart-analytics",
-              config: { tableId: "table_metrics_01" }
-            }
+              config: { tableId: "table_metrics_01" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "children-display",
       label: "Children Display",
       description: "List child pages under the current document",
-      icon: <FolderInput size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
+      icon: (
+        <FolderInput
+          size={16}
+          style={{ color: "var(--accent-blue, #60a5fa)" }}
+        />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1100,18 +1231,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "children-display",
-              config: {}
-            }
+              config: {},
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "page-index",
       label: "Page Index",
       description: "Alphabetical directory of all pages",
-      icon: <Layers size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      icon: (
+        <Layers size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1119,18 +1252,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "page-index",
-              config: {}
-            }
+              config: {},
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "attachments-list",
       label: "Attachments List",
       description: "Show table or grid of all page attachments",
-      icon: <Paperclip size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      icon: (
+        <Paperclip
+          size={16}
+          style={{ color: "var(--accent-purple, #a78bfa)" }}
+        />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1138,18 +1276,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "attachments-list",
-              config: { layout: "table" }
-            }
+              config: { layout: "table" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "file-preview",
       label: "File Preview",
-      description: "Embed an interactive file preview (Word, PowerPoint, 3D model, PDF)",
-      icon: <Paperclip size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
+      description:
+        "Embed an interactive file preview (Word, PowerPoint, 3D model, PDF)",
+      icon: (
+        <Paperclip size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1157,34 +1298,41 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "single-attachment",
-              config: { attachmentId: "", layoutStyle: "preview" }
-            }
+              config: { attachmentId: "", layoutStyle: "preview" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "excerpt",
       label: "Excerpt Area",
       description: "Define excerpt section for inclusion",
-      icon: <FileText size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      icon: (
+        <FileText
+          size={16}
+          style={{ color: "var(--accent-purple, #a78bfa)" }}
+        />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
           .insertContent({
             type: "excerpt",
-            content: [{ type: "paragraph" }]
+            content: [{ type: "paragraph" }],
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "excerpt-include",
       label: "Excerpt Include",
       description: "Include excerpt from another page",
-      icon: <FileUp size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
+      icon: (
+        <FileUp size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1192,18 +1340,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "excerpt-include",
-              config: {}
-            }
+              config: {},
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "mentions-list",
       label: "Mentions List",
       description: "List of all documents mentioning a user",
-      icon: <AtSign size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      icon: (
+        <AtSign size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1213,19 +1363,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               type: "mentions-list",
               config: {
                 username: "current",
-                sortBy: "updated_at"
-              }
-            }
+                sortBy: "updated_at",
+              },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "drawio",
       label: "Draw.io Diagram",
       description: "Insert an offline Draw.io vector drawing canvas",
-      icon: <Palette size={16} style={{ color: "var(--accent-pink, #f472b6)" }} />,
+      icon: (
+        <Palette size={16} style={{ color: "var(--accent-pink, #f472b6)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1233,18 +1385,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "drawio",
-              config: { xml: "", svg: "" }
-            }
+              config: { xml: "", svg: "" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "excalidraw",
       label: "Excalidraw Diagram",
       description: "Insert an offline Excalidraw sketching canvas",
-      icon: <PenTool size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />,
+      icon: (
+        <PenTool size={16} style={{ color: "var(--accent-purple, #a78bfa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1252,18 +1406,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "excalidraw",
-              config: { elements: [], appState: {}, svg: "" }
-            }
+              config: { elements: [], appState: {}, svg: "" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "mermaid",
       label: "Mermaid Diagram",
       description: "Render flowcharts and sequence diagrams from text",
-      icon: <Network size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />,
+      icon: (
+        <Network size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+      ),
       action: (ed) => {
         ed.chain()
           .focus()
@@ -1271,12 +1427,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "mermaid",
-              config: { code: "graph TD\n  A --> B", svg: "" }
-            }
+              config: { code: "graph TD\n  A --> B", svg: "" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "jira-gitlab-issue",
@@ -1290,12 +1446,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "jira-gitlab-issue",
-              config: { url: "" }
-            }
+              config: { url: "" },
+            },
           })
           .run();
       },
-      category: "advanced"
+      category: "advanced",
     },
     {
       id: "table",
@@ -1305,7 +1461,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setTableCreatorOpen(true);
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "layout-twocol",
@@ -1321,13 +1477,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: { layout: "twocol" },
             content: [
               { type: "layoutColumn", content: [{ type: "paragraph" }] },
-              { type: "layoutColumn", content: [{ type: "paragraph" }] }
-            ]
+              { type: "layoutColumn", content: [{ type: "paragraph" }] },
+            ],
           })
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "layout-threecol",
@@ -1344,13 +1500,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [
               { type: "layoutColumn", content: [{ type: "paragraph" }] },
               { type: "layoutColumn", content: [{ type: "paragraph" }] },
-              { type: "layoutColumn", content: [{ type: "paragraph" }] }
-            ]
+              { type: "layoutColumn", content: [{ type: "paragraph" }] },
+            ],
           })
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "layout-asymmetric-left",
@@ -1366,19 +1522,24 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: { layout: "asymmetric-left" },
             content: [
               { type: "layoutColumn", content: [{ type: "paragraph" }] },
-              { type: "layoutColumn", content: [{ type: "paragraph" }] }
-            ]
+              { type: "layoutColumn", content: [{ type: "paragraph" }] },
+            ],
           })
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "layout-asymmetric-right",
       label: "Columns (30/70)",
       description: "Narrow left column, wide right column",
-      icon: <Layout size={16} style={{ color: "#fbbf24", transform: "scaleX(-1)" }} />,
+      icon: (
+        <Layout
+          size={16}
+          style={{ color: "#fbbf24", transform: "scaleX(-1)" }}
+        />
+      ),
       action: (ed) => {
         const pos = ed.state.selection.from;
         ed.chain()
@@ -1388,13 +1549,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: { layout: "asymmetric-right" },
             content: [
               { type: "layoutColumn", content: [{ type: "paragraph" }] },
-              { type: "layoutColumn", content: [{ type: "paragraph" }] }
-            ]
+              { type: "layoutColumn", content: [{ type: "paragraph" }] },
+            ],
           })
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "image",
@@ -1404,87 +1565,125 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: (ed) => {
         triggerImageUpload(ed);
       },
-      category: "layout"
+      category: "layout",
     },
     {
       id: "inline-status",
       label: "Status Badge",
       description: "Insert an inline status pill",
       icon: <Smile size={16} style={{ color: "#3b82f6" }} />,
-      action: (ed) => ed.chain().focus().insertContent({ type: "inlineStatus", attrs: { text: "TODO", color: "blue" } }).run(),
-      category: "tasks"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "inlineStatus",
+            attrs: { text: "TODO", color: "blue" },
+          })
+          .run(),
+      category: "tasks",
     },
     {
       id: "callout-info",
       label: "Info Panel",
       description: "Insert a blue information callout",
       icon: <Info size={16} style={{ color: "#3b82f6" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "info" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "info" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "callout-note",
       label: "Note Panel",
       description: "Insert a yellow note callout",
       icon: <AlertCircle size={16} style={{ color: "#f59e0b" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "note" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "note" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "callout-tip",
       label: "Tip Panel",
       description: "Insert a green tip callout",
       icon: <Lightbulb size={16} style={{ color: "#10b981" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "tip" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "tip" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "callout-warning",
       label: "Warning Panel",
       description: "Insert a yellow warning callout",
       icon: <AlertTriangle size={16} style={{ color: "#f59e0b" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "warning" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "warning" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "callout-error",
       label: "Error Panel",
       description: "Insert a red error callout",
       icon: <AlertCircle size={16} style={{ color: "#ef4444" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "error" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "error" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "callout-check",
       label: "Check Panel",
       description: "Insert a green success callout",
       icon: <Check size={16} style={{ color: "#10b981" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "calloutPanel",
-        attrs: { type: "check" },
-        content: [{ type: "paragraph" }]
-      }).run(),
-      category: "callouts"
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "calloutPanel",
+            attrs: { type: "check" },
+            content: [{ type: "paragraph" }],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "task-list",
@@ -1492,53 +1691,73 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Insert a checkable task checklist",
       icon: <ListTodo size={16} style={{ color: "var(--accent-purple)" }} />,
       action: (ed) => ed.chain().focus().toggleTaskList().run(),
-      category: "tasks"
+      category: "tasks",
     },
     {
       id: "details-summary",
       label: "Expandable Box",
       description: "Insert a collapsible block panel",
-      icon: <ChevronsUpDown size={16} style={{ color: "var(--accent-blue)" }} />,
-      action: (ed) => ed.chain().focus().insertContent({
-        type: "details",
-        content: [
-          { type: "detailsSummary" },
-          { type: "detailsContent", content: [{ type: "paragraph" }] }
-        ]
-      }).run(),
-      category: "callouts"
+      icon: (
+        <ChevronsUpDown size={16} style={{ color: "var(--accent-blue)" }} />
+      ),
+      action: (ed) =>
+        ed
+          .chain()
+          .focus()
+          .insertContent({
+            type: "details",
+            content: [
+              { type: "detailsSummary" },
+              { type: "detailsContent", content: [{ type: "paragraph" }] },
+            ],
+          })
+          .run(),
+      category: "callouts",
     },
     {
       id: "inline-date",
       label: "Date Pill",
       description: "Insert an inline date indicator",
       icon: <Calendar size={16} style={{ color: "var(--accent-pink)" }} />,
-      action: (ed) => ed.chain().focus().insertContent({ type: "inlineDate" }).run(),
-      category: "tasks"
+      action: (ed) =>
+        ed.chain().focus().insertContent({ type: "inlineDate" }).run(),
+      category: "tasks",
     },
     {
       id: "no-format-panel",
       label: "No Format Panel",
       description: "Monospace panel block for unformatted text",
       icon: <SquareTerminal size={16} style={{ color: "#94a3b8" }} />,
-      action: (ed) => ed.chain().focus().insertContent({ type: "noFormatPanel" }).run(),
-      category: "text"
+      action: (ed) =>
+        ed.chain().focus().insertContent({ type: "noFormatPanel" }).run(),
+      category: "text",
     },
     {
       id: "table-of-contents",
       label: "Table of Contents",
       description: "Auto-generate a heading-based outline",
       icon: <List size={16} style={{ color: "var(--primary-color)" }} />,
-      action: (ed) => ed.chain().focus().insertContent({ type: "tableOfContents" }).run(),
-      category: "advanced"
+      action: (ed) =>
+        ed.chain().focus().insertContent({ type: "tableOfContents" }).run(),
+      category: "advanced",
     },
     {
       id: "symbol-picker",
       label: "Symbol Picker",
       description: "Insert special symbols (Ω, →, etc.)",
-      icon: <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "14px", color: "#fbbf24", pl: 0.25 }}>Ω</Typography>,
+      icon: (
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 700, fontSize: "14px", color: "#fbbf24", pl: 0.25 }}
+        >
+          Ω
+        </Typography>
+      ),
       action: () => {
-        const rect = window.getSelection()?.getRangeAt(0).getBoundingClientRect();
+        const rect = window
+          .getSelection()
+          ?.getRangeAt(0)
+          .getBoundingClientRect();
         if (rect) {
           const tempEl = document.createElement("div");
           tempEl.style.position = "absolute";
@@ -1555,7 +1774,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           setSymbolMenuAnchorEl(document.querySelector(".editor-content"));
         }
       },
-      category: "text"
+      category: "text",
     },
     {
       id: "lorem-ipsum",
@@ -1565,19 +1784,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setLoremDialogOpen(true);
       },
-      category: "text"
-    }
+      category: "text",
+    },
   ];
 
   // Filter commands dynamically based on input query
   // Filter commands dynamically based on input query
-  const filteredCommands = commands.filter(cmd => 
-    cmd.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cmd.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCommands = commands.filter(
+    (cmd) =>
+      cmd.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cmd.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const filteredUsers = teamUsers.filter(u => 
-    u.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = teamUsers.filter((u) =>
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const checkSlashCommand = (editorInstance: any) => {
@@ -1587,36 +1807,50 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
     const { selection } = editorInstance.state;
     const { $from } = selection;
-    
+
     // Extract text in current paragraph block before the cursor
-    const textBeforeCursor = $from.parent.textBetween(0, $from.parentOffset, null, null);
-    
+    const textBeforeCursor = $from.parent.textBetween(
+      0,
+      $from.parentOffset,
+      null,
+      null,
+    );
+
     const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
     const lastAtIndex = textBeforeCursor.lastIndexOf("@");
-    
-    if (lastAtIndex !== -1 && (lastSlashIndex === -1 || lastAtIndex > lastSlashIndex)) {
+
+    if (
+      lastAtIndex !== -1 &&
+      (lastSlashIndex === -1 || lastAtIndex > lastSlashIndex)
+    ) {
       const query = textBeforeCursor.substring(lastAtIndex + 1);
-      
+
       // Ensure there are no spaces after the @
       if (!query.includes(" ")) {
         const range = window.getSelection()?.getRangeAt(0);
         if (range) {
           const rect = range.getBoundingClientRect();
-          const matchingUsers = teamUsers.filter(u => 
-            u.username.toLowerCase().includes(query.toLowerCase())
+          const matchingUsers = teamUsers.filter((u) =>
+            u.username.toLowerCase().includes(query.toLowerCase()),
           );
-          
+
           if (matchingUsers.length > 0) {
             const viewportHeight = window.innerHeight;
             const itemCount = matchingUsers.length;
-            const estimatedMenuHeight = Math.min(280, 20 + (itemCount * 36.5) + 8);
+            const estimatedMenuHeight = Math.min(
+              280,
+              20 + itemCount * 36.5 + 8,
+            );
             const spaceBelow = viewportHeight - rect.bottom;
-            
+
             let top = rect.bottom + 8;
-            if (spaceBelow < estimatedMenuHeight + 16 && rect.top > estimatedMenuHeight + 16) {
+            if (
+              spaceBelow < estimatedMenuHeight + 16 &&
+              rect.top > estimatedMenuHeight + 16
+            ) {
               top = rect.top - estimatedMenuHeight - 8;
             }
-            
+
             setMenuPosition({
               top: top,
               left: rect.left,
@@ -1624,7 +1858,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             setSearchQuery(query);
             setMenuMode("mention");
             setMenuOpen(true);
-            setSelectedIndex(prev => prev >= matchingUsers.length ? 0 : prev);
+            setSelectedIndex((prev) =>
+              prev >= matchingUsers.length ? 0 : prev,
+            );
           } else {
             setMenuOpen(false);
           }
@@ -1634,26 +1870,33 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       }
     } else if (lastSlashIndex !== -1) {
       const query = textBeforeCursor.substring(lastSlashIndex + 1);
-      
+
       // Ensure there are no spaces after the slash (trigger remains active for search term)
       if (!query.includes(" ")) {
         const range = window.getSelection()?.getRangeAt(0);
         if (range) {
           const rect = range.getBoundingClientRect();
-          
-          const matching = commands.filter(c => 
-            c.label.toLowerCase().includes(query.toLowerCase()) ||
-            c.description.toLowerCase().includes(query.toLowerCase())
+
+          const matching = commands.filter(
+            (c) =>
+              c.label.toLowerCase().includes(query.toLowerCase()) ||
+              c.description.toLowerCase().includes(query.toLowerCase()),
           );
 
           if (matching.length > 0) {
             const viewportHeight = window.innerHeight;
             const itemCount = matching.length;
-            const estimatedMenuHeight = Math.min(280, 20 + (itemCount * 36.5) + 8);
+            const estimatedMenuHeight = Math.min(
+              280,
+              20 + itemCount * 36.5 + 8,
+            );
             const spaceBelow = viewportHeight - rect.bottom;
-            
+
             let top = rect.bottom + 8;
-            if (spaceBelow < estimatedMenuHeight + 16 && rect.top > estimatedMenuHeight + 16) {
+            if (
+              spaceBelow < estimatedMenuHeight + 16 &&
+              rect.top > estimatedMenuHeight + 16
+            ) {
               top = rect.top - estimatedMenuHeight - 8;
             }
 
@@ -1664,7 +1907,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             setSearchQuery(query);
             setMenuMode("slash");
             setMenuOpen(true);
-            setSelectedIndex(prev => prev >= matching.length ? 0 : prev);
+            setSelectedIndex((prev) => (prev >= matching.length ? 0 : prev));
           } else {
             setMenuOpen(false);
           }
@@ -1679,33 +1922,36 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const executeCommand = (cmd: SlashCommandItem) => {
     if (!editor) return;
-    
+
     const { selection } = editor.state;
     const { $from } = selection;
-    
+
     const queryLength = searchQuery.length;
     editor
       .chain()
       .focus()
       .deleteRange({ from: $from.pos - 1 - queryLength, to: $from.pos })
       .run();
-    
+
     cmd.action(editor);
     setMenuOpen(false);
   };
 
   const executeUserSelect = (user: { id: string; username: string }) => {
     if (!editor) return;
-    
+
     const { selection } = editor.state;
     const { $from } = selection;
-    
+
     const queryLength = searchQuery.length;
     editor
       .chain()
       .focus()
       .deleteRange({ from: $from.pos - 1 - queryLength, to: $from.pos })
-      .insertContent({ type: "mention", attrs: { id: user.id, username: user.username } })
+      .insertContent({
+        type: "mention",
+        attrs: { id: user.id, username: user.username },
+      })
       .insertContent(" ")
       .run();
     setMenuOpen(false);
@@ -1719,13 +1965,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     filteredCommands,
     filteredUsers,
     executeCommand,
-    executeUserSelect
+    executeUserSelect,
   };
 
   // Scroll selected autocomplete menu item into view automatically
   useEffect(() => {
     if (menuOpen) {
-      const selectedEl = document.getElementById(`slash-menu-item-${selectedIndex}`);
+      const selectedEl = document.getElementById(
+        `slash-menu-item-${selectedIndex}`,
+      );
       const container = document.getElementById("slash-menu-container");
       if (selectedEl && container) {
         selectedEl.scrollIntoView({ block: "nearest", behavior: "auto" });
@@ -1733,7 +1981,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   }, [selectedIndex, menuOpen]);
 
-  const handleInsertTable = (rows: number, cols: number, withHeaderRow: boolean) => {
+  const handleInsertTable = (
+    rows: number,
+    cols: number,
+    withHeaderRow: boolean,
+  ) => {
     if (!editor) return;
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow }).run();
   };
@@ -1743,14 +1995,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     "Nullam cursus lacus quis leo facilisis, a consequat diam cursus. Integer a purus vel ex hendrerit interdum. Phasellus porta leo ut egestas volutpat. Phasellus ut convallis arcu. Duis quis nisl id leo scelerisque bibendum. Praesent eget urna vel elit aliquet congue rhoncus id erat. Quisque porta nunc id tortor tempor convallis.",
     "Duis elementum accumsan nulla sed tempus. Aliquam nec arcu sodales, pretium ex eget, iaculis erat. Curabitur vel sodales magna, quis tempus elit. Suspendisse non sapien sed urna interdum euismod ac non nibh. Praesent non dictum dolor. Morbi a metus congue, accumsan nunc ut, pretium urna. Pellentesque at sem sem. Cras convallis ipsum vel tellus lacinia dictum.",
     "Maecenas id ex efficitur, iaculis ante a, euismod dolor. Aliquam pulvinar est vel tristique egestas. Pellentesque sodales volutpat arcu sed feugiat. Ut et felis eget sapien pretium tristique eu nec lectus. Mauris non tincidunt massa. Proin quis sapien varius, accumsan diam a, congue elit. Donec et sem eget lacus tempus varius.",
-    "Sed tristique, leo id rhoncus convallis, lorem felis sodales leo, sed vestibulum nisl erat ut neque. Suspendisse eget elit vitae nisl hendrerit laoreet. Fusce sed finibus mauris. Cras sollicitudin tincidunt turpis vel elementum. Aliquam erat volutpat. Nam nec urna vel tellus dictum ultrices et et lectus. Curabitur a tempor leo. Sed nec ipsum sed justo consequat commodo nec id elit."
+    "Sed tristique, leo id rhoncus convallis, lorem felis sodales leo, sed vestibulum nisl erat ut neque. Suspendisse eget elit vitae nisl hendrerit laoreet. Fusce sed finibus mauris. Cras sollicitudin tincidunt turpis vel elementum. Aliquam erat volutpat. Nam nec urna vel tellus dictum ultrices et et lectus. Curabitur a tempor leo. Sed nec ipsum sed justo consequat commodo nec id elit.",
   ];
 
   const insertLoremIpsum = (count: number) => {
     if (!editor) return;
-    const contentToInsert = LOREM_PARAGRAPHS.slice(0, count).map(text => ({
+    const contentToInsert = LOREM_PARAGRAPHS.slice(0, count).map((text) => ({
       type: "paragraph",
-      content: [{ type: "text", text }]
+      content: [{ type: "text", text }],
     }));
     editor.chain().focus().insertContent(contentToInsert).run();
   };
@@ -1830,7 +2082,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   };
 
   return (
-    <Box 
+    <Box
       sx={{
         flex: 1,
         display: "flex",
@@ -1846,8 +2098,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       className="scrollbar-thin"
     >
       {/* Decorative Blur Backgrounds */}
-      <div className="accent-glow-purple" style={{ position: "absolute", right: "40px", top: "40px" }} />
-      <div className="accent-glow-blue" style={{ position: "absolute", left: "80px", bottom: "40px" }} />
+      <div
+        className="accent-glow-purple"
+        style={{ position: "absolute", right: "40px", top: "40px" }}
+      />
+      <div
+        className="accent-glow-blue"
+        style={{ position: "absolute", left: "80px", bottom: "40px" }}
+      />
 
       {/* Editor Container Paper */}
       <Paper
@@ -1890,8 +2148,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Clock size={16} />
-              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "12.5px", fontFamily: '"Outfit", sans-serif' }}>
-                Previewing Version {previewVersion.versionNumber} - "{previewVersion.changeSummary || "Auto-saved snapshot"}" (Created {new Date(previewVersion.createdAt).toLocaleString()} by {previewVersion.createdBy || "Anonymous"})
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "12.5px",
+                  fontFamily: '"Outfit", sans-serif',
+                }}
+              >
+                Previewing Version {previewVersion.versionNumber} - "
+                {previewVersion.changeSummary || "Auto-saved snapshot"}"
+                (Created {new Date(previewVersion.createdAt).toLocaleString()}{" "}
+                by {previewVersion.createdBy || "Anonymous"})
               </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
@@ -1905,7 +2173,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   fontWeight: 700,
                   bgcolor: "#d97706",
                   color: "#ffffff",
-                  "&:hover": { bgcolor: "#b45309" }
+                  "&:hover": { bgcolor: "#b45309" },
                 }}
               >
                 Restore
@@ -1919,7 +2187,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   fontSize: "10px",
                   fontWeight: 600,
                   borderColor: "rgba(245, 158, 11, 0.4)",
-                  "&:hover": { borderColor: "#f59e0b" }
+                  "&:hover": { borderColor: "#f59e0b" },
                 }}
               >
                 Exit Preview
@@ -1929,534 +2197,62 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         )}
 
         {/* Top Header Actions Bar */}
-        {editor && !previewVersion && (
-          <Box sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "space-between",
-            color: "text.secondary",
-            px: { xs: 2, sm: 3, md: 4 },
-            pt: 2,
-            pb: 1.5,
-            borderBottom: "1px solid var(--border-color)",
-            borderColor: "rgba(255, 255, 255, 0.04)",
-            gap: { xs: 1.5, sm: 2 },
-          }}>
-            {/* Left: Breadcrumbs in Readonly, Mode/Save in Edit */}
-            {!isEditing ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap", color: "text.secondary", userSelect: "none" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  {selectedTeamName && (
-                    <>
-                      <Typography variant="body2" sx={{ fontSize: "11px", color: "text.secondary", fontWeight: 600, letterSpacing: "0.03em" }}>
-                        {selectedTeamName}
-                      </Typography>
-                      <ChevronRight size={11} style={{ opacity: 0.4 }} />
-                    </>
-                  )}
-                  {selectedProjectName && (
-                    <>
-                      <Typography variant="body2" sx={{ fontSize: "11px", color: "text.secondary", fontWeight: 600, letterSpacing: "0.03em" }}>
-                        {selectedProjectName}
-                      </Typography>
-                      <ChevronRight size={11} style={{ opacity: 0.4 }} />
-                    </>
-                  )}
-                  {breadcrumbsList.map((crumb, idx) => (
-                    <React.Fragment key={crumb.id}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          fontSize: "11px", 
-                          color: idx === breadcrumbsList.length - 1 ? "text.primary" : "text.secondary", 
-                          fontWeight: idx === breadcrumbsList.length - 1 ? 600 : 500,
-                          letterSpacing: "0.03em"
-                        }}
-                      >
-                        {crumb.title}
-                      </Typography>
-                      {idx < breadcrumbsList.length - 1 && (
-                        <ChevronRight size={11} style={{ opacity: 0.4 }} />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </Box>
-                {attachments.length > 0 && (
-                  <Box sx={{ display: "flex", alignItems: "center", ml: 2, borderLeft: "1px solid rgba(255,255,255,0.08)", pl: 2 }}>
-                    <Tooltip title="Jump to attachments at bottom">
-                      <Button
-                        size="small"
-                        startIcon={<Paperclip size={12} />}
-                        onClick={() => {
-                          document.getElementById("page-attachments-section")?.scrollIntoView({ behavior: "smooth" });
-                        }}
-                        sx={{
-                          p: "2px 8px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "var(--primary-color, #8b5cf6)",
-                          textTransform: "none",
-                          fontFamily: '"Outfit", sans-serif',
-                          minWidth: 0,
-                          backgroundColor: "rgba(139, 92, 246, 0.05)",
-                          borderRadius: "4px",
-                          border: "1px solid rgba(139, 92, 246, 0.15)",
-                          "&:hover": {
-                            backgroundColor: "rgba(139, 92, 246, 0.12)"
-                          }
-                        }}
-                      >
-                        Attachments ({attachments.length})
-                      </Button>
-                    </Tooltip>
-                  </Box>
-                )}
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Chip
-                  label="EDIT MODE"
-                  size="small"
-                  sx={{
-                    height: 20,
-                    fontSize: "9px",
-                    fontWeight: 700,
-                    fontFamily: '"Outfit", sans-serif',
-                    letterSpacing: "0.05em",
-                    backgroundColor: "rgba(139, 92, 246, 0.12)",
-                    color: "var(--primary-color)",
-                    border: "1px solid rgba(139, 92, 246, 0.25)",
-                    borderColor: "rgba(139, 92, 246, 0.25)",
-                    borderRadius: "4px",
-                  }}
-                />
-                
-                {attachments.length > 0 && (
-                  <Tooltip title="Jump to attachments at bottom">
-                    <Button
-                      size="small"
-                      startIcon={<Paperclip size={12} />}
-                      onClick={() => {
-                        document.getElementById("page-attachments-section")?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      sx={{
-                        p: "2px 8px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "var(--primary-color, #8b5cf6)",
-                        textTransform: "none",
-                        fontFamily: '"Outfit", sans-serif',
-                        minWidth: 0,
-                        backgroundColor: "rgba(139, 92, 246, 0.05)",
-                        borderRadius: "4px",
-                        border: "1px solid rgba(139, 92, 246, 0.15)",
-                        "&:hover": {
-                          backgroundColor: "rgba(139, 92, 246, 0.12)"
-                        }
-                      }}
-                    >
-                      Attachments ({attachments.length})
-                    </Button>
-                  </Tooltip>
-                )}
-                
-                {/* Saving Indicator */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  {isSaving ? (
-                    <>
-                      <CircularProgress size={10} sx={{ color: "text.secondary", opacity: 0.7 }} thickness={6} />
-                      <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.6, fontSize: "11px", fontWeight: 500, userSelect: "none" }}>
-                        Saving...
-                      </Typography>
-                    </>
-                  ) : (
-                    <>
-                      <Cloud size={12} style={{ color: "rgba(16, 185, 129, 0.6)" }} />
-                      <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.6, fontSize: "11px", fontWeight: 500, display: "flex", alignItems: "center", gap: 0.25, userSelect: "none" }}>
-                        Saved <Check size={10} style={{ color: "rgba(16, 185, 129, 0.7)" }} />
-                      </Typography>
-                    </>
-                  )}
-                </Box>
-              </Box>
-            )}
-
-            {/* Right: Actions Toolbar */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              {/* Active Users */}
-              {uniqueActiveUsers.length > 0 && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mr: 1 }}>
-                  {uniqueActiveUsers.map((user) => {
-                    const initials = user.username
-                      ? user.username
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .substring(0, 2)
-                          .toUpperCase()
-                      : "??";
-                    return (
-                      <Tooltip key={user.userId} title={`${user.username} (Online)`} arrow>
-                        <Box
-                          sx={{
-                            width: 22,
-                            height: 22,
-                            borderRadius: "50%",
-                            backgroundColor: user.color,
-                            color: "#ffffff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "8.5px",
-                            fontWeight: 700,
-                            border: "1.5px solid var(--panel-color)",
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                            userSelect: "none",
-                          }}
-                        >
-                          {initials}
-                        </Box>
-                      </Tooltip>
-                    );
-                  })}
-                </Box>
-              )}
-
-              {/* Favorite */}
-              <Tooltip title={isFavorite ? "Remove from Favorites" : "Add to Favorites"} arrow>
-                <IconButton
-                  size="small"
-                  onClick={async () => {
-                    if (!activeDocId) return;
-                    try {
-                      if (isFavorite) {
-                        await removeFavorite(activeDocId);
-                        setIsFavorite(false);
-                      } else {
-                        await addFavorite(activeDocId);
-                        setIsFavorite(true);
-                      }
-                    } catch (err) {
-                      console.error("Failed to toggle favorite status:", err);
-                    }
-                  }}
-                  sx={{ 
-                    color: isFavorite ? "#fbbf24" : "text.secondary",
-                    "&:hover": { color: "#fbbf24", backgroundColor: "action.hover" }
-                  }}
-                >
-                  <Star size={14} fill={isFavorite ? "#fbbf24" : "none"} />
-                </IconButton>
-              </Tooltip>
-
-              {/* Developer Mode: View JSON Button */}
-              {developerMode && (
-                <Tooltip title="View JSON Representation" arrow>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setJsonDialogOpen(true)}
-                    sx={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      fontFamily: '"Outfit", sans-serif',
-                      height: 26,
-                      px: { xs: 1, sm: 1.25 },
-                      minWidth: { xs: 26, sm: "auto" },
-                      borderRadius: "5px",
-                      borderColor: "rgba(255, 255, 255, 0.08)",
-                      color: "text.secondary",
-                      textTransform: "none",
-                      "&:hover": {
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
-                      }
-                    }}
-                  >
-                    <Code size={13} />
-                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                      View JSON
-                    </Box>
-                  </Button>
-                </Tooltip>
-              )}
-
-              {!isEditing ? (
-                <>
-                  {/* Analytics Button */}
-                  <Tooltip title="View Page Analytics" arrow>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => setAnalyticsOpen(true)}
-                      sx={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: '"Outfit", sans-serif',
-                        height: 26,
-                        px: { xs: 1, sm: 1.25 },
-                        minWidth: { xs: 26, sm: "auto" },
-                        borderRadius: "5px",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
-                        color: "text.secondary",
-                        textTransform: "none",
-                        "&:hover": {
-                          borderColor: "rgba(255, 255, 255, 0.15)",
-                          backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        }
-                      }}
-                    >
-                      <BarChart2 size={13} />
-                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                        Analytics
-                      </Box>
-                    </Button>
-                  </Tooltip>
-
-                  {/* History Button */}
-                  <Tooltip title="Version History" arrow>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={handleToggleHistory}
-                      sx={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: '"Outfit", sans-serif',
-                        height: 26,
-                        px: { xs: 1, sm: 1.25 },
-                        minWidth: { xs: 26, sm: "auto" },
-                        borderRadius: "5px",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
-                        color: "text.secondary",
-                        textTransform: "none",
-                        "&:hover": {
-                          borderColor: "rgba(255, 255, 255, 0.15)",
-                          backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        }
-                      }}
-                    >
-                      <History size={13} />
-                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                        History
-                      </Box>
-                    </Button>
-                  </Tooltip>
-
-                  {/* Share Button */}
-                  <Tooltip title="Link Sharing" arrow>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      disabled={!!deletedAt}
-                      onClick={() => setSharingLinksDialogOpen(true)}
-                      sx={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        fontFamily: '"Outfit", sans-serif',
-                        height: 26,
-                        px: { xs: 1, sm: 1.25 },
-                        minWidth: { xs: 26, sm: "auto" },
-                        borderRadius: "5px",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
-                        color: "text.secondary",
-                        textTransform: "none",
-                        "&:hover": {
-                          borderColor: "rgba(255, 255, 255, 0.15)",
-                          backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        }
-                      }}
-                    >
-                      <Link2 size={13} />
-                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                        Share
-                      </Box>
-                    </Button>
-                  </Tooltip>
-
-                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 14, alignSelf: "center", borderColor: "rgba(255,255,255,0.06)" }} />
-
-                  {/* Edit Button */}
-                  <Button
-                    variant="contained"
-                    size="small"
-                    disabled={!!deletedAt}
-                    onClick={() => setIsEditing(true)}
-                    sx={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      fontFamily: '"Outfit", sans-serif',
-                      height: 26,
-                      px: { xs: 1, sm: 1.5 },
-                      minWidth: { xs: 26, sm: "auto" },
-                      borderRadius: "5px",
-                      backgroundColor: "var(--primary-color)",
-                      color: "#ffffff",
-                      boxShadow: "none",
-                      textTransform: "none",
-                      "&:hover": {
-                        backgroundColor: "var(--primary-dark)",
-                        boxShadow: "none"
-                      }
-                    }}
-                  >
-                    <Edit size={12} />
-                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                      Edit
-                    </Box>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {/* History Button (icon only in edit mode to save space) */}
-                  <Tooltip title="Version History" arrow>
-                    <IconButton
-                      size="small"
-                      onClick={handleToggleHistory}
-                      sx={{ 
-                        color: historyOpen ? "primary.light" : "text.secondary",
-                        "&:hover": { color: "primary.light", backgroundColor: "action.hover" }
-                      }}
-                    >
-                      <History size={14} />
-                    </IconButton>
-                  </Tooltip>
-
-                  <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 14, alignSelf: "center", borderColor: "rgba(255,255,255,0.06)" }} />
-
-                  {/* Done Button */}
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      setCommitDescription("");
-                      setCommitModalOpen(true);
-                    }}
-                    sx={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      fontFamily: '"Outfit", sans-serif',
-                      height: 26,
-                      px: { xs: 1, sm: 1.5 },
-                      minWidth: { xs: 26, sm: "auto" },
-                      borderRadius: "5px",
-                      backgroundColor: "rgba(16, 185, 129, 0.12)",
-                      color: "#10b981",
-                      border: "1px solid rgba(16, 185, 129, 0.25)",
-                      borderColor: "rgba(16, 185, 129, 0.25)",
-                      boxShadow: "none",
-                      textTransform: "none",
-                      "&:hover": {
-                        backgroundColor: "rgba(16, 185, 129, 0.2)",
-                        boxShadow: "none"
-                      }
-                    }}
-                  >
-                    <Check size={12} />
-                    <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}>
-                      Done
-                    </Box>
-                  </Button>
-                </>
-              )}
-
-              {/* More Actions Menu */}
-              {activeDocId && (
-                <>
-                  <Tooltip title={deletedAt ? "Actions disabled for deleted page" : "More Actions"} arrow>
-                    <IconButton
-                      size="small"
-                      disabled={!!deletedAt}
-                      onClick={handleOpenMoreMenu}
-                      sx={{ 
-                        color: "text.secondary",
-                        width: 26,
-                        height: 26,
-                        "&:hover": { backgroundColor: "action.hover" }
-                      }}
-                    >
-                      <MoreHorizontal size={14} />
-                    </IconButton>
-                  </Tooltip>
-                  <Menu
-                    anchorEl={moreMenuAnchor}
-                    open={Boolean(moreMenuAnchor)}
-                    onClose={handleCloseMoreMenu}
-                    slotProps={{
-                      paper: {
-                        sx: {
-                          minWidth: 160,
-                          mt: 0.5,
-                        }
-                      }
-                    }}
-                  >
-                    <MenuItem
-                      onClick={() => {
-                        handleCloseMoreMenu();
-                        setRestrictionsDialogOpen(true);
-                      }}
-                      sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 24 }}><Users size={12} /></ListItemIcon>
-                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Viewers & Editors</Typography>} />
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleCloseMoreMenu();
-                        setSharingLinksDialogOpen(true);
-                      }}
-                      sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 24 }}><Link2 size={12} /></ListItemIcon>
-                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Share Link</Typography>} />
-                    </MenuItem>
-                    <MenuItem onClick={handleTriggerMove} sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
-                      <ListItemIcon sx={{ minWidth: 24 }}><FolderInput size={12} /></ListItemIcon>
-                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Move Page</Typography>} />
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleCloseMoreMenu();
-                        setExportDialogOpen(true);
-                      }}
-                      sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 24 }}><FileUp size={12} /></ListItemIcon>
-                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Export Page</Typography>} />
-                    </MenuItem>
-                    <MenuItem onClick={handleTriggerDelete} sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', color: "error.main" }}>
-                      <ListItemIcon sx={{ minWidth: 24, color: "error.main" }}><Trash2 size={12} /></ListItemIcon>
-                      <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', color: "error.main" }}>Delete Page</Typography>} />
-                    </MenuItem>
-                  </Menu>
-                </>
-              )}
-            </Box>
-          </Box>
-        )}
+        <EditorHeader
+          editor={editor}
+          activeDocId={activeDocId}
+          developerMode={developerMode}
+          isSaving={isSaving}
+          previewVersion={previewVersion}
+          isFavorite={isFavorite}
+          setIsFavorite={setIsFavorite}
+          selectedProjectName={selectedProjectName || ""}
+          selectedTeamName={selectedTeamName || ""}
+          breadcrumbsList={breadcrumbsList}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          uniqueActiveUsers={uniqueActiveUsers}
+          moreMenuAnchor={moreMenuAnchor}
+          historyOpen={historyOpen}
+          attachments={attachments}
+          deletedAt={deletedAt}
+          handleToggleHistory={handleToggleHistory}
+          handleOpenMoreMenu={handleOpenMoreMenu}
+          handleCloseMoreMenu={handleCloseMoreMenu}
+          handleTriggerMove={handleTriggerMove}
+          handleTriggerDelete={handleTriggerDelete}
+          setAnalyticsOpen={setAnalyticsOpen}
+          setCommitDescription={setCommitDescription}
+          setCommitModalOpen={setCommitModalOpen}
+          setExportDialogOpen={setExportDialogOpen}
+          setJsonDialogOpen={setJsonDialogOpen}
+          setRestrictionsDialogOpen={setRestrictionsDialogOpen}
+          setSharingLinksDialogOpen={setSharingLinksDialogOpen}
+          addFavorite={addFavorite}
+          removeFavorite={removeFavorite}
+        />
 
         {/* Formatting Quick Toolbar */}
         {editor && isEditing && !previewVersion && (
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            flexWrap: "wrap",
-            gap: 0.75, 
-            color: "text.secondary",
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-            backgroundColor: "var(--panel-color)",
-            px: { xs: 2, sm: 3, md: 4 },
-            pt: 1,
-            pb: 1,
-            borderBottom: "1px solid var(--border-color)",
-            pointerEvents: isTitleFocused ? "none" : "auto",
-            opacity: isTitleFocused ? 0.35 : 1,
-            transition: "all 0.15s ease",
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 0.75,
+              color: "text.secondary",
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+              backgroundColor: "var(--panel-color)",
+              px: { xs: 2, sm: 3, md: 4 },
+              pt: 1,
+              pb: 1,
+              borderBottom: "1px solid var(--border-color)",
+              pointerEvents: isTitleFocused ? "none" : "auto",
+              opacity: isTitleFocused ? 0.35 : 1,
+              transition: "all 0.15s ease",
+            }}
+          >
             <Select
               value={getHeadingValue()}
               onChange={handleHeadingChange}
@@ -2484,34 +2280,36 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   px: 1.5,
                   display: "flex",
                   alignItems: "center",
-                }
+                },
               }}
-              MenuProps={{
-                slotProps: {
-                  paper: {
-                    sx: {
-                      backgroundColor: "var(--panel-color)",
-                      border: "1px solid var(--border-color)",
-                      boxShadow: "var(--shadow-premium)",
-                      backgroundImage: "none",
-                      "& .MuiMenuItem-root": {
-                        fontSize: "13px",
-                        fontFamily: '"Outfit", sans-serif',
-                        "&:hover": {
-                          backgroundColor: "rgba(139, 92, 246, 0.08)",
-                        },
-                        "&.Mui-selected": {
-                          backgroundColor: "rgba(139, 92, 246, 0.12)",
-                          color: "var(--primary-color)",
+              MenuProps={
+                {
+                  slotProps: {
+                    paper: {
+                      sx: {
+                        backgroundColor: "var(--panel-color)",
+                        border: "1px solid var(--border-color)",
+                        boxShadow: "var(--shadow-premium)",
+                        backgroundImage: "none",
+                        "& .MuiMenuItem-root": {
+                          fontSize: "13px",
+                          fontFamily: '"Outfit", sans-serif',
                           "&:hover": {
-                            backgroundColor: "rgba(139, 92, 246, 0.18)",
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              } as any}
+                            backgroundColor: "rgba(139, 92, 246, 0.08)",
+                          },
+                          "&.Mui-selected": {
+                            backgroundColor: "rgba(139, 92, 246, 0.12)",
+                            color: "var(--primary-color)",
+                            "&:hover": {
+                              backgroundColor: "rgba(139, 92, 246, 0.18)",
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                } as any
+              }
             >
               <MenuItem value="paragraph">Normal</MenuItem>
               <MenuItem value="h1">Heading 1</MenuItem>
@@ -2524,29 +2322,39 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <MenuItem value="h8">Heading 8</MenuItem>
             </Select>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 16, alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 0.5, height: 16, alignSelf: "center" }}
+            />
 
             {/* Typography Group */}
             <Tooltip title="Bold" arrow>
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                sx={{ 
-                  color: editor.isActive("bold") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("bold") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("bold") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("bold")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <Bold size={15} />
               </IconButton>
             </Tooltip>
-            
+
             <Tooltip title="Italic" arrow>
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                sx={{ 
-                  color: editor.isActive("italic") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("italic") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("italic")
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive("italic")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <Italic size={15} />
@@ -2557,9 +2365,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
-                sx={{ 
-                  color: editor.isActive("strike") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("strike") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("strike")
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive("strike")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <Strikethrough size={15} />
@@ -2570,40 +2382,54 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleCode().run()}
-                sx={{ 
-                  color: editor.isActive("code") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("code") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("code") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("code")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <Code size={15} />
               </IconButton>
             </Tooltip>
 
-
-
             <Tooltip title="Code Block" arrow>
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                sx={{ 
-                  color: editor.isActive("codeBlock") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("codeBlock") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("codeBlock")
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive("codeBlock")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <SquareTerminal size={15} />
               </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 16, alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 0.5, height: 16, alignSelf: "center" }}
+            />
 
             {/* Alignment Group */}
             <Tooltip title="Align Left" arrow>
               <IconButton
                 size="small"
-                onClick={() => editor.chain().focus().setTextAlign("left").run()}
-                sx={{ 
-                  color: editor.isActive({ textAlign: "left" }) ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive({ textAlign: "left" }) ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("left").run()
+                }
+                sx={{
+                  color: editor.isActive({ textAlign: "left" })
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive({ textAlign: "left" })
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <AlignLeft size={15} />
@@ -2613,10 +2439,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             <Tooltip title="Align Center" arrow>
               <IconButton
                 size="small"
-                onClick={() => editor.chain().focus().setTextAlign("center").run()}
-                sx={{ 
-                  color: editor.isActive({ textAlign: "center" }) ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive({ textAlign: "center" }) ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("center").run()
+                }
+                sx={{
+                  color: editor.isActive({ textAlign: "center" })
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive({ textAlign: "center" })
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <AlignCenter size={15} />
@@ -2626,26 +2458,40 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             <Tooltip title="Align Right" arrow>
               <IconButton
                 size="small"
-                onClick={() => editor.chain().focus().setTextAlign("right").run()}
-                sx={{ 
-                  color: editor.isActive({ textAlign: "right" }) ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive({ textAlign: "right" }) ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                onClick={() =>
+                  editor.chain().focus().setTextAlign("right").run()
+                }
+                sx={{
+                  color: editor.isActive({ textAlign: "right" })
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive({ textAlign: "right" })
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <AlignRight size={15} />
               </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 16, alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 0.5, height: 16, alignSelf: "center" }}
+            />
 
             {/* Lists */}
             <Tooltip title="Bullet List" arrow>
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
-                sx={{ 
-                  color: editor.isActive("bulletList") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("bulletList") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("bulletList")
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive("bulletList")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <List size={15} />
@@ -2656,25 +2502,36 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <IconButton
                 size="small"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                sx={{ 
-                  color: editor.isActive("orderedList") ? "primary.light" : "inherit", 
-                  backgroundColor: editor.isActive("orderedList") ? "rgba(139, 92, 246, 0.1)" : "transparent"
+                sx={{
+                  color: editor.isActive("orderedList")
+                    ? "primary.light"
+                    : "inherit",
+                  backgroundColor: editor.isActive("orderedList")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
                 }}
               >
                 <ListOrdered size={15} />
               </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 16, alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 0.5, height: 16, alignSelf: "center" }}
+            />
 
             {/* Insert Complex Components */}
             <Tooltip title="Insert Table" arrow>
               <IconButton
                 size="small"
                 onClick={() => setTableCreatorOpen(true)}
-                sx={{ 
+                sx={{
                   color: "inherit",
-                  "&:hover": { color: "primary.light", backgroundColor: "action.hover" }
+                  "&:hover": {
+                    color: "primary.light",
+                    backgroundColor: "action.hover",
+                  },
                 }}
               >
                 <Grid3X3 size={15} />
@@ -2685,9 +2542,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <IconButton
                 size="small"
                 onClick={(e) => setLayoutMenuAnchor(e.currentTarget)}
-                sx={{ 
+                sx={{
                   color: "inherit",
-                  "&:hover": { color: "primary.light", backgroundColor: "action.hover" }
+                  "&:hover": {
+                    color: "primary.light",
+                    backgroundColor: "action.hover",
+                  },
                 }}
               >
                 <Layout size={15} />
@@ -2710,87 +2570,140 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <MenuItem
                 onClick={() => {
                   const pos = editor.state.selection.from;
-                  editor.chain()
+                  editor
+                    .chain()
                     .focus()
                     .insertContent({
                       type: "layoutSection",
                       attrs: { layout: "twocol" },
                       content: [
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] },
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] }
-                      ]
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                      ],
                     })
                     .setTextSelection(pos + 3)
                     .run();
                   setLayoutMenuAnchor(null);
                 }}
               >
-                <ListItemIcon sx={{ color: "text.secondary" }}><Columns2 size={14} /></ListItemIcon>
-                <ListItemText primary={<Typography variant="body2">2 Columns (50/50)</Typography>} />
+                <ListItemIcon sx={{ color: "text.secondary" }}>
+                  <Columns2 size={14} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2">2 Columns (50/50)</Typography>
+                  }
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   const pos = editor.state.selection.from;
-                  editor.chain()
+                  editor
+                    .chain()
                     .focus()
                     .insertContent({
                       type: "layoutSection",
                       attrs: { layout: "threecol" },
                       content: [
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] },
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] },
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] }
-                      ]
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                      ],
                     })
                     .setTextSelection(pos + 3)
                     .run();
                   setLayoutMenuAnchor(null);
                 }}
               >
-                <ListItemIcon sx={{ color: "text.secondary" }}><Columns3 size={14} /></ListItemIcon>
-                <ListItemText primary={<Typography variant="body2">3 Columns</Typography>} />
+                <ListItemIcon sx={{ color: "text.secondary" }}>
+                  <Columns3 size={14} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={<Typography variant="body2">3 Columns</Typography>}
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   const pos = editor.state.selection.from;
-                  editor.chain()
+                  editor
+                    .chain()
                     .focus()
                     .insertContent({
                       type: "layoutSection",
                       attrs: { layout: "asymmetric-left" },
                       content: [
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] },
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] }
-                      ]
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                      ],
                     })
                     .setTextSelection(pos + 3)
                     .run();
                   setLayoutMenuAnchor(null);
                 }}
               >
-                <ListItemIcon sx={{ color: "text.secondary" }}><Layout size={14} /></ListItemIcon>
-                <ListItemText primary={<Typography variant="body2">Columns (70/30)</Typography>} />
+                <ListItemIcon sx={{ color: "text.secondary" }}>
+                  <Layout size={14} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2">Columns (70/30)</Typography>
+                  }
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => {
                   const pos = editor.state.selection.from;
-                  editor.chain()
+                  editor
+                    .chain()
                     .focus()
                     .insertContent({
                       type: "layoutSection",
                       attrs: { layout: "asymmetric-right" },
                       content: [
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] },
-                        { type: "layoutColumn", content: [{ type: "paragraph" }] }
-                      ]
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                        {
+                          type: "layoutColumn",
+                          content: [{ type: "paragraph" }],
+                        },
+                      ],
                     })
                     .setTextSelection(pos + 3)
                     .run();
                   setLayoutMenuAnchor(null);
                 }}
               >
-                <ListItemIcon sx={{ color: "text.secondary" }}><Layout size={14} style={{ transform: "scaleX(-1)" }} /></ListItemIcon>
-                <ListItemText primary={<Typography variant="body2">Columns (30/70)</Typography>} />
+                <ListItemIcon sx={{ color: "text.secondary" }}>
+                  <Layout size={14} style={{ transform: "scaleX(-1)" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2">Columns (30/70)</Typography>
+                  }
+                />
               </MenuItem>
             </Menu>
 
@@ -2798,35 +2711,46 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <IconButton
                 size="small"
                 onClick={() => setAiPromptOpen(true)}
-                sx={{ 
+                sx={{
                   color: "inherit",
-                  "&:hover": { color: "primary.light", backgroundColor: "action.hover" }
+                  "&:hover": {
+                    color: "primary.light",
+                    backgroundColor: "action.hover",
+                  },
                 }}
               >
                 <Sparkles size={15} />
               </IconButton>
             </Tooltip>
 
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 16, alignSelf: "center" }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{ mx: 0.5, height: 16, alignSelf: "center" }}
+            />
 
             {/* Dynamically Render Favorited Macros */}
-            <Box sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              flexWrap: "nowrap",
-              overflow: "hidden",
-              flexShrink: 1,
-            }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                flexWrap: "nowrap",
+                overflow: "hidden",
+                flexShrink: 1,
+              }}
+            >
               {favorites.map((favId) => {
-                const cmd = commands.find(c => c.id === favId);
+                const cmd = commands.find((c) => c.id === favId);
                 if (!cmd) return null;
-                
+
                 const isActive = () => {
                   if (cmd.id === "bullet") return editor.isActive("bulletList");
-                  if (cmd.id === "number") return editor.isActive("orderedList");
+                  if (cmd.id === "number")
+                    return editor.isActive("orderedList");
                   if (cmd.id === "code") return editor.isActive("codeBlock");
-                  if (cmd.id === "task-list") return editor.isActive("taskList");
+                  if (cmd.id === "task-list")
+                    return editor.isActive("taskList");
                   return false;
                 };
 
@@ -2835,11 +2759,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <IconButton
                       size="small"
                       onClick={() => cmd.action(editor)}
-                      sx={{ 
+                      sx={{
                         color: isActive() ? "primary.light" : "inherit",
-                        backgroundColor: isActive() ? "rgba(139, 92, 246, 0.1)" : "transparent",
+                        backgroundColor: isActive()
+                          ? "rgba(139, 92, 246, 0.1)"
+                          : "transparent",
                         flexShrink: 0,
-                        "&:hover": { color: "primary.light", backgroundColor: "action.hover" }
+                        "&:hover": {
+                          color: "primary.light",
+                          backgroundColor: "action.hover",
+                        },
                       }}
                     >
                       {cmd.icon}
@@ -2857,16 +2786,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   setMacroSearchQuery("");
                   setMacroSelectorOpen(true);
                 }}
-                sx={{ 
+                sx={{
                   color: "primary.light",
                   backgroundColor: "rgba(139, 92, 246, 0.08)",
                   border: "1px dashed rgba(139, 92, 246, 0.3)",
                   flexShrink: 0,
                   ml: 0.5,
-                  "&:hover": { 
+                  "&:hover": {
                     backgroundColor: "rgba(139, 92, 246, 0.15)",
-                    borderColor: "var(--primary-color)" 
-                  }
+                    borderColor: "var(--primary-color)",
+                  },
                 }}
               >
                 <Plus size={15} />
@@ -2876,7 +2805,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         )}
 
         {/* Document Content Area */}
-        <Box sx={{ px: { xs: 2, sm: 3, md: 4 }, py: 3, display: "flex", flexDirection: "column", flex: 1, gap: 2 }}>
+        <Box
+          sx={{
+            px: { xs: 2, sm: 3, md: 4 },
+            py: 3,
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            gap: 2,
+          }}
+        >
           {deletedAt && (
             <Paper
               elevation={0}
@@ -2894,17 +2832,42 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <AlertCircle size={20} style={{ color: "var(--error-color, #ef4444)", flexShrink: 0 }} />
+                <AlertCircle
+                  size={20}
+                  style={{
+                    color: "var(--error-color, #ef4444)",
+                    flexShrink: 0,
+                  }}
+                />
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", fontSize: "14px", fontFamily: '"Outfit", sans-serif' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 700,
+                      color: "text.primary",
+                      fontSize: "14px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
                     This page is in the Trash Bin
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "12.5px" }}>
-                    It was deleted on {new Date(deletedAt).toLocaleDateString()}. You cannot edit this page until it is restored.
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "text.secondary", fontSize: "12.5px" }}
+                  >
+                    It was deleted on {new Date(deletedAt).toLocaleDateString()}
+                    . You cannot edit this page until it is restored.
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", gap: 1, width: { xs: "100%", sm: "auto" }, justifyContent: { xs: "flex-end", sm: "flex-start" } }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  width: { xs: "100%", sm: "auto" },
+                  justifyContent: { xs: "flex-end", sm: "flex-start" },
+                }}
+              >
                 <Button
                   variant="outlined"
                   size="small"
@@ -2918,7 +2881,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     "&:hover": {
                       borderColor: "var(--primary-dark)",
                       backgroundColor: "rgba(139, 92, 246, 0.04)",
-                    }
+                    },
                   }}
                 >
                   Restore Page
@@ -2933,7 +2896,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     fontWeight: 600,
                     fontFamily: '"Outfit", sans-serif',
                     boxShadow: "none",
-                    "&:hover": { boxShadow: "none" }
+                    "&:hover": { boxShadow: "none" },
                   }}
                 >
                   Delete Permanently
@@ -2945,7 +2908,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           {/* Title and Metadata group */}
           <Box sx={{ display: "flex", flexDirection: "column" }}>
             <InputBase
-              value={previewVersion ? `${title} (Version ${previewVersion.versionNumber} Preview)` : title}
+              value={
+                previewVersion
+                  ? `${title} (Version ${previewVersion.versionNumber} Preview)`
+                  : title
+              }
               readOnly={!isEditing || !!previewVersion}
               onChange={handleTitleChange}
               onKeyDown={handleTitleKeyDown}
@@ -2959,9 +2926,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 fontWeight: 800,
                 mb: 0,
                 "& input": { p: 0 },
-                "& input::placeholder": { color: "text.disabled", opacity: 0.5 },
+                "& input::placeholder": {
+                  color: "text.disabled",
+                  opacity: 0.5,
+                },
                 fontFamily: '"Outfit", sans-serif',
-                letterSpacing: "-0.02em"
+                letterSpacing: "-0.02em",
               }}
             />
 
@@ -2976,35 +2946,43 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   fontSize: "11px",
                   fontFamily: '"Outfit", sans-serif',
                   fontWeight: 500,
-                  opacity: 0.75
+                  opacity: 0.75,
                 }}
               >
-                Created by {createdBy || "System"}, last updated on {formatDate(updatedAt || createdAt)} by {updatedBy || "System"}
+                Created by {createdBy || "System"}, last updated on{" "}
+                {formatDate(updatedAt || createdAt)} by {updatedBy || "System"}
               </Typography>
             )}
-
           </Box>
 
           {/* Editor Body */}
           <Box sx={{ flex: 1 }}>
-            <DocumentContext.Provider value={{ documents, activeDocId, onSelectDoc: onSelectDoc || (() => {}), selectedTeamId }}>
+            <DocumentContext.Provider
+              value={{
+                documents,
+                activeDocId,
+                onSelectDoc: onSelectDoc || (() => {}),
+                selectedTeamId,
+              }}
+            >
               <EditorContent editor={previewVersion ? previewEditor : editor} />
             </DocumentContext.Provider>
           </Box>
 
           {/* Page Attachments Section */}
-          {activeDocId && ((isEditing && !deletedAt) || attachments.length > 0) && (
-            <Box id="page-attachments-section">
-              <PageAttachments
-                docId={activeDocId}
-                authToken={authToken}
-                isEditable={isEditing && !deletedAt}
-                attachments={attachments}
-                onRefresh={loadAttachments}
-                loading={attachmentsLoading}
-              />
-            </Box>
-          )}
+          {activeDocId &&
+            ((isEditing && !deletedAt) || attachments.length > 0) && (
+              <Box id="page-attachments-section">
+                <PageAttachments
+                  docId={activeDocId}
+                  authToken={authToken}
+                  isEditable={isEditing && !deletedAt}
+                  attachments={attachments}
+                  onRefresh={loadAttachments}
+                  loading={attachmentsLoading}
+                />
+              </Box>
+            )}
 
           {/* Image Gallery Section */}
           {activeDocId && attachments.length > 0 && (
@@ -3018,18 +2996,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
           {/* Page Tags Section */}
           {activeDocId && (
-            <DocumentTags 
-              docId={activeDocId} 
-              readOnly={!!deletedAt} 
-            />
+            <DocumentTags docId={activeDocId} readOnly={!!deletedAt} />
           )}
 
           {/* Page Comments Section */}
           {activeDocId && (
-            <PageComments 
-              docId={activeDocId} 
-              authToken={authToken} 
-              readOnly={!!deletedAt} 
+            <PageComments
+              docId={activeDocId}
+              authToken={authToken}
+              readOnly={!!deletedAt}
             />
           )}
         </Box>
@@ -3054,7 +3029,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           onClose={() => setExportDialogOpen(false)}
           documentId={activeDocId || ""}
           documentTitle={title}
-          hasChildren={!!(documents && documents.some(d => d.parentId === activeDocId && !d.deletedAt))}
+          hasChildren={
+            !!(
+              documents &&
+              documents.some((d) => d.parentId === activeDocId && !d.deletedAt)
+            )
+          }
         />
       )}
 
@@ -3079,1178 +3059,242 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       )}
 
       {/* Caret-Positioned Autocomplete Popup Menu */}
-      {menuOpen && ((menuMode === "slash" && filteredCommands.length > 0) || (menuMode === "mention" && filteredUsers.length > 0)) && (
-        <ClickAwayListener onClickAway={() => setMenuOpen(false)}>
-          <Paper
-            id="slash-menu-container"
-            sx={{
-              position: "fixed",
-              top: menuPosition.top,
-              left: menuPosition.left,
-              zIndex: 1300,
-              width: 260,
-              maxHeight: 280,
-              overflowY: "auto",
-              backgroundColor: "background.paper",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-color)",
-              borderRadius: 2,
-              boxShadow: "0 12px 40px rgba(0, 0, 0, 0.2)",
-              py: 0.5,
-            }}
-            className="scrollbar-thin"
-          >
-            {menuMode === "slash" ? (
-              <>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    px: 2, 
-                    py: 1, 
-                    display: "block", 
-                    fontWeight: 700, 
-                    letterSpacing: "0.05em",
-                    color: "text.disabled",
-                    textTransform: "uppercase",
-                    fontSize: "9px"
-                  }}
-                >
-                  Basic Blocks & Macros
-                </Typography>
-                
-                {filteredCommands.map((cmd, idx) => (
-                  <Box
-                    key={cmd.id}
-                    id={`slash-menu-item-${idx}`}
-                    onClick={() => executeCommand(cmd)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      py: 0.75,
-                      px: 2,
-                      mx: 0.5,
-                      my: 0.25,
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      backgroundColor: idx === selectedIndex ? "color-mix(in srgb, var(--primary-color) 12%, transparent)" : "transparent",
-                      color: idx === selectedIndex ? "text.primary" : "text.secondary",
-                      "&:hover": {
-                        backgroundColor: idx === selectedIndex ? "color-mix(in srgb, var(--primary-color) 18%, transparent)" : "action.hover",
-                        color: "text.primary"
-                      },
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <Box sx={{ 
-                      backgroundColor: "var(--bg-color)", 
-                      border: "1px solid var(--border-color)",
-                      p: 0.75, 
-                      borderRadius: 1.5, 
-                      display: "flex", 
-                      alignItems: "center", 
-                      justifyContent: "center",
-                      color: idx === selectedIndex ? "primary.light" : "inherit"
-                    }}>
-                      {cmd.icon}
-                    </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "12.5px" }}>
-                        {cmd.label}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px" }} noWrap>
-                        {cmd.description}
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </>
-            ) : (
-              <>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    px: 2, 
-                    py: 1, 
-                    display: "block", 
-                    fontWeight: 700, 
-                    letterSpacing: "0.05em",
-                    color: "text.disabled",
-                    textTransform: "uppercase",
-                    fontSize: "9px"
-                  }}
-                >
-                  Team Members
-                </Typography>
-                
-                {filteredUsers.map((user, idx) => (
-                  <Box
-                    key={user.id}
-                    id={`slash-menu-item-${idx}`}
-                    onClick={() => executeUserSelect(user)}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      py: 0.75,
-                      px: 2,
-                      mx: 0.5,
-                      my: 0.25,
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      backgroundColor: idx === selectedIndex ? "color-mix(in srgb, var(--primary-color) 12%, transparent)" : "transparent",
-                      color: idx === selectedIndex ? "text.primary" : "text.secondary",
-                      "&:hover": {
-                        backgroundColor: idx === selectedIndex ? "color-mix(in srgb, var(--primary-color) 18%, transparent)" : "action.hover",
-                        color: "text.primary"
-                      },
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <Users size={15} style={{ color: idx === selectedIndex ? "var(--primary-color)" : "inherit" }} />
-                    <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "12.5px" }}>
-                        @{user.username}
-                      </Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </>
-            )}
-          </Paper>
-        </ClickAwayListener>
-      )}
-
-      {/* Macro Chooser Dialog */}
-      <Dialog
-        open={macroSelectorOpen}
-        onClose={() => setMacroSelectorOpen(false)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            className: "glass-card",
-            sx: {
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--panel-color)",
-              color: "var(--text-primary)",
-              borderRadius: "16px",
-              boxShadow: "var(--shadow-premium)",
-              overflow: "hidden",
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ 
-          fontFamily: '"Outfit", sans-serif', 
-          fontWeight: 800, 
-          pb: 1.5,
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif' }}>
-            Insert Macro or Block
-          </Typography>
-          <IconButton 
-            size="small" 
-            onClick={() => setMacroSelectorOpen(false)}
-            sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
-          >
-            <X size={18} />
-          </IconButton>
-        </DialogTitle>
-
-        {/* Search Bar at the Top */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            px: 3,
-            py: 1.5,
-            borderBottom: "1px solid var(--border-color)",
-            backgroundColor: "rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Search size={16} style={{ color: "var(--primary-color)" }} />
-          <InputBase
-            value={macroSearchQuery}
-            onChange={(e) => setMacroSearchQuery(e.target.value)}
-            placeholder="Search macros by name or description..."
-            fullWidth
-            sx={{
-              color: "text.primary",
-              fontSize: "13.5px",
-              fontFamily: '"Outfit", sans-serif',
-              fontWeight: 500,
-              "& input::placeholder": { color: "text.disabled", opacity: 0.6 },
-            }}
-          />
-          {macroSearchQuery && (
-            <IconButton
-              size="small"
-              onClick={() => setMacroSearchQuery("")}
-              sx={{ p: 0.25, color: "text.secondary" }}
+      {menuOpen &&
+        ((menuMode === "slash" && filteredCommands.length > 0) ||
+          (menuMode === "mention" && filteredUsers.length > 0)) && (
+          <ClickAwayListener onClickAway={() => setMenuOpen(false)}>
+            <Paper
+              id="slash-menu-container"
+              sx={{
+                position: "fixed",
+                top: menuPosition.top,
+                left: menuPosition.left,
+                zIndex: 1300,
+                width: 260,
+                maxHeight: 280,
+                overflowY: "auto",
+                backgroundColor: "background.paper",
+                backdropFilter: "blur(12px)",
+                border: "1px solid var(--border-color)",
+                borderRadius: 2,
+                boxShadow: "0 12px 40px rgba(0, 0, 0, 0.2)",
+                py: 0.5,
+              }}
+              className="scrollbar-thin"
             >
-              <X size={14} />
-            </IconButton>
-          )}
-        </Box>
-
-        <DialogContent sx={{ p: 0, height: 480, display: "flex" }}>
-          {/* Vertical Category Tabs */}
-          {!macroSearchQuery && (
-            <Tabs
-            orientation="vertical"
-            value={activeCategoryTab}
-            onChange={(e, val) => setActiveCategoryTab(val)}
-            variant="scrollable"
-            sx={{
-              borderRight: "1px solid var(--border-color)",
-              minWidth: 180,
-              backgroundColor: "rgba(255, 255, 255, 0.01)",
-              "& .MuiTabs-indicator": {
-                left: 0,
-                right: "auto",
-                backgroundColor: "var(--primary-color)",
-                width: 3,
-              },
-              "& .MuiTab-root": {
-                fontFamily: '"Outfit", sans-serif',
-                fontWeight: 600,
-                fontSize: "13px",
-                textTransform: "none",
-                alignItems: "flex-start",
-                textAlign: "left",
-                py: 2,
-                px: 2.5,
-                color: "text.secondary",
-                minHeight: 48,
-                justifyContent: "flex-start",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.02)",
-                "&.Mui-selected": {
-                  color: "var(--primary-color)",
-                  backgroundColor: "rgba(139, 92, 246, 0.05)",
-                },
-                "&:hover": {
-                  color: "text.primary",
-                  backgroundColor: "rgba(255, 255, 255, 0.02)",
-                }
-              }
-            }}
-          >
-            <Tab label="Text & Lists" value="text" icon={<Type size={16} />} iconPosition="start" />
-            <Tab label="Layout & Media" value="layout" icon={<Columns2 size={16} />} iconPosition="start" />
-            <Tab label="Callouts & Details" value="callouts" icon={<Info size={16} />} iconPosition="start" />
-            <Tab label="Task & Status" value="tasks" icon={<ListTodo size={16} />} iconPosition="start" />
-            <Tab label="Advanced Macros" value="advanced" icon={<Layers size={16} />} iconPosition="start" />
-          </Tabs>
-          )}
-
-          {/* Macro Cards Grid */}
-          <Box sx={{ 
-            flex: 1, 
-            p: 3, 
-            overflowY: "auto", 
-            display: "grid", 
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            alignContent: "start",
-            gap: 1.5,
-            backgroundColor: "rgba(0, 0, 0, 0.05)"
-          }} className="scrollbar-thin">
-            {commands
-              .filter(cmd => {
-                const matchesSearch = cmd.label.toLowerCase().includes(macroSearchQuery.toLowerCase()) ||
-                                      cmd.description.toLowerCase().includes(macroSearchQuery.toLowerCase());
-                if (macroSearchQuery) {
-                  return matchesSearch;
-                }
-                return cmd.category === activeCategoryTab;
-              })
-              .map((cmd) => {
-                const isFav = favorites.includes(cmd.id);
-                return (
-                  <Box
-                    key={cmd.id}
-                    onClick={() => {
-                      cmd.action(editor);
-                      setMacroSelectorOpen(false);
-                    }}
+              {menuMode === "slash" ? (
+                <>
+                  <Typography
+                    variant="caption"
                     sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      p: 2,
-                      borderRadius: "10px",
-                      border: "1px solid var(--border-color)",
-                      backgroundColor: "var(--panel-color)",
-                      cursor: "pointer",
-                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": {
-                        borderColor: "var(--primary-color)",
-                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)",
-                        transform: "translateY(-1px)",
-                        backgroundColor: "rgba(139, 92, 246, 0.02)",
-                        "& .macro-icon-box": {
-                          backgroundColor: "rgba(139, 92, 246, 0.15)",
-                          borderColor: "rgba(139, 92, 246, 0.3)"
-                        }
-                      }
+                      px: 2,
+                      py: 1,
+                      display: "block",
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      color: "text.disabled",
+                      textTransform: "uppercase",
+                      fontSize: "9px",
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-                      {/* Macro Icon Container */}
-                      <Box className="macro-icon-box" sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: "8px",
+                    Basic Blocks & Macros
+                  </Typography>
+
+                  {filteredCommands.map((cmd, idx) => (
+                    <Box
+                      key={cmd.id}
+                      id={`slash-menu-item-${idx}`}
+                      onClick={() => executeCommand(cmd)}
+                      sx={{
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
-                        border: "1px solid var(--border-color)",
-                        color: "text.primary",
-                        transition: "all 0.2s ease"
-                      }}>
-                        {cmd.icon}
-                      </Box>
-                      {/* Title & Description Card */}
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", fontFamily: '"Outfit", sans-serif', fontSize: "13.5px" }}>
-                          {cmd.label}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "11.5px" }}>
-                          {cmd.description}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    {/* Star Favorite Toggle */}
-                    <Tooltip title={isFav ? "Remove from Favorites" : "Pin to Toolbar Favorites"} arrow>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => toggleFavorite(cmd.id, e)}
-                        sx={{
-                          color: isFav ? "#fbbf24" : "text.disabled",
-                          "&:hover": {
-                            color: "#fbbf24",
-                            backgroundColor: "rgba(251, 191, 36, 0.08)"
-                          }
-                        }}
-                      >
-                        <Star size={16} fill={isFav ? "#fbbf24" : "none"} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                );
-              })}
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Table Creator Dialog */}
-      <TableCreatorDialog
-        open={tableCreatorOpen}
-        onClose={() => setTableCreatorOpen(false)}
-        onSubmit={handleInsertTable}
-      />
-
-      {/* Lorem Ipsum Generator Dialog */}
-      <Dialog
-        open={loremDialogOpen}
-        onClose={() => setLoremDialogOpen(false)}
-        slotProps={{
-          paper: {
-            className: "glass-card",
-            sx: {
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--panel-color)",
-              color: "var(--text-primary)",
-              borderRadius: "12px",
-              p: 2,
-              minWidth: 320,
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 700, pb: 1 }}>
-          Generate Lorem Ipsum
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ fontFamily: '"Outfit", sans-serif', color: "text.secondary", mb: 3 }}>
-            Choose the number of paragraphs to generate and insert at the cursor:
-          </DialogContentText>
-          <Box sx={{ display: "flex", gap: 1.5, justifyContent: "center" }}>
-            {[1, 2, 3, 4, 5].map((num) => (
-              <Button
-                key={num}
-                variant="outlined"
-                onClick={() => {
-                  insertLoremIpsum(num);
-                  setLoremDialogOpen(false);
-                }}
-                sx={{
-                  fontFamily: '"Outfit", sans-serif',
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  minWidth: "48px",
-                  height: "40px",
-                  borderColor: "var(--border-color)",
-                  color: "var(--text-primary)",
-                  borderRadius: "8px",
-                  transition: "all 0.15s ease",
-                  "&:hover": {
-                    borderColor: "var(--primary-color)",
-                    backgroundColor: "rgba(139, 92, 246, 0.08)",
-                    transform: "translateY(-1px)"
-                  }
-                }}
-              >
-                {num}
-              </Button>
-            ))}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 1 }}>
-          <Button 
-            onClick={() => setLoremDialogOpen(false)} 
-            sx={{ 
-              fontFamily: '"Outfit", sans-serif', 
-              color: "text.secondary",
-              fontWeight: 500,
-              fontSize: "12.5px"
-            }}
-          >
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Table Contextual Bubble Toolbar */}
-      {editor && !previewVersion && isEditing && <TableBubbleToolbar editor={editor} />}
-
-      {/* AI Assistant Inline Prompt Bar */}
-      {editor && !previewVersion && (
-        <AIPromptBar
-          editor={editor}
-          open={aiPromptOpen}
-          onClose={() => setAiPromptOpen(false)}
-        />
-      )}
-
-      {/* Symbol Picker Popover */}
-      {editor && !previewVersion && (
-        <Popover
-          anchorEl={symbolMenuAnchorEl}
-          open={Boolean(symbolMenuAnchorEl)}
-          onClose={() => setSymbolMenuAnchorEl(null)}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
-          }}
-          slotProps={{
-            paper: {
-              className: "glass-card",
-              sx: {
-                p: 1,
-                mt: 0.5,
-                border: "1px solid var(--border-color)",
-                backgroundColor: "var(--panel-color)",
-                color: "text.primary",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-                width: 220,
-              }
-            }
-          }}
-        >
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 0.5 }}>
-            {[
-              "→", "←", "↑", "↓", "↔", "⇒", "⇐", "⇔",
-              "≠", "≈", "≤", "≥", "±", "×", "÷", "∞", "∑", "∏", "√", "∂", "∆", "µ", "π", "Ω",
-              "¢", "£", "€", "¥", "©", "®", "™", "§", "¶", "•", "✔", "✘", "★", "✰", "✦", "▲", "▼"
-            ].map(sym => (
-              <IconButton
-                key={sym}
-                size="small"
-                onClick={() => {
-                  editor.chain().focus().insertContent(sym).run();
-                  setSymbolMenuAnchorEl(null);
-                }}
-                sx={{
-                  fontSize: "13px",
-                  p: 0.5,
-                  minWidth: 0,
-                  color: "text.primary",
-                  borderRadius: "4px",
-                  "&:hover": { backgroundColor: "rgba(139, 92, 246, 0.15)", color: "var(--primary-color)" }
-                }}
-              >
-                {sym}
-              </IconButton>
-            ))}
-          </Box>
-        </Popover>
-      )}
-
-      {/* Version History Drawer */}
-      <Drawer
-        anchor="right"
-        open={historyOpen}
-        onClose={() => handleToggleHistory()}
-        variant="temporary"
-        slotProps={{
-          backdrop: {
-            sx: {
-              backdropFilter: "blur(2px)",
-              backgroundColor: "rgba(0, 0, 0, 0.2)",
-            },
-          },
-          paper: {
-            className: "glass-sidebar",
-            sx: {
-              width: 360,
-              borderLeft: "1px solid var(--border-color)",
-              color: "var(--text-primary)",
-              display: "flex",
-              flexDirection: "column",
-              height: "100%",
-              backgroundColor: "var(--panel-color)",
-            },
-          },
-        }}
-      >
-        {/* Drawer Header */}
-        <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border-color)" }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>
-            Version History
-          </Typography>
-          <IconButton onClick={() => handleToggleHistory()} sx={{ color: "text.secondary" }}>
-            <X size={16} />
-          </IconButton>
-        </Box>
-
-        {/* Create Milestone Section */}
-        <Box sx={{ p: 2, borderBottom: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: 1 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", fontSize: "9px", color: "text.disabled", letterSpacing: "0.05em" }}>
-            Create Milestone Checkpoint
-          </Typography>
-          <Box component="form" onSubmit={handleCreateMilestone} sx={{ display: "flex", gap: 1 }}>
-            <InputBase
-              value={milestoneSummary}
-              onChange={(e) => setMilestoneSummary(e.target.value)}
-              placeholder="E.g., Final Draft, V1 Release..."
-              sx={{
-                flex: 1,
-                fontSize: "12px",
-                px: 1.5,
-                py: 0.75,
-                borderRadius: "6px",
-                backgroundColor: "var(--bg-color)",
-                border: "1px solid var(--border-color)",
-                color: "text.primary",
-                "& input::placeholder": { color: "text.disabled", opacity: 0.6 }
-              }}
-            />
-            <Button
-              type="submit"
-              disabled={isSavingMilestone || !milestoneSummary.trim()}
-              variant="contained"
-              size="small"
-              sx={{
-                fontSize: "10px",
-                fontWeight: 600,
-                px: 1.5,
-                py: 0.75,
-                borderRadius: "6px",
-                boxShadow: "none"
-              }}
-            >
-              {isSavingMilestone ? "Saving..." : "Save"}
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Versions Timeline List */}
-        <Box sx={{ flex: 1, overflowY: "auto", p: 2 }} className="scrollbar-thin">
-          {loadingVersions ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : versions.length > 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {versions.map((v, idx) => {
-                const isCurrentPreview = previewVersion?.id === v.id;
-                const isLiveChanges = v.versionNumber === -1;
-                const formattedDate = new Date(v.createdAt).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit"
-                });
-
-                return (
-                  <Box
-                    key={v.id}
-                    sx={{
-                      position: "relative",
-                      pl: 2.5,
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        left: 4,
-                        top: 10,
-                        bottom: idx === versions.length - 1 ? 0 : -20,
-                        width: "1.5px",
-                        backgroundColor: "var(--border-color)",
-                        display: idx === versions.length - 1 ? "none" : "block",
-                      }
-                    }}
-                  >
-                    {/* Timeline node dot */}
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: 0,
-                        top: 4,
-                        width: 9,
-                        height: 9,
-                        borderRadius: "50%",
-                        backgroundColor: isLiveChanges ? "#10b981" : (isCurrentPreview ? "var(--primary-color)" : "var(--border-color)"),
-                        border: (isLiveChanges || isCurrentPreview) ? "2.5px solid var(--panel-color)" : "1.5px solid var(--panel-color)",
-                        boxShadow: isLiveChanges 
-                          ? "0 0 0 2px rgba(16, 185, 129, 0.4)" 
-                          : (isCurrentPreview ? "0 0 0 2px var(--primary-color)" : "none"),
-                        zIndex: 2,
-                        animation: isLiveChanges ? "live-pulse 2s infinite" : "none",
-                        transition: "all 0.15s ease"
-                      }}
-                    />
-
-                    {/* Version Card */}
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "8px",
-                        backgroundColor: isCurrentPreview 
-                          ? "color-mix(in srgb, var(--primary-color) 8%, transparent)" 
-                          : (isLiveChanges ? "rgba(16, 185, 129, 0.04)" : "rgba(255, 255, 255, 0.02)"),
-                        border: isCurrentPreview 
-                          ? "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)" 
-                          : (isLiveChanges ? "1px solid rgba(16, 185, 129, 0.25)" : "1px solid var(--border-color)"),
+                        gap: 1.5,
+                        py: 0.75,
+                        px: 2,
+                        mx: 0.5,
+                        my: 0.25,
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        backgroundColor:
+                          idx === selectedIndex
+                            ? "color-mix(in srgb, var(--primary-color) 12%, transparent)"
+                            : "transparent",
+                        color:
+                          idx === selectedIndex
+                            ? "text.primary"
+                            : "text.secondary",
                         "&:hover": {
-                          borderColor: isCurrentPreview 
-                            ? "color-mix(in srgb, var(--primary-color) 35%, transparent)"
-                            : (isLiveChanges ? "rgba(16, 185, 129, 0.4)" : "color-mix(in srgb, var(--text-primary) 12%, transparent)"),
-                          backgroundColor: isCurrentPreview 
-                            ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
-                            : (isLiveChanges ? "rgba(16, 185, 129, 0.06)" : "rgba(255, 255, 255, 0.04)")
+                          backgroundColor:
+                            idx === selectedIndex
+                              ? "color-mix(in srgb, var(--primary-color) 18%, transparent)"
+                              : "action.hover",
+                          color: "text.primary",
                         },
                         transition: "all 0.15s ease",
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-                        <Typography sx={{ 
-                          fontSize: "12px", 
-                          fontWeight: 700, 
-                          fontFamily: '"Outfit", sans-serif',
-                          color: isLiveChanges ? "#10b981" : "inherit"
-                        }}>
-                          {isLiveChanges ? "Live Changes" : (v.changeSummary || "Auto-saved snapshot")}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", ml: "auto" }}>
-                          {formattedDate}
-                        </Typography>
+                      <Box
+                        sx={{
+                          backgroundColor: "var(--bg-color)",
+                          border: "1px solid var(--border-color)",
+                          p: 0.75,
+                          borderRadius: 1.5,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color:
+                            idx === selectedIndex ? "primary.light" : "inherit",
+                        }}
+                      >
+                        {cmd.icon}
                       </Box>
-
-                      {!isLiveChanges && (
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.25, fontSize: "10px" }}>
-                          Version {v.versionNumber} • Edited by {v.createdBy || "Anonymous"}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, fontSize: "12.5px" }}
+                        >
+                          {cmd.label}
                         </Typography>
-                      )}
-
-                      {isLiveChanges && (
-                        <Box
-                          sx={{
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: "4px",
-                            backgroundColor: "rgba(16, 185, 129, 0.08)",
-                            border: "1px solid rgba(16, 185, 129, 0.15)",
-                            mb: 1.5,
-                          }}
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "text.disabled", fontSize: "10px" }}
+                          noWrap
                         >
-                          <Typography sx={{ fontSize: "10px", fontWeight: 600, color: "#10b981" }}>
-                            Unsaved Local Edits
-                          </Typography>
-                        </Box>
-                      )}
-
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Button
-                          size="small"
-                          variant={isCurrentPreview ? "contained" : "outlined"}
-                          onClick={() => setPreviewVersion(isCurrentPreview ? null : v)}
-                          sx={{
-                            fontSize: "9px",
-                            py: 0.25,
-                            px: 1,
-                            height: 22,
-                            borderRadius: "4px",
-                            boxShadow: "none",
-                            color: isLiveChanges && !isCurrentPreview ? "#10b981" : "white",
-                            borderColor: isLiveChanges && !isCurrentPreview ? "rgba(16, 185, 129, 0.3)" : "rgba(255, 255, 255, 0.15)",
-                            "&:hover": {
-                              borderColor: isLiveChanges ? "#10b981" : "rgba(255, 255, 255, 0.3)",
-                              backgroundColor: isLiveChanges && !isCurrentPreview ? "rgba(16, 185, 129, 0.05)" : "rgba(255, 255, 255, 0.05)",
-                            }
-                          }}
-                        >
-                          {isCurrentPreview ? "Viewing" : "Preview"}
-                        </Button>
-                        {!isLiveChanges && (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => handleRestoreVersion(v)}
-                            sx={{
-                              fontSize: "9px",
-                              py: 0.25,
-                              px: 1,
-                              height: 22,
-                              borderRadius: "4px",
-                              color: "text.secondary",
-                              borderColor: "var(--border-color)",
-                              "&:hover": {
-                                color: "primary.light",
-                                borderColor: "var(--primary-color)"
-                              }
-                            }}
-                          >
-                            Restore
-                          </Button>
-                        )}
+                          {cmd.description}
+                        </Typography>
                       </Box>
                     </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-          ) : (
-            <Box sx={{ py: 6, textAlign: "center", color: "text.disabled" }}>
-              <Typography variant="body2">
-                No versions recorded yet.
-              </Typography>
-              <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-                Versions are captured automatically every 5 minutes during editing, or on user handover.
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </Drawer>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      display: "block",
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      color: "text.disabled",
+                      textTransform: "uppercase",
+                      fontSize: "9px",
+                    }}
+                  >
+                    Team Members
+                  </Typography>
+
+                  {filteredUsers.map((user, idx) => (
+                    <Box
+                      key={user.id}
+                      id={`slash-menu-item-${idx}`}
+                      onClick={() => executeUserSelect(user)}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        py: 0.75,
+                        px: 2,
+                        mx: 0.5,
+                        my: 0.25,
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        backgroundColor:
+                          idx === selectedIndex
+                            ? "color-mix(in srgb, var(--primary-color) 12%, transparent)"
+                            : "transparent",
+                        color:
+                          idx === selectedIndex
+                            ? "text.primary"
+                            : "text.secondary",
+                        "&:hover": {
+                          backgroundColor:
+                            idx === selectedIndex
+                              ? "color-mix(in srgb, var(--primary-color) 18%, transparent)"
+                              : "action.hover",
+                          color: "text.primary",
+                        },
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <Users
+                        size={15}
+                        style={{
+                          color:
+                            idx === selectedIndex
+                              ? "var(--primary-color)"
+                              : "inherit",
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          minWidth: 0,
+                          flex: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, fontSize: "12.5px" }}
+                        >
+                          @{user.username}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </>
+              )}
+            </Paper>
+          </ClickAwayListener>
+        )}
+
+      {/* Macro Chooser Dialog */}
+      <EditorMacroDialog
+        macroSelectorOpen={macroSelectorOpen}
+        setMacroSelectorOpen={setMacroSelectorOpen}
+        macroSearchQuery={macroSearchQuery}
+        setMacroSearchQuery={setMacroSearchQuery}
+        activeCategoryTab={activeCategoryTab}
+        setActiveCategoryTab={setActiveCategoryTab}
+        commands={commands}
+        editor={editor}
+        toggleFavorite={toggleFavorite}
+        favorites={favorites}
+      />
+
+      {/* Version History Drawer */}
+      <EditorHistoryDrawer
+        historyOpen={historyOpen}
+        handleToggleHistory={handleToggleHistory}
+        loadingVersions={loadingVersions}
+        versions={versions}
+        previewVersion={previewVersion}
+        setPreviewVersion={setPreviewVersion}
+        handleRestoreVersion={handleRestoreVersion}
+        milestoneSummary={milestoneSummary}
+        setMilestoneSummary={setMilestoneSummary}
+        handleCreateMilestone={handleCreateMilestone}
+        isSavingMilestone={isSavingMilestone}
+      />
 
       {/* Page Analytics Dialog */}
-      <Dialog
-        open={analyticsOpen}
-        onClose={() => setAnalyticsOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          backdrop: {
-            sx: {
-              backdropFilter: "blur(4px)",
-              backgroundColor: "rgba(0, 0, 0, 0.4)"
-            }
-          },
-          paper: {
-            className: "glass-card",
-            sx: {
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--panel-color)",
-              color: "text.primary",
-              borderRadius: "12px",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
-              p: 3,
-            }
-          }
-        }}
-      >
-        {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <Box 
-              sx={{ 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                width: 32, 
-                height: 32, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(139, 92, 246, 0.12)",
-                color: "var(--primary-color)" 
-              }}
-            >
-              <BarChart2 size={18} />
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
-              Page Analytics
-            </Typography>
-          </Box>
-          <IconButton onClick={() => setAnalyticsOpen(false)} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}>
-            <X size={18} />
-          </IconButton>
-        </Box>
-
-        {/* Dialog Content */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          
-          {/* Grid of KPI Cards */}
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
-            {/* Words */}
-            <Box 
-              data-testid="kpi-words"
-              sx={{ 
-                p: 1.75, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(255, 255, 255, 0.02)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#8b5cf6" }}>
-                <FileText size={16} />
-                <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 600 }}>Words</Typography>
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
-                {getDocumentStats().words}
-              </Typography>
-            </Box>
-
-            {/* Characters */}
-            <Box 
-              data-testid="kpi-chars"
-              sx={{ 
-                p: 1.75, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(255, 255, 255, 0.02)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#06b6d4" }}>
-                <Type size={16} />
-                <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 600 }}>Chars</Typography>
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
-                {getDocumentStats().characters}
-              </Typography>
-            </Box>
-
-            {/* Est. Read Time */}
-            <Box 
-              data-testid="kpi-read-time"
-              sx={{ 
-                p: 1.75, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(255, 255, 255, 0.02)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#10b981" }}>
-                <Clock size={16} />
-                <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 600 }}>Read Time</Typography>
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', display: "flex", alignItems: "baseline", gap: 0.5 }}>
-                {getDocumentStats().readTime} <Typography variant="caption" sx={{ fontSize: "10px", color: "text.secondary", fontWeight: 600 }}>min</Typography>
-              </Typography>
-            </Box>
-
-            {/* Online Users */}
-            <Box 
-              data-testid="kpi-online"
-              sx={{ 
-                p: 1.75, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(255, 255, 255, 0.02)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 1
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", color: "#f59e0b" }}>
-                <Users size={16} />
-                <Typography variant="caption" sx={{ color: "text.disabled", fontWeight: 600 }}>Online</Typography>
-              </Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
-                {uniqueActiveUsers.length || 1}
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Block Composition Bar Chart */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "text.disabled", letterSpacing: "0.05em" }}>
-              Content Composition
-            </Typography>
-            
-            {/* Horizontal Stacked Bar */}
-            <Box sx={{ 
-              height: 10, 
-              borderRadius: "5px", 
-              width: "100%", 
-              backgroundColor: "rgba(255,255,255,0.03)", 
-              display: "flex", 
-              overflow: "hidden" 
-            }}>
-              {/* Paragraphs */}
-              {getDocumentStats().blocks.paragraphs > 0 && (
-                <Tooltip title={`Paragraphs: ${getDocumentStats().blocks.paragraphs}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.paragraphs / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#a78bfa" }} />
-                </Tooltip>
-              )}
-              {/* Headings */}
-              {getDocumentStats().blocks.headings > 0 && (
-                <Tooltip title={`Headings: ${getDocumentStats().blocks.headings}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.headings / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#38bdf8" }} />
-                </Tooltip>
-              )}
-              {/* Tables */}
-              {getDocumentStats().blocks.tables > 0 && (
-                <Tooltip title={`Tables: ${getDocumentStats().blocks.tables}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.tables / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#34d399" }} />
-                </Tooltip>
-              )}
-              {/* Tasks */}
-              {getDocumentStats().blocks.tasks > 0 && (
-                <Tooltip title={`Tasks: ${getDocumentStats().blocks.tasks}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.tasks / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#facc15" }} />
-                </Tooltip>
-              )}
-              {/* Callouts */}
-              {getDocumentStats().blocks.callouts > 0 && (
-                <Tooltip title={`Callout Panels: ${getDocumentStats().blocks.callouts}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.callouts / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#fb923c" }} />
-                </Tooltip>
-              )}
-              {/* Images */}
-              {getDocumentStats().blocks.images > 0 && (
-                <Tooltip title={`Images: ${getDocumentStats().blocks.images}`}>
-                  <Box sx={{ width: `${(getDocumentStats().blocks.images / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#f472b6" }} />
-                </Tooltip>
-              )}
-              {/* Status / Dates */}
-              {(getDocumentStats().blocks.statuses + getDocumentStats().blocks.dates) > 0 && (
-                <Tooltip title={`Status/Date Chips: ${getDocumentStats().blocks.statuses + getDocumentStats().blocks.dates}`}>
-                  <Box sx={{ width: `${((getDocumentStats().blocks.statuses + getDocumentStats().blocks.dates) / (Object.values(getDocumentStats().blocks).reduce((a, b) => a + b, 0) || 1)) * 100}%`, height: "100%", backgroundColor: "#94a3b8" }} />
-                </Tooltip>
-              )}
-            </Box>
-
-            {/* Legend Grid */}
-            <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, mt: 0.5 }}>
-              <LegendItem color="#a78bfa" label="Paragraphs" count={getDocumentStats().blocks.paragraphs} />
-              <LegendItem color="#38bdf8" label="Headings" count={getDocumentStats().blocks.headings} />
-              <LegendItem color="#34d399" label="Tables" count={getDocumentStats().blocks.tables} />
-              <LegendItem color="#facc15" label="Tasks" count={getDocumentStats().blocks.tasks} />
-              <LegendItem color="#fb923c" label="Callouts" count={getDocumentStats().blocks.callouts} />
-              <LegendItem color="#f472b6" label="Media" count={getDocumentStats().blocks.images} />
-              <LegendItem color="#94a3b8" label="Chips" count={getDocumentStats().blocks.statuses + getDocumentStats().blocks.dates} />
-            </Box>
-          </Box>
-
-
-          {/* Traffic Sparklines (Last 7 Days) */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", fontSize: "9.5px", color: "text.disabled", letterSpacing: "0.05em" }}>
-                Page Views & Visitors (Last 7 Days)
-              </Typography>
-              {!loadingAnalytics && analyticsData && (
-                <Typography variant="caption" sx={{ 
-                  color: (analyticsData.trendPercentage ?? 0) >= 0 ? "#10b981" : "#ef4444", 
-                  fontWeight: 600, 
-                  fontSize: "10.5px" 
-                }}>
-                  {(analyticsData.trendPercentage ?? 0) >= 0 ? `+${(analyticsData.trendPercentage ?? 0).toFixed(0)}%` : `${(analyticsData.trendPercentage ?? 0).toFixed(0)}%`} this week
-                </Typography>
-              )}
-            </Box>
-            
-            {loadingAnalytics ? (
-              <Box sx={{ 
-                height: 150, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(0, 0, 0, 0.15)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1.5
-              }}>
-                <CircularProgress size={24} sx={{ color: "var(--primary-color)" }} />
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>Loading traffic trend...</Typography>
-              </Box>
-            ) : !analyticsData ? (
-              <Box sx={{ 
-                height: 150, 
-                borderRadius: "8px", 
-                backgroundColor: "rgba(0, 0, 0, 0.15)", 
-                border: "1px solid var(--border-color)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <Typography variant="caption" sx={{ color: "text.disabled" }}>Failed to load traffic analytics.</Typography>
-              </Box>
-            ) : (() => {
-              const history = analyticsData.history || [];
-              const maxVal = Math.max(...history.map(h => Math.max(h.views, h.uniqueVisitors)), 10);
-
-              const viewsPoints = history.map((pt, i) => {
-                const x = 10 + i * 80;
-                const y = 106 - ((pt.views / maxVal) * 86);
-                return { x, y };
-              });
-
-              const visitorsPoints = history.map((pt, i) => {
-                const x = 10 + i * 80;
-                const y = 106 - ((pt.uniqueVisitors / maxVal) * 86);
-                return { x, y };
-              });
-
-              const viewsPath = viewsPoints.length > 0 
-                ? `M ${viewsPoints.map(p => `${p.x} ${p.y}`).join(' L ')}` 
-                : "";
-              const visitorsPath = visitorsPoints.length > 0 
-                ? `M ${visitorsPoints.map(p => `${p.x} ${p.y}`).join(' L ')}` 
-                : "";
-
-              const viewsAreaPath = viewsPoints.length > 0 
-                ? `M 10 120 L ${viewsPoints.map(p => `${p.x} ${p.y}`).join(' L ')} L 490 120 Z` 
-                : "";
-              const visitorsAreaPath = visitorsPoints.length > 0 
-                ? `M 10 120 L ${visitorsPoints.map(p => `${p.x} ${p.y}`).join(' L ')} L 490 120 Z` 
-                : "";
-
-              const formatDateLabel = (dateStr: string, isToday: boolean) => {
-                if (isToday) return "Today";
-                const parts = dateStr.split("-");
-                if (parts.length === 3) {
-                  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                  const monthIdx = parseInt(parts[1], 10) - 1;
-                  const day = parseInt(parts[2], 10);
-                  if (monthIdx >= 0 && monthIdx < 12) {
-                    return `${months[monthIdx]} ${day}`;
-                  }
-                }
-                return dateStr;
-              };
-
-              return (
-                <Box sx={{ 
-                  p: 2, 
-                  borderRadius: "8px", 
-                  backgroundColor: "rgba(0, 0, 0, 0.15)", 
-                  border: "1px solid var(--border-color)",
-                  position: "relative" 
-                }}>
-                  <svg viewBox="0 0 500 120" style={{ width: "100%", height: "110px", display: "block" }}>
-                    <defs>
-                      <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.4"/>
-                        <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0.0"/>
-                      </linearGradient>
-                      <linearGradient id="visitorsGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.4"/>
-                        <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0"/>
-                      </linearGradient>
-                    </defs>
-
-                    <line x1="0" y1="20" x2="500" y2="20" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-                    <line x1="0" y1="55" x2="500" y2="55" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-                    <line x1="0" y1="90" x2="500" y2="90" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-
-                    {viewsAreaPath && <path d={viewsAreaPath} fill="url(#viewsGrad)" />}
-                    {visitorsAreaPath && <path d={visitorsAreaPath} fill="url(#visitorsGrad)" />}
-
-                    {viewsPath && (
-                      <path 
-                        d={viewsPath} 
-                        fill="none" 
-                        stroke="var(--primary-color)" 
-                        strokeWidth="2.5" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        style={{ filter: "drop-shadow(0 2px 8px rgba(139, 92, 246, 0.4))" }}
-                      />
-                    )}
-
-                    {visitorsPath && (
-                      <path 
-                        d={visitorsPath} 
-                        fill="none" 
-                        stroke="#06b6d4" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        style={{ filter: "drop-shadow(0 2px 8px rgba(6, 182, 212, 0.4))" }}
-                      />
-                    )}
-
-                    {viewsPoints.length > 0 && (
-                      <circle cx={viewsPoints[viewsPoints.length - 1].x} cy={viewsPoints[viewsPoints.length - 1].y} r="4" fill="var(--primary-color)" stroke="#ffffff" strokeWidth="1.5" />
-                    )}
-                    {visitorsPoints.length > 0 && (
-                      <circle cx={visitorsPoints[visitorsPoints.length - 1].x} cy={visitorsPoints[visitorsPoints.length - 1].y} r="3.5" fill="#06b6d4" stroke="#ffffff" strokeWidth="1" />
-                    )}
-
-                    {history.map((pt, idx) => {
-                      const x = 10 + idx * 80;
-                      const isLast = idx === history.length - 1;
-                      const textX = isLast ? x - 18 : x - 12;
-                      return (
-                        <text key={idx} x={textX} y="118" fill="rgba(255,255,255,0.3)" fontSize="8.5" fontFamily='"Outfit", sans-serif'>
-                          {formatDateLabel(pt.date, isLast)}
-                        </text>
-                      );
-                    })}
-                  </svg>
-                  
-                  <Box sx={{ display: "flex", gap: 3, mt: 1, px: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--primary-color)" }} />
-                      <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
-                        {analyticsData.totalViews.toLocaleString()} <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>Views</span>
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#06b6d4" }} />
-                      <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>
-                        {analyticsData.totalVisitors.toLocaleString()} <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>Unique Visitors</span>
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              );
-            })()}
-          </Box>
-        </Box>
-      </Dialog>
-
-
+      <EditorAnalyticsDialog
+        analyticsOpen={analyticsOpen}
+        setAnalyticsOpen={setAnalyticsOpen}
+        loadingAnalytics={loadingAnalytics}
+        analyticsData={analyticsData}
+        getDocumentStats={getDocumentStats}
+        LegendItem={LegendItem}
+        uniqueActiveUsers={uniqueActiveUsers}
+      />
 
       {/* Commit Checkpoint Modal */}
       <Dialog
@@ -4265,16 +3309,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             border: "1px solid var(--border-color)",
             borderRadius: "12px",
             color: "text.primary",
-            p: 1
-          }
+            p: 1,
+          },
         }}
       >
-        <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
+        <DialogTitle
+          sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}
+        >
           Save Version Checkpoint
         </DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <DialogContentText sx={{ color: "text.secondary", fontSize: "13px", mb: 1 }}>
-            Describe your changes to create a named checkpoint in the document version history.
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+        >
+          <DialogContentText
+            sx={{ color: "text.secondary", fontSize: "13px", mb: 1 }}
+          >
+            Describe your changes to create a named checkpoint in the document
+            version history.
           </DialogContentText>
           <InputBase
             autoFocus
@@ -4294,11 +3345,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               py: 1,
               mb: 1,
               "&:hover": { borderColor: "rgba(255,255,255,0.2)" },
-              "&.Mui-focused": { 
+              "&.Mui-focused": {
                 borderColor: "var(--primary-color)",
-                boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)"
+                boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)",
               },
-              transition: "all 0.15s ease"
+              transition: "all 0.15s ease",
             }}
           />
           <Button
@@ -4308,11 +3359,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               if (!editor) return;
               setIsGeneratingSummary(true);
               try {
-                const res = await autogenSummary(activeDocId || "", JSON.stringify(editor.getJSON()), title);
+                const res = await autogenSummary(
+                  activeDocId || "",
+                  JSON.stringify(editor.getJSON()),
+                  title,
+                );
                 setCommitDescription(res.summary);
               } catch (err) {
                 console.error("AI summary failed:", err);
-                alert("AI description generation failed. Using word difference fallback.");
+                alert(
+                  "AI description generation failed. Using word difference fallback.",
+                );
               } finally {
                 setIsGeneratingSummary(false);
               }
@@ -4328,15 +3385,28 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               borderColor: "rgba(139, 92, 246, 0.3)",
               "&:hover": {
                 borderColor: "var(--primary-color)",
-                backgroundColor: "rgba(139, 92, 246, 0.05)"
-              }
+                backgroundColor: "rgba(139, 92, 246, 0.05)",
+              },
             }}
-            startIcon={isGeneratingSummary ? <CircularProgress size={12} color="inherit" /> : <Sparkles size={12} />}
+            startIcon={
+              isGeneratingSummary ? (
+                <CircularProgress size={12} color="inherit" />
+              ) : (
+                <Sparkles size={12} />
+              )
+            }
           >
             {isGeneratingSummary ? "Generating..." : "Auto-generate using AI"}
           </Button>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, display: "flex", justifyContent: "space-between" }}>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
           <Button
             onClick={() => {
               // Skip Checkpoint
@@ -4350,7 +3420,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               fontFamily: '"Outfit", sans-serif',
               fontWeight: 600,
               fontSize: "12px",
-              "&:hover": { color: "text.primary" }
+              "&:hover": { color: "text.primary" },
             }}
           >
             Skip Checkpoint
@@ -4364,7 +3434,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 fontFamily: '"Outfit", sans-serif',
                 fontWeight: 600,
                 fontSize: "12px",
-                "&:hover": { color: "text.primary" }
+                "&:hover": { color: "text.primary" },
               }}
             >
               Cancel
@@ -4387,8 +3457,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 fontSize: "12px",
                 px: 2,
                 "&:hover": {
-                  backgroundColor: "var(--primary-hover)"
-                }
+                  backgroundColor: "var(--primary-hover)",
+                },
               }}
             >
               Publish & Save
@@ -4408,20 +3478,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             border: "1px solid var(--border-color)",
             borderRadius: "12px",
             color: "text.primary",
-            p: 1
-          }
+            p: 1,
+          },
         }}
       >
-        <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
+        <DialogTitle
+          sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}
+        >
           Session Idle Timeout
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ color: "text.secondary", fontSize: "14px" }}>
-            You have been checked out due to 10 minutes of inactivity. Your edits were automatically published and saved as a checkpoint.
+            You have been checked out due to 10 minutes of inactivity. Your
+            edits were automatically published and saved as a checkpoint.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button 
+          <Button
             onClick={() => setIdleToastOpen(false)}
             variant="contained"
             sx={{
@@ -4432,8 +3505,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               fontWeight: 600,
               px: 3,
               "&:hover": {
-                backgroundColor: "var(--primary-hover)"
-              }
+                backgroundColor: "var(--primary-hover)",
+              },
             }}
           >
             Got it
@@ -4456,11 +3529,19 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               color: "text.primary",
               boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
               borderRadius: "12px",
-            }
-          }
+            },
+          },
         }}
       >
-        <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <DialogTitle
+          sx={{
+            fontFamily: '"Outfit", sans-serif',
+            fontWeight: 600,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <span>Document JSON Representation</span>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
@@ -4468,7 +3549,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               size="small"
               onClick={() => {
                 if (editor) {
-                  navigator.clipboard.writeText(JSON.stringify(editor.getJSON(), null, 2));
+                  navigator.clipboard.writeText(
+                    JSON.stringify(editor.getJSON(), null, 2),
+                  );
                 }
               }}
               sx={{
@@ -4477,39 +3560,50 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 borderColor: "rgba(255,255,255,0.08)",
                 color: "text.secondary",
                 textTransform: "none",
-                "&:hover": { borderColor: "rgba(255,255,255,0.15)", backgroundColor: "rgba(255,255,255,0.03)" }
+                "&:hover": {
+                  borderColor: "rgba(255,255,255,0.15)",
+                  backgroundColor: "rgba(255,255,255,0.03)",
+                },
               }}
             >
               Copy JSON
             </Button>
-            <IconButton size="small" onClick={() => setJsonDialogOpen(false)} sx={{ color: "text.disabled" }}>
+            <IconButton
+              size="small"
+              onClick={() => setJsonDialogOpen(false)}
+              sx={{ color: "text.disabled" }}
+            >
               <X size={16} />
             </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "rgba(255,255,255,0.06)", p: 0 }}>
+        <DialogContent
+          dividers
+          sx={{ borderColor: "rgba(255,255,255,0.06)", p: 0 }}
+        >
           <Box
             component="pre"
             sx={{
               p: 2,
               m: 0,
               fontSize: "12px",
-              fontFamily: 'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
+              fontFamily:
+                'Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace',
               backgroundColor: "rgba(0, 0, 0, 0.2)",
               color: "#34d399",
               overflow: "auto",
               maxHeight: "60vh",
               whiteSpace: "pre-wrap",
-              wordBreak: "break-all"
+              wordBreak: "break-all",
             }}
           >
             {editor ? JSON.stringify(editor.getJSON(), null, 2) : "{}"}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, justifyContent: "flex-end" }}>
-          <Button 
-            variant="contained" 
-            size="small" 
+          <Button
+            variant="contained"
+            size="small"
             onClick={() => setJsonDialogOpen(false)}
             sx={{
               fontSize: "11px",
@@ -4518,523 +3612,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               backgroundColor: "var(--primary-color)",
               color: "#ffffff",
               textTransform: "none",
-              "&:hover": { backgroundColor: "var(--primary-hover)" }
+              "&:hover": { backgroundColor: "var(--primary-hover)" },
             }}
           >
             Close
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
-  );
-};
-
-// ==========================================
-// PageComments Component
-// ==========================================
-
-interface PageCommentsProps {
-  docId: string;
-  authToken: string | null;
-  readOnly?: boolean;
-}
-
-const parseJwt = (token: string) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      window.atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-};
-
-const PageComments: React.FC<PageCommentsProps> = ({ docId, authToken, readOnly = false }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [newCommentText, setNewCommentText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [replyToId, setReplyToId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-  const [likesState, setLikesState] = useState<Record<string, { count: number; liked: boolean }>>({});
-
-  const decoded = authToken ? parseJwt(authToken) : null;
-  const currentUserId = decoded ? (decoded.sub || decoded.user_id) : "";
-  const currentUserDisplayName = decoded ? (decoded.name || decoded.username || decoded.preferred_username || "You") : "You";
-
-  const loadComments = async () => {
-    if (!docId) return;
-    setLoading(true);
-    try {
-      const data = await fetchComments(docId);
-      const sorted = [...(data || [])].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      setComments(sorted);
-
-      const initialLikes: Record<string, { count: number; liked: boolean }> = {};
-      sorted.forEach(c => {
-        const count = c.id.charCodeAt(0) % 4;
-        initialLikes[c.id] = { count, liked: false };
-      });
-      setLikesState(initialLikes);
-    } catch (err) {
-      console.error("Failed to fetch comments:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadComments();
-    setNewCommentText("");
-    setReplyToId(null);
-    setReplyText("");
-    setEditingCommentId(null);
-  }, [docId]);
-
-  const handleCreateComment = async () => {
-    if (!newCommentText.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      const created = await createComment(docId, null, newCommentText);
-      setComments(prev => [...prev, created]);
-      setNewCommentText("");
-    } catch (err) {
-      console.error("Failed to post comment:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleCreateReply = async (parentId: string) => {
-    if (!replyText.trim() || submitting) return;
-    setSubmitting(true);
-    try {
-      const created = await createComment(docId, parentId, replyText);
-      setComments(prev => [...prev, created]);
-      setReplyText("");
-      setReplyToId(null);
-    } catch (err) {
-      console.error("Failed to post reply:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUpdateComment = async (id: string) => {
-    if (!editText.trim()) return;
-    try {
-      const updated = await updateComment(id, editText);
-      setComments(prev => prev.map(c => c.id === id ? updated : c));
-      setEditingCommentId(null);
-    } catch (err) {
-      console.error("Failed to edit comment:", err);
-    }
-  };
-
-  const handleDeleteComment = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
-    try {
-      await deleteComment(id);
-      setComments(prev => prev.filter(c => c.id !== id && c.parentId !== id));
-    } catch (err) {
-      console.error("Failed to delete comment:", err);
-    }
-  };
-
-  const handleToggleLike = (id: string) => {
-    setLikesState(prev => {
-      const current = prev[id] || { count: 0, liked: false };
-      const nextLiked = !current.liked;
-      const nextCount = nextLiked ? current.count + 1 : Math.max(0, current.count - 1);
-      return {
-        ...prev,
-        [id]: { count: nextCount, liked: nextLiked }
-      };
-    });
-  };
-
-  const topLevelComments = comments.filter(c => !c.parentId);
-  const getReplies = (parentId: string) => comments.filter(c => c.parentId === parentId);
-
-  const formatCommentDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
-  };
-
-  if (loading && comments.length === 0) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-        <CircularProgress size={24} sx={{ color: "var(--primary-color, #8b5cf6)" }} />
-      </Box>
-    );
-  }
-
-  const renderCommentItem = (comment: Comment, isReply = false) => {
-    const isEditingThis = editingCommentId === comment.id;
-    const isAuthor = comment.createdBy === currentUserId;
-    const likesInfo = likesState[comment.id] || { count: 0, liked: false };
-
-    return (
-      <Box 
-        key={comment.id} 
-        sx={{ 
-          display: "flex", 
-          gap: 2, 
-          ml: isReply ? 6 : 0, 
-          mt: 2, 
-          pb: 2,
-          borderBottom: isReply ? "none" : "1px solid var(--border-color)",
-          "&:last-child": {
-            borderBottom: "none"
-          }
-        }}
-      >
-        <UserAvatar 
-          displayName={comment.createdByName}
-          sx={{ 
-            bgcolor: isAuthor ? "var(--primary-color, #8b5cf6)" : "var(--border-color, #e2e8f0)",
-            color: isAuthor ? "#fff" : "text.primary",
-            width: 32, 
-            height: 32, 
-            fontSize: "12px", 
-            fontWeight: 700,
-            border: "1px solid var(--border-color)"
-          }}
-        />
-        <Box sx={{ flex: 1 }}>
-          <Box sx={{ display: "flex", flexDirection: "column" }}>
-            <Typography 
-              sx={{ 
-                color: "var(--primary-color, #8b5cf6)", 
-                fontWeight: 600, 
-                fontSize: "13px",
-                fontFamily: '"Outfit", sans-serif',
-                cursor: "pointer",
-                "&:hover": { textDecoration: "underline" }
-              }}
-            >
-              {comment.createdByName}
-            </Typography>
-            <Typography 
-              sx={{ 
-                color: "text.secondary", 
-                fontSize: "11px",
-                fontFamily: '"Outfit", sans-serif',
-                opacity: 0.8
-              }}
-            >
-              {formatCommentDate(comment.createdAt)}
-            </Typography>
-          </Box>
-
-          {isEditingThis ? (
-            <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
-              <InputBase
-                multiline
-                rows={2}
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                sx={{
-                  width: "100%",
-                  p: 1.5,
-                  borderRadius: 2,
-                  fontSize: "13.5px",
-                  border: "1px solid var(--primary-color, #8b5cf6)",
-                  backgroundColor: "background.paper",
-                  fontFamily: 'inherit',
-                  color: "text.primary"
-                }}
-              />
-              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-                <Button 
-                  size="small" 
-                  onClick={() => setEditingCommentId(null)}
-                  sx={{ textTransform: "none", fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  size="small" 
-                  variant="contained"
-                  onClick={() => handleUpdateComment(comment.id)}
-                  sx={{ 
-                    textTransform: "none", 
-                    fontSize: "12px", 
-                    fontFamily: '"Outfit", sans-serif',
-                    bgcolor: "var(--primary-color, #8b5cf6)",
-                    boxShadow: "none",
-                    "&:hover": { bgcolor: "var(--primary-dark)", boxShadow: "none" }
-                  }}
-                >
-                  Save
-                </Button>
-              </Box>
-            </Box>
-          ) : (
-            <Typography 
-              sx={{ 
-                color: "text.primary", 
-                fontSize: "13.5px", 
-                mt: 1, 
-                whiteSpace: "pre-wrap",
-                fontFamily: 'inherit',
-                lineHeight: 1.5
-              }}
-            >
-              {comment.content}
-            </Typography>
-          )}
-
-          {!isEditingThis && (
-            <Box sx={{ display: "flex", gap: 2, mt: 1, alignItems: "center" }}>
-              {!readOnly && (
-                <Typography 
-                  variant="caption"
-                  onClick={() => {
-                    setReplyToId(comment.id);
-                    setReplyText("");
-                  }}
-                  sx={{ 
-                    cursor: "pointer", 
-                    color: "text.secondary", 
-                    fontSize: "11px",
-                    fontWeight: 500,
-                    userSelect: "none",
-                    "&:hover": { color: "var(--primary-color, #8b5cf6)" }
-                  }}
-                >
-                  Reply
-                </Typography>
-              )}
-
-              {isAuthor && !readOnly && (
-                <>
-                  <Typography 
-                    variant="caption"
-                    onClick={() => {
-                      setEditingCommentId(comment.id);
-                      setEditText(comment.content);
-                    }}
-                    sx={{ 
-                      cursor: "pointer", 
-                      color: "text.secondary", 
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      userSelect: "none",
-                      "&:hover": { color: "var(--primary-color, #8b5cf6)" }
-                    }}
-                  >
-                    Edit
-                  </Typography>
-
-                  <Typography 
-                    variant="caption"
-                    onClick={() => handleDeleteComment(comment.id)}
-                    sx={{ 
-                      cursor: "pointer", 
-                      color: "text.secondary", 
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      userSelect: "none",
-                      "&:hover": { color: "var(--error-color, #ef4444)" }
-                    }}
-                  >
-                    Delete
-                  </Typography>
-                </>
-              )}
-
-              <Typography 
-                variant="caption"
-                onClick={() => handleToggleLike(comment.id)}
-                sx={{ 
-                  cursor: "pointer", 
-                  color: likesInfo.liked ? "var(--primary-color, #8b5cf6)" : "text.secondary", 
-                  fontSize: "11px",
-                  fontWeight: likesInfo.liked ? 700 : 500,
-                  userSelect: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  "&:hover": { color: "var(--primary-color, #8b5cf6)" }
-                }}
-              >
-                Like {likesInfo.count > 0 && `(${likesInfo.count})`}
-              </Typography>
-            </Box>
-          )}
-
-          {replyToId === comment.id && !readOnly && (
-            <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-              <InputBase
-                multiline
-                rows={2}
-                placeholder="Write a reply..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                sx={{
-                  width: "100%",
-                  p: 1.5,
-                  borderRadius: 2,
-                  fontSize: "13.5px",
-                  border: "1px solid var(--border-color)",
-                  backgroundColor: "background.paper",
-                  fontFamily: 'inherit',
-                  color: "text.primary"
-                }}
-              />
-              <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-                <Button 
-                  size="small" 
-                  onClick={() => setReplyToId(null)}
-                  sx={{ textTransform: "none", fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  size="small" 
-                  variant="contained"
-                  disabled={!replyText.trim() || submitting}
-                  onClick={() => handleCreateReply(isReply ? comment.parentId! : comment.id)}
-                  sx={{ 
-                    textTransform: "none", 
-                    fontSize: "12px", 
-                    fontFamily: '"Outfit", sans-serif',
-                    bgcolor: "var(--primary-color, #8b5cf6)",
-                    boxShadow: "none",
-                    "&:hover": { bgcolor: "var(--primary-dark)", boxShadow: "none" }
-                  }}
-                >
-                  Reply
-                </Button>
-              </Box>
-            </Box>
-          )}
-        </Box>
-      </Box>
-    );
-  };
-
-  const totalCount = comments.length;
-
-  return (
-    <Box sx={{ mt: 5, mb: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontSize: "16px", 
-            fontWeight: 700, 
-            color: "text.primary",
-            fontFamily: '"Outfit", sans-serif'
-          }}
-        >
-          {totalCount} Comment{totalCount !== 1 ? "s" : ""}
-        </Typography>
-      </Box>
-      
-      <Divider sx={{ mb: 2, borderColor: "var(--border-color)" }} />
-
-      <Box sx={{ display: "flex", flexDirection: "column" }}>
-        {topLevelComments.map(parent => (
-          <Box key={parent.id}>
-            {renderCommentItem(parent, false)}
-            {getReplies(parent.id).map(reply => renderCommentItem(reply, true))}
-          </Box>
-        ))}
-
-        {totalCount === 0 && (
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: "text.secondary", 
-              py: 2, 
-              fontStyle: "italic",
-              fontSize: "13px",
-              fontFamily: '"Outfit", sans-serif'
-            }}
-          >
-            No comments yet. Be the first to share your thoughts!
-          </Typography>
-        )}
-      </Box>
-
-      {!readOnly ? (
-        <Box sx={{ display: "flex", gap: 2, mt: 4, pt: 3, borderTop: "1px solid var(--border-color)" }}>
-          <UserAvatar 
-            displayName={currentUserDisplayName}
-            sx={{ 
-              bgcolor: "var(--primary-color, #8b5cf6)", 
-              color: "#fff",
-              width: 36, 
-              height: 36, 
-              fontSize: "13px", 
-              fontWeight: 700
-            }}
-          />
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.5 }}>
-            <InputBase
-              multiline
-              rows={2}
-              placeholder="Write a comment..."
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              sx={{
-                width: "100%",
-                p: 2,
-                borderRadius: 2.5,
-                fontSize: "14px",
-                border: "1px solid var(--border-color)",
-                backgroundColor: "background.paper",
-                fontFamily: 'inherit',
-                color: "text.primary",
-                transition: "border-color 0.2s",
-                "&:focus-within": {
-                  borderColor: "var(--primary-color, #8b5cf6)"
-                }
-              }}
-            />
-            {newCommentText.trim() && (
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button
-                  variant="contained"
-                  disabled={submitting}
-                  onClick={handleCreateComment}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 600,
-                    fontFamily: '"Outfit", sans-serif',
-                    bgcolor: "var(--primary-color, #8b5cf6)",
-                    boxShadow: "none",
-                    "&:hover": { bgcolor: "var(--primary-dark)", boxShadow: "none" }
-                  }}
-                >
-                  Post Comment
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </Box>
-      ) : (
-        <Box sx={{ mt: 3, p: 2, borderRadius: 2, bgcolor: "action.disabledBackground", border: "1px dashed var(--border-color)" }}>
-          <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", fontStyle: "italic", fontSize: "13px" }}>
-            Comments are disabled in read-only mode or when the page is in the Trash Bin.
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 };
