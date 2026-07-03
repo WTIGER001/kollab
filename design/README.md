@@ -6,38 +6,38 @@ This directory contains the hierarchical technical specifications of Project Kol
 
 ## 🗂️ Table of Contents
 
-### 🖥️ [1. System Overview & Roadmap](file:///Users/johnbauer/Dev/Personal/arkm/design/system_overview.md)
-*High-level architecture, technology stack details, database indexing strategy, Gantt charts, and deployment roadmaps.*
+### 🖥️ [1. System Architecture Overview](file:///Users/johnbauer/Dev/Personal/kollab/design/01_system_overview.md)
+*High-level architecture, technology stack details, database indexing strategy, and Gantt charts.*
 
-### 🎨 [2. Editor Canvas & Shadow DOM](file:///Users/johnbauer/Dev/Personal/arkm/design/editor_canvas.md)
-*Tiptap headless editor integration, ProseMirror AST structures, collaborative Yjs syncing updates, and Shadow DOM web component lifecycles.*
+### 🎨 [2. Editor Core & Canvas](file:///Users/johnbauer/Dev/Personal/kollab/design/02_editor_core.md)
+*Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 
-### 🔍 [3. Hybrid Search Engine](file:///Users/johnbauer/Dev/Personal/arkm/design/search_engine.md)
-*Postgres pgvector similarity queries, HNSW indexes, Ollama nomic-embed-text HTTP client configurations, and keyword fallback logic.*
+### 🧩 [3. Macros & Plugins](file:///Users/johnbauer/Dev/Personal/kollab/design/03_macros_and_plugins.md)
+*Native rich content macros (Callouts, Status Badges), advanced plugins (Polyglot blocks, Data tables), and external integrations (GitLab).*
 
-### ⏳ [4. Version Control & Restorations](file:///Users/johnbauer/Dev/Personal/arkm/design/version_control.md)
-*Automated snapshot triggers, author handover checks, sandbox preview uncoupling, and WebSocket transclusion restore operations.*
+### 🔍 [4. Hybrid Search & AI Providers](file:///Users/johnbauer/Dev/Personal/kollab/design/04_search_and_ai.md)
+*Postgres pgvector similarity queries, Ollama embedding configurations, keyword fallback logic, and the Multi-Provider LLM adapter.*
 
-### 🛠️ [5. Rich Content Macros](file:///Users/johnbauer/Dev/Personal/arkm/design/rich_content_macros.md)
-*Tiptap node schemas, attribute bindings, HTML parsing rules, and dynamic React node view components (CalloutPanel and InlineStatus).*
+### ⏳ [5. Data Lifecycle & Version Control](file:///Users/johnbauer/Dev/Personal/kollab/design/05_data_lifecycle.md)
+*Version DB schemas, auto-snapshot rules, history restorations, soft deletes, cascading page deletions, and trash recovery.*
 
-### 🗑️ [6. Soft Delete & Restoration](file:///Users/johnbauer/Dev/Personal/arkm/design/trash_undelete.md)
-*Nullable soft deletion columns, cascading recursive CTE database queries, permanent purging, and parent-orphaning restoration checks.*
+### 🔐 [6. Access & Permissions Model](file:///Users/johnbauer/Dev/Personal/kollab/design/06_access_and_permissions.md)
+*Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), go-permissions integration, and Confluence-style hierarchical inheritance.*
 
-### 💬 [7. Document Comments & Threads](file:///Users/johnbauer/Dev/Personal/arkm/design/comments.md)
-*PostgreSQL table schemas, Go service layer domains, CRUD HTTP REST endpoints, OIDC authorization checks, and React nested threads state rendering.*
+### 💾 [7. Import, Export & Media Preview](file:///Users/johnbauer/Dev/Personal/kollab/design/07_import_export_media.md)
+*Word/PDF/HTML serialization, page hierarchy JSON trees, and isolated Media Preview Service architecture.*
 
-### 👤 [8. User Initials Avatar](file:///Users/johnbauer/Dev/Personal/arkm/design/user_avatar.md)
-*Technical specifications, initials calculation algorithm, and interface bindings of the custom UserAvatar component.*
+### 💬 [8. Metadata, Social, & Collaboration](file:///Users/johnbauer/Dev/Personal/kollab/design/08_metadata_and_social.md)
+*Document comments, nested threads, task AST parser synchronization, global tagging, and user avatars.*
 
-### 📋 [9. Task Synchronization & Dashboard](file:///Users/johnbauer/Dev/Personal/arkm/design/tasks.md)
-*Technical specifications of the AST parser, relational schema sync transactions, autocomplete input rules, and urgency layout.*
+### 🏠 [9. Customizable Workspace Homepage](file:///Users/johnbauer/Dev/Personal/kollab/design/09_custom_homepage.md)
+*Dynamic, document-based user dashboard utilizing the Tiptap editor engine and the Workspace Directory Macro.*
 
-### 🏷️ [10. Document Tagging & Labels](file:///Users/johnbauer/Dev/Personal/arkm/design/tags.md)
-*Technical specifications for global tag models, mapping structures, REST endpoints, and the React tags editor.*
+### 🔔 [10. Watch Capabilities & Notifications](file:///Users/johnbauer/Dev/Personal/kollab/design/10_watch_and_notifications.md)
+*Subscription data models, event routing pipelines, WebSocket real-time pushes, and email digest batching.*
 
-### 🔐 [11. Permissions & Access Control](file:///Users/johnbauer/Dev/Personal/arkm/design/permissions.md)
-*Technical specifications for the permissions model, go-permissions integration, role hierarchy inheritance, share link TTLs, ABAC tags, and Zero Trust security controls.*
+### 🏢 [11. Enterprise Publishing, Templates, & Transclusion](file:///Users/johnbauer/Dev/Personal/kollab/design/11_enterprise_publishing_and_templates.md)
+*Draft vs. Published state separation, the Page Blueprint engine, and dynamic content transclusion (Excerpts and Includes).*
 
-
-
+### 🔗 [12. Page Routing and Custom Slugs](file:///Users/johnbauer/Dev/Personal/kollab/design/12_page_routing_and_slugs.md)
+*Dual UUID/Slug URL resolution, title-based auto-generation, global uniqueness constraints, and user-defined nickname overrides.*

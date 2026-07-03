@@ -30,7 +30,7 @@ The user guide is located in the [user_guide/](file:///Users/johnbauer/Dev/Perso
 
 The design specifications are located in the [design/](file:///Users/johnbauer/Dev/Personal/arkm/design/) folder and are organized into modular, technical pages.
 
-*   **Style**: Highly technical, containing type models, JSON payload examples, SQL schemas, block definitions, and sequence diagrams.
+*   **Style**: Highly technical, containing type models, JSON payload examples, SQL schemas, block definitions, and sequence diagrams. Use Mermaidjs syntax for all drawings. 
 *   **Content**: Explain the *why* and the *how* of the engineering design, detailing security boundaries, REST endpoints, and WebSocket updates.
 *   **Hierarchy**:
     *   [design/README.md](file:///Users/johnbauer/Dev/Personal/arkm/design/README.md): Table of contents and index of design specifications.
