@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Info, Sparkles, ChevronRight, Calendar, Code, List as ListIcon, Palette, PenTool } from "lucide-react";
+import { Info, Sparkles, ChevronRight, Calendar, Code, List as ListIcon, Palette, PenTool, LayoutGrid, Layers } from "lucide-react";
 
 export const HelpMacros: React.FC = () => {
   return (
@@ -59,6 +59,28 @@ export const HelpMacros: React.FC = () => {
           <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2, lineHeight: 1.4 }}>
             Collapse lengthy details or code examples. Users can toggle sections open or closed, which is synchronized character-by-character for other co-authors.
           </Typography>
+        </Box>
+
+        {/* Structural Layouts */}
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+          <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              <LayoutGrid size={14} style={{ color: "var(--primary-color)" }} />
+              Cards Grid
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+              Organize content into responsive, auto-wrapping flex-grids of modular cards. Choose from small, medium, or large card sizes.
+            </Typography>
+          </Box>
+          <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              <Layers size={14} style={{ color: "var(--primary-color)" }} />
+              Tabbed Container
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>
+              Segment long blocks of content into an interactive tab panel component. Add, remove, and rename tabs dynamically.
+            </Typography>
+          </Box>
         </Box>
 
         {/* Inline Dates & Monospace Panels */}

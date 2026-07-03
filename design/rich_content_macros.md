@@ -167,7 +167,43 @@ No Format panels render plain unformatted text in a monospace block, ignoring st
 
 ---
 
-## 8. Hierarchical Macros (Children Display & Page Index)
+## 8. Cards Grid
+
+The Cards Grid macro renders a responsive grid of modular cards using CSS Grid (`auto-fill`) to ensure perfect vertical column alignment.
+
+- **Group**: `block`
+- **Content**: `cardItem+`
+- **Defining**: `true`
+- **Isolating**: `true`
+- **Attributes**:
+  - `cardSize` (string `"sm" | "md" | "lg"`, defaults to `"md"`)
+  - `showBorder` (boolean, defaults to `false`)
+
+### Rendering Engine (`CardsGridNodeView`)
+1. **Grid Layout**: Container wraps `[data-node-view-content-react]` and sets `display: grid`.
+2. **Read-Only Mode**: In edit mode, the outer grid container renders a border. In read-only mode, the border and lateral padding are hidden to remain flush with document margins, unless the author explicitly toggles `showBorder` on.
+3. **Card Item**: Each `CardItem` represents a distinct block, utilizing `NodeViewWrapper` to nest standard block contents (e.g. paragraphs).
+
+---
+
+## 9. Tabbed Containers
+
+The Tabs macro allows users to segment long blocks of content into an interactive Tab Panel component.
+
+- **TabsContainer Node**: `group: "block"`, `content: "tabItem+"`, `defining: true`, `isolating: true`
+- **TabItem Node**: `group: "block"`, `content: "block+"`
+- **Attributes**:
+  - `activeTab` (integer, defaults to `0`)
+  - `showBorder` (boolean, defaults to `false`)
+
+### Rendering Engine (`TabsNodeView`)
+1. **Tab Navigation**: Parses the `TabItem` node fragments to dynamically generate an MUI `<Tabs>` bar, mapping node attributes (like `label`) to the visual tabs.
+2. **Display Toggling**: The active tab's children are shown via dynamic `<style>` injection. The container CSS forcefully applies `opacity: 0` and `position: absolute` to all tab contents, except for the item matching the active tab.
+3. **Read-Only Mode**: Border removal logic mirrors the Cards Grid, maintaining document rhythm.
+
+---
+
+## 10. Hierarchical Macros (Children Display & Page Index)
 
 Children Display and Page Index macros dynamically render lists of document structures within the active workspace/space.
 

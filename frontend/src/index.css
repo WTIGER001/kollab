@@ -925,3 +925,41 @@ h7, h8 {
   }
 }
 
+
+/* Cards Grid NodeView Layout */
+.cards-grid-container > [data-node-view-content] {
+  display: block !important;
+  width: 100% !important;
+}
+
+.cards-grid-container [data-node-view-content-react] {
+  display: grid !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+
+.cards-grid-container [data-node-view-content-react] > * {
+  display: block !important;
+  max-width: 100% !important;
+}
+
+.cards-grid-container.size-sm [data-node-view-content-react] {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+}
+.cards-grid-container.size-sm [data-node-view-content-react] > * {
+  min-height: 150px !important;
+}
+
+.cards-grid-container.size-md [data-node-view-content-react] {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+}
+.cards-grid-container.size-md [data-node-view-content-react] > * {
+  min-height: 200px !important;
+}
+
+.cards-grid-container.size-lg [data-node-view-content-react] {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)) !important;
+}
+.cards-grid-container.size-lg [data-node-view-content-react] > * {
+  min-height: 300px !important;
+}

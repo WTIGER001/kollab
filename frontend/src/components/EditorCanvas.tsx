@@ -1544,9 +1544,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: (ed) => {
         ed.chain().focus().insertContent({
           type: "cardsGrid",
+          attrs: { cardSize: "md" },
           content: [
-            { type: "cardItem", content: [{ type: "paragraph" }] },
-            { type: "cardItem", content: [{ type: "paragraph" }] },
+            { type: "cardItem", attrs: { cardId: Math.random().toString(36).substr(2, 9) }, content: [{ type: "paragraph", content: [{ type: "text", text: "New Card" }] }] },
+            { type: "cardItem", attrs: { cardId: Math.random().toString(36).substr(2, 9) }, content: [{ type: "paragraph", content: [{ type: "text", text: "New Card" }] }] },
           ]
         }).run();
       },

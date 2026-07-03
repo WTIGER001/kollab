@@ -1,6 +1,6 @@
 import { NodeViewWrapper, NodeViewContent } from "@tiptap/react";
 import { Box, Tabs, Tab, IconButton } from "@mui/material";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Square } from "lucide-react";
 import React from "react";
 
 export const TabsNodeView = (props: any) => {
@@ -100,16 +100,23 @@ export const TabsNodeView = (props: any) => {
   const activeTabNode = node.childCount > activeTab ? node.child(activeTab) : null;
   const activeTabId = activeTabNode?.attrs?.tabId;
 
+  const showBorder = node.attrs.showBorder || false;
+  const displayBorder = isEditable || showBorder;
+
+  const toggleBorder = () => {
+    updateAttributes({ showBorder: !showBorder });
+  };
+
   // Convert node.content (Fragment) to an array for map
-  const tabsArray = [];
+  const tabsArray: any[] = [];
   node.content.forEach((child: any) => {
     tabsArray.push(child);
   });
 
   return (
     <NodeViewWrapper className="tabs-macro-wrapper">
-      <Box sx={{ border: "1px solid var(--border-color)", borderRadius: 2, overflow: "hidden", my: 2 }}>
-        <Box sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "rgba(0,0,0,0.2)", display: "flex", alignItems: "center" }}>
+      <Box sx={{ border: displayBorder ? "1px solid var(--border-color)" : "none", borderRadius: 2, overflow: "hidden", my: 2 }}>
+        <Box sx={{ borderBottom: displayBorder ? 1 : 0, borderColor: "divider", bgcolor: displayBorder ? "rgba(0,0,0,0.2)" : "transparent", display: "flex", alignItems: "center" }}>
           <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
             {tabsArray.map((child: any, index: number) => (
               <Tab 
@@ -151,9 +158,14 @@ export const TabsNodeView = (props: any) => {
             ))}
           </Tabs>
           {isEditable && (
-            <IconButton size="small" onClick={addTab} sx={{ ml: 1 }}>
-              <Plus size={18} />
-            </IconButton>
+            <>
+              <IconButton size="small" onClick={addTab} sx={{ ml: 1 }} title="Add Tab">
+                <Plus size={18} />
+              </IconButton>
+              <IconButton size="small" onClick={toggleBorder} title={showBorder ? "Hide Border in Read Mode" : "Show Border in Read Mode"} color={showBorder ? "primary" : "default"}>
+                <Square size={18} />
+              </IconButton>
+            </>
           )}
           <Box sx={{ flexGrow: 1 }} />
           {isEditable && (
@@ -163,7 +175,7 @@ export const TabsNodeView = (props: any) => {
           )}
         </Box>
         
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: displayBorder ? 2 : 0, py: 2 }}>
           {/* We use robust CSS attribute selectors to show only the active tab item */}
           <div id={domId} className="tabs-content-container" style={{ position: 'relative' }}>
             <style>{`
