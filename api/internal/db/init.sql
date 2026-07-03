@@ -25,6 +25,27 @@ CREATE TABLE IF NOT EXISTS projects (
     CONSTRAINT unique_team_project_abbreviation UNIQUE (team_id, abbreviation)
 );
 
+CREATE TABLE IF NOT EXISTS images (
+    id VARCHAR(255) PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(255) NOT NULL,
+    original_width INT NOT NULL,
+    original_height INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS library_images (
+    id VARCHAR(255) PRIMARY KEY,
+    image_id VARCHAR(255) NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    display_name VARCHAR(255) NOT NULL,
+    scope VARCHAR(50) NOT NULL,
+    team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE,
+    project_id VARCHAR(255) REFERENCES projects(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    size_bytes BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS documents (
     id VARCHAR(255) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,

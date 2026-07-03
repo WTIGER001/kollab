@@ -15,7 +15,7 @@ import (
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,
 // and maps public/protected routes using JWT middleware.
-func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, evaluator *permissions.AccessEvaluator) http.Handler {
+func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, evaluator *permissions.AccessEvaluator) http.Handler {
 	r := chi.NewRouter()
 
 	// Standard middleware
@@ -45,6 +45,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 	// Public image retrieval route (no auth header needed for <img> elements in canvas)
 	r.Get("/api/images/{id}/{size}", imgH.GetImage)
+	r.Get("/api/images/{id}", imgH.GetImage) // Fallback for URLs without size param
 
 	// Public attachment download/preview route
 	r.Get("/api/attachments/{id}", attH.Download)
@@ -92,6 +93,11 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Post("/images", imgH.Upload)
 		r.Delete("/images/{id}", imgH.Delete)
+
+		r.Get("/library/images", libImgH.List)
+		r.Post("/library/images", libImgH.Upload)
+		r.Put("/library/images/{id}", libImgH.UpdateName)
+		r.Delete("/library/images/{id}", libImgH.Delete)
 
 		r.Delete("/attachments/{id}", attH.Delete)
 

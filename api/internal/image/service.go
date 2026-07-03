@@ -30,15 +30,19 @@ func NewImageService(repo domain.ImageRepository, storage domain.FileStorage) *I
 }
 
 func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeType string, data []byte) (*domain.ImageMetadata, error) {
-	// 1. Decode original image to verify format and extract dimensions
 	img, format, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode image: %w", err)
+	
+	var origWidth, origHeight int
+	if err == nil {
+		bounds := img.Bounds()
+		origWidth = bounds.Dx()
+		origHeight = bounds.Dy()
+	} else {
+		// Cannot decode image (e.g. AVIF, SVG, WEBP without decoder registered). 
+		// We gracefully continue, setting dimensions to 0, saving the original, and skipping scaling.
+		origWidth = 0
+		origHeight = 0
 	}
-
-	bounds := img.Bounds()
-	origWidth := bounds.Dx()
-	origHeight := bounds.Dy()
 
 	id := uuid.New().String()
 	ext := getExtension(mimeType)
@@ -52,8 +56,8 @@ func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeTyp
 	// 2. Perform scaling for target widths (300, 600, 900, 1200)
 	targetSizes := []int{300, 600, 900, 1200}
 	for _, targetWidth := range targetSizes {
-		if origWidth <= targetWidth {
-			// Skip scaling if the original image is smaller
+		if img == nil || origWidth <= targetWidth {
+			// Skip scaling if the original image is smaller or if we couldn't decode it
 			continue
 		}
 
@@ -148,6 +152,10 @@ func getExtension(mimeType string) string {
 		return "gif"
 	case "image/webp":
 		return "webp"
+	case "image/avif":
+		return "avif"
+	case "image/svg+xml":
+		return "svg"
 	default:
 		return "jpg"
 	}

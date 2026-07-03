@@ -38,7 +38,8 @@ import {
   FolderInput,
   X,
   AtSign,
-  FileUp
+  FileUp,
+  Image
 } from "lucide-react";
 import type { Team, Project } from "../services/api";
 import { ImportDialog } from "./ImportDialog";
@@ -232,7 +233,8 @@ interface SidebarProps {
     isAuditPage?: boolean,
     isTrashPage?: boolean,
     isTasksPage?: boolean,
-    isMentionsPage?: boolean
+    isMentionsPage?: boolean,
+    isImagesPage?: boolean
   ) => void;
   width?: number;
 
@@ -736,7 +738,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx: {
               width: 250,
               mt: 0.5,
-              maxHeight: 400,
+              maxHeight: "85vh",
             }
           }
         }}
@@ -1003,6 +1005,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <ListItemText primary={<Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif' }}>Personal Settings</Typography>} />
           </MenuItem>
         )}
+        <MenuItem
+          onClick={() => {
+            if (selectedTeamId?.startsWith("personal_")) {
+              navigateTo("personal", null, null, false, false, false, false, false, false, false, false, true);
+            } else if (selectedProjectId) {
+              const team = teams.find(t => t.id === selectedTeamId);
+              const proj = projects.find(p => p.id === selectedProjectId);
+              if (team && proj) {
+                navigateTo(team.abbreviation || team.id, proj.abbreviation || proj.id, null, false, false, false, false, false, false, false, false, true);
+              }
+            } else if (selectedTeamId) {
+              const team = teams.find(t => t.id === selectedTeamId);
+              if (team) {
+                navigateTo(team.abbreviation || team.id, null, null, false, false, false, false, false, false, false, false, true);
+              }
+            }
+            handleCloseProjectMenu();
+          }}
+          sx={{
+            py: 0.75,
+            px: 2,
+            fontSize: "12.5px",
+            fontFamily: '"Outfit", sans-serif',
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 24 }}>
+            <Image size={12} />
+          </ListItemIcon>
+          <ListItemText primary={<Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif' }}>Image Library</Typography>} />
+        </MenuItem>
       </Menu>
 
       {/* Split Create Button */}

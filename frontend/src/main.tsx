@@ -68,8 +68,9 @@ function Root() {
     redirect_uri: config!.redirectUri,
     response_type: "code",
     scope: "openid profile email",
-    onSigninCallback: () => {
-      window.history.replaceState({}, document.title, window.location.pathname);
+    onSigninCallback: (user: any) => {
+      const returnTo = user?.state || window.location.pathname;
+      window.history.replaceState({}, document.title, returnTo);
     }
   };
 

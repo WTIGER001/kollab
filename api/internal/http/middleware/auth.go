@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 
@@ -207,7 +208,7 @@ func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.User
 				}
 
 				return jwksCache.GetKey(r.Context(), kid)
-			})
+			}, jwt.WithLeeway(5*time.Minute))
 
 			if err != nil || !token.Valid {
 				log.Printf("JWT validation failed: %v", err)

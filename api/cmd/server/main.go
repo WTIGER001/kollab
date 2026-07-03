@@ -171,6 +171,7 @@ func main() {
 	teamRepo := pgrepo.NewPostgresTeamRepository(db)
 	docRepo := pgrepo.NewPostgresDocumentRepository(db)
 	imageRepo := pgrepo.NewPostgresImageRepository(db)
+	libImageRepo := pgrepo.NewPostgresLibraryImageRepository(db)
 	themeRepo := pgrepo.NewPostgresThemeRepository(db)
 	systemRepo := pgrepo.NewPostgresSystemRepository(db)
 	commentRepo := pgrepo.NewPostgresCommentRepository(db)
@@ -189,6 +190,7 @@ func main() {
 	systemService := systemrepo.NewSystemService(systemRepo)
 	docService := docrepo.NewDocumentService(docRepo, systemService, taskRepo, teamRepo)
 	imageService := imgrepo.NewImageService(imageRepo, storageProvider)
+	libImageService := imgrepo.NewLibraryImageService(libImageRepo, imageService)
 	themeService := themerepo.NewThemeService(themeRepo)
 	commentService := commentrepo.NewCommentService(commentRepo)
 	attachmentService := attrepo.NewAttachmentService(attachmentRepo, storageProvider)
@@ -227,6 +229,7 @@ func main() {
 	teamHandler := handler.NewTeamHandler(teamService)
 	docHandler := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imageHandler := handler.NewImageHandler(imageService)
+	libImageHandler := handler.NewLibraryImageHandler(libImageService)
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService, attachmentService)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
@@ -240,7 +243,7 @@ func main() {
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, evaluator)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, evaluator)
 
 	port := os.Getenv("PORT")
 	if port == "" {

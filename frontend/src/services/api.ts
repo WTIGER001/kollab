@@ -92,7 +92,7 @@ export const setOnUnauthorized = (cb: () => void) => {
   onUnauthorizedCallback = cb;
 };
 
-const request = async (path: string, options: RequestInit = {}) => {
+const request = async (path: string, options: RequestInit & { suppress401?: boolean } = {}) => {
   const headers = new Headers(options.headers || {});
   headers.set("Content-Type", "application/json");
   if (apiToken) {
@@ -106,7 +106,7 @@ const request = async (path: string, options: RequestInit = {}) => {
 
   if (!res.ok) {
     if (res.status === 401) {
-      if (onUnauthorizedCallback) {
+      if (onUnauthorizedCallback && !options.suppress401) {
         onUnauthorizedCallback();
       }
     }
@@ -133,9 +133,16 @@ export const fetchTasks = (username: string): Promise<Task[]> => {
   return request(`/api/tasks?username=${encodeURIComponent(username)}`);
 };
 
-export const fetchProjects = (teamId?: string): Promise<Project[]> => {
+export const fetchProjects = async (teamId?: string): Promise<Project[]> => {
   const url = teamId ? `/api/projects?teamId=${teamId}` : "/api/projects";
-  return request(url);
+  try {
+    return await request(url, { suppress401: true });
+  } catch (err: any) {
+    if (err.message && err.message.includes("401")) {
+      return [];
+    }
+    throw err;
+  }
 };
 
 export const fetchDocuments = (projectId?: string | null, teamId?: string | null): Promise<Document[]> => {
@@ -867,6 +874,84 @@ export const importSyncPackage = async (formData: FormData): Promise<{ message: 
   return res.json();
 };
 
+export interface LibraryImage {
+  id: string;
+  filename: string;
+  displayName: string;
+  mimeType: string;
+  sizeBytes: number;
+  url: string;
+  scope: "system" | "team" | "project" | "personal";
+  teamId?: string | null;
+  projectId?: string | null;
+  uploadedBy: string;
+  createdAt: string;
+}
 
+const getHeaders = (isFormData = false) => {
+  const headers: HeadersInit = {};
+  if (apiToken) {
+    headers["Authorization"] = `Bearer ${apiToken}`;
+  }
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+  return headers;
+};
 
+const handleResponse = async (res: Response) => {
+  if (!res.ok) {
+    if (res.status === 401) {
+      if (onUnauthorizedCallback) {
+        onUnauthorizedCallback();
+      }
+    }
+    const text = await res.text();
+    throw new Error(text || `Request failed with status ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+};
 
+export const fetchLibraryImages = async (scope: string, teamId?: string | null, projectId?: string | null): Promise<LibraryImage[]> => {
+  const query = new URLSearchParams({ scope });
+  if (teamId) query.append("teamId", teamId);
+  if (projectId) query.append("projectId", projectId);
+
+  const res = await fetch(`${BASE_URL}/api/library/images?${query.toString()}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const uploadLibraryImage = async (file: File, scope: string, teamId?: string | null, projectId?: string | null): Promise<LibraryImage> => {
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("scope", scope);
+  if (teamId) formData.append("teamId", teamId);
+  if (projectId) formData.append("projectId", projectId);
+
+  const res = await fetch(`${BASE_URL}/api/library/images`, {
+    method: "POST",
+    headers: getHeaders(true), // Assuming getHeaders(true) does not set Content-Type so the browser sets it with boundaries
+    body: formData,
+  });
+  return handleResponse(res);
+};
+
+export const updateLibraryImageName = async (id: string, displayName: string): Promise<LibraryImage> => {
+  const res = await fetch(`${BASE_URL}/api/library/images/${id}`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify({ displayName }),
+  });
+  return handleResponse(res);
+};
+
+export const deleteLibraryImage = async (id: string): Promise<void> => {
+  const res = await fetch(`${BASE_URL}/api/library/images/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+  return handleResponse(res);
+};
