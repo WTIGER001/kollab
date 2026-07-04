@@ -4,74 +4,72 @@ This document specifies the architecture for Kollab's global and workspace-level
 
 ---
 
-## 1. Design Token Architecture
+## 1. Design Token Architecture & Presets
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟢 Implemented
 
-Instead of defining raw hex codes individually, Kollab uses a structured `ThemeConfig` JSON payload. This allows for centralized control over the look and feel of the entire platform or specific workspaces.
+Kollab utilizes a dynamic `ThemeEngine` that manages a suite of aesthetic presets (e.g., Default, Workbench, Editorial, Neobrutalism). These presets are defined in `src/theme/presets.ts`.
 
-### 1.1 The `ThemeConfig` Payload
-The database stores this configuration as a `JSONB` column on the `workspaces` and `projects` tables.
+### 1.1 The `ThemePreset` Interface
+Instead of defining raw hex codes individually, Kollab uses a structured `ThemePreset` object:
 
-```json
-{
-  "palette": {
-    "light": {
-      "primary": "#3b82f6",
-      "secondary": "#8b5cf6",
-      "background": "#ffffff",
-      "surface": "#f8fafc",
-      "text": "#0f172a"
-    },
-    "dark": {
-      "primary": "#60a5fa",
-      "secondary": "#a78bfa",
-      "background": "#0f172a",
-      "surface": "#1e293b",
-      "text": "#f8fafc"
-    }
-  },
-  "typography": {
-    "headingFontFamily": "\"Inter\", sans-serif",
-    "bodyFontFamily": "\"Roboto\", sans-serif",
-    "monospaceFontFamily": "\"JetBrains Mono\", monospace"
-  },
-  "shape": {
-    "borderRadius": "8px" // 0px for sharp, 9999px for pill
-  }
+```typescript
+export interface ThemeColors {
+  primary: string;
+  secondary: string;
+  background: string;
+  paper: string;
+  textPrimary: string;
+  textSecondary: string;
+  border: string;
+  accent: string;
+  glassBg: string;
+  glassBorder: string;
+}
+
+export interface ThemePreset {
+  id: string;
+  name: string;
+  colors: {
+    light: ThemeColors;
+    dark: ThemeColors;
+  };
+  cssVariables: Record<string, string>;
+  muiOverrides: (mode: "light" | "dark") => ThemeOptions;
 }
 ```
 
 ### 1.2 Hierarchical Resolution
-1. **System Default**: Hardcoded baseline theme.
-2. **Workspace Override**: Administrators can set a theme for the entire team space.
-3. **Project Override**: Specific projects (e.g., a public Help Center) can define a custom theme that overrides the workspace theme.
+1. **System Default**: The "Default (Glassmorphism)" preset is the baseline.
+2. **User/Admin Evaluation**: An interactive `<ThemeEngine>` component wraps the application. The active theme ID is tracked in the Zustand `useAppStore` (`activeThemeId`), allowing instant aesthetic swapping.
+3. **Workspace/Project Override (Planned)**: The active theme ID will be persisted to the database and fetched during application load.
 
 ---
 
 ## 2. CSS Custom Property Injection
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟢 Implemented
 
-When the React application initializes, a `ThemeProvider` context fetches the resolved `ThemeConfig` and dynamically injects it into the `:root` pseudo-class as CSS Variables.
+When the React application initializes, the `<ThemeEngine>` wrapper component fetches the resolved `ThemePreset` and dynamically injects it into the `:root` document as CSS Variables.
 
 ### 2.1 Dynamic Theme Swapping
-The system listens to the user's `prefers-color-scheme` or manual toggle. Based on the active mode, it maps the correct palette variants (light or dark) to the active variables:
+The system listens to the active `themeMode` (light/dark) and the `activeThemeId`. Based on these, it resolves the MUI `ThemeOptions` and injects raw CSS variables for UI components (like the Tiptap editor) that live outside MUI's direct styling scope:
 
 ```javascript
-// Example Injection Logic
+// Inside ThemeEngine.tsx
 const root = document.documentElement;
+const activeColors = activePreset.colors[themeMode];
 
-// Inject active palette
-root.style.setProperty('--color-primary', activeTheme.primary);
-root.style.setProperty('--color-background', activeTheme.background);
-root.style.setProperty('--color-text', activeTheme.text);
+// Inject active palette based on light/dark mode
+root.style.setProperty('--primary-color', activeColors.primary);
+root.style.setProperty('--bg-color', activeColors.background);
 
-// Inject static tokens
-root.style.setProperty('--font-heading', config.typography.headingFontFamily);
-root.style.setProperty('--shape-radius', config.shape.borderRadius);
+// Inject static tokens (fonts, borders, shadows)
+Object.entries(activePreset.cssVariables).forEach(([key, value]) => {
+  root.style.setProperty(key, value);
+});
 ```
 
 ---

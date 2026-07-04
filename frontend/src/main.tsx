@@ -1,9 +1,8 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ThemeProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import { AuthProvider } from 'react-oidc-context'
-import { theme } from './theme.ts'
+import { ThemeEngine } from './theme/ThemeEngine.tsx';
+import CssBaseline from '@mui/material/CssBaseline';
+import { AuthProvider } from 'react-oidc-context';
 import './index.css'
 import App from './App.tsx'
 import { fetchOIDCConfig } from './services/api.ts'
@@ -77,12 +76,12 @@ function Root() {
   if (isMock) {
     return (
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
+        <ThemeEngine>
           <CssBaseline />
           <BrowserRouter>
             <App isMockMode={true} />
           </BrowserRouter>
-        </ThemeProvider>
+        </ThemeEngine>
       </QueryClientProvider>
     );
   }
@@ -90,12 +89,12 @@ function Root() {
   return (
     <AuthProvider {...oidcConfig}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
+        <ThemeEngine>
           <CssBaseline />
           <BrowserRouter>
             <App isMockMode={false} />
           </BrowserRouter>
-        </ThemeProvider>
+        </ThemeEngine>
       </QueryClientProvider>
     </AuthProvider>
   );

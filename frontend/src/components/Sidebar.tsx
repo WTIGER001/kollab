@@ -582,7 +582,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 flexShrink: 0
               }}
             >
-              {activeProject.name.slice(0, 1).toUpperCase()}
+              {!activeProject.logoUrl && <Briefcase size={12} />}
             </Avatar>
             <Box sx={{ minWidth: 0 }}>
               <Typography 

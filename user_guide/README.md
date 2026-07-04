@@ -29,4 +29,5 @@ Explore the following help pages to learn how to use the wiki features:
 ### 🏷️ [7. Document Tagging & Labels](file:///Users/johnbauer/Dev/Personal/arkm/user_guide/tags.md)
 *Learn how to assign labels to pages and manage tag definitions globally.*
 
-
+### 📝 [8. Basic Text Formatting & Hyperlinks](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/basic_formatting.md)
+*Learn how to apply text styling (bold, italic, colors) and insert and manage hyperlinks to external sites or internal Kollab pages.*

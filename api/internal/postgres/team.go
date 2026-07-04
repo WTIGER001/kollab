@@ -46,7 +46,7 @@ func (r *PostgresTeamRepository) GetTeamsByUserID(ctx context.Context, userID st
 func (r *PostgresTeamRepository) GetProjectsByTeamID(ctx context.Context, teamID string) ([]*domain.Project, error) {
 	var rows pgx.Rows
 	var err error
-	if teamID == "" {
+	if teamID == "" || teamID == "all" {
 		rows, err = r.db.Query(ctx, "SELECT id, name, team_id, COALESCE(logo_url, ''), COALESCE(abbreviation, ''), COALESCE(description, '') FROM projects")
 	} else {
 		rows, err = r.db.Query(ctx, "SELECT id, name, team_id, COALESCE(logo_url, ''), COALESCE(abbreviation, ''), COALESCE(description, '') FROM projects WHERE team_id = $1", teamID)

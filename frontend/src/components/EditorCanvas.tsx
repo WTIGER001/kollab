@@ -20,6 +20,14 @@ import { TableOfContents } from "../editor/extensions/TableOfContents";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
+import { Link } from "@tiptap/extension-link";
+import { Underline } from "@tiptap/extension-underline";
+import { Highlight } from "@tiptap/extension-highlight";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
+import { Typography as TypographyExtension } from "@tiptap/extension-typography";
+import { Subscript } from "@tiptap/extension-subscript";
+import { Superscript } from "@tiptap/extension-superscript";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import {
@@ -58,6 +66,7 @@ import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
 import { EditorMacroDialog } from "./editor/EditorMacroDialog";
 import { EditorToolbar } from "./editor/EditorToolbar";
 import { EditorFloatingMenus } from "./editor/EditorFloatingMenus";
+import { InsertLinkDialog } from "./editor/InsertLinkDialog";
 import { ImageSelectionDialog } from "./editor/ImageSelectionDialog";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
@@ -154,6 +163,10 @@ import {
   Network,
   PenTool,
   Cpu,
+  Underline as UnderlineIcon,
+  Highlighter,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -422,6 +435,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [restrictionsDialogOpen, setRestrictionsDialogOpen] = useState(false);
   const [sharingLinksDialogOpen, setSharingLinksDialogOpen] = useState(false);
+  const [insertLinkDialogOpen, setInsertLinkDialogOpen] = useState(false);
+  const [linkInitialUrl, setLinkInitialUrl] = useState("");
+  const [linkInitialText, setLinkInitialText] = useState("");
 
   const handleOpenMoreMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     setMoreMenuAnchor(e.currentTarget);
@@ -2509,6 +2525,115 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               </IconButton>
             </Tooltip>
 
+            <Tooltip title="Underline" arrow>
+              <IconButton
+                size="small"
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                sx={{
+                  color: editor.isActive("underline") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("underline")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <UnderlineIcon size={15} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Text Color" arrow>
+              <IconButton
+                size="small"
+                sx={{
+                  position: "relative",
+                  color: editor.getAttributes("textStyle")?.color || "inherit",
+                  backgroundColor: editor.isActive("textStyle", { color: editor.getAttributes("textStyle")?.color })
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <Palette size={15} />
+                <input 
+                  type="color"
+                  value={editor.getAttributes("textStyle")?.color || "#000000"}
+                  onInput={(e) => editor.chain().focus().setColor((e.target as HTMLInputElement).value).run()}
+                  style={{
+                    position: "absolute",
+                    opacity: 0,
+                    width: "100%",
+                    height: "100%",
+                    cursor: "pointer"
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Highlight" arrow>
+              <IconButton
+                size="small"
+                onClick={() => editor.chain().focus().toggleHighlight().run()}
+                sx={{
+                  color: editor.isActive("highlight") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("highlight")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <Highlighter size={15} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Subscript" arrow>
+              <IconButton
+                size="small"
+                onClick={() => editor.chain().focus().toggleSubscript().run()}
+                sx={{
+                  color: editor.isActive("subscript") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("subscript")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <SubscriptIcon size={15} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Superscript" arrow>
+              <IconButton
+                size="small"
+                onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                sx={{
+                  color: editor.isActive("superscript") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("superscript")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <SuperscriptIcon size={15} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Insert Link" arrow>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  if (editor) {
+                    const attrs = editor.getAttributes("link");
+                    setLinkInitialUrl(attrs.href || "");
+                    setLinkInitialText("");
+                    setInsertLinkDialogOpen(true);
+                  }
+                }}
+                sx={{
+                  color: editor.isActive("link") ? "primary.light" : "inherit",
+                  backgroundColor: editor.isActive("link")
+                    ? "rgba(139, 92, 246, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <Link2 size={15} />
+              </IconButton>
+            </Tooltip>
+
             <Tooltip title="Inline Code" arrow>
               <IconButton
                 size="small"
@@ -3387,6 +3512,30 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           </ClickAwayListener>
         )}
 
+      {/* Editor Floating Menus */}
+      <EditorFloatingMenus
+        editor={editor}
+        tableCreatorOpen={tableCreatorOpen}
+        setTableCreatorOpen={setTableCreatorOpen}
+        insertTable={handleInsertTable}
+        aiPromptOpen={aiPromptOpen}
+        setAiPromptOpen={setAiPromptOpen}
+        menuOpen={menuOpen}
+        menuAnchorEl={menuPosition}
+        setMenuOpen={setMenuOpen}
+        menuStateRef={menuStateRef}
+        handleUserMentionSelect={executeUserSelect}
+        handleCommandSelect={executeCommand}
+        onEditLink={() => {
+          if (editor) {
+            const attrs = editor.getAttributes("link");
+            setLinkInitialUrl(attrs.href || "");
+            setLinkInitialText("");
+            setInsertLinkDialogOpen(true);
+          }
+        }}
+      />
+
       {/* Macro Chooser Dialog */}
       <EditorMacroDialog
         macroSelectorOpen={macroSelectorOpen}
@@ -3761,6 +3910,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         activeDocId={activeDocId}
         attachments={attachments}
         selectedTeamId={selectedTeamId}
+      />
+
+      <InsertLinkDialog
+        open={insertLinkDialogOpen}
+        onClose={() => setInsertLinkDialogOpen(false)}
+        projectId={document.projectId || null}
+        initialUrl={linkInitialUrl}
+        initialText={linkInitialText}
+        onSubmit={(url, text) => {
+          if (editor) {
+            if (text) {
+              editor.chain().focus().extendMarkRange("link").setLink({ href: url }).insertContent(text).run();
+            } else {
+              editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+            }
+          }
+        }}
       />
     </Box>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Box, useMediaQuery } from '@mui/material';
+import { Box, useMediaQuery, Fab } from '@mui/material';
 import { GripVertical, ChevronsLeftRight } from 'lucide-react';
 import { TopNavbar } from '../components/TopNavbar';
 import { Sidebar } from '../components/Sidebar';
@@ -10,9 +10,7 @@ import { useDocumentTree } from '../hooks/useDocumentTree';
 import { getLegacyNavigateFn } from '../utils/navigation';
 import { useAuth } from 'react-oidc-context';
 import { createDocument, deleteDocument, moveDocument, restoreDocument } from '../services/api';
-
-// Temporary mock for recent spaces until we move it to store/query
-const recentSpaces: any[] = JSON.parse(localStorage.getItem('recent_spaces') || '[]');
+import { presets } from '../theme/presets';
 
 export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) => {
   const navigate = useNavigate();
@@ -25,6 +23,21 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   
   // Resolve correct IDs from the route params
   let actualTeamId = teamId === 'personal' ? null : teamId;
+  let actualProjectId = projectId || null;
+  
+  if (teamId && teamId !== 'personal') {
+    const matchedTeam = teams.find(t => t.id === teamId || t.abbreviation === teamId);
+    if (matchedTeam) {
+      actualTeamId = matchedTeam.id;
+    }
+  }
+
+  if (projectId && actualTeamId) {
+    const matchedProject = allProjects.find(p => (p.id === projectId || p.abbreviation === projectId) && p.teamId === actualTeamId);
+    if (matchedProject) {
+      actualProjectId = matchedProject.id;
+    }
+  }
   
   // If the route is /personal, use the personal team ID
   const isPersonalRoute = location.pathname === '/personal' || location.pathname.startsWith('/personal/');
@@ -35,7 +48,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     }
   }
   
-  const { data: flatDocs, refetch: refetchDocs } = useDocuments(projectId, actualTeamId);
+  const { data: flatDocs, refetch: refetchDocs } = useDocuments(actualProjectId, actualTeamId);
   const filteredDocs = (flatDocs || []).filter(d => d.id !== actualTeamId && d.id !== projectId);
   const documentsTree = useDocumentTree(filteredDocs);
   
@@ -54,12 +67,37 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     setSidebarOpen,
     sidebarWidth,
     setSidebarWidth,
-    setCreateSpaceOpen
+    setCreateSpaceOpen,
+    activeThemeId,
+    setActiveThemeId
   } = useAppStore();
 
   const isMobile = useMediaQuery("(max-width:768px)");
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  
+  const [recentSpaces, setRecentSpaces] = useState<any[]>(() => JSON.parse(localStorage.getItem('recent_spaces') || '[]'));
+
+  useEffect(() => {
+    if (teams.length > 0 || allProjects.length > 0) {
+      setRecentSpaces(prev => {
+        const filtered = prev.filter(space => {
+          if (space.type === 'personal' || space.type === 'team') {
+            return teams.some(t => t.id === space.id || t.abbreviation === space.id);
+          }
+          if (space.type === 'project') {
+            return allProjects.some(p => p.id === space.id || p.abbreviation === space.id);
+          }
+          return false;
+        });
+        
+        if (filtered.length !== prev.length) {
+          localStorage.setItem('recent_spaces', JSON.stringify(filtered));
+        }
+        return filtered;
+      });
+    }
+  }, [teams, allProjects]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -89,11 +127,11 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   // Mutation wrappers to trigger a query refetch instead of mutating state
   const handleAddDoc = async (parentId?: string) => {
     try {
-      const parent = parentId || (projectId ? projectId : actualTeamId);
+      const parent = parentId || (actualProjectId ? actualProjectId : actualTeamId);
       if (!parent) return; // Cannot create document without a team or project context
-      const newDoc = await createDocument("Untitled Document", projectId || null, actualTeamId, parent);
+      const newDoc = await createDocument("Untitled Document", actualProjectId || null, actualTeamId, parent);
       refetchDocs();
-      legacyNavigate(actualTeamId, projectId || null, newDoc.id);
+      legacyNavigate(actualTeamId, actualProjectId || null, newDoc.id);
     } catch (e) {
       console.error(e);
     }
@@ -102,7 +140,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   const handleDeleteDoc = async (id: string) => {
     await deleteDocument(id);
     refetchDocs();
-    legacyNavigate(actualTeamId, projectId || null, null);
+    legacyNavigate(actualTeamId, actualProjectId || null, null);
   };
 
   const handleMoveDoc = async (id: string, parentId: string | null) => {
@@ -152,14 +190,14 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
           <Sidebar
             documents={documentsTree}
             activeDocId={docId || null}
-            onSelectDoc={(id) => legacyNavigate(actualTeamId, projectId || null, id)}
+            onSelectDoc={(id) => legacyNavigate(actualTeamId, actualProjectId, id)}
             onAddDoc={handleAddDoc}
             onDeleteDoc={handleDeleteDoc}
             onMoveDoc={handleMoveDoc}
             teams={teams}
             projects={allProjects}
             selectedTeamId={actualTeamId}
-            selectedProjectId={projectId || null}
+            selectedProjectId={actualProjectId}
             navigateTo={legacyNavigate}
             width={sidebarWidth}
             recentSpaces={recentSpaces}
@@ -206,7 +244,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         )}
 
         {/* Main Canvas Workspace */}
-        <Box component="main" sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <Box component="main" sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           <Outlet />
         </Box>
       </Box>

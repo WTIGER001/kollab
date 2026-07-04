@@ -17,6 +17,9 @@ import {
 import { Sparkles, ArrowLeft } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
 import { API_BASE_URL, downloadBackup, downloadSyncExport, restoreBackup, importSyncPackage } from "../services/api";
+import { useAppStore } from "../store/useAppStore";
+import { presets } from "../theme/presets";
+import { ThemeSelector } from "./ThemeSelector";
 
 interface ServerSettingsPageProps {
   currentTheme: WorkspaceTheme | null;
@@ -37,6 +40,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   
+  const { activeThemeId, setActiveThemeId, themeMode } = useAppStore();
+
   // Audit settings states
   const [policy, setPolicy] = useState("forever");
   const [customDays, setCustomDays] = useState(30);
@@ -238,8 +243,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           }}
         >
           <Tab label="General Settings" />
-          <Tab label="Light Palette Editor" />
-          <Tab label="Dark Palette Editor" />
+          <Tab label="Theme & Aesthetics" />
           <Tab label="Audit & Retention" />
           <Tab label="Aspose & Previews" />
           <Tab label="Backups & Air-Gap Sync" />
@@ -345,52 +349,74 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         )}
 
         {tabIndex === 1 && (
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {/* Theme Engine Section */}
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
-                Theme Primary Colors
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+                Dynamic Theme Engine
               </Typography>
-              {renderColorInput("Primary Theme Highlight", "primary", lightColors, setLightColors)}
-              {renderColorInput("Secondary Theme Color", "secondary", lightColors, setLightColors)}
-              {renderColorInput("Brand Accent Callout", "accent", lightColors, setLightColors)}
+              <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+                Select a global aesthetic preset for this workspace. This will override CSS variables across the entire application.
+              </Typography>
+              <ThemeSelector 
+                activeThemeId={activeThemeId}
+                onSelectTheme={setActiveThemeId}
+                themeMode={themeMode}
+                presets={presets}
+              />
             </Box>
+
+            <Divider />
+
+            {/* Custom Palette Overrides */}
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
-                Surface & Typography
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+                Custom Palette Overrides
               </Typography>
-              {renderColorInput("Body Background Canvas", "background", lightColors, setLightColors)}
-              {renderColorInput("Paper Component Background", "paper", lightColors, setLightColors)}
-              {renderColorInput("Primary Text Font Color", "textPrimary", lightColors, setLightColors)}
-              {renderColorInput("Secondary Label Font Color", "textSecondary", lightColors, setLightColors)}
-              {renderColorInput("Border Grid lines Color", "border", lightColors, setLightColors)}
+              <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+                Fine-tune specific colors for Light and Dark modes. These manual values take precedence over the selected theme engine preset.
+              </Typography>
+              
+              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                {/* Light Palette */}
+                <Box sx={{ p: 3, border: "1px solid var(--border-color)", borderRadius: 2, bgcolor: "var(--glass-bg)" }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
+                    Light Mode Overrides
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {renderColorInput("Primary Theme Highlight", "primary", lightColors, setLightColors)}
+                    {renderColorInput("Secondary Theme Color", "secondary", lightColors, setLightColors)}
+                    {renderColorInput("Brand Accent Callout", "accent", lightColors, setLightColors)}
+                    {renderColorInput("Body Background Canvas", "background", lightColors, setLightColors)}
+                    {renderColorInput("Paper Component Background", "paper", lightColors, setLightColors)}
+                    {renderColorInput("Primary Text Font Color", "textPrimary", lightColors, setLightColors)}
+                    {renderColorInput("Secondary Label Font Color", "textSecondary", lightColors, setLightColors)}
+                    {renderColorInput("Border Grid lines Color", "border", lightColors, setLightColors)}
+                  </Box>
+                </Box>
+
+                {/* Dark Palette */}
+                <Box sx={{ p: 3, border: "1px solid var(--border-color)", borderRadius: 2, bgcolor: "var(--glass-bg)" }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
+                    Dark Mode Overrides
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {renderColorInput("Primary Theme Highlight", "primary", darkColors, setDarkColors)}
+                    {renderColorInput("Secondary Theme Color", "secondary", darkColors, setDarkColors)}
+                    {renderColorInput("Brand Accent Callout", "accent", darkColors, setDarkColors)}
+                    {renderColorInput("Body Background Canvas", "background", darkColors, setDarkColors)}
+                    {renderColorInput("Paper Component Background", "paper", darkColors, setDarkColors)}
+                    {renderColorInput("Primary Text Font Color", "textPrimary", darkColors, setDarkColors)}
+                    {renderColorInput("Secondary Label Font Color", "textSecondary", darkColors, setDarkColors)}
+                    {renderColorInput("Border Grid lines Color", "border", darkColors, setDarkColors)}
+                  </Box>
+                </Box>
+              </Box>
             </Box>
           </Box>
         )}
 
         {tabIndex === 2 && (
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
-                Theme Primary Colors
-              </Typography>
-              {renderColorInput("Primary Theme Highlight", "primary", darkColors, setDarkColors)}
-              {renderColorInput("Secondary Theme Color", "secondary", darkColors, setDarkColors)}
-              {renderColorInput("Brand Accent Callout", "accent", darkColors, setDarkColors)}
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: "text.primary" }}>
-                Surface & Typography
-              </Typography>
-              {renderColorInput("Body Background Canvas", "background", darkColors, setDarkColors)}
-              {renderColorInput("Paper Component Background", "paper", darkColors, setDarkColors)}
-              {renderColorInput("Primary Text Font Color", "textPrimary", darkColors, setDarkColors)}
-              {renderColorInput("Secondary Label Font Color", "textSecondary", darkColors, setDarkColors)}
-              {renderColorInput("Border Grid lines Color", "border", darkColors, setDarkColors)}
-            </Box>
-          </Box>
-        )}
-
-        {tabIndex === 3 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {/* Audit Log Panel */}
             <Box>
@@ -496,7 +522,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 4 && (
+        {tabIndex === 3 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
@@ -554,7 +580,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 5 && (
+        {tabIndex === 4 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>

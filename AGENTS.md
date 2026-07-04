@@ -44,10 +44,17 @@ The design specifications are located in the [design/](file:///Users/johnbauer/D
 
 ## 🌗 Theme Support Mandate
 
-To ensure a seamless user experience, all UI elements, custom components, and editing controls must have explicit support for both **light and dark themes**.
-- Avoid hardcoding dark-only or light-only background, text, and border colors (e.g., solid black borders or pure white backgrounds) unless they are theme-aware.
-- Use dynamic theme checks (e.g., matching the `themeMode` variable or React theme context) or standard color tokens that adapt automatically.
-- Test visual contrast and readability of all elements (like icons, menus, input placeholder texts, and drag handles) in both light and dark modes.
+To ensure a seamless user experience across the dynamic Theme Engine and Light/Dark modes, all custom UI elements and editing controls must exclusively use the injected CSS variables for styling. **Never hardcode hex colors or rely solely on MUI's static palette for custom components.**
+
+**Mandatory CSS Variables:**
+- **Colors**: `var(--primary-color)`, `var(--secondary-color)`, `var(--bg-color)`, `var(--panel-color)`, `var(--accent-color)`
+- **Text**: `var(--text-primary)`, `var(--text-secondary)`
+- **Borders & Shapes**: `var(--border-color)`, `var(--border-width)`, `var(--border-style)`, `var(--border-radius-card)`, `var(--border-radius-button)`
+- **Shadows**: `var(--shadow-elevation)`, `var(--shadow-button)`
+- **Glassmorphism**: `var(--glass-bg)`, `var(--glass-border)`
+
+- Avoid hardcoding dark-only or light-only background, text, and border colors unless explicitly required for a highly specific visual effect.
+- Test visual contrast and readability of all elements (like icons, menus, input placeholder texts, and drag handles) in both light and dark modes across multiple theme presets (Default, Workbench, Editorial, Neobrutal).
 
 ---
 

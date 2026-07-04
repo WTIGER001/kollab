@@ -72,7 +72,7 @@ func (r *InMemoryTeamRepository) GetProjectsByTeamID(ctx context.Context, teamID
 
 	var list []*domain.Project
 	for _, p := range r.projects {
-		if teamID == "" || p.TeamID == teamID {
+		if teamID == "" || teamID == "all" || p.TeamID == teamID {
 			list = append(list, p)
 		}
 	}

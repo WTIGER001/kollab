@@ -278,7 +278,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
                   boxShadow: "var(--shadow-premium)"
                 }}
               >
-                {name.slice(0, 1).toUpperCase()}
+                {name?.slice(0, 1).toUpperCase() || "P"}
               </Avatar>
               {!logoUrl && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "text.disabled" }}>

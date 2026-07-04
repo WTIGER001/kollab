@@ -21,7 +21,13 @@ flowchart TD
     Editor --> Plugins
 ```
 
-### 1.1 Document AST Structure
+### 1.1 Core Extensions
+The editor canvas integrates several native Tiptap extensions to provide foundational rich text capabilities:
+* **Standard Formatting**: Bold, Italic, Strikethrough, Underline, Highlight, Subscript, Superscript, Code, Text Align.
+* **Text Styles**: The `TextStyle` and `Color` extensions enable arbitrary text color hex properties to be stored directly in the document AST.
+* **Hyperlinks**: The `Link` extension maintains URL mapping across the AST, with a custom-built floating action menu and Insert Link dialog handling the user experience.
+
+### 1.2 Document AST Structure
 ProseMirror represents documents as a nested node tree (JSON) rather than flat HTML, which guarantees structured data validation and seamless operational transformation (OT) mapping:
 
 ```json

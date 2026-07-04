@@ -28,6 +28,12 @@ import {
   Columns3,
   Sparkles,
   Plus,
+  Underline,
+  Highlighter,
+  Subscript as SubscriptIcon,
+  Superscript as SuperscriptIcon,
+  Link2,
+  Palette
 } from "lucide-react";
 
 export const EditorToolbar = ({
@@ -45,6 +51,7 @@ export const EditorToolbar = ({
   commands,
   setMacroSearchQuery,
   setMacroSelectorOpen,
+  onInsertLinkClick,
 }: any) => {
   if (!editor || !isEditing || previewVersion) return null;
   return (
@@ -189,6 +196,81 @@ export const EditorToolbar = ({
               }}
             >
               <Strikethrough size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Underline" arrow>
+            <IconButton
+              size="small"
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              sx={{
+                color: editor.isActive("underline") ? "primary.light" : "inherit",
+                backgroundColor: editor.isActive("underline")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <Underline size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Highlight" arrow>
+            <IconButton
+              size="small"
+              onClick={() => editor.chain().focus().toggleHighlight().run()}
+              sx={{
+                color: editor.isActive("highlight") ? "primary.light" : "inherit",
+                backgroundColor: editor.isActive("highlight")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <Highlighter size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Subscript" arrow>
+            <IconButton
+              size="small"
+              onClick={() => editor.chain().focus().toggleSubscript().run()}
+              sx={{
+                color: editor.isActive("subscript") ? "primary.light" : "inherit",
+                backgroundColor: editor.isActive("subscript")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <SubscriptIcon size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Superscript" arrow>
+            <IconButton
+              size="small"
+              onClick={() => editor.chain().focus().toggleSuperscript().run()}
+              sx={{
+                color: editor.isActive("superscript") ? "primary.light" : "inherit",
+                backgroundColor: editor.isActive("superscript")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <SuperscriptIcon size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Insert Link" arrow>
+            <IconButton
+              size="small"
+              onClick={onInsertLinkClick}
+              sx={{
+                color: editor.isActive("link") ? "primary.light" : "inherit",
+                backgroundColor: editor.isActive("link")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <Link2 size={15} />
             </IconButton>
           </Tooltip>
 

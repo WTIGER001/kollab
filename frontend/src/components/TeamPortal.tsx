@@ -16,7 +16,8 @@ import {
 import { 
   Settings, 
   Users, 
-  ArrowRight
+  ArrowRight,
+  Briefcase
 } from "lucide-react";
 import { fetchTeamUsers } from "../services/api";
 import type { Team, Project } from "../services/api";
@@ -139,7 +140,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
                   cursor: "pointer",
                   backgroundColor: "transparent",
                   border: "1px solid var(--border-color)",
-                  borderRadius: 2,
+                  borderRadius: 'var(--border-radius-card)',
                   transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                   p: 3,
                   display: "flex",
@@ -164,7 +165,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
                         fontWeight: 700 
                       }}
                     >
-                      {proj.name.slice(0, 1).toUpperCase()}
+                      {!proj.logoUrl && <Briefcase size={16} />}
                     </Avatar>
                     <Box>
                       <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "text.primary", lineHeight: 1.2 }}>
