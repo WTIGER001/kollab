@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Box, 
   Typography, 
@@ -10,7 +10,8 @@ import {
   ListItemIcon, 
   ListItemText, 
   Divider,
-  Checkbox
+  Checkbox,
+  InputBase
 } from "@mui/material";
 import { 
   Layers, 
@@ -39,7 +40,6 @@ interface TopNavbarProps {
   onLogout: () => void;
   themeMode: "light" | "dark";
   onToggleThemeMode: () => void;
-  onOpenSearch: () => void;
   onOpenHelp: () => void;
   onOpenSettings?: () => void;
   onOpenAdminHelp?: () => void;
@@ -63,7 +63,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onLogout,
   themeMode,
   onToggleThemeMode,
-  onOpenSearch,
   onOpenHelp,
   onOpenSettings,
   onOpenAdminHelp,
@@ -77,6 +76,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onToggleSidebar
 }) => {
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        const input = document.getElementById('global-search-input');
+        if (input) {
+          input.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const activeTeam = teams.find(t => t.id === selectedTeamId);
 
@@ -159,7 +172,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* Middle section: Global Search Box */}
       <Box sx={{ flex: 1, maxWidth: 320, mx: { xs: 1, sm: 4 }, display: { xs: "none", sm: "block" } }}>
         <Box 
-          onClick={onOpenSearch}
           sx={{ 
             display: "flex", 
             alignItems: "center", 
@@ -170,19 +182,40 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             backgroundColor: "var(--bg-color)", 
             border: "1px solid var(--border-color)",
             color: "text.secondary",
-            "&:hover": {
+            "&:focus-within": {
               borderColor: "primary.main",
               boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)",
             },
             transition: "all 0.15s ease",
-            cursor: "pointer",
-            userSelect: "none"
           }}
         >
           <Search size={13} style={{ color: "var(--text-muted)" }} />
-          <Typography sx={{ fontSize: "11px", color: "text.disabled", flex: 1 }}>
-            Search document spec...
-          </Typography>
+          <InputBase
+            placeholder="Search document spec..."
+            inputProps={{
+              id: "global-search-input",
+              "aria-label": "global search",
+              onKeyDown: (e) => {
+                if (e.key === "Enter") {
+                  const query = (e.target as HTMLInputElement).value;
+                  if (query.trim()) {
+                    // Navigate directly instead of firing onOpenSearch
+                    window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+                  }
+                }
+              }
+            }}
+            sx={{
+              flex: 1,
+              color: "text.primary",
+              fontSize: "13px",
+              fontFamily: '"Outfit", sans-serif',
+              "& .MuiInputBase-input::placeholder": {
+                color: "text.disabled",
+                opacity: 1,
+              }
+            }}
+          />
           <Box component="kbd" sx={{ 
             fontSize: "9px", 
             px: 0.75, 
@@ -229,7 +262,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         {/* Search Icon Button - Visible only on mobile */}
         <IconButton 
           size="small" 
-          onClick={onOpenSearch} 
+          onClick={() => {
+            const input = document.getElementById('global-search-input');
+            if (input) input.focus();
+          }} 
           sx={{ 
             color: "text.secondary", 
             "&:hover": { color: "text.primary" },

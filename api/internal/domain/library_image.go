@@ -16,6 +16,7 @@ type LibraryImage struct {
 	URL         string    `json:"url"`
 	Scope       string    `json:"scope"`
 	TeamID      *string   `json:"teamId,omitempty"`
+	ProjectID   *string   `json:"projectId,omitempty"`
 	UploadedBy   string    `json:"uploadedBy"` // This is the user ID
 	UploaderName string    `json:"uploaderName"` // This is the user's display name
 	CreatedAt    time.Time `json:"createdAt"`

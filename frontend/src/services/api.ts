@@ -312,8 +312,8 @@ export const createMilestone = (docId: string, summary: string): Promise<Documen
   });
 };
 
-export const searchDocuments = (projectId: string, query: string): Promise<Document[]> => {
-  return request(`/api/search?q=${encodeURIComponent(query)}&projectId=${projectId}`);
+export const searchDocuments = (projectId: string, query: string, mode: "ai" | "keyword" = "ai"): Promise<Document[]> => {
+  return request(`/api/search?q=${encodeURIComponent(query)}&projectId=${encodeURIComponent(projectId)}&mode=${encodeURIComponent(mode)}`);
 };
 
 export interface AnalyticsDataPoint {

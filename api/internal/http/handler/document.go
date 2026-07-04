@@ -358,8 +358,9 @@ func (h *DocumentHandler) CreateMilestone(w http.ResponseWriter, r *http.Request
 func (h *DocumentHandler) Search(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	projectId := r.URL.Query().Get("projectId")
+	mode := r.URL.Query().Get("mode")
 
-	docs, err := h.docService.SearchDocuments(r.Context(), query, projectId)
+	docs, err := h.docService.SearchDocuments(r.Context(), query, projectId, mode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

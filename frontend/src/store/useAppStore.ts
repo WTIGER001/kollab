@@ -3,7 +3,6 @@ import { create } from 'zustand';
 interface AppState {
   sidebarOpen: boolean;
   themeMode: "light" | "dark";
-  searchOpen: boolean;
   helpOpen: boolean;
   createSpaceOpen: boolean;
   developerMode: boolean;
@@ -13,7 +12,6 @@ interface AppState {
   setSidebarOpen: (open: boolean) => void;
   setThemeMode: (mode: "light" | "dark") => void;
   toggleThemeMode: () => void;
-  setSearchOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
   setCreateSpaceOpen: (open: boolean) => void;
   toggleDeveloperMode: () => void;
@@ -23,7 +21,6 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   sidebarOpen: true,
   themeMode: "dark",
-  searchOpen: false,
   helpOpen: false,
   createSpaceOpen: false,
   developerMode: false,
@@ -33,7 +30,6 @@ export const useAppStore = create<AppState>((set) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setThemeMode: (mode) => set({ themeMode: mode }),
   toggleThemeMode: () => set((state) => ({ themeMode: state.themeMode === "light" ? "dark" : "light" })),
-  setSearchOpen: (open) => set({ searchOpen: open }),
   setHelpOpen: (open) => set({ helpOpen: open }),
   setCreateSpaceOpen: (open) => set({ createSpaceOpen: open }),
   toggleDeveloperMode: () => set((state) => ({ developerMode: !state.developerMode })),

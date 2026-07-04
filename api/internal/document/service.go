@@ -516,7 +516,7 @@ func (s *DocumentService) CreateManualMilestone(ctx context.Context, docID strin
 	return version, nil
 }
 
-func (s *DocumentService) SearchDocuments(ctx context.Context, query string, projectId string) ([]*domain.Document, error) {
+func (s *DocumentService) SearchDocuments(ctx context.Context, query string, projectId string, mode string) ([]*domain.Document, error) {
 	if query == "" {
 		if projectId == "" || projectId == "all" || projectId == "*" {
 			return []*domain.Document{}, nil
@@ -527,10 +527,15 @@ func (s *DocumentService) SearchDocuments(ctx context.Context, query string, pro
 		return s.repo.GetByProjectID(ctx, projectId)
 	}
 
-	embedding, err := s.aiClient.GenerateTextEmbeddings(ctx, query)
-	if err != nil {
-		log.Printf("Search query embedding generation failed, falling back to database keyword search: %v", err)
-		embedding = nil
+	var embedding []float32
+	var err error
+
+	if mode != "keyword" {
+		embedding, err = s.aiClient.GenerateTextEmbeddings(ctx, query)
+		if err != nil {
+			log.Printf("Search query embedding generation failed, falling back to database keyword search: %v", err)
+			embedding = nil
+		}
 	}
 
 	return s.repo.Search(ctx, query, projectId, embedding)

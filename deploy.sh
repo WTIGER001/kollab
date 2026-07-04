@@ -53,11 +53,11 @@ fi
 
 # 4. Build images first (old site stays online during build)
 echo "🐳 Building new Docker images in the background (zero downtime)..."
-docker compose build
+docker-compose build
 
 # 5. Recreate containers instantly (switch takes < 2 seconds)
 echo "🔄 Swapping running containers to new versions..."
-docker compose up -d
+docker-compose up -d
 
 # 6. Cleanup unused Docker images to save space on small VPS
 echo "🧹 Cleaning up dangling Docker images..."

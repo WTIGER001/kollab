@@ -47,7 +47,6 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     sidebarOpen,
     themeMode,
     toggleThemeMode,
-    setSearchOpen,
     setHelpOpen,
     developerMode,
     toggleDeveloperMode,
@@ -132,7 +131,6 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         onLogout={() => auth?.signoutRedirect()}
         themeMode={themeMode}
         onToggleThemeMode={toggleThemeMode}
-        onOpenSearch={() => setSearchOpen(true)}
         onOpenHelp={() => setHelpOpen(true)}
         onOpenSettings={() => legacyNavigate("_admin", null, null)}
         onOpenAdminHelp={() => legacyNavigate("_admin_help", null, null)}

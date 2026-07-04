@@ -58,6 +58,7 @@ import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
 import { EditorMacroDialog } from "./editor/EditorMacroDialog";
 import { EditorToolbar } from "./editor/EditorToolbar";
 import { EditorFloatingMenus } from "./editor/EditorFloatingMenus";
+import { ImageSelectionDialog } from "./editor/ImageSelectionDialog";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
 import { TableCreatorDialog } from "./TableCreatorDialog";
@@ -314,6 +315,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [macroSelectorOpen, setMacroSelectorOpen] = useState(false);
   const [activeCategoryTab, setActiveCategoryTab] = useState("text");
   const [macroSearchQuery, setMacroSearchQuery] = useState("");
+  
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageDialogTargetEditor, setImageDialogTargetEditor] = useState<any>(null);
+
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("arkollab_favorite_macros");
@@ -519,36 +524,31 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const triggerImageUpload = (targetEditor: any) => {
     if (!targetEditor) return;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.onchange = async (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    setImageDialogTargetEditor(targetEditor);
+    setImageDialogOpen(true);
+  };
 
-      try {
-        const meta = await uploadImage(file);
-        targetEditor
-          .chain()
-          .focus()
-          .insertContent({
-            type: "customImage",
-            attrs: {
-              imageId: meta.id,
-              src: `${API_BASE_URL}/api/images/${meta.id}/O`,
-              size: "O",
-              alignment: "center",
-              originalWidth: meta.originalWidth,
-              originalHeight: meta.originalHeight,
-            },
-          })
-          .run();
-      } catch (err) {
-        console.error("Failed to upload image:", err);
-        alert("Failed to upload image. Please try again.");
-      }
-    };
-    input.click();
+  const handleImageSelect = (imageData: { src: string; imageId?: string; originalWidth?: number; originalHeight?: number }) => {
+    if (!imageDialogTargetEditor) return;
+    
+    imageDialogTargetEditor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "customImage",
+        attrs: {
+          imageId: imageData.imageId || null,
+          src: imageData.src,
+          size: "O",
+          alignment: "center",
+          originalWidth: imageData.originalWidth || null,
+          originalHeight: imageData.originalHeight || null,
+        },
+      })
+      .run();
+      
+    setImageDialogOpen(false);
+    setImageDialogTargetEditor(null);
   };
 
   // Sync title when initialTitle changes
@@ -3750,6 +3750,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ImageSelectionDialog
+        open={imageDialogOpen}
+        onClose={() => {
+          setImageDialogOpen(false);
+          setImageDialogTargetEditor(null);
+        }}
+        onSelect={handleImageSelect}
+        activeDocId={activeDocId}
+        attachments={attachments}
+        selectedTeamId={selectedTeamId}
+      />
     </Box>
   );
 };

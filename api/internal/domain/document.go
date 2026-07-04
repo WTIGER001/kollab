@@ -105,7 +105,7 @@ type DocumentService interface {
 	GenerateSummary(ctx context.Context, title string, oldContent string, newContent string) (string, error)
 
 	// Search
-	SearchDocuments(ctx context.Context, query string, projectId string) ([]*Document, error)
+	SearchDocuments(ctx context.Context, query string, projectId string, mode string) ([]*Document, error)
 
 	// Analytics
 	RecordView(ctx context.Context, documentID string, userID string) error

@@ -22,7 +22,7 @@ import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { AdminHelpPage } from "./components/AdminHelpPage";
 import { ImageLibraryView } from "./components/ImageLibraryView";
 
-import { SearchModal } from "./components/SearchModal";
+import { SearchPage } from "./pages/SearchPage";
 import { HelpDialog } from "./components/HelpDialog";
 import { CreateSpaceDialog } from "./components/CreateSpaceDialog";
 
@@ -98,7 +98,7 @@ export default function App({ isMockMode = false }: AppProps) {
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { themeMode, searchOpen, setSearchOpen, helpOpen, setHelpOpen, createSpaceOpen, setCreateSpaceOpen } = useAppStore();
+  const { themeMode, helpOpen, setHelpOpen, createSpaceOpen, setCreateSpaceOpen } = useAppStore();
   
   // Only enable data fetching when fully authenticated and not currently processing a login/redirect
   const isAuthenticated = isMockMode || (!!auth?.isAuthenticated && !auth?.isLoading && !auth?.activeNavigator && !auth?.error);
@@ -305,6 +305,8 @@ export default function App({ isMockMode = false }: AppProps) {
         <Route path="/" element={<MainLayout isMockMode={isMockMode} />}>
           <Route index element={<Navigate to="/my/recents" replace />} />
           
+          <Route path="search" element={<SearchPage onNavigate={handleGlobalNavigate} />} />
+          
           <Route path="my/recents" element={<RecentPagesView onNavigate={handleGlobalNavigate} teams={teams} projects={projects} />} />
           <Route path="my/favorites" element={<FavoritesView onNavigate={handleGlobalNavigate} onUnfavoriteActive={() => {}} />} />
           <Route path="my/tasks" element={<TasksView username="user" onNavigate={handleGlobalNavigate} />} />
@@ -339,7 +341,6 @@ export default function App({ isMockMode = false }: AppProps) {
         </Route>
       </Routes>
 
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} projectId={null} onSelectDoc={() => {}} />
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
       <CreateSpaceDialog open={createSpaceOpen} onClose={() => setCreateSpaceOpen(false)} teams={teams} activeTeamId={null} onCreateTeam={handleCreateTeam} onCreateProject={handleCreateProject} />
 
