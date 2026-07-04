@@ -141,18 +141,33 @@ Administrators can configure the retention policy in Server Settings (e.g., `for
 
 ---
 
-## 6. Automated System Backups
+## 6. Cross-Space Document Movement
+
+> [!NOTE]
+> **Status:** 🟢 Completed
+
+Documents can be seamlessly transferred between entirely different hierarchical spaces (Teams, Projects, or Personal Spaces).
+
+### 6.1 Move Logic
+When `MoveDocument` is executed:
+1. **Validation**: The system verifies that the document is not being moved inside itself or one of its descendants (preventing cycle loops).
+2. **Space Re-Assignment**: The document's `TeamID` and `ProjectID` columns are updated to match the target space (inheriting from the new `ParentID` or directly via root assignments if `ParentID = nil`).
+3. **Descendant Propagation**: A recursive hook instantly updates the `TeamID` and `ProjectID` of all nested sub-pages, ensuring the entire tree shifts cleanly to the new destination space.
+
+---
+
+## 7. Automated System Backups
 
 > [!NOTE]
 > **Status:** ⚪ Planned
 
 To ensure disaster recovery, Kollab utilizes the same Go cron worker system to manage automated database snapshots.
 
-### 6.1 Backup Routine
+### 7.1 Backup Routine
 1. **Trigger**: A nightly (or weekly) cron job fires.
 2. **Snapshot**: The worker executes a `pg_dump` of the entire PostgreSQL database schema and data.
 3. **Compression**: The resulting SQL file is compressed (gzip).
 4. **Upload**: The compressed payload is uploaded securely to the currently configured storage backend (e.g., S3 or Azure Blob Storage).
 
-### 6.2 Retention Policy
+### 7.2 Retention Policy
 Administrators can define a backup retention policy (e.g., keep the last 7 daily backups and 4 weekly backups). The cron worker will automatically prune old backups from the storage provider after a successful new upload.

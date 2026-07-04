@@ -41,6 +41,8 @@ import {
   FileUp,
   Image
 } from "lucide-react";
+import { useDocuments } from "../hooks/queries";
+import { useDocumentTree } from "../hooks/useDocumentTree";
 import type { Team, Project } from "../services/api";
 import { ImportDialog } from "./ImportDialog";
 
@@ -119,7 +121,11 @@ interface MovePageDialogProps {
   documentId: string;
   documentTitle: string;
   documents: DocumentItem[];
-  onConfirm: (id: string, parentId: string | null) => Promise<void>;
+  teams: Team[];
+  projects: Project[];
+  currentTeamId: string | null;
+  currentProjectId: string | null;
+  onConfirm: (id: string, parentId: string | null, projectId?: string, teamId?: string) => Promise<void>;
 }
 
 export const MovePageDialog: React.FC<MovePageDialogProps> = ({
@@ -128,17 +134,31 @@ export const MovePageDialog: React.FC<MovePageDialogProps> = ({
   documentId,
   documentTitle,
   documents,
+  teams,
+  projects,
+  currentTeamId,
+  currentProjectId,
   onConfirm
 }) => {
+  const defaultSpace = currentProjectId ? `project:${currentProjectId}` : `team:${currentTeamId}`;
+  const [selectedSpace, setSelectedSpace] = useState<string>(defaultSpace);
   const [selectedParentId, setSelectedParentId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const candidates = getMoveCandidates(documents, documentId);
+  const isProject = selectedSpace.startsWith("project:");
+  const selectedProjId = isProject ? selectedSpace.substring(8) : null;
+  const selectedTeamId = !isProject ? selectedSpace.substring(5) : null;
+
+  const { data: fetchedDocs } = useDocuments(selectedProjId, selectedTeamId);
+  const tree = useDocumentTree(fetchedDocs);
+
+  const displayTree = selectedSpace === defaultSpace ? documents : tree;
+  const candidates = getMoveCandidates(displayTree, documentId);
 
   const handleMove = async () => {
     setIsSubmitting(true);
     try {
-      await onConfirm(documentId, selectedParentId === "" ? null : selectedParentId);
+      await onConfirm(documentId, selectedParentId === "" ? null : selectedParentId, selectedProjId || undefined, selectedTeamId || undefined);
       onClose();
     } catch (err) {
       console.error("Move dialog confirm error:", err);
@@ -156,6 +176,34 @@ export const MovePageDialog: React.FC<MovePageDialogProps> = ({
         <Typography variant="body2" sx={{ mb: 3, color: "text.secondary", fontSize: "13px" }}>
           Select the new parent page for this document. Moving it to the "Top Level (Root)" will place it at the base of the space.
         </Typography>
+
+        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+          <InputLabel id="move-space-select-label" sx={{ fontFamily: '"Outfit", sans-serif' }}>
+            Destination Space
+          </InputLabel>
+          <Select
+            labelId="move-space-select-label"
+            value={selectedSpace}
+            label="Destination Space"
+            onChange={(e) => {
+              setSelectedSpace(e.target.value as string);
+              setSelectedParentId("");
+            }}
+            sx={{ fontFamily: '"Outfit", sans-serif', fontSize: "13px" }}
+          >
+            {teams.map(t => (
+              <MenuItem key={`team:${t.id}`} value={`team:${t.id}`} sx={{ fontFamily: '"Outfit", sans-serif', fontSize: "13px" }}>
+                {t.id.startsWith("personal_") ? "👤 Personal Space" : `🏢 Team: ${t.name}`}
+              </MenuItem>
+            ))}
+            {projects.map(p => (
+              <MenuItem key={`project:${p.id}`} value={`project:${p.id}`} sx={{ fontFamily: '"Outfit", sans-serif', fontSize: "13px" }}>
+                🎯 Project: {p.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <FormControl fullWidth size="small">
           <InputLabel id="move-parent-select-label" sx={{ fontFamily: '"Outfit", sans-serif' }}>
             New Parent Page
@@ -216,7 +264,7 @@ interface SidebarProps {
   onAddDoc: (parentId?: string) => void;
   onImportMarkdown?: (parentId: string | undefined, title: string, markdown: string) => void;
   onDeleteDoc: (id: string) => void;
-  onMoveDoc: (id: string, parentId: string | null) => Promise<void>;
+  onMoveDoc: (id: string, parentId: string | null, projectId?: string, teamId?: string) => Promise<void>;
   
   // OIDC & Workspace Hierarchy
   teams: Team[];
@@ -305,7 +353,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [activeMoveDoc, setActiveMoveDoc] = useState<DocumentItem | null>(null);
+  const [moveDialogDocId, setMoveDialogDocId] = useState<string>("");
+  const [moveDialogDocTitle, setMoveDialogDocTitle] = useState<string>("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -1290,6 +1339,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           parentId={activeDocId}
           onImportSuccess={(newDocId) => {
             onSelectDoc(newDocId);
+          }}
+        />
+      )}
+      
+      {/* Move Document Dialog */}
+      {moveDialogOpen && moveDialogDocId && (
+        <MovePageDialog
+          open={moveDialogOpen}
+          onClose={() => setMoveDialogOpen(false)}
+          documentId={moveDialogDocId}
+          documentTitle={moveDialogDocTitle}
+          documents={documents}
+          teams={teams}
+          projects={projects}
+          currentTeamId={selectedTeamId}
+          currentProjectId={selectedProjectId}
+          onConfirm={async (id, parentId, projectId, teamId) => {
+            await onMoveDoc(id, parentId, projectId, teamId);
           }}
         />
       )}

@@ -447,11 +447,9 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 	} else {
 		// Moving to root level of space
 		doc.ParentID = nil
-		if projectID != "" {
-			doc.ProjectID = projectID
-		}
 		if teamID != "" {
 			doc.TeamID = teamID
+			doc.ProjectID = projectID
 		}
 	}
 

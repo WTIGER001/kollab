@@ -24,3 +24,14 @@ You can create a new page in a project directly from the left sidebar:
 2. Or, click the chevron arrow next to "Create Page" to open the creation menu:
    - **Import Markdown File**: Select this option to choose a local `.md` or text file from your computer. A new page will be created automatically. The system will extract the first `# Heading` in your file to use as the page title, and inject the rest of the file into the new page using the Markdown Import macro.
    - **Import Hierarchy**: Upload a `.json` file to automatically generate an entire tree of nested pages and folders.
+
+## Organizing & Moving Pages
+
+You can easily reorganize your document hierarchy or move pages entirely across different spaces (Teams, Projects, or Personal).
+
+1. In the sidebar, hover over the page you want to move.
+2. Click the **More Options (`⋮`)** icon next to the page name and select **Move**.
+3. In the Move dialog:
+   - **Destination Space**: At the top of the dialog, select the space you want to move the page to. It defaults to the current space, but you can select any Team, Project, or your Personal Space that you have access to.
+   - **New Parent Page**: Select the new parent folder within the chosen destination space. Select "Top Level (Root)" to place it at the base of the space.
+4. Click **Move** to finalize. If the page contains sub-pages, they will all be moved together to the new destination.
