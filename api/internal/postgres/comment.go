@@ -22,7 +22,7 @@ func NewPostgresCommentRepository(db *pgxpool.Pool) *PostgresCommentRepository {
 
 func (r *PostgresCommentRepository) GetByDocumentID(ctx context.Context, docID string) ([]*domain.Comment, error) {
 	query := `
-		SELECT id, document_id, parent_id, content, created_by, created_name, created_at, updated_at
+		SELECT id, document_id, parent_id, anchor_id, content, created_by, created_name, created_at, updated_at
 		FROM comments
 		WHERE document_id = $1
 		ORDER BY created_at ASC
@@ -40,6 +40,7 @@ func (r *PostgresCommentRepository) GetByDocumentID(ctx context.Context, docID s
 			&c.ID,
 			&c.DocumentID,
 			&c.ParentID,
+			&c.AnchorID,
 			&c.Content,
 			&c.CreatedBy,
 			&c.CreatedByName,
@@ -56,7 +57,7 @@ func (r *PostgresCommentRepository) GetByDocumentID(ctx context.Context, docID s
 
 func (r *PostgresCommentRepository) GetByID(ctx context.Context, id string) (*domain.Comment, error) {
 	query := `
-		SELECT id, document_id, parent_id, content, created_by, created_name, created_at, updated_at
+		SELECT id, document_id, parent_id, anchor_id, content, created_by, created_name, created_at, updated_at
 		FROM comments
 		WHERE id = $1
 	`
@@ -65,6 +66,7 @@ func (r *PostgresCommentRepository) GetByID(ctx context.Context, id string) (*do
 		&c.ID,
 		&c.DocumentID,
 		&c.ParentID,
+		&c.AnchorID,
 		&c.Content,
 		&c.CreatedBy,
 		&c.CreatedByName,
@@ -82,8 +84,8 @@ func (r *PostgresCommentRepository) GetByID(ctx context.Context, id string) (*do
 
 func (r *PostgresCommentRepository) Create(ctx context.Context, comment *domain.Comment) error {
 	query := `
-		INSERT INTO comments (id, document_id, parent_id, content, created_by, created_name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO comments (id, document_id, parent_id, anchor_id, content, created_by, created_name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 	_, err := r.db.Exec(
 		ctx,
@@ -91,6 +93,7 @@ func (r *PostgresCommentRepository) Create(ctx context.Context, comment *domain.
 		comment.ID,
 		comment.DocumentID,
 		comment.ParentID,
+		comment.AnchorID,
 		comment.Content,
 		comment.CreatedBy,
 		comment.CreatedByName,

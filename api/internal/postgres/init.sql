@@ -146,12 +146,15 @@ CREATE TABLE IF NOT EXISTS comments (
     id VARCHAR(255) PRIMARY KEY,
     document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     parent_id VARCHAR(255) REFERENCES comments(id) ON DELETE CASCADE,
+    anchor_id VARCHAR(255),
     content TEXT NOT NULL,
     created_by VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
+
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS anchor_id VARCHAR(255);
 CREATE INDEX IF NOT EXISTS idx_comments_doc_id ON comments(document_id);
 
 CREATE TABLE IF NOT EXISTS attachments (

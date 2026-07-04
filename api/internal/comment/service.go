@@ -25,7 +25,7 @@ func (s *CommentServiceImpl) ListByDocument(ctx context.Context, docID string) (
 	return s.repo.GetByDocumentID(ctx, docID)
 }
 
-func (s *CommentServiceImpl) CreateComment(ctx context.Context, docID string, parentID *string, content, userID, userDisplayName string) (*domain.Comment, error) {
+func (s *CommentServiceImpl) CreateComment(ctx context.Context, docID string, parentID *string, anchorID *string, content, userID, userDisplayName string) (*domain.Comment, error) {
 	cleanContent := strings.TrimSpace(content)
 	if cleanContent == "" {
 		return nil, errors.New("comment content cannot be empty")
@@ -48,6 +48,7 @@ func (s *CommentServiceImpl) CreateComment(ctx context.Context, docID string, pa
 		ID:            uuid.New().String(),
 		DocumentID:    docID,
 		ParentID:      parentID,
+		AnchorID:      anchorID,
 		Content:       cleanContent,
 		CreatedBy:     userID,
 		CreatedByName: userDisplayName,

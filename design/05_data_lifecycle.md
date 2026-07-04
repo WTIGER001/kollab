@@ -135,9 +135,9 @@ When restored, `deleted_at` is cleared. If the restored page's parent page (`par
 - Project Trash: `/teams/{teamId}/p/{projectId}/trash`
 - Banner Overlay Warning: Soft-deleted pages display an alert banner and configure the editor as read-only.
 
-### 5.6 Automated Garbage Collection (30-Day Retention)
+### 5.6 Automated Garbage Collection (Configurable Retention)
 To prevent unbound database and storage growth, a backend Go cron worker (the "Garbage Collector") runs nightly. 
-It queries the database for all documents where `deleted_at < NOW() - INTERVAL '30 days'` and executes the permanent purge routine, destroying the AST, historical versions, and all associated media attachments.
+Administrators can configure the retention policy in Server Settings (e.g., `forever` or `custom` days). If configured to delete after a certain number of days, it queries the database for all documents where `deleted_at < NOW() - INTERVAL 'X days'` and executes the permanent purge routine, destroying the AST, historical versions, and all associated media attachments.
 
 ---
 

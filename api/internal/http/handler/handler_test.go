@@ -304,7 +304,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	teamService := inmemteam.NewTeamService(teamRepo)
 	systemService := inmemsystem.NewSystemService(systemRepo)
 	_ = systemService.EnsurePartitions(context.Background())
-	docService := inmemdoc.NewDocumentService(docRepo, systemService, taskRepo)
+	docService := inmemdoc.NewDocumentService(docRepo, systemService, taskRepo, teamRepo)
 	imageService := imgservice.NewImageService(imageRepo, storageProvider)
 	themeService := themepkg.NewThemeService(themeRepo)
 	attachmentService := inmematt.NewAttachmentService(attachmentRepo, storageProvider)
@@ -338,7 +338,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	tagH := handler.NewTagHandler(tagService)
 
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, evaluator)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, nil, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, evaluator)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {

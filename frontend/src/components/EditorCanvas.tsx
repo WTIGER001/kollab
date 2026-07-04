@@ -36,6 +36,7 @@ import {
 } from "../editor/extensions/CustomTableExtensions";
 import { CustomImage } from "../editor/extensions/CustomImage";
 import { PresenceCursors } from "../editor/extensions/PresenceCursors";
+import { CommentMark } from "../editor/extensions/CommentMark";
 import { usePresence } from "../hooks/usePresence";
 import {
   uploadImage,
@@ -59,7 +60,7 @@ import type {
 } from "../services/api";
 import { DocumentTags } from "./DocumentTags";
 import { UserAvatar } from "./UserAvatar";
-import { PageComments } from "./editor/PageComments";
+
 import { EditorHeader } from "./editor/EditorHeader";
 import { EditorAnalyticsDialog } from "./editor/EditorAnalyticsDialog";
 import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
@@ -324,6 +325,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [symbolMenuAnchorEl, setSymbolMenuAnchorEl] =
     useState<null | HTMLElement>(null);
   const [isEditing, setIsEditing] = useState(initialEditMode && !deletedAt);
+  const [showComments, setShowComments] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [macroSelectorOpen, setMacroSelectorOpen] = useState(false);
   const [activeCategoryTab, setActiveCategoryTab] = useState("text");
@@ -639,6 +641,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       CustomImage,
       PresenceCursors,
       TableOfContents,
+      CommentMark,
     ],
     content: "", // Start empty; populated dynamically by WebSocket sync-history or offline fallback
     editable: false,
@@ -2114,6 +2117,35 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     executeCommand,
     executeUserSelect,
   };
+  // Scroll selected autocomplete menu item into view automatically
+  useEffect(() => {
+    const handleRemoveCommentMark = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { anchorId } = customEvent.detail;
+      if (!editor || !anchorId) return;
+
+      const tr = editor.state.tr;
+      editor.state.doc.descendants((node, pos) => {
+        const hasMark = node.marks.find(
+          (mark) =>
+            mark.type.name === "comment" && mark.attrs.commentId === anchorId,
+        );
+        if (hasMark) {
+          tr.removeMark(pos, pos + node.nodeSize, hasMark);
+        }
+      });
+
+      if (tr.docChanged) {
+        editor.view.dispatch(tr);
+        saveDocument();
+      }
+    };
+
+    document.addEventListener("remove-comment-mark", handleRemoveCommentMark);
+    return () => {
+      document.removeEventListener("remove-comment-mark", handleRemoveCommentMark);
+    };
+  }, [editor]);
 
   // Scroll selected autocomplete menu item into view automatically
   useEffect(() => {
@@ -2357,6 +2389,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           breadcrumbsList={breadcrumbsList}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
+          showComments={showComments}
+          setShowComments={setShowComments}
           uniqueActiveUsers={uniqueActiveUsers}
           moreMenuAnchor={moreMenuAnchor}
           historyOpen={historyOpen}
@@ -3212,7 +3246,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           </Box>
 
           {/* Editor Body */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1 }} className={!showComments ? "hide-comments" : ""}>
             <DocumentContext.Provider
               value={{
                 documents,
@@ -3253,15 +3287,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           {/* Page Tags Section */}
           {activeDocId && (
             <DocumentTags docId={activeDocId} readOnly={!!deletedAt} />
-          )}
-
-          {/* Page Comments Section */}
-          {activeDocId && (
-            <PageComments
-              docId={activeDocId}
-              authToken={authToken}
-              readOnly={!!deletedAt}
-            />
           )}
         </Box>
       </Paper>
@@ -3533,6 +3558,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             setLinkInitialText("");
             setInsertLinkDialogOpen(true);
           }
+        }}
+        onAddComment={(commentId) => {
+          saveDocument(); // Ensure we save the new inline comment marks even if in read mode
+          // Fire custom event to be picked up by the CommentDrawer globally
+          document.dispatchEvent(new CustomEvent("open-comment-drawer", { detail: { commentId } }));
         }}
       />
 

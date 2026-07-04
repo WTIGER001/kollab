@@ -65,6 +65,13 @@ A smart inline extension for creating resilient internal page references and cle
 - **Internal Links (Mentions)**: Authors can type `@` or use a search dialog to link to another Kollab page. The document AST stores the target's `document_id` rather than a hardcoded URL. During rendering, the system dynamically resolves the target's current title and slug. This guarantees the link text and routing URL automatically update even if the target page is moved or renamed.
 - **External Links**: When a user pastes or creates a standard link to an external domain (e.g., `https://google.com`), the editor automatically appends a subtle "External Link" icon (`↗`) to the text, signaling to readers that the link leads outside the Kollab workspace.
 
+### 1.12 Draw.io Diagram Macro
+A fully integrated, offline vector drawing canvas allowing users to embed flowcharts, wireframes, and schemas directly in the document.
+- **Implementation**: Renders via `MacroBlockView` (type `"drawio"`).
+- **Editor Integration**: Opens a sandboxed `iframe` pointing to the Draw.io embed API (`embed.diagrams.net`) when double-clicked.
+- **Data Storage**: The raw diagram XML/SVG vector data is serialized directly into the Tiptap node's `config.xml` attribute, ensuring fully client-side, database-backed offline persistence without needing external file attachments.
+- **Theme Awareness**: Dynamically injects `ui=atlas` and toggles the `dark=1` or `dark=0` URL query parameters based on the host Kollab theme configuration.
+
 ---
 
 ## 2. Advanced Plugin Macros

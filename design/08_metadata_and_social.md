@@ -7,7 +7,7 @@ This document specifies the technical design for document metadata and social fe
 ## 1. Document Comments & Nested Threads
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟢 Implemented
 
 Comments are stored in PostgreSQL using a nested parent-child hierarchy to form threads.
 
@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS comments (
     id VARCHAR(255) PRIMARY KEY,
     document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     parent_id VARCHAR(255) REFERENCES comments(id) ON DELETE CASCADE,
+    anchor_id VARCHAR(255),
     content TEXT NOT NULL,
     created_by VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_name VARCHAR(255) NOT NULL,
@@ -28,9 +29,13 @@ CREATE TABLE IF NOT EXISTS comments (
 - **Authorization**: When updating or deleting, the service verifies `comment.CreatedBy == userID`.
 - **Endpoints**: Standard REST endpoints (`GET`, `POST`, `PUT`, `DELETE`) secured with OIDC tokens.
 
-### 1.2 Frontend Rendering (`<PageComments>`)
-- Decodes the OIDC JWT payload locally for identity.
-- Filters top-level comments and maps nested replies.
+### 1.2 Frontend Rendering (`<CommentDrawer>`)
+- Tiptap extension (`CommentMark`) creates `<span class="inline-comment-anchor" data-comment-id="...">` wrappers around commented text.
+- `EditorFloatingMenus` displays a `SelectionBubbleMenu` with an "Add Comment" action when text is highlighted.
+- Emits custom DOM events (`open-comment-drawer`) to globally invoke the `CommentDrawer`.
+- `CommentDrawer` filters top-level comments and maps nested replies based on the active `anchorId`.
+- **Deletion & Cleanup**: Users can delete their own comments. When the last comment in a group is deleted, `CommentDrawer` fires a `remove-comment-mark` event, prompting `EditorCanvas` to manually traverse the ProseMirror node tree and remove the orphaned `CommentMark` from the document.
+- **Hide/Show Comments**: `EditorCanvas` maintains a `showComments` state toggled via `EditorHeader`. When hidden, a CSS class (`.hide-comments`) is applied to the editor container which visually suppresses the `inline-comment-anchor` styles.
 - Provides read-only guards if the document is soft-deleted (in Trash Bin).
 
 ---

@@ -9,6 +9,7 @@ type Comment struct {
 	ID            string    `json:"id"`
 	DocumentID    string    `json:"documentId"`
 	ParentID      *string   `json:"parentId,omitempty"`
+	AnchorID      *string   `json:"anchorId,omitempty"`
 	Content       string    `json:"content"`
 	CreatedBy     string    `json:"createdBy"`
 	CreatedByName string    `json:"createdByName"`
@@ -26,7 +27,7 @@ type CommentRepository interface {
 
 type CommentService interface {
 	ListByDocument(ctx context.Context, docID string) ([]*Comment, error)
-	CreateComment(ctx context.Context, docID string, parentID *string, content, userID, userDisplayName string) (*Comment, error)
+	CreateComment(ctx context.Context, docID string, parentID *string, anchorID *string, content, userID, userDisplayName string) (*Comment, error)
 	UpdateComment(ctx context.Context, id, content, userID string) (*Comment, error)
 	DeleteComment(ctx context.Context, id, userID string) error
 }

@@ -40,8 +40,10 @@ func (h *CommentHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateCommentRequest struct {
-	ParentID *string `json:"parentId"`
-	Content  string  `json:"content"`
+	ParentID      *string `json:"parentId"`
+	AnchorID      *string `json:"anchorId"`
+	Content       string  `json:"content"`
+	CreatedByName *string `json:"createdByName"`
 }
 
 func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -59,18 +61,20 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	username, _ := middleware.GetUsername(r.Context())
 
-	displayName := username
-	if user, err := h.userRepo.GetByUsername(r.Context(), username); err == nil && user.DisplayName != "" {
-		displayName = user.DisplayName
-	}
-
 	var req CreateCommentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad Request: invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	comment, err := h.commentService.CreateComment(r.Context(), docID, req.ParentID, req.Content, userID, displayName)
+	displayName := username
+	if req.CreatedByName != nil && *req.CreatedByName != "" {
+		displayName = *req.CreatedByName
+	} else if user, err := h.userRepo.GetByUsername(r.Context(), username); err == nil && user.DisplayName != "" {
+		displayName = user.DisplayName
+	}
+
+	comment, err := h.commentService.CreateComment(r.Context(), docID, req.ParentID, req.AnchorID, req.Content, userID, displayName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

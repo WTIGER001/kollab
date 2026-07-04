@@ -67,7 +67,7 @@ CREATE INDEX idx_documents_embedding ON documents USING hnsw (embedding vector_c
 
 *   **Q1: CRUD API & Auth Middleware**: SQLite & Postgres schema migrations, JWT/Logto OIDC JWKS token validation, team workspace scoping.
 *   **Q2: Collaborative Editor Shell**: Tiptap headless canvas bindings, WebSocket roomRelay handlers, cursor presence, Yjs synchronization updates, toolbar layout adjustments.
-*   **Q3: Hybrid Search & Versioning**: `pgvector` HNSW indexes, Ollama http embedding client, debounced versions, Named milestones, Search modal overlays (`⌘P`), History drawers.
+*   **Q3: Hybrid Search & Versioning**: `pgvector` HNSW indexes, Ollama http embedding client, debounced versions, Named milestones, Global Search Page (`/search`), History drawers.
 *   **Q4: Rich Content Blocks**: Callout panels, status badges, expandable blocks, export integrations (PDF/Word), metrics dashboards.
 
 ---

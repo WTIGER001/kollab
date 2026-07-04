@@ -10,7 +10,7 @@ When you delete a page from the document actions menu:
 - The page is **soft-deleted** (moved to the Trash Bin) instead of deleted immediately.
 - **Cascading deletion**: Any sub-pages nested under the deleted page are also moved to the Trash Bin automatically to keep your workspace tree clean.
 - Deleted pages are removed from the sidebar tree and will not appear in standard search results.
-
+- **Garbage Collection**: Depending on your workspace's Server Settings, deleted pages may remain in the Trash Bin indefinitely, or they may be automatically purged by the system after a designated number of days (e.g., 30 days).
 ---
 
 ## 📥 2. The Trash Bin Page

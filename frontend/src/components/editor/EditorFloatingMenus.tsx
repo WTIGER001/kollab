@@ -4,6 +4,7 @@ import { TableCreatorDialog } from "../TableCreatorDialog";
 import { AIPromptBar } from "../AIPromptBar";
 import { Popover } from "@mui/material";
 import { LinkBubbleMenu } from "./LinkBubbleMenu";
+import { SelectionBubbleMenu } from "./SelectionBubbleMenu";
 
 export interface EditorFloatingMenusProps {
   editor: any;
@@ -19,6 +20,7 @@ export interface EditorFloatingMenusProps {
   handleUserMentionSelect: (user: any) => void;
   handleCommandSelect: (cmd: any) => void;
   onEditLink: () => void;
+  onAddComment: (commentId: string) => void;
 }
 
 export const EditorFloatingMenus: React.FC<EditorFloatingMenusProps> = ({
@@ -35,12 +37,14 @@ export const EditorFloatingMenus: React.FC<EditorFloatingMenusProps> = ({
   handleUserMentionSelect,
   handleCommandSelect,
   onEditLink,
+  onAddComment,
 }) => {
   return (
     <>
       {/* Popups & Menus that float above editor */}
       {editor && <TableBubbleToolbar editor={editor} />}
       {editor && <LinkBubbleMenu editor={editor} onEditLink={onEditLink} />}
+      {editor && <SelectionBubbleMenu editor={editor} onAddComment={onAddComment} />}
 
       <TableCreatorDialog
         open={tableCreatorOpen}

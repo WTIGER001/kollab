@@ -33,6 +33,8 @@ import {
   ChevronRight,
   Paperclip,
   Users,
+  MessageSquare,
+  MessageSquareOff,
 } from "lucide-react";
 import { UserAvatar } from "../UserAvatar";
 
@@ -49,6 +51,8 @@ export interface EditorHeaderProps {
   breadcrumbsList: any[];
   isEditing: boolean;
   setIsEditing: (val: boolean) => void;
+  showComments?: boolean;
+  setShowComments?: (val: boolean) => void;
   uniqueActiveUsers: any[];
   moreMenuAnchor: HTMLElement | null;
   historyOpen: boolean;
@@ -83,6 +87,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   breadcrumbsList,
   isEditing,
   setIsEditing,
+  showComments,
+  setShowComments,
   uniqueActiveUsers,
   moreMenuAnchor,
   historyOpen,
@@ -515,6 +521,36 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     </Box>
                   </Button>
                 </Tooltip>
+
+                {/* Show/Hide Comments Toggle */}
+                {setShowComments && (
+                  <Tooltip title={showComments ? "Hide Comments" : "Show Comments"} arrow>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setShowComments(!showComments)}
+                      sx={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        fontFamily: '"Outfit", sans-serif',
+                        height: 26,
+                        px: { xs: 1, sm: 1.25 },
+                        minWidth: { xs: 26, sm: "auto" },
+                        borderRadius: "5px",
+                        borderColor: "rgba(255, 255, 255, 0.08)",
+                        color: showComments ? "text.primary" : "text.secondary",
+                        backgroundColor: showComments ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                        textTransform: "none",
+                        "&:hover": {
+                          borderColor: "rgba(255, 255, 255, 0.15)",
+                          backgroundColor: "rgba(255, 255, 255, 0.08)",
+                        },
+                      }}
+                    >
+                      {showComments ? <MessageSquare size={13} /> : <MessageSquareOff size={13} />}
+                    </Button>
+                  </Tooltip>
+                )}
 
                 {/* Share Button */}
                 <Tooltip title="Link Sharing" arrow>

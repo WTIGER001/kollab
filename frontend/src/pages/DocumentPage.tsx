@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Box, CircularProgress } from '@mui/material';
 import { EditorCanvas } from '../components/EditorCanvas';
+import { CommentDrawer } from '../components/CommentDrawer';
 import { fetchDocument, updateDocument, deleteDocument, moveDocument } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from 'react-oidc-context';
@@ -81,26 +82,34 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   }
 
   return (
-    <EditorCanvas
-      key={activeDoc.id} // Remount editor on switching documents
-      activeDocId={activeDoc.id}
-      authToken={userToken}
-      initialTitle={activeDoc.title}
-      initialContent={activeDoc.content || ""}
-      initialEditMode={false}
-      developerMode={developerMode}
-      onSave={(title, content) => handleSaveDoc(activeDoc.id, title, content)}
-      isSaving={isSaving}
-      documents={documents}
-      selectedTeamName={activeTeam?.name}
-      selectedProjectName={activeProject?.name}
-      onDeleteDoc={handleDeleteDoc}
-      onMoveDoc={handleMoveDoc}
-      createdAt={activeDoc.createdAt}
-      updatedAt={activeDoc.updatedAt}
-      createdBy={activeDoc.createdBy}
-      updatedBy={activeDoc.updatedBy}
-      deletedAt={activeDoc.deletedAt}
-    />
+    <Box sx={{ display: "flex", width: "100%", height: "100%" }}>
+      <EditorCanvas
+        key={activeDoc.id} // Remount editor on switching documents
+        activeDocId={activeDoc.id}
+        authToken={userToken}
+        initialTitle={activeDoc.title}
+        initialContent={activeDoc.content || ""}
+        initialEditMode={false}
+        developerMode={developerMode}
+        onSave={(title, content) => handleSaveDoc(activeDoc.id, title, content)}
+        isSaving={isSaving}
+        documents={documents}
+        selectedTeamName={activeTeam?.name}
+        selectedProjectName={activeProject?.name}
+        onDeleteDoc={handleDeleteDoc}
+        onMoveDoc={handleMoveDoc}
+        createdAt={activeDoc.createdAt}
+        updatedAt={activeDoc.updatedAt}
+        createdBy={activeDoc.createdBy}
+        updatedBy={activeDoc.updatedBy}
+        deletedAt={activeDoc.deletedAt}
+      />
+      <CommentDrawer 
+        documentId={activeDoc.id} 
+        authToken={userToken} 
+        currentUserId={auth?.user?.profile.sub}
+        currentUserDisplayName={auth?.user?.profile.name || auth?.user?.profile.preferred_username}
+      />
+    </Box>
   );
 };
