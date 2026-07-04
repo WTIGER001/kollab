@@ -9,6 +9,7 @@ type Team struct {
 	Name         string `json:"name"`
 	Abbreviation string `json:"abbreviation"`
 	Description  string `json:"description"`
+	LogoURL      string `json:"logoUrl"`
 }
 
 type Project struct {

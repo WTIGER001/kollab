@@ -19,6 +19,7 @@ import { updateProjectSettings, fetchTeamUsers } from "../services/api";
 import type { Project } from "../services/api";
 import { TagsManager } from "./TagsManager";
 import { UserAvatar } from "./UserAvatar";
+import { LogoSelector } from "./LogoSelector";
 
 interface ProjectSettingsViewProps {
   project: Project;
@@ -201,19 +202,12 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
                 }}
               />
 
-              <TextField
-                label="Logo Image URL"
+              <LogoSelector
+                label="Project Logo (Optional)"
                 value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                fullWidth
-                placeholder="https://example.com/logo.png"
-                variant="outlined"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    fontFamily: '"Outfit", sans-serif'
-                  }
-                }}
+                onChange={setLogoUrl}
+                scope="project"
+                projectId={project.id}
               />
 
               <TextField

@@ -34,3 +34,6 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### 📎 [9. Attachments & Media Previews](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/attachments_and_previews.md)
 *Learn how to upload files, generate inline previews for Office/CAD documents, and manage Aspose settings.*
+
+### ⚙️ [10. Admin Server Settings](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/server_settings.md)
+*Learn how to customize the workspace branding, authentication screen, and global data retention policies.*

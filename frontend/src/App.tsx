@@ -26,13 +26,18 @@ import { SearchPage } from "./pages/SearchPage";
 import { HelpDialog } from "./components/HelpDialog";
 import { CreateSpaceDialog } from "./components/CreateSpaceDialog";
 
-import { fetchOIDCConfig, setApiToken, setOnUnauthorized, createTeam, createProject } from "./services/api";
+import { fetchOIDCConfig, setApiToken, setOnUnauthorized, createTeam, createProject, updateSystemSettings } from "./services/api";
 import { useAppStore } from "./store/useAppStore";
 import { useTeams, useProjects, useSystemSettings } from "./hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AppProps {
   isMockMode?: boolean;
+  welcomeTitle?: string;
+  welcomeText?: string;
+  authLogoUrl?: string;
+  legalDisclaimer?: string;
+  authLoginButtonText?: string;
 }
 
 
@@ -140,9 +145,10 @@ function PersonalPortalWrapper({ teams, projects }: { teams: any[], projects: an
   );
 }
 
-export default function App({ isMockMode = false }: AppProps) {
+export default function App({ isMockMode = false, welcomeTitle, welcomeText, authLogoUrl, legalDisclaimer, authLoginButtonText }: AppProps) {
   const auth = isMockMode ? null : useAuth();
-  // We use id_token because Logto free tier does not support API resources, so we can't get a JWT access_token.
+  
+  // Try to grab token if authenticatedo free tier does not support API resources, so we can't get a JWT access_token.
   const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
   setApiToken(userToken);
 
@@ -224,12 +230,85 @@ export default function App({ isMockMode = false }: AppProps) {
 
   if (!isMockMode && !auth?.isAuthenticated) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', gap: 2 }}>
-        <Typography variant="h5" sx={{ color: 'text.primary' }}>Kollab Login</Typography>
-        <Typography sx={{ color: 'text.secondary', mb: 2 }}>Please log in to continue.</Typography>
-        <Button variant="contained" onClick={() => auth?.signinRedirect({ state: window.location.pathname })}>
-          Log In with Logto
-        </Button>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100vh', 
+        width: '100vw', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        bgcolor: 'background.default',
+        backgroundImage: 'radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--primary-color) 15%, transparent) 0%, transparent 80%)',
+        p: 4 
+      }}>
+        <Box sx={{ 
+          p: 6, 
+          borderRadius: 4, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          gap: 4,
+          bgcolor: 'var(--glass-bg)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid var(--glass-border)',
+          boxShadow: 'var(--shadow-elevation)',
+          maxWidth: 480,
+          width: '100%',
+          textAlign: 'center',
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            transform: 'translateY(-4px)'
+          }
+        }}>
+          {authLogoUrl && (
+            <img src={authLogoUrl} alt="Workspace Logo" style={{ maxHeight: 80, objectFit: 'contain' }} />
+          )}
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {welcomeTitle && (
+              <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800, fontFamily: '"Outfit", sans-serif', letterSpacing: '-0.02em' }}>
+                {welcomeTitle}
+              </Typography>
+            )}
+            {welcomeText && (
+              <Typography sx={{ color: 'text.secondary', fontSize: '1.05rem', lineHeight: 1.5 }}>
+                {welcomeText}
+              </Typography>
+            )}
+            
+            {/* Fallback text if both are empty but no logo is present either */}
+            {!welcomeTitle && !welcomeText && !authLogoUrl && (
+              <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800, fontFamily: '"Outfit", sans-serif' }}>
+                Kollab
+              </Typography>
+            )}
+          </Box>
+
+          <Button 
+            variant="contained" 
+            size="large"
+            onClick={() => auth?.signinRedirect({ state: window.location.pathname })}
+            sx={{ 
+              mt: 1, 
+              width: '100%', 
+              py: 1.5, 
+              fontSize: '1.1rem', 
+              fontWeight: 700, 
+              fontFamily: '"Outfit", sans-serif',
+              borderRadius: 'var(--border-radius-button)',
+              textTransform: 'none',
+              boxShadow: 'var(--shadow-button)'
+            }}
+          >
+            {authLoginButtonText || "Log In to Workspace"}
+          </Button>
+
+          {legalDisclaimer && (
+            <Typography variant="caption" sx={{ color: 'text.disabled', mt: 2, display: 'block', px: 2, lineHeight: 1.5 }}>
+              {legalDisclaimer}
+            </Typography>
+          )}
+        </Box>
       </Box>
     );
   }
@@ -295,7 +374,7 @@ export default function App({ isMockMode = false }: AppProps) {
           <Route path="teams/:teamId/p/:projectId/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
           <Route path="teams/:teamId/p/:projectId/docs/:docId/viewers" element={<PageAuditView docId="docId" docTitle="Title" selectedTeamName="Team" onBack={() => {}} />} />
           
-          <Route path="_admin/settings" element={<ServerSettingsPage currentTheme={null} onSave={async () => {}} systemSettings={systemSettings!} onSaveSettings={async () => {}} onBack={() => {}} />} />
+          <Route path="_admin/settings" element={<ServerSettingsPage currentTheme={null} onSave={async () => {}} systemSettings={systemSettings!} onSaveSettings={async (settings) => { await updateSystemSettings(settings); queryClient.invalidateQueries({ queryKey: ['systemSettings'] }); }} onBack={() => {}} showToast={showToast} />} />
           <Route path="_admin/help" element={<AdminHelpPage onBack={() => {}} />} />
           
           <Route path="_admin/_images" element={<ImageLibraryView scope="system" />} />

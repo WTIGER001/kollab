@@ -93,8 +93,9 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         
         if (filtered.length !== prev.length) {
           localStorage.setItem('recent_spaces', JSON.stringify(filtered));
+          return filtered;
         }
-        return filtered;
+        return prev;
       });
     }
   }, [teams, allProjects]);

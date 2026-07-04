@@ -17,15 +17,22 @@ CREATE TABLE IF NOT EXISTS teams (
     description TEXT
 );
 
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS abbreviation VARCHAR(255) UNIQUE;
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE teams ADD COLUMN IF NOT EXISTS logo_url TEXT;
+
 CREATE TABLE IF NOT EXISTS projects (
     id VARCHAR(255) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE,
-    logo_url TEXT,
     abbreviation VARCHAR(255),
     description TEXT,
     CONSTRAINT unique_team_project_abbreviation UNIQUE (team_id, abbreviation)
 );
+
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS logo_url TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS abbreviation VARCHAR(255);
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT;
 
 CREATE TABLE IF NOT EXISTS documents (
     id VARCHAR(255) PRIMARY KEY,

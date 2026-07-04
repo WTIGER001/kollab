@@ -37,6 +37,7 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 		AIRateLimit:              10,
 		WelcomeTitle:             "Welcome to Kollab",
 		WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
+		AuthLoginButtonText:      "Log In to Workspace",
 		AsposeEnabled:            true,
 	}
 
@@ -68,6 +69,12 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 			settings.WelcomeTitle = val
 		case "welcome_text":
 			settings.WelcomeText = val
+		case "auth_logo_url":
+			settings.AuthLogoURL = val
+		case "auth_legal_disclaimer":
+			settings.AuthLegalDisclaimer = val
+		case "auth_login_button_text":
+			settings.AuthLoginButtonText = val
 		case "aspose_enabled":
 			settings.AsposeEnabled = val == "true"
 		case "aspose_license":
@@ -96,6 +103,9 @@ func (r *PostgresSystemRepository) UpdateSettings(ctx context.Context, settings 
 		{"ai_rate_limit", strconv.Itoa(settings.AIRateLimit)},
 		{"welcome_title", settings.WelcomeTitle},
 		{"welcome_text", settings.WelcomeText},
+		{"auth_logo_url", settings.AuthLogoURL},
+		{"auth_legal_disclaimer", settings.AuthLegalDisclaimer},
+		{"auth_login_button_text", settings.AuthLoginButtonText},
 		{"aspose_enabled", strconv.FormatBool(settings.AsposeEnabled)},
 		{"aspose_license", settings.AsposeLicense},
 	}

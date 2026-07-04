@@ -28,18 +28,29 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 
 	welcomeTitle := "Welcome to Kollab"
 	welcomeText := "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces."
+	logoUrl := ""
+	legalDisclaimer := ""
+	loginButtonText := "Log In to Workspace"
 	if settings, err := h.systemService.GetSettings(r.Context()); err == nil && settings != nil {
 		welcomeTitle = settings.WelcomeTitle
 		welcomeText = settings.WelcomeText
+		logoUrl = settings.AuthLogoURL
+		legalDisclaimer = settings.AuthLegalDisclaimer
+		if settings.AuthLoginButtonText != "" {
+			loginButtonText = settings.AuthLoginButtonText
+		}
 	}
 
 	resp := map[string]interface{}{
-		"authority":    h.oidcConfig["authority"],
-		"clientId":     h.oidcConfig["clientId"],
-		"redirectUri":  h.oidcConfig["redirectUri"],
-		"theme":        theme,
-		"welcomeTitle": welcomeTitle,
-		"welcomeText":  welcomeText,
+		"authority":       h.oidcConfig["authority"],
+		"clientId":        h.oidcConfig["clientId"],
+		"redirectUri":     h.oidcConfig["redirectUri"],
+		"theme":               theme,
+		"welcomeTitle":        welcomeTitle,
+		"welcomeText":         welcomeText,
+		"authLogoUrl":         logoUrl,
+		"legalDisclaimer":     legalDisclaimer,
+		"authLoginButtonText": loginButtonText,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

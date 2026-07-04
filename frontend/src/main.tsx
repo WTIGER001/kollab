@@ -24,6 +24,10 @@ interface OidcConfig {
   authority: string;
   clientId: string;
   redirectUri: string;
+  welcomeTitle?: string;
+  welcomeText?: string;
+  authLogoUrl?: string;
+  legalDisclaimer?: string;
 }
 
 function Root() {
@@ -37,6 +41,11 @@ function Root() {
           authority: cfg.authority,
           clientId: cfg.clientId,
           redirectUri: cfg.redirectUri,
+          welcomeTitle: cfg.welcomeTitle,
+          welcomeText: cfg.welcomeText,
+          authLogoUrl: cfg.authLogoUrl,
+          legalDisclaimer: cfg.legalDisclaimer,
+          authLoginButtonText: cfg.authLoginButtonText,
         });
         setLoading(false);
       })
@@ -79,7 +88,13 @@ function Root() {
         <ThemeEngine>
           <CssBaseline />
           <BrowserRouter>
-            <App isMockMode={true} />
+            <App 
+              isMockMode={true} 
+              welcomeTitle={config?.welcomeTitle}
+              welcomeText={config?.welcomeText}
+              authLogoUrl={config?.authLogoUrl}
+              legalDisclaimer={config?.legalDisclaimer}
+            />
           </BrowserRouter>
         </ThemeEngine>
       </QueryClientProvider>
@@ -92,7 +107,14 @@ function Root() {
         <ThemeEngine>
           <CssBaseline />
           <BrowserRouter>
-            <App isMockMode={false} />
+            <App 
+              isMockMode={false} 
+              welcomeTitle={config?.welcomeTitle}
+              welcomeText={config?.welcomeText}
+              authLogoUrl={config?.authLogoUrl}
+              legalDisclaimer={config?.legalDisclaimer}
+              authLoginButtonText={config?.authLoginButtonText}
+            />
           </BrowserRouter>
         </ThemeEngine>
       </QueryClientProvider>

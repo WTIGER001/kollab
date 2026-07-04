@@ -1,8 +1,9 @@
 export interface Team {
   id: string;
   name: string;
-  abbreviation: string;
-  description: string;
+  abbreviation?: string;
+  description?: string;
+  logoUrl?: string;
 }
 
 export interface Project {
@@ -229,6 +230,9 @@ export const fetchOIDCConfig = (): Promise<{
   theme: WorkspaceTheme | null;
   welcomeTitle?: string;
   welcomeText?: string;
+  authLogoUrl?: string;
+  legalDisclaimer?: string;
+  authLoginButtonText?: string;
 }> => {
   return fetch(`${BASE_URL}/api/auth/config`).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch OIDC configuration");
@@ -337,15 +341,16 @@ export const fetchDocumentAnalytics = (docId: string): Promise<DocumentAnalytics
   return request(`/api/documents/${docId}/analytics`);
 };
 
-export const updateTeamSettings = (
-  id: string,
+export const updateTeamSettings = async (
+  teamId: string,
   name: string,
   abbreviation: string,
-  description: string
+  description: string,
+  logoUrl?: string
 ): Promise<Team> => {
-  return request(`/api/teams/${id}`, {
+  return request(`/api/teams/${encodeURIComponent(teamId)}`, {
     method: "PUT",
-    body: JSON.stringify({ name, abbreviation, description }),
+    body: JSON.stringify({ name, abbreviation, description, logoUrl }),
   });
 };
 
@@ -431,9 +436,12 @@ export interface SystemSettings {
   auditLogDestination: string;
   trashRetentionPolicy: string;
   trashRetentionCustomDays: number;
-  aiRateLimit: number;
   welcomeTitle: string;
   welcomeText: string;
+  authLogoUrl: string;
+  authLegalDisclaimer: string;
+  authLoginButtonText: string;
+  aiRateLimit: number;
   asposeEnabled: boolean;
   asposeLicense: string;
 }

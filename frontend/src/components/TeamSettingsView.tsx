@@ -27,9 +27,9 @@ import {
   addTeamMember, 
   removeTeamMember 
 } from "../services/api";
-import type { Team, UserDirectoryItem } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
 import { TagsManager } from "./TagsManager";
+import { LogoSelector } from "./LogoSelector";
 
 interface TeamSettingsViewProps {
   team: Team;
@@ -47,6 +47,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
   const [name, setName] = useState(team.name);
   const [abbreviation, setAbbreviation] = useState(team.abbreviation || "");
   const [description, setDescription] = useState(team.description || "");
+  const [logoUrl, setLogoUrl] = useState(team.logoUrl || "");
   const [members, setMembers] = useState<{ id: string; username: string }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,11 +62,11 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
       .then(data => setAllUsers(data))
       .catch(err => console.error("Error fetching user directory:", err));
   }, []);
-
   useEffect(() => {
     setName(team.name);
     setAbbreviation(team.abbreviation || "");
     setDescription(team.description || "");
+    setLogoUrl(team.logoUrl || "");
     
     setLoadingMembers(true);
     fetchTeamUsers(team.id)
@@ -122,7 +123,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
 
     setSaving(true);
     try {
-      const updated = await updateTeamSettings(team.id, name, abbreviation, description);
+      const updated = await updateTeamSettings(team.id, name, abbreviation, description, logoUrl);
       onUpdateTeam(updated);
       showToast("Team settings updated successfully", "success");
       // Update URL to match new abbreviation
@@ -249,6 +250,14 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
                   fontFamily: '"Outfit", sans-serif'
                 }
               }}
+            />
+
+            <LogoSelector
+              label="Team Logo (Optional)"
+              value={logoUrl}
+              onChange={setLogoUrl}
+              scope="team"
+              teamId={team.id}
             />
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>

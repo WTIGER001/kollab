@@ -20,7 +20,7 @@ func NewPostgresTeamRepository(db *pgxpool.Pool) *PostgresTeamRepository {
 
 func (r *PostgresTeamRepository) GetTeamsByUserID(ctx context.Context, userID string) ([]*domain.Team, error) {
 	query := `
-		SELECT t.id, t.name, COALESCE(t.abbreviation, '') AS abbreviation, COALESCE(t.description, '') AS description
+		SELECT t.id, t.name, COALESCE(t.abbreviation, '') AS abbreviation, COALESCE(t.description, '') AS description, COALESCE(t.logo_url, '') AS logo_url
 		FROM teams t
 		JOIN team_members tm ON t.id = tm.team_id
 		WHERE tm.user_id = $1
@@ -35,7 +35,7 @@ func (r *PostgresTeamRepository) GetTeamsByUserID(ctx context.Context, userID st
 	list := []*domain.Team{}
 	for rows.Next() {
 		var t domain.Team
-		if err := rows.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description, &t.LogoURL); err != nil {
 			return nil, err
 		}
 		list = append(list, &t)
@@ -115,9 +115,9 @@ func (r *PostgresTeamRepository) UpdateTeam(ctx context.Context, team *domain.Te
 
 	_, err = r.db.Exec(ctx, `
 		UPDATE teams
-		SET name = $1, abbreviation = $2, description = $3
-		WHERE id = $4
-	`, team.Name, team.Abbreviation, team.Description, team.ID)
+		SET name = $1, abbreviation = $2, description = $3, logo_url = $4
+		WHERE id = $5
+	`, team.Name, team.Abbreviation, team.Description, team.LogoURL, team.ID)
 	return err
 }
 
@@ -140,9 +140,9 @@ func (r *PostgresTeamRepository) UpdateProject(ctx context.Context, project *dom
 }
 
 func (r *PostgresTeamRepository) GetTeamByAbbreviation(ctx context.Context, abbreviation string) (*domain.Team, error) {
-	row := r.db.QueryRow(ctx, "SELECT id, name, COALESCE(abbreviation, ''), COALESCE(description, '') FROM teams WHERE abbreviation = $1", abbreviation)
+	row := r.db.QueryRow(ctx, "SELECT id, name, COALESCE(abbreviation, ''), COALESCE(description, ''), COALESCE(logo_url, '') FROM teams WHERE abbreviation = $1", abbreviation)
 	var t domain.Team
-	if err := row.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description); err != nil {
+	if err := row.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description, &t.LogoURL); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.New("team not found")
 		}
@@ -202,6 +202,24 @@ func (r *PostgresTeamRepository) RemoveTeamMember(ctx context.Context, teamID st
 		WHERE team_id = $1 AND user_id = $2
 	`, teamID, userID)
 	return err
+}
+
+func (r *PostgresTeamRepository) ListTeams(ctx context.Context) ([]*domain.Team, error) {
+	rows, err := r.db.Query(ctx, "SELECT id, name, COALESCE(abbreviation, ''), COALESCE(description, ''), COALESCE(logo_url, '') FROM teams ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	list := []*domain.Team{}
+	for rows.Next() {
+		var t domain.Team
+		if err := rows.Scan(&t.ID, &t.Name, &t.Abbreviation, &t.Description, &t.LogoURL); err != nil {
+			return nil, err
+		}
+		list = append(list, &t)
+	}
+	return list, nil
 }
 
 func (r *PostgresTeamRepository) ListAllUsers(ctx context.Context) ([]*domain.User, error) {

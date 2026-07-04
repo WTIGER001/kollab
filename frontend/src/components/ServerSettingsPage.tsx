@@ -20,6 +20,7 @@ import { API_BASE_URL, downloadBackup, downloadSyncExport, restoreBackup, import
 import { useAppStore } from "../store/useAppStore";
 import { presets } from "../theme/presets";
 import { ThemeSelector } from "./ThemeSelector";
+import { LogoSelector } from "./LogoSelector";
 
 interface ServerSettingsPageProps {
   currentTheme: WorkspaceTheme | null;
@@ -27,6 +28,7 @@ interface ServerSettingsPageProps {
   systemSettings: SystemSettings | null;
   onSaveSettings: (settings: SystemSettings) => Promise<void>;
   onBack: () => void;
+  showToast: (message: string, severity: "success" | "error" | "info" | "warning") => void;
 }
 
 export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
@@ -34,7 +36,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   onSave,
   systemSettings,
   onSaveSettings,
-  onBack
+  onBack,
+  showToast
 }) => {
   const [tabIndex, setTabIndex] = useState(0);
   const [name, setName] = useState("");
@@ -52,6 +55,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   // New settings states
   const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Kollab");
   const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+  const [authLogoUrl, setAuthLogoUrl] = useState("");
+  const [authLegalDisclaimer, setAuthLegalDisclaimer] = useState("");
+  const [authLoginButtonText, setAuthLoginButtonText] = useState("Log In to Workspace");
   const [aiRateLimit, setAiRateLimit] = useState(10);
   const [asposeEnabled, setAsposeEnabled] = useState(true);
   const [asposeLicense, setAsposeLicense] = useState("");
@@ -95,6 +101,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setTrashCustomDays(systemSettings.trashRetentionCustomDays || 30);
       setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Kollab");
       setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+      setAuthLogoUrl(systemSettings.authLogoUrl || "");
+      setAuthLegalDisclaimer(systemSettings.authLegalDisclaimer || "");
+      setAuthLoginButtonText(systemSettings.authLoginButtonText || "Log In to Workspace");
       setAiRateLimit(systemSettings.aiRateLimit || 10);
       setAsposeEnabled(systemSettings.asposeEnabled !== false);
       setAsposeLicense(systemSettings.asposeLicense || "");
@@ -106,20 +115,28 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   };
 
   const handleSave = async () => {
-    onSave(name, logoUrl, lightColors, darkColors);
-    await onSaveSettings({
-      auditRetentionPolicy: policy,
-      auditRetentionCustomDays: customDays,
-      auditLogDestination: destination,
-      trashRetentionPolicy: trashPolicy,
-      trashRetentionCustomDays: trashCustomDays,
-      welcomeTitle: welcomeTitle,
-      welcomeText: welcomeText,
-      aiRateLimit: aiRateLimit,
-      asposeEnabled: asposeEnabled,
-      asposeLicense: asposeLicense
-    });
-    onBack();
+    try {
+      onSave(name, logoUrl, lightColors, darkColors);
+      await onSaveSettings({
+        auditRetentionPolicy: policy,
+        auditRetentionCustomDays: customDays,
+        auditLogDestination: destination,
+        trashRetentionPolicy: trashPolicy,
+        trashRetentionCustomDays: trashCustomDays,
+        welcomeTitle: welcomeTitle,
+        welcomeText: welcomeText,
+        authLogoUrl: authLogoUrl,
+        authLegalDisclaimer: authLegalDisclaimer,
+        authLoginButtonText: authLoginButtonText,
+        aiRateLimit: aiRateLimit,
+        asposeEnabled: asposeEnabled,
+        asposeLicense: asposeLicense
+      });
+      showToast("Server settings saved successfully", "success");
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to save server settings", "error");
+    }
   };
 
   const renderColorInput = (
@@ -247,6 +264,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           <Tab label="Audit & Retention" />
           <Tab label="Aspose & Previews" />
           <Tab label="Backups & Air-Gap Sync" />
+          <Tab label="Authentication Branding" />
         </Tabs>
       </Box>
 
@@ -272,61 +290,13 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               }}
             />
 
-            <TextField
+            <LogoSelector
               label="Branding Logo URL (Optional)"
-              placeholder="https://example.com/logo.png"
               value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              fullWidth
-              slotProps={{
-                inputLabel: { style: { fontSize: "13px" } },
-                htmlInput: { style: { fontSize: "13.5px" } }
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "var(--border-color)" },
-                  "&:hover fieldset": { borderColor: "primary.main" }
-                }
-              }}
+              onChange={setLogoUrl}
+              scope="system"
             />
 
-            <TextField
-              label="Welcome Screen Title"
-              placeholder="Welcome to Kollab"
-              value={welcomeTitle}
-              onChange={(e) => setWelcomeTitle(e.target.value)}
-              fullWidth
-              slotProps={{
-                inputLabel: { style: { fontSize: "13px" } },
-                htmlInput: { style: { fontSize: "13.5px" } }
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "var(--border-color)" },
-                  "&:hover fieldset": { borderColor: "primary.main" }
-                }
-              }}
-            />
-
-            <TextField
-              label="Welcome Screen Description"
-              placeholder="A premium block-based document workspace..."
-              value={welcomeText}
-              onChange={(e) => setWelcomeText(e.target.value)}
-              multiline
-              rows={4}
-              fullWidth
-              slotProps={{
-                inputLabel: { style: { fontSize: "13px" } },
-                htmlInput: { style: { fontSize: "13.5px" } }
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "var(--border-color)" },
-                  "&:hover fieldset": { borderColor: "primary.main" }
-                }
-              }}
-            />
 
             <TextField
               label="AI Assistant Global Rate Limit (requests/min)"
@@ -710,6 +680,99 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 </Button>
               </Box>
             </Box>
+          </Box>
+        )}
+        {tabIndex === 5 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 600 }}>
+              Authentication Screen Branding
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+              Customize the public login screen for your users. If any field is left blank, it will not be displayed.
+            </Typography>
+
+            <LogoSelector
+              label="Auth Logo URL"
+              value={authLogoUrl}
+              onChange={setAuthLogoUrl}
+              scope="system"
+            />
+
+            <TextField
+              label="Welcome Screen Title"
+              placeholder="Welcome to Kollab"
+              value={welcomeTitle}
+              onChange={(e) => setWelcomeTitle(e.target.value)}
+              fullWidth
+              slotProps={{
+                inputLabel: { style: { fontSize: "13px" } },
+                htmlInput: { style: { fontSize: "13.5px" } }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "primary.main" }
+                }
+              }}
+            />
+
+            <TextField
+              label="Welcome Screen Subtitle (Description)"
+              placeholder="A premium block-based document workspace..."
+              value={welcomeText}
+              onChange={(e) => setWelcomeText(e.target.value)}
+              multiline
+              rows={4}
+              fullWidth
+              slotProps={{
+                inputLabel: { style: { fontSize: "13px" } },
+                htmlInput: { style: { fontSize: "13.5px" } }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "primary.main" }
+                }
+              }}
+            />
+
+            <TextField
+              label="Legal Disclaimer"
+              placeholder="By logging in, you agree to our Terms of Service..."
+              value={authLegalDisclaimer}
+              onChange={(e) => setAuthLegalDisclaimer(e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+              slotProps={{
+                inputLabel: { style: { fontSize: "13px" } },
+                htmlInput: { style: { fontSize: "13.5px" } }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "primary.main" }
+                }
+              }}
+            />
+
+            <TextField
+              label="Login Button Text"
+              placeholder="Log In to Workspace"
+              value={authLoginButtonText}
+              onChange={(e) => setAuthLoginButtonText(e.target.value)}
+              fullWidth
+              slotProps={{
+                inputLabel: { style: { fontSize: "13px" } },
+                htmlInput: { style: { fontSize: "13.5px" } }
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "primary.main" }
+                }
+              }}
+            />
           </Box>
         )}
       </Box>
