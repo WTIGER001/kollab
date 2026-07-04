@@ -16,3 +16,11 @@ The main content area of the Project Portal displays a **grid of all pages** tha
 - Click "Open Page" or anywhere on a document card to dive straight into the editor for that page.
 
 *If a project doesn't have any pages yet, you'll see a placeholder prompting you to create one using the sidebar.*
+
+## Creating Pages
+
+You can create a new page in a project directly from the left sidebar:
+1. Click the **Create Page** button (with the `+` icon) at the top of the space's sidebar to instantly create a new blank page.
+2. Or, click the chevron arrow next to "Create Page" to open the creation menu:
+   - **Import Markdown File**: Select this option to choose a local `.md` or text file from your computer. A new page will be created automatically. The system will extract the first `# Heading` in your file to use as the page title, and inject the rest of the file into the new page using the Markdown Import macro.
+   - **Import Hierarchy**: Upload a `.json` file to automatically generate an entire tree of nested pages and folders.

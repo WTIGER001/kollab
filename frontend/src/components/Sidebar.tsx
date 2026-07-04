@@ -214,6 +214,7 @@ interface SidebarProps {
   activeDocId: string | null;
   onSelectDoc: (id: string) => void;
   onAddDoc: (parentId?: string) => void;
+  onImportMarkdown?: (parentId: string | undefined, title: string, markdown: string) => void;
   onDeleteDoc: (id: string) => void;
   onMoveDoc: (id: string, parentId: string | null) => Promise<void>;
   
@@ -251,6 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeDocId,
   onSelectDoc,
   onAddDoc,
+  onImportMarkdown,
   onDeleteDoc,
   onMoveDoc,
   teams,
@@ -1123,6 +1125,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <ListItemIcon sx={{ minWidth: 24 }}><FileUp size={12} /></ListItemIcon>
           <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Import Hierarchy</Typography>} />
         </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleCloseTemplates();
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".md,.markdown,text/markdown,text/plain";
+            input.onchange = (e: any) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (evt) => {
+                const text = evt.target?.result as string;
+                let title = file.name.replace(/\.md$/, "");
+                let markdownContent = text;
+                
+                const lines = text.split('\n');
+                const firstH1Index = lines.findIndex(line => line.startsWith('# '));
+                if (firstH1Index !== -1) {
+                  title = lines[firstH1Index].substring(2).trim();
+                  lines.splice(firstH1Index, 1);
+                  markdownContent = lines.join('\n');
+                }
+                
+                if (onImportMarkdown) {
+                  const isDoc = activeDocId && activeDocId !== selectedProjectId && activeDocId !== selectedTeamId;
+                  onImportMarkdown(isDoc ? activeDocId : undefined, title, markdownContent);
+                }
+              };
+              reader.readAsText(file);
+            };
+            input.click();
+          }}
+          sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}
+        >
+          <ListItemIcon sx={{ minWidth: 24 }}><FileText size={12} /></ListItemIcon>
+          <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Import Markdown File</Typography>} />
+        </MenuItem>
+
         <MenuItem disabled sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
           <ListItemIcon sx={{ minWidth: 24 }}><FileText size={12} /></ListItemIcon>
           <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Templates coming soon</Typography>} />

@@ -34,6 +34,12 @@ graph TD
     AST -->|Recursive Struct Builder| JSONExport[JSON Export/Import]
 ```
 
+### 1.4 Markdown Page Import
+Users can seamlessly create new pages by uploading a raw `.md` or `.txt` file directly from the Sidebar. 
+- **Processing Flow**: The system extracts the first `# Heading` in the file to use as the page's title and removes it from the content payload.
+- **Node Type**: The remaining markdown text is injected directly into the new document via the native `markdown-paste` macro block format.
+- **Client-Side Execution**: The entire parsing and initialization workflow runs 100% locally in the browser via standard `FileReader` APIs without needing to post the raw file binary to a backend endpoint.
+
 ---
 
 ## 2. Media Preview Service & Attachments

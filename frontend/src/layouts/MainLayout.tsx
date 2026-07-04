@@ -9,7 +9,7 @@ import { useTeams, useAllProjects, useDocuments } from '../hooks/queries';
 import { useDocumentTree } from '../hooks/useDocumentTree';
 import { getLegacyNavigateFn } from '../utils/navigation';
 import { useAuth } from 'react-oidc-context';
-import { createDocument, deleteDocument, moveDocument, restoreDocument } from '../services/api';
+import { createDocument, deleteDocument, moveDocument, restoreDocument, updateDocument } from '../services/api';
 import { presets } from '../theme/presets';
 import { useRecentSpacesStore } from '../store/useRecentSpacesStore';
 
@@ -139,6 +139,37 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     refetchDocs();
   };
 
+  const handleImportMarkdown = async (parentId: string | undefined, title: string, markdown: string) => {
+    try {
+      const parent = parentId || (actualProjectId ? actualProjectId : actualTeamId);
+      if (!parent) return;
+
+      const newDoc = await createDocument(title, actualProjectId || null, actualTeamId, parent);
+      
+      const contentJSON = JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "macroBlock",
+            attrs: {
+              type: "markdown-paste",
+              config: {
+                markdown: markdown
+              }
+            }
+          }
+        ]
+      });
+
+      await updateDocument(newDoc.id, title, contentJSON);
+
+      refetchDocs();
+      legacyNavigate(actualTeamId, actualProjectId || null, newDoc.id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleDeleteDocPermanently = async (id: string) => {
     await deleteDocument(id, true);
     refetchDocs();
@@ -178,6 +209,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
             activeDocId={docId || null}
             onSelectDoc={(id) => legacyNavigate(actualTeamId, actualProjectId, id)}
             onAddDoc={handleAddDoc}
+            onImportMarkdown={handleImportMarkdown}
             onDeleteDoc={handleDeleteDoc}
             onMoveDoc={handleMoveDoc}
             teams={teams}
