@@ -231,7 +231,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       try {
         mermaid.initialize({
           startOnLoad: false,
-          theme: "dark",
+          theme: theme.palette.mode === "dark" ? "dark" : "default",
           securityLevel: "loose",
           themeVariables: {
             background: "transparent",
@@ -241,7 +241,37 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         console.error("Failed to initialize Mermaid:", e);
       }
     }
-  }, [type]);
+  }, [type, theme.palette.mode]);
+
+  // Re-render Mermaid locally when theme changes (or when code changes outside of editing)
+  useEffect(() => {
+    if (type !== "mermaid" || isMermaidEditing || !config.code) return;
+    
+    let isMounted = true;
+    const reRender = async () => {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: theme.palette.mode === "dark" ? "dark" : "default",
+          securityLevel: "loose",
+          themeVariables: { background: "transparent" }
+        });
+        const { svg } = await mermaid.render(`${uniqueId}-theme-render`, config.code);
+        if (isMounted) {
+          setRenderedMermaidSvg(svg);
+        }
+      } catch (e) {
+        // Silently ignore errors during background re-renders
+      }
+    };
+    
+    // Add a slight delay to allow the layout to settle and prevent rapid re-renders
+    const timer = setTimeout(reRender, 100);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [theme.palette.mode, config.code, type, isMermaidEditing, uniqueId]);
 
   // Mermaid live compile effect
   useEffect(() => {
@@ -256,6 +286,12 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     const timer = setTimeout(async () => {
       try {
         setMermaidError("");
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: theme.palette.mode === "dark" ? "dark" : "default",
+          securityLevel: "loose",
+          themeVariables: { background: "transparent" }
+        });
         const { svg } = await mermaid.render(uniqueId, code);
         setRenderedMermaidSvg(svg);
         updateAttributes({
