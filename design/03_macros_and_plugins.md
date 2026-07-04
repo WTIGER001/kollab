@@ -69,8 +69,12 @@ A smart inline extension for creating resilient internal page references and cle
 A fully integrated, offline vector drawing canvas allowing users to embed flowcharts, wireframes, and schemas directly in the document.
 - **Implementation**: Renders via `MacroBlockView` (type `"drawio"`).
 - **Editor Integration**: Opens a sandboxed `iframe` pointing to the Draw.io embed API (`embed.diagrams.net`) when double-clicked.
-- **Data Storage**: The raw diagram XML/SVG vector data is serialized directly into the Tiptap node's `config.xml` attribute, ensuring fully client-side, database-backed offline persistence without needing external file attachments.
 - **Theme Awareness**: Dynamically injects `ui=atlas` and toggles the `dark=1` or `dark=0` URL query parameters based on the host Kollab theme configuration.
+
+### 1.13 Markdown Import Macro
+Allows users to paste raw Markdown text or upload a local `.md` file, which is then parsed and injected directly into the document AST, or kept within a distinct block to maintain the raw markdown.
+- **Node Type**: `markdown-paste`
+- **Features**: Supports file uploads via native `<input type="file">` to read local files client-side without creating server attachments.
 
 ---
 
@@ -241,6 +245,6 @@ The following is a formalized index of the remaining "long tail" macros designed
 *   **RSS Feed**: Remote RSS fetcher to summarize feeds directly in the page.
 
 ### 5.6 Diagramming & Sketching
-*   **Draw.io Diagram**: Inserts an offline Draw.io vector drawing canvas for complex architecture diagrams.
+*   **Draw.io Diagram**: Inserts an offline Draw.io vector drawing canvas for complex architecture diagrams. 🟢 **(Completed)**
 *   **Excalidraw Diagram**: Inserts an offline Excalidraw sketching canvas for hand-drawn style whiteboarding.
 *   **Mermaid Diagram**: Renders flowchart, sequence, and Gantt diagrams automatically from text definitions.

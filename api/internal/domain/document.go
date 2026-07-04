@@ -8,6 +8,7 @@ import (
 type Document struct {
 	ID          string     `json:"id"`
 	Title       string     `json:"title"`
+	Slug        string     `json:"slug"`
 	Content     string     `json:"content"` // JSON string representation of Tiptap content
 	ProjectID   string     `json:"projectId"`
 	TeamID      string     `json:"teamId"`
@@ -45,6 +46,7 @@ type Favorite struct {
 
 type DocumentRepository interface {
 	GetByID(ctx context.Context, id string) (*Document, error)
+	GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Document, string, error) // Returns doc, requested_slug (if alias), err
 	GetByProjectID(ctx context.Context, projectId string) ([]*Document, error)
 	GetByTeamID(ctx context.Context, teamId string) ([]*Document, error)
 	Create(ctx context.Context, doc *Document) error
@@ -82,11 +84,11 @@ type DocumentRepository interface {
 }
 
 type DocumentService interface {
-	GetDocument(ctx context.Context, id string) (*Document, error)
+	GetDocument(ctx context.Context, idOrSlug string) (*Document, string, error)
 	ListDocumentsByProject(ctx context.Context, projectId string) ([]*Document, error)
 	ListDocumentsByTeam(ctx context.Context, teamId string) ([]*Document, error)
-	CreateDocument(ctx context.Context, title string, projectId string, teamId string, parentId *string, userID string) (*Document, error)
-	UpdateDocument(ctx context.Context, id string, title string, content string, userID string, changeSummary string) (*Document, error)
+	CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string) (*Document, error)
+	UpdateDocument(ctx context.Context, id string, title string, slug string, content string, userID string, changeSummary string) (*Document, error)
 	MoveDocument(ctx context.Context, id string, parentID *string, projectID string, teamID string) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) error
 	ListRecentDocuments(ctx context.Context, userID string, filterType string) ([]*Document, error)

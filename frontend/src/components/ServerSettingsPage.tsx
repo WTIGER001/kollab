@@ -56,6 +56,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Kollab");
   const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
   const [authLogoUrl, setAuthLogoUrl] = useState("");
+  const [authLogoSize, setAuthLogoSize] = useState("Medium");
   const [authLegalDisclaimer, setAuthLegalDisclaimer] = useState("");
   const [authLoginButtonText, setAuthLoginButtonText] = useState("Log In to Workspace");
   const [aiRateLimit, setAiRateLimit] = useState(10);
@@ -102,6 +103,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Kollab");
       setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
       setAuthLogoUrl(systemSettings.authLogoUrl || "");
+      setAuthLogoSize(systemSettings.authLogoSize || "Medium");
       setAuthLegalDisclaimer(systemSettings.authLegalDisclaimer || "");
       setAuthLoginButtonText(systemSettings.authLoginButtonText || "Log In to Workspace");
       setAiRateLimit(systemSettings.aiRateLimit || 10);
@@ -126,6 +128,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         welcomeTitle: welcomeTitle,
         welcomeText: welcomeText,
         authLogoUrl: authLogoUrl,
+        authLogoSize: authLogoSize,
         authLegalDisclaimer: authLegalDisclaimer,
         authLoginButtonText: authLoginButtonText,
         aiRateLimit: aiRateLimit,
@@ -697,6 +700,44 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               onChange={setAuthLogoUrl}
               scope="system"
             />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                Logo Height
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                <Select
+                  value={["Small", "Medium", "Large"].includes(authLogoSize) ? authLogoSize : "Custom"}
+                  onChange={(e) => setAuthLogoSize(e.target.value === "Custom" ? "150" : e.target.value)}
+                  size="small"
+                  sx={{
+                    width: 200,
+                    backgroundColor: "var(--bg-color)",
+                    "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
+                  }}
+                >
+                  <MenuItem value="Small">Small (48px)</MenuItem>
+                  <MenuItem value="Medium">Medium (80px)</MenuItem>
+                  <MenuItem value="Large">Large (120px)</MenuItem>
+                  <MenuItem value="Custom">Custom</MenuItem>
+                </Select>
+                {(!["Small", "Medium", "Large"].includes(authLogoSize)) && (
+                  <TextField
+                    size="small"
+                    placeholder="e.g. 150"
+                    value={authLogoSize}
+                    onChange={(e) => setAuthLogoSize(e.target.value)}
+                    sx={{ width: 100 }}
+                    slotProps={{
+                      htmlInput: { style: { fontSize: "14px" } }
+                    }}
+                  />
+                )}
+                {(!["Small", "Medium", "Large"].includes(authLogoSize)) && (
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>px</Typography>
+                )}
+              </Box>
+            </Box>
 
             <TextField
               label="Welcome Screen Title"

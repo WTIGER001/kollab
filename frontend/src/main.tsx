@@ -27,7 +27,9 @@ interface OidcConfig {
   welcomeTitle?: string;
   welcomeText?: string;
   authLogoUrl?: string;
+  authLogoSize?: string;
   legalDisclaimer?: string;
+  authLoginButtonText?: string;
 }
 
 function Root() {
@@ -44,6 +46,7 @@ function Root() {
           welcomeTitle: cfg.welcomeTitle,
           welcomeText: cfg.welcomeText,
           authLogoUrl: cfg.authLogoUrl,
+          authLogoSize: cfg.authLogoSize,
           legalDisclaimer: cfg.legalDisclaimer,
           authLoginButtonText: cfg.authLoginButtonText,
         });
@@ -62,7 +65,7 @@ function Root() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b10', color: '#8b5cf6', fontFamily: 'sans-serif' }}>
+      <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--primary-color)', fontFamily: 'var(--font-sans, sans-serif)' }}>
         Loading configuration...
       </div>
     );
@@ -93,6 +96,7 @@ function Root() {
               welcomeTitle={config?.welcomeTitle}
               welcomeText={config?.welcomeText}
               authLogoUrl={config?.authLogoUrl}
+              authLogoSize={config?.authLogoSize}
               legalDisclaimer={config?.legalDisclaimer}
             />
           </BrowserRouter>
@@ -109,11 +113,12 @@ function Root() {
           <BrowserRouter>
             <App 
               isMockMode={false} 
-              welcomeTitle={config?.welcomeTitle}
-              welcomeText={config?.welcomeText}
-              authLogoUrl={config?.authLogoUrl}
-              legalDisclaimer={config?.legalDisclaimer}
-              authLoginButtonText={config?.authLoginButtonText}
+              welcomeTitle={config!.welcomeTitle}
+              welcomeText={config!.welcomeText}
+              authLogoUrl={config!.authLogoUrl}
+              authLogoSize={config!.authLogoSize}
+              legalDisclaimer={config!.legalDisclaimer}
+              authLoginButtonText={config!.authLoginButtonText}
             />
           </BrowserRouter>
         </ThemeEngine>

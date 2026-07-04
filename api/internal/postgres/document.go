@@ -24,7 +24,7 @@ func NewPostgresDocumentRepository(db *pgxpool.Pool) *PostgresDocumentRepository
 
 func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*domain.Document, error) {
 	row := r.db.QueryRow(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -35,7 +35,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 		WHERE d.id = $1
 	`, id)
 	var doc domain.Document
-	err := row.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+	err := row.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// Check if ID is a Team ID
@@ -86,9 +86,57 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 	return &doc, nil
 }
 
+func (r *PostgresDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug string) (*domain.Document, string, error) {
+	// First try to find by ID or Slug directly in documents
+	row := r.db.QueryRow(ctx, `
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+		       COALESCE(u1.display_name, u1.username, ''),
+		       COALESCE(u2.display_name, u2.username, ''),
+		       d.deleted_at
+		FROM documents d
+		LEFT JOIN users u1 ON d.created_by = u1.id
+		LEFT JOIN users u2 ON d.updated_by = u2.id
+		WHERE d.id = $1 OR d.slug = $1
+	`, idOrSlug)
+	
+	var doc domain.Document
+	err := row.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+	if err == nil {
+		return &doc, "", nil
+	}
+
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, "", err
+	}
+
+	// If not found, check document_slug_aliases
+	aliasRow := r.db.QueryRow(ctx, `
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+		       COALESCE(u1.display_name, u1.username, ''),
+		       COALESCE(u2.display_name, u2.username, ''),
+		       d.deleted_at
+		FROM document_slug_aliases a
+		JOIN documents d ON a.document_id = d.id
+		LEFT JOIN users u1 ON d.created_by = u1.id
+		LEFT JOIN users u2 ON d.updated_by = u2.id
+		WHERE a.old_slug = $1
+	`, idOrSlug)
+
+	err = aliasRow.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+	if err == nil {
+		return &doc, idOrSlug, nil // Found via alias
+	}
+
+	// Fallback to the original GetByID logic (checking team ID or project ID creation)
+	fallbackDoc, err := r.GetByID(ctx, idOrSlug)
+	return fallbackDoc, "", err
+}
+
 func (r *PostgresDocumentRepository) GetByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -103,21 +151,21 @@ func (r *PostgresDocumentRepository) GetByProjectID(ctx context.Context, project
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &doc)
+		docs = append(docs, &doc)
 	}
-	return list, nil
+	return docs, nil
 }
 
 func (r *PostgresDocumentRepository) GetByTeamID(ctx context.Context, teamId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -125,44 +173,40 @@ func (r *PostgresDocumentRepository) GetByTeamID(ctx context.Context, teamId str
 		FROM documents d
 		LEFT JOIN users u1 ON d.created_by = u1.id
 		LEFT JOIN users u2 ON d.updated_by = u2.id
-		WHERE d.team_id = $1 AND (d.project_id IS NULL OR d.project_id = '') AND d.deleted_at IS NULL
+		WHERE d.team_id = $1 AND d.project_id IS NULL AND d.deleted_at IS NULL
 	`, teamId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &doc)
+		docs = append(docs, &doc)
 	}
-	return list, nil
+	return docs, nil
 }
 
 func (r *PostgresDocumentRepository) Create(ctx context.Context, doc *domain.Document) error {
-	if doc.TeamID == "" && doc.ProjectID != "" {
-		_ = r.db.QueryRow(ctx, "SELECT team_id FROM projects WHERE id = $1", doc.ProjectID).Scan(&doc.TeamID)
-	}
 	var projID *string
 	if doc.ProjectID != "" {
 		projID = &doc.ProjectID
 	}
-	var createdBy, updatedBy *string
-	if doc.CreatedByID != "" {
-		createdBy = &doc.CreatedByID
+
+	var slugPtr *string
+	if doc.Slug != "" {
+		slugPtr = &doc.Slug
 	}
-	if doc.UpdatedByID != "" {
-		updatedBy = &doc.UpdatedByID
-	}
-	_, err := r.db.Exec(ctx,
-		"INSERT INTO documents (id, title, content, project_id, team_id, parent_id, created_at, updated_at, created_by, updated_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-		doc.ID, doc.Title, doc.Content, projID, doc.TeamID, doc.ParentID, doc.CreatedAt, doc.UpdatedAt, createdBy, updatedBy,
-	)
+
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO documents (id, title, slug, content, project_id, team_id, parent_id, created_at, updated_at, created_by, updated_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`, doc.ID, doc.Title, slugPtr, doc.Content, projID, doc.TeamID, doc.ParentID, doc.CreatedAt, doc.UpdatedAt, doc.CreatedByID, doc.UpdatedByID)
 	return err
 }
 
@@ -171,15 +215,40 @@ func (r *PostgresDocumentRepository) Update(ctx context.Context, doc *domain.Doc
 	if doc.ProjectID != "" {
 		projID = &doc.ProjectID
 	}
-	var updatedBy *string
-	if doc.UpdatedByID != "" {
-		updatedBy = &doc.UpdatedByID
+
+	var slugPtr *string
+	if doc.Slug != "" {
+		slugPtr = &doc.Slug
 	}
-	_, err := r.db.Exec(ctx,
-		"UPDATE documents SET title = $1, content = $2, project_id = $3, team_id = $4, parent_id = $5, updated_at = $6, updated_by = $7 WHERE id = $8",
-		doc.Title, doc.Content, projID, doc.TeamID, doc.ParentID, doc.UpdatedAt, updatedBy, doc.ID,
-	)
-	return err
+
+	// Fetch old slug to see if it changed
+	var oldSlug *string
+	err := r.db.QueryRow(ctx, "SELECT slug FROM documents WHERE id = $1", doc.ID).Scan(&oldSlug)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+
+	// Update document
+	_, err = r.db.Exec(ctx, `
+		UPDATE documents
+		SET title = $2, slug = $3, content = $4, project_id = $5, parent_id = $6, updated_at = $7, updated_by = $8
+		WHERE id = $1
+	`, doc.ID, doc.Title, slugPtr, doc.Content, projID, doc.ParentID, doc.UpdatedAt, doc.UpdatedByID)
+
+	if err != nil {
+		return err
+	}
+
+	// Insert into aliases if slug changed
+	if oldSlug != nil && *oldSlug != "" && (slugPtr == nil || *oldSlug != *slugPtr) {
+		_, _ = r.db.Exec(ctx, `
+			INSERT INTO document_slug_aliases (document_id, old_slug)
+			VALUES ($1, $2)
+			ON CONFLICT (old_slug) DO NOTHING
+		`, doc.ID, *oldSlug)
+	}
+
+	return nil
 }
 
 func (r *PostgresDocumentRepository) Delete(ctx context.Context, id string) error {
@@ -224,7 +293,7 @@ func (r *PostgresDocumentRepository) Delete(ctx context.Context, id string) erro
 
 func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -233,28 +302,27 @@ func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, pr
 		LEFT JOIN users u1 ON d.created_by = u1.id
 		LEFT JOIN users u2 ON d.updated_by = u2.id
 		WHERE d.project_id = $1 AND d.deleted_at IS NOT NULL
-		ORDER BY d.deleted_at DESC
 	`, projectId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &doc)
+		docs = append(docs, &doc)
 	}
-	return list, nil
+	return docs, nil
 }
 
 func (r *PostgresDocumentRepository) GetTrashByTeamID(ctx context.Context, teamId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -262,24 +330,23 @@ func (r *PostgresDocumentRepository) GetTrashByTeamID(ctx context.Context, teamI
 		FROM documents d
 		LEFT JOIN users u1 ON d.created_by = u1.id
 		LEFT JOIN users u2 ON d.updated_by = u2.id
-		WHERE d.team_id = $1 AND (d.project_id IS NULL OR d.project_id = '') AND d.deleted_at IS NOT NULL
-		ORDER BY d.deleted_at DESC
+		WHERE d.team_id = $1 AND d.project_id IS NULL AND d.deleted_at IS NOT NULL
 	`, teamId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	var docs []*domain.Document
 	for rows.Next() {
 		var doc domain.Document
-		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
+		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, &doc)
+		docs = append(docs, &doc)
 	}
-	return list, nil
+	return docs, nil
 }
 
 func (r *PostgresDocumentRepository) Restore(ctx context.Context, id string) error {

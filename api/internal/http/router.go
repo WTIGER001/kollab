@@ -129,6 +129,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 			r.Get("/", docH.List)
 			r.Get("/recent", docH.ListRecent)
 			r.Get("/trash", docH.ListTrash)
+			r.Get("/check-slug", docH.CheckSlug)
 			r.Post("/", docH.Create)
 			r.Post("/import", docH.Import)
 			r.Route("/{id}", func(r chi.Router) {

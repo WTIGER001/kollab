@@ -56,7 +56,16 @@ ALTER TABLE documents ALTER COLUMN team_id SET NOT NULL;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS created_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_documents_team_id ON documents (team_id);
+CREATE INDEX IF NOT EXISTS idx_documents_slug ON documents (slug);
+
+CREATE TABLE IF NOT EXISTS document_slug_aliases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    old_slug VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE IF NOT EXISTS document_versions (
     id VARCHAR(255) PRIMARY KEY,
@@ -135,7 +144,8 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT INTO system_settings (key, value) VALUES 
 ('audit_retention_policy', 'forever'),
 ('audit_retention_custom_days', '30'),
-('audit_log_destination', 'postgres')
+('audit_log_destination', 'postgres'),
+('auth_logo_size', 'Medium')
 ON CONFLICT (key) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS document_audit_logs (

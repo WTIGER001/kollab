@@ -12,6 +12,10 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🎨 [2. Editor Core & Canvas](file:///Users/johnbauer/Dev/Personal/kollab/design/02_editor_core.md)
 *Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 
+### ⚙️ Systems & Administration
+- [15. Server Settings & Branding](file:///Users/johnbauer/Dev/Personal/kollab/design/15_server_settings_and_branding.md) - Site title, welcome messages, auth background imagery.
+- [16. URL Slugs & Aliases](file:///Users/johnbauer/Dev/Personal/kollab/design/16_url_slugs.md) - Dynamic slug auto-generation, uniqueness constraints, and old-alias redirection routing.
+
 ### 🧩 [3. Macros & Plugins](file:///Users/johnbauer/Dev/Personal/kollab/design/03_macros_and_plugins.md)
 *Native rich content macros (Callouts, Status Badges), advanced plugins (Polyglot blocks, Data tables), and external integrations (GitLab).*
 

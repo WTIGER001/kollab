@@ -175,6 +175,7 @@ import { PageAttachments } from "./PageAttachments";
 import { ExportDialog } from "./ExportDialog";
 import { PageRestrictionsDialog } from "./PageRestrictionsDialog";
 import { SharingLinksDialog } from "./SharingLinksDialog";
+import { PageSettingsModal } from "./PageSettingsModal";
 import { ImageGallery } from "./ImageGallery";
 
 import { DocumentContext } from "./DocumentContext";
@@ -437,6 +438,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [restrictionsDialogOpen, setRestrictionsDialogOpen] = useState(false);
   const [sharingLinksDialogOpen, setSharingLinksDialogOpen] = useState(false);
+  const [pageSettingsDialogOpen, setPageSettingsDialogOpen] = useState(false);
   const [insertLinkDialogOpen, setInsertLinkDialogOpen] = useState(false);
   const [linkInitialUrl, setLinkInitialUrl] = useState("");
   const [linkInitialText, setLinkInitialText] = useState("");
@@ -2408,6 +2410,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           setJsonDialogOpen={setJsonDialogOpen}
           setRestrictionsDialogOpen={setRestrictionsDialogOpen}
           setSharingLinksDialogOpen={setSharingLinksDialogOpen}
+          setPageSettingsDialogOpen={setPageSettingsDialogOpen}
           addFavorite={addFavorite}
           removeFavorite={removeFavorite}
         />
@@ -3300,6 +3303,27 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           documentTitle={title}
           documents={documents}
           onConfirm={onMoveDoc}
+        />
+      )}
+
+      {/* Page Settings Modal */}
+      {pageSettingsDialogOpen && (
+        <PageSettingsModal
+          open={pageSettingsDialogOpen}
+          onClose={() => setPageSettingsDialogOpen(false)}
+          document={documents.find((d: any) => d.id === activeDocId) || { id: activeDocId, title, content: "", slug: "", projectId: "", parentId: null, createdAt: "", updatedAt: "", createdBy: "", updatedBy: "" } as any}
+          onUpdate={(updatedDoc) => {
+            if (activeDocId) {
+              const currentUrl = new URL(window.location.href);
+              const pathParts = currentUrl.pathname.split('/');
+              if (pathParts[pathParts.length - 1] === activeDocId || pathParts.includes(activeDocId)) {
+                // If the url was using the documentId, or the old slug, replace it with the new slug
+                const newPath = currentUrl.pathname.replace(pathParts[pathParts.length - 1], updatedDoc.slug || updatedDoc.id);
+                window.history.pushState({}, "", newPath);
+              }
+            }
+          }}
+          showToast={showToast}
         />
       )}
 

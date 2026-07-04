@@ -15,6 +15,7 @@ type SystemSettings struct {
 	WelcomeTitle             string `json:"welcomeTitle"`
 	WelcomeText              string `json:"welcomeText"`
 	AuthLogoURL              string `json:"authLogoUrl"`
+	AuthLogoSize             string `json:"authLogoSize"`
 	AuthLegalDisclaimer      string `json:"authLegalDisclaimer"`
 	AuthLoginButtonText      string `json:"authLoginButtonText"`
 	AsposeEnabled            bool   `json:"asposeEnabled"`

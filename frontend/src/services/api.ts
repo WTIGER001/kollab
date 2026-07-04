@@ -18,6 +18,7 @@ export interface Project {
 export interface Document {
   id: string;
   title: string;
+  slug: string;
   content: string;
   projectId: string;
   parentId: string | null;
@@ -157,11 +158,12 @@ export const createDocument = (
   title: string,
   projectId: string | null,
   teamId: string,
-  parentId?: string | null
+  parentId?: string | null,
+  slug?: string
 ): Promise<Document> => {
   return request("/api/documents", {
     method: "POST",
-    body: JSON.stringify({ title, projectId, teamId, parentId: parentId || null }),
+    body: JSON.stringify({ title, projectId, teamId, parentId: parentId || null, slug }),
   });
 };
 
@@ -169,11 +171,12 @@ export const updateDocument = (
   id: string,
   title: string,
   content: string,
-  changeSummary?: string
+  changeSummary?: string,
+  slug?: string
 ): Promise<Document> => {
   return request(`/api/documents/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ title, content, changeSummary }),
+    body: JSON.stringify({ title, content, changeSummary, slug }),
   });
 };
 
@@ -223,6 +226,18 @@ export const restoreDocument = (id: string): Promise<Document> => {
   });
 };
 
+export const checkSlug = (
+  slug: string,
+  documentId?: string
+): Promise<{ available: boolean; suggested?: string }> => {
+  const url = new URL(`${BASE_URL}/api/documents/check-slug`);
+  url.searchParams.append("slug", slug);
+  if (documentId) {
+    url.searchParams.append("documentId", documentId);
+  }
+  return request(url.pathname + url.search);
+};
+
 export const fetchOIDCConfig = (): Promise<{
   authority: string;
   clientId: string;
@@ -231,6 +246,7 @@ export const fetchOIDCConfig = (): Promise<{
   welcomeTitle?: string;
   welcomeText?: string;
   authLogoUrl?: string;
+  authLogoSize?: string;
   legalDisclaimer?: string;
   authLoginButtonText?: string;
 }> => {
@@ -439,6 +455,7 @@ export interface SystemSettings {
   welcomeTitle: string;
   welcomeText: string;
   authLogoUrl: string;
+  authLogoSize: string;
   authLegalDisclaimer: string;
   authLoginButtonText: string;
   aiRateLimit: number;

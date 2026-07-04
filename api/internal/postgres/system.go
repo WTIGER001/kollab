@@ -71,6 +71,8 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 			settings.WelcomeText = val
 		case "auth_logo_url":
 			settings.AuthLogoURL = val
+		case "auth_logo_size":
+			settings.AuthLogoSize = val
 		case "auth_legal_disclaimer":
 			settings.AuthLegalDisclaimer = val
 		case "auth_login_button_text":
@@ -104,6 +106,7 @@ func (r *PostgresSystemRepository) UpdateSettings(ctx context.Context, settings 
 		{"welcome_title", settings.WelcomeTitle},
 		{"welcome_text", settings.WelcomeText},
 		{"auth_logo_url", settings.AuthLogoURL},
+		{"auth_logo_size", settings.AuthLogoSize},
 		{"auth_legal_disclaimer", settings.AuthLegalDisclaimer},
 		{"auth_login_button_text", settings.AuthLoginButtonText},
 		{"aspose_enabled", strconv.FormatBool(settings.AsposeEnabled)},

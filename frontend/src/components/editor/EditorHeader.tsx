@@ -29,6 +29,7 @@ import {
   Lock,
   Link2,
   Trash2,
+  Settings,
   Code,
   ChevronRight,
   Paperclip,
@@ -63,7 +64,8 @@ export interface EditorHeaderProps {
   handleCloseMoreMenu: () => void;
   handleTriggerMove: () => void;
   handleTriggerDelete: () => void;
-  setAnalyticsOpen: (val: boolean) => void;
+  setPageSettingsDialogOpen: (val: boolean) => void;
+  setAnalyticsDialogOpen: (val: boolean) => void;
   setCommitDescription: (val: string) => void;
   setCommitModalOpen: (val: boolean) => void;
   setExportDialogOpen: (val: boolean) => void;
@@ -99,7 +101,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   handleCloseMoreMenu,
   handleTriggerMove,
   handleTriggerDelete,
-  setAnalyticsOpen,
+  setPageSettingsDialogOpen,
+  setAnalyticsDialogOpen,
   setCommitDescription,
   setCommitModalOpen,
   setExportDialogOpen,
@@ -785,6 +788,32 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                           }}
                         >
                           Share Link
+                        </Typography>
+                      }
+                    />
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleCloseMoreMenu();
+                      setPageSettingsDialogOpen(true);
+                    }}
+                    sx={{
+                      fontSize: "12px",
+                      fontFamily: '"Outfit", sans-serif',
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <Settings size={12} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={
+                        <Typography
+                          sx={{
+                            fontSize: "12px",
+                            fontFamily: '"Outfit", sans-serif',
+                          }}
+                        >
+                          Page Settings
                         </Typography>
                       }
                     />

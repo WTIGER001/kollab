@@ -75,22 +75,28 @@ func (h *DocumentHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.docService.GetDocument(r.Context(), id)
+	doc, reqSlug, err := h.docService.GetDocument(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
 	}
 
 	if userID, ok := middleware.GetUserID(r.Context()); ok {
-		_ = h.docService.RecordView(r.Context(), id, userID)
+		_ = h.docService.RecordView(r.Context(), doc.ID, userID)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if reqSlug != "" {
+		// If we fetched it via an alias, we can optionally send a header or wrapper.
+		// For now, the frontend will just compare doc.Slug != id and auto-redirect.
+		w.Header().Set("X-Kollab-Alias-Redirect", "true")
+	}
 	_ = json.NewEncoder(w).Encode(doc)
 }
 
 type createDocumentRequest struct {
 	Title     string  `json:"title"`
+	Slug      string  `json:"slug,omitempty"`
 	ProjectID string  `json:"projectId"`
 	TeamID    string  `json:"teamId"`
 	ParentID  *string `json:"parentId"`
@@ -109,7 +115,7 @@ func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, _ := middleware.GetUserID(r.Context())
-	doc, err := h.docService.CreateDocument(r.Context(), req.Title, req.ProjectID, req.TeamID, req.ParentID, userID)
+	doc, err := h.docService.CreateDocument(r.Context(), req.Title, req.Slug, req.ProjectID, req.TeamID, req.ParentID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,8 +130,41 @@ func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(doc)
 }
 
+func (h *DocumentHandler) CheckSlug(w http.ResponseWriter, r *http.Request) {
+	slug := r.URL.Query().Get("slug")
+	currentDocId := r.URL.Query().Get("documentId")
+	if slug == "" {
+		http.Error(w, "Bad Request: slug is required", http.StatusBadRequest)
+		return
+	}
+
+	doc, _, err := h.docService.GetDocument(r.Context(), slug)
+	if err != nil || doc == nil {
+		// Not found, so it's available
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"available": true, "suggested": slug})
+		return
+	}
+
+	// Found something
+	if doc.ID == currentDocId {
+		// Owned by the current document
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"available": true, "suggested": slug})
+		return
+	}
+
+	// Used by someone else, auto-generate a suggestion if possible
+	// To do this we can use the GenerateUniqueSlug method if it was exposed,
+	// but it's easier to just call it (wait, it's not exported. Let's export it or just say unavailable).
+	// For now we'll just say unavailable. We'd have to export GenerateUniqueSlug to suggest one.
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"available": false})
+}
+
 type updateDocumentRequest struct {
 	Title         string `json:"title"`
+	Slug          string `json:"slug,omitempty"`
 	Content       string `json:"content"`
 	ChangeSummary string `json:"changeSummary,omitempty"`
 }
@@ -145,7 +184,7 @@ func (h *DocumentHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	userID, _ := middleware.GetUserID(r.Context())
 
-	doc, err := h.docService.UpdateDocument(r.Context(), id, req.Title, req.Content, userID, req.ChangeSummary)
+	doc, err := h.docService.UpdateDocument(r.Context(), id, req.Title, req.Slug, req.Content, userID, req.ChangeSummary)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -420,7 +459,7 @@ func (h *DocumentHandler) AutogenSummary(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	doc, err := h.docService.GetDocument(r.Context(), id)
+	doc, _, err := h.docService.GetDocument(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -590,7 +629,7 @@ func (h *DocumentHandler) Export(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.docService.GetDocument(r.Context(), id)
+	doc, _, err := h.docService.GetDocument(r.Context(), id)
 	if err != nil {
 		http.Error(w, "Document not found", http.StatusNotFound)
 		return
@@ -738,12 +777,12 @@ func (h *DocumentHandler) Import(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DocumentHandler) importTree(ctx context.Context, node docExporter.JSONTree, teamID, projectID string, parentID *string, userID string) (*domain.Document, error) {
-	doc, err := h.docService.CreateDocument(ctx, node.Title, projectID, teamID, parentID, userID)
+	doc, err := h.docService.CreateDocument(ctx, node.Title, "", projectID, teamID, parentID, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = h.docService.UpdateDocument(ctx, doc.ID, node.Title, node.Content, userID, "Imported from JSON")
+	_, err = h.docService.UpdateDocument(ctx, doc.ID, node.Title, "", node.Content, userID, "Imported from JSON")
 	if err != nil {
 		return nil, err
 	}

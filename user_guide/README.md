@@ -37,3 +37,6 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### ⚙️ [10. Admin Server Settings](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/server_settings.md)
 *Learn how to customize the workspace branding, authentication screen, and global data retention policies.*
+
+### 🔗 [11. Page Settings & Custom URLs](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/page_settings.md)
+*Learn how to customize page URL slugs and manage legacy link redirects.*

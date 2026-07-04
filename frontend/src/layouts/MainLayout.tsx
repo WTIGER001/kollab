@@ -11,6 +11,7 @@ import { getLegacyNavigateFn } from '../utils/navigation';
 import { useAuth } from 'react-oidc-context';
 import { createDocument, deleteDocument, moveDocument, restoreDocument } from '../services/api';
 import { presets } from '../theme/presets';
+import { useRecentSpacesStore } from '../store/useRecentSpacesStore';
 
 export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) => {
   const navigate = useNavigate();
@@ -76,29 +77,13 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   
-  const [recentSpaces, setRecentSpaces] = useState<any[]>(() => JSON.parse(localStorage.getItem('recent_spaces') || '[]'));
+  const { recentSpaces, syncSpaces } = useRecentSpacesStore();
 
   useEffect(() => {
     if (teams.length > 0 || allProjects.length > 0) {
-      setRecentSpaces(prev => {
-        const filtered = prev.filter(space => {
-          if (space.type === 'personal' || space.type === 'team') {
-            return teams.some(t => t.id === space.id || t.abbreviation === space.id);
-          }
-          if (space.type === 'project') {
-            return allProjects.some(p => p.id === space.id || p.abbreviation === space.id);
-          }
-          return false;
-        });
-        
-        if (filtered.length !== prev.length) {
-          localStorage.setItem('recent_spaces', JSON.stringify(filtered));
-          return filtered;
-        }
-        return prev;
-      });
+      syncSpaces(teams, allProjects);
     }
-  }, [teams, allProjects]);
+  }, [teams, allProjects, syncSpaces]);
 
   useEffect(() => {
     setSidebarOpen(!isMobile);
@@ -231,12 +216,12 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
             <Box
               sx={{
                 width: "16px", height: "32px",
-                backgroundColor: isResizing || isHovered ? "var(--primary-color)" : (themeMode === "light" ? "#ffffff" : "rgba(22, 25, 36, 0.6)"),
-                border: "1px solid", borderColor: isResizing || isHovered ? "var(--primary-color)" : (themeMode === "light" ? "rgba(0, 0, 0, 0.12)" : "rgba(255, 255, 255, 0.08)"),
+                backgroundColor: isResizing || isHovered ? "var(--primary-color)" : "var(--glass-bg)",
+                border: "1px solid", borderColor: isResizing || isHovered ? "var(--primary-color)" : "var(--glass-border)",
                 borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center",
-                color: isResizing || isHovered ? "#ffffff" : (themeMode === "light" ? "rgba(0, 0, 0, 0.45)" : "text.secondary"),
+                color: isResizing || isHovered ? "var(--text-primary)" : "var(--text-secondary)",
                 cursor: "col-resize", pointerEvents: "none", transition: "all 0.15s ease",
-                boxShadow: themeMode === "light" ? "0 1px 4px rgba(0, 0, 0, 0.08)" : "0 1px 4px rgba(0, 0, 0, 0.25)",
+                boxShadow: "var(--shadow-sm)",
               }}
             >
               {isResizing || isHovered ? <ChevronsLeftRight size={10} /> : <GripVertical size={10} />}

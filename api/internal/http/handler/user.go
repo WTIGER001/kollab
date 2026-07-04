@@ -29,12 +29,16 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	welcomeTitle := "Welcome to Kollab"
 	welcomeText := "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces."
 	logoUrl := ""
+	logoSize := "Medium"
 	legalDisclaimer := ""
 	loginButtonText := "Log In to Workspace"
 	if settings, err := h.systemService.GetSettings(r.Context()); err == nil && settings != nil {
 		welcomeTitle = settings.WelcomeTitle
 		welcomeText = settings.WelcomeText
 		logoUrl = settings.AuthLogoURL
+		if settings.AuthLogoSize != "" {
+			logoSize = settings.AuthLogoSize
+		}
 		legalDisclaimer = settings.AuthLegalDisclaimer
 		if settings.AuthLoginButtonText != "" {
 			loginButtonText = settings.AuthLoginButtonText
@@ -49,6 +53,7 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		"welcomeTitle":        welcomeTitle,
 		"welcomeText":         welcomeText,
 		"authLogoUrl":         logoUrl,
+		"authLogoSize":        logoSize,
 		"legalDisclaimer":     legalDisclaimer,
 		"authLoginButtonText": loginButtonText,
 	}

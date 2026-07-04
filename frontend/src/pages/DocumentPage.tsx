@@ -47,6 +47,23 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
     enabled: !!docId,
   });
 
+  // Automatically replace URL address bar if navigating via alias or old ID
+  useEffect(() => {
+    if (activeDoc && docId) {
+      const preferredIdentifier = activeDoc.slug || activeDoc.id;
+      if (docId !== preferredIdentifier) {
+        const currentUrl = new URL(window.location.href);
+        const pathParts = currentUrl.pathname.split('/');
+        // Assuming docId is the last part of the path
+        if (pathParts[pathParts.length - 1] === docId) {
+          pathParts[pathParts.length - 1] = preferredIdentifier;
+          currentUrl.pathname = pathParts.join('/');
+          window.history.replaceState(null, "", currentUrl.toString());
+        }
+      }
+    }
+  }, [activeDoc, docId]);
+
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveDoc = async (id: string, title: string, content: string) => {

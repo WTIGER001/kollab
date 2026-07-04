@@ -36,8 +36,8 @@ func NewDocumentService(repo domain.DocumentRepository, systemService domain.Sys
 	}
 }
 
-func (s *DocumentService) GetDocument(ctx context.Context, id string) (*domain.Document, error) {
-	return s.repo.GetByID(ctx, id)
+func (s *DocumentService) GetDocument(ctx context.Context, idOrSlug string) (*domain.Document, string, error) {
+	return s.repo.GetByIDOrSlug(ctx, idOrSlug)
 }
 
 func (s *DocumentService) ListDocumentsByProject(ctx context.Context, projectId string) ([]*domain.Document, error) {
@@ -54,7 +54,7 @@ func (s *DocumentService) ListDocumentsByTeam(ctx context.Context, teamId string
 	return s.repo.GetByTeamID(ctx, teamId)
 }
 
-func (s *DocumentService) CreateDocument(ctx context.Context, title string, projectId string, teamId string, parentId *string, userID string) (*domain.Document, error) {
+func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string) (*domain.Document, error) {
 	if title == "" {
 		return nil, errors.New("title is required")
 	}
@@ -94,6 +94,7 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 	doc := &domain.Document{
 		ID:          uuid.New().String(),
 		Title:       title,
+		Slug:        s.GenerateUniqueSlug(ctx, slug, title, ""),
 		Content:     `{"type":"doc","content":[{"type":"paragraph"}]}`, // Default blank content
 		ProjectID:   projectId,
 		TeamID:      teamId,
@@ -119,7 +120,34 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, proj
 	return s.repo.GetByID(ctx, doc.ID)
 }
 
-func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title string, content string, userID string, changeSummary string) (*domain.Document, error) {
+func (s *DocumentService) GenerateUniqueSlug(ctx context.Context, requestedSlug string, title string, currentDocID string) string {
+	base := requestedSlug
+	if base == "" {
+		base = title
+	}
+	re := regexp.MustCompile("[^a-z0-9]+")
+	slug := strings.Trim(re.ReplaceAllString(strings.ToLower(base), "-"), "-")
+	if slug == "" {
+		slug = "doc"
+	}
+
+	finalSlug := slug
+	counter := 1
+	for {
+		doc, _, err := s.repo.GetByIDOrSlug(ctx, finalSlug)
+		if err != nil || doc == nil {
+			break // Slug is available
+		}
+		if doc.ID == currentDocID {
+			break // This document already owns this slug
+		}
+		finalSlug = fmt.Sprintf("%s-%d", slug, counter)
+		counter++
+	}
+	return finalSlug
+}
+
+func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title string, slug string, content string, userID string, changeSummary string) (*domain.Document, error) {
 	doc, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -207,11 +235,18 @@ func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title s
 		}
 	}
 
-	// 2. Perform the update
+	// Update the document fields
 	doc.Title = title
 	doc.Content = content
 	doc.UpdatedAt = time.Now()
 	doc.UpdatedByID = userID
+
+	if slug != "" {
+		doc.Slug = s.GenerateUniqueSlug(ctx, slug, "", doc.ID)
+	} else if doc.Slug == "" {
+		// If it doesn't have a slug yet and none provided, generate one from title
+		doc.Slug = s.GenerateUniqueSlug(ctx, "", title, doc.ID)
+	}
 
 	if err := s.repo.Update(ctx, doc); err != nil {
 		return nil, err

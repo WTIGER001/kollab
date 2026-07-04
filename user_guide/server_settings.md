@@ -19,6 +19,7 @@ The **Authentication Branding** tab lets you customize the appearance and messag
 
 You can configure the following elements:
 - **Auth Logo URL**: Provide an absolute path (or an internal `/api/images/...` path) to your organization's logo. This replaces the default Kollab logo above the login button. You can upload an image directly to the Image Library from this page.
+- **Logo Height**: Select the display size of the logo on the login screen. Options include Small (48px), Medium (80px), Large (120px), or a Custom pixel height.
 - **Welcome Screen Title**: A prominent headline displayed below the logo (e.g., "Welcome to Arkloud").
 - **Welcome Screen Subtitle (Description)**: A longer descriptive text block explaining the purpose of the workspace.
 - **Legal Disclaimer**: A small-print disclaimer displayed at the very bottom of the login screen (useful for Terms of Service or Beta software warnings).

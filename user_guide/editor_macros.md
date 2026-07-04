@@ -266,6 +266,7 @@ The Markdown Import macro allows you to easily paste raw Markdown text and choos
 ### How to Use
 * **Import to Document**: Paste your Markdown text into the text box and click **Import to Document**. The Markdown will be instantly parsed to rich HTML, inserted directly into the editor canvas as native document elements (headings, bullet points, code blocks, etc.), and the macro block will delete itself.
 * **Keep as Block**: Paste your Markdown text and click **Keep as Block**. The macro will parse and render the formatted Markdown inside a styled panel, retaining the raw Markdown inside the block.
+* **Upload .md File**: Click the **Upload .md File** button to select a local `.md` or text file from your computer. Its text content will be read and injected into the markdown editor instantly without attaching the file to the document.
 * **Edit Kept Block**: If you kept it as a block, hover over the block in edit mode and click **Edit Markdown** to update the raw text at any time.
 
 ---

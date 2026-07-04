@@ -685,7 +685,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     }}
                   />
 
-                  <Stack direction="row" spacing={1.5}>
+                  <Stack direction="row" spacing={1.5} alignItems="center">
                     <Button
                       variant="contained"
                       size="small"
@@ -719,6 +719,41 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       }}
                     >
                       Keep as Block
+                    </Button>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.accept = ".md,.markdown,text/markdown,text/plain";
+                        input.onchange = (e: any) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = (evt) => {
+                            const text = evt.target?.result as string;
+                            updateConfig("markdown", text);
+                          };
+                          reader.readAsText(file);
+                        };
+                        input.click();
+                      }}
+                      startIcon={<FileUp size={14} />}
+                      sx={{
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "12px",
+                        fontFamily: '"Outfit", sans-serif',
+                        borderColor: "var(--border-color)",
+                        color: "text.secondary",
+                        "&:hover": { borderColor: "var(--primary-color)", color: "var(--primary-color)" }
+                      }}
+                    >
+                      Upload .md File
                     </Button>
                   </Stack>
                 </Box>

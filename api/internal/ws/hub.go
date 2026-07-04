@@ -162,7 +162,7 @@ func (h *Hub) autoSaveSession(docID string, userID string) {
 	defer cancel()
 
 	// Check if there are live unsaved changes
-	doc, err := h.docService.GetDocument(ctx, docID)
+	doc, _, err := h.docService.GetDocument(ctx, docID)
 	if err != nil {
 		log.Printf("Session autosave: failed to fetch document %s: %v", docID, err)
 		return
