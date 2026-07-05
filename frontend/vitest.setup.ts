@@ -10,6 +10,3 @@ const localStorageMock = {
 
 vi.stubGlobal('localStorage', localStorageMock);
 vi.stubGlobal('sessionStorage', localStorageMock);
-
-// Mock open-color which causes JSON import errors in JSDOM
-vi.mock('open-color', () => ({ default: {} }));

@@ -23,7 +23,6 @@ export default defineConfig({
   resolve: {
     alias: {
       'react-transition-group/TransitionGroupContext': 'react-transition-group/cjs/TransitionGroupContext.js',
-      'open-color': '/Users/johnbauer/Dev/Personal/kollab/frontend/src/utils/dummy.ts',
     }
   },
   test: {
@@ -33,7 +32,7 @@ export default defineConfig({
     exclude: ['tests/**', 'node_modules/**'],
     server: {
       deps: {
-        inline: ['@mui/material', '@mui/icons-material', '@mui/system', 'react-transition-group', 'open-color', /@tiptap/]
+        inline: ['@mui/material', '@mui/icons-material', '@mui/system', 'react-transition-group']
       }
     }
   },
