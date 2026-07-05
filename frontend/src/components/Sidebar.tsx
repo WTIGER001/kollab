@@ -547,7 +547,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeTeam.logoUrl || undefined}
-              variant={activeTeam.logoUrl ? "rounded" : "circular"}
+              variant={activeTeam.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
@@ -629,7 +629,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeProject.logoUrl || undefined}
-              variant={activeProject.logoUrl ? "rounded" : "circular"}
+              variant={activeProject.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
@@ -711,7 +711,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeTeam.logoUrl || undefined}
-              variant={activeTeam.logoUrl ? "rounded" : "circular"}
+              variant={activeTeam.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
