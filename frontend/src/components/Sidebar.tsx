@@ -910,7 +910,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={p.id}
                     selected={isProjectSelected}
                     onClick={() => {
-                      onAddDoc(undefined, false);
                       navigateTo(t.abbreviation || t.id, p.abbreviation || p.id, null);
                       handleCloseProjectMenu();
                     }}
