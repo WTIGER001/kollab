@@ -1,6 +1,20 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+
+try {
+  process.env.VITE_COMMIT_HASH = execSync('git rev-parse --short HEAD').toString().trim();
+} catch (e) {
+  process.env.VITE_COMMIT_HASH = 'unknown';
+}
+try {
+  const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+  process.env.VITE_APP_VERSION = pkg.version;
+} catch (e) {
+  process.env.VITE_APP_VERSION = '0.0.0';
+}
 
 // https://vite.dev/config/
 export default defineConfig({

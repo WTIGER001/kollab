@@ -399,6 +399,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
             overflowX: { xs: "auto", sm: "visible" },
             overflowY: { xs: "visible", sm: "auto" },
             p: 1.5,
+            display: "flex",
+            flexDirection: "column"
           }}
         >
           <List 
@@ -448,6 +450,14 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
               );
             })}
           </List>
+          <Box sx={{ mt: "auto", pt: 2, display: { xs: "none", sm: "flex" }, flexDirection: "column", opacity: 0.5 }}>
+            <Typography sx={{ fontSize: "11px", fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
+              Kollab v{import.meta.env.VITE_APP_VERSION || "0.0.0"}
+            </Typography>
+            <Typography sx={{ fontSize: "10px", fontFamily: '"Outfit", sans-serif', fontFamily: "monospace" }}>
+              {import.meta.env.VITE_COMMIT_HASH || "unknown"}
+            </Typography>
+          </Box>
         </Box>
 
         {/* Content Viewer */}

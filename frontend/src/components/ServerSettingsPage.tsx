@@ -817,6 +817,14 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
       </Box>
+      <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid var(--border-color)", opacity: 0.6, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+        <Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
+          Kollab v{import.meta.env.VITE_APP_VERSION || "0.0.0"}
+        </Typography>
+        <Typography sx={{ fontSize: "11px", fontFamily: '"Outfit", sans-serif', fontFamily: "monospace" }}>
+          Commit: {import.meta.env.VITE_COMMIT_HASH || "unknown"}
+        </Typography>
+      </Box>
     </Box>
   );
 };
