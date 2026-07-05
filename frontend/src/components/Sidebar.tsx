@@ -612,7 +612,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Box 
             onClick={() => {
               if (activeTeam && activeProject) {
-                const url = `/teams/${activeTeam.abbreviation || activeTeam.id}/${activeProject.abbreviation || activeProject.id}`;
+                const url = `/teams/${activeTeam.abbreviation || activeTeam.id}/p/${activeProject.abbreviation || activeProject.id}`;
                 window.history.pushState({}, "", url);
                 window.dispatchEvent(new PopStateEvent("popstate"));
               }

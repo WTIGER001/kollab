@@ -92,7 +92,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
       onUpdateProject(updated);
       showToast("Project settings updated successfully", "success");
       // Update URL to match new abbreviation
-      const newUrl = `/teams/${teamAbbreviationOrId}/${updated.abbreviation || updated.id}/_settings`;
+      const newUrl = `/teams/${teamAbbreviationOrId}/p/${updated.abbreviation || updated.id}/_settings`;
       window.history.pushState({}, "", newUrl);
     } catch (err: any) {
       console.error("Failed to update project settings:", err);
