@@ -546,6 +546,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <Avatar 
+              src={activeTeam.logoUrl || undefined}
               sx={{ 
                 width: 24, 
                 height: 24, 
@@ -705,6 +706,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <Avatar 
+              src={activeTeam.logoUrl || undefined}
               sx={{ 
                 width: 24, 
                 height: 24, 
