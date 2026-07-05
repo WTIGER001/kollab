@@ -15,6 +15,7 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### ⚙️ Systems & Administration
 - [15. Server Settings & Branding](file:///Users/johnbauer/Dev/Personal/kollab/design/15_server_settings_and_branding.md) - Site title, welcome messages, auth background imagery.
 - [16. URL Slugs & Aliases](file:///Users/johnbauer/Dev/Personal/kollab/design/16_url_slugs.md) - Dynamic slug auto-generation, uniqueness constraints, and old-alias redirection routing.
+- [17. Automated Testing Strategy](file:///Users/johnbauer/Dev/Personal/kollab/design/17_automated_testing.md) - Dual-execution backend E2E testing, testcontainers-go, and frontend component mocking.
 
 ### 🧩 [3. Macros & Plugins](file:///Users/johnbauer/Dev/Personal/kollab/design/03_macros_and_plugins.md)
 *Native rich content macros (Callouts, Status Badges), advanced plugins (Polyglot blocks, Data tables), and external integrations (GitLab).*

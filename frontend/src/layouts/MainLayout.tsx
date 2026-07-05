@@ -12,6 +12,8 @@ import { useAuth } from 'react-oidc-context';
 import { createDocument, deleteDocument, moveDocument, restoreDocument, updateDocument } from '../services/api';
 import { presets } from '../theme/presets';
 import { useRecentSpacesStore } from '../store/useRecentSpacesStore';
+import { CreatePageWizardModal } from '../components/CreatePageWizardModal';
+import type { Template } from '../services/api';
 
 export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) => {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   
   const { data: teams = [] } = useTeams();
   const { data: allProjects = [] } = useAllProjects();
+
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [pendingParentId, setPendingParentId] = useState<string | undefined>(undefined);
   
   // Resolve correct IDs from the route params
   let actualTeamId = teamId === 'personal' ? null : teamId;
@@ -111,13 +116,36 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   }, [isResizing]);
 
   // Mutation wrappers to trigger a query refetch instead of mutating state
-  const handleAddDoc = async (parentId?: string) => {
+  const handleAddDoc = (parentId?: string, bypassWizard?: boolean) => {
+    if (bypassWizard) {
+      executeAddDoc(null, "Untitled Document", parentId || null);
+    } else {
+      setPendingParentId(parentId);
+      setTemplateModalOpen(true);
+    }
+  };
+
+  const executeAddDoc = async (
+    template: Template | null,
+    customTitle?: string,
+    customParentId?: string | null,
+    customProjectId?: string,
+    customTeamId?: string
+  ) => {
+    setTemplateModalOpen(false);
     try {
-      const parent = parentId || (actualProjectId ? actualProjectId : actualTeamId);
+      const pId = customProjectId !== undefined ? customProjectId : actualProjectId;
+      const tId = customTeamId !== undefined ? customTeamId : actualTeamId;
+      
+      const parent = customParentId || pendingParentId || (pId ? pId : tId);
       if (!parent) return; // Cannot create document without a team or project context
-      const newDoc = await createDocument("Untitled Document", actualProjectId || null, actualTeamId, parent);
+      
+      const title = customTitle || (template ? template.title : "Untitled Document");
+      const content = template ? template.content : undefined;
+      
+      const newDoc = await createDocument(title, pId || null, tId, parent, undefined, content);
       refetchDocs();
-      legacyNavigate(actualTeamId, actualProjectId || null, newDoc.id);
+      legacyNavigate(tId, pId || null, newDoc.id);
     } catch (e) {
       console.error(e);
     }
@@ -266,6 +294,16 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
           <Outlet />
         </Box>
       </Box>
+
+      <CreatePageWizardModal
+        open={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        teams={teams}
+        projects={allProjects}
+        currentTeamId={actualTeamId}
+        currentProjectId={actualProjectId || null}
+        onConfirm={executeAddDoc}
+      />
     </Box>
   );
 };

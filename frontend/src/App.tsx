@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { MainLayout } from "./layouts/MainLayout";
 import { DocumentPage } from "./pages/DocumentPage";
+import { TemplatePage } from "./pages/TemplatePage";
 
 import { TeamSettingsView } from "./components/TeamSettingsView";
 import { PersonalSettingsView } from "./components/PersonalSettingsView";
@@ -17,6 +18,7 @@ import { UserMentionsView } from "./components/UserMentionsView";
 import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { AdminHelpPage } from "./components/AdminHelpPage";
 import { ImageLibraryView } from "./components/ImageLibraryView";
+import { TemplateLibraryView } from "./components/TemplateLibraryView";
 import { TeamsDirectoryView } from "./components/TeamsDirectoryView";
 import { SearchPage } from "./pages/SearchPage";
 import { HelpDialog } from "./components/HelpDialog";
@@ -87,10 +89,16 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
   const handleGlobalNavigate = (documentId: string, teamId: string, projectId: string | null) => {
     if (teamId === "personal" || teamId.startsWith("personal_")) {
       navigate(`/personal/docs/${documentId}`);
-    } else if (projectId) {
-      navigate(`/teams/${teamId}/p/${projectId}/docs/${documentId}`);
     } else {
-      navigate(`/teams/${teamId}/docs/${documentId}`);
+      const team = teams.find(t => t.id === teamId);
+      const tId = team?.abbreviation || teamId;
+      if (projectId) {
+        const project = projects.find(p => p.id === projectId);
+        const pId = project?.abbreviation || projectId;
+        navigate(`/teams/${tId}/p/${pId}/docs/${documentId}`);
+      } else {
+        navigate(`/teams/${tId}/docs/${documentId}`);
+      }
     }
   };
 
@@ -122,6 +130,8 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="personal/_settings" element={<PersonalSettingsWrapper />} />
             <Route path="personal/trash" element={<TrashView teamId={null} projectId={null} onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="personal/_images" element={<ImageLibraryView scope="personal" />} />
+            <Route path="personal/_templates" element={<TemplateLibraryView scope="personal" />} />
+            <Route path="personal/template/:templateId" element={<TemplatePage isMockMode={isMockMode} />} />
             <Route path="personal/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
             <Route path="personal/docs/:docId/viewers" element={<PageAuditView docId="docId" docTitle="Title" selectedTeamName="Personal" onBack={() => {}} />} />
 
@@ -131,12 +141,16 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="teams/:teamId/_settings" element={<TeamSettingsWrapper teams={teams} />} />
             <Route path="teams/:teamId/trash" element={<TrashView teamId="mock" projectId={null} onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="teams/:teamId/_images" element={<ImageLibraryView scope="team" />} />
+            <Route path="teams/:teamId/_templates" element={<TemplateLibraryView scope="team" />} />
+            <Route path="teams/:teamId/template/:templateId" element={<TemplatePage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/docs/:docId/viewers" element={<PageAuditView docId="docId" docTitle="Title" selectedTeamName="Team" onBack={() => {}} />} />
 
             <Route path="teams/:teamId/p/:projectId/_settings" element={<ProjectSettingsWrapper teams={teams} projects={projects} />} />
             <Route path="teams/:teamId/p/:projectId/trash" element={<TrashView teamId="mock" projectId="mock" onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="teams/:teamId/p/:projectId/_images" element={<ImageLibraryView scope="project" />} />
+            <Route path="teams/:teamId/p/:projectId/_templates" element={<TemplateLibraryView scope="team" />} />
+            <Route path="teams/:teamId/p/:projectId/template/:templateId" element={<TemplatePage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/p/:projectId/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/p/:projectId/docs/:docId/viewers" element={<PageAuditView docId="docId" docTitle="Title" selectedTeamName="Team" onBack={() => {}} />} />
             
@@ -144,6 +158,8 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="_admin/help" element={<AdminHelpPage onBack={() => {}} />} />
             
             <Route path="_admin/_images" element={<ImageLibraryView scope="system" />} />
+            <Route path="_admin/_templates" element={<TemplateLibraryView scope="system" />} />
+            <Route path="_admin/template/:templateId" element={<TemplatePage isMockMode={isMockMode} />} />
           </Route>
         </Routes>
       </AuthGuard>

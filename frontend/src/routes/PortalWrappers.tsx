@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Typography } from "@mui/material";
 import { TeamPortal } from "../components/TeamPortal";
@@ -10,6 +11,19 @@ export function TeamPortalWrapper({ teams, projects }: { teams: any[], projects:
   const { teamId } = useParams();
   const navigate = useNavigate();
   const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
+  
+  useEffect(() => {
+    if (team && teamId && team.abbreviation && team.abbreviation !== teamId) {
+      const currentUrl = new URL(window.location.href);
+      const pathParts = currentUrl.pathname.split('/');
+      const teamIndex = pathParts.indexOf('teams') + 1;
+      if (teamIndex > 0 && pathParts[teamIndex] === teamId) {
+        pathParts[teamIndex] = team.abbreviation;
+        currentUrl.pathname = pathParts.join('/');
+        window.history.replaceState(null, "", currentUrl.toString());
+      }
+    }
+  }, [team, teamId]);
   
   if (!team) return <Typography sx={{ p: 4, color: "text.secondary" }}>Team not found.</Typography>;
   
@@ -41,6 +55,19 @@ export function TeamSettingsWrapper({ teams }: { teams: any[] }) {
   
   const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
   
+  useEffect(() => {
+    if (team && teamId && team.abbreviation && team.abbreviation !== teamId) {
+      const currentUrl = new URL(window.location.href);
+      const pathParts = currentUrl.pathname.split('/');
+      const teamIndex = pathParts.indexOf('teams') + 1;
+      if (teamIndex > 0 && pathParts[teamIndex] === teamId) {
+        pathParts[teamIndex] = team.abbreviation;
+        currentUrl.pathname = pathParts.join('/');
+        window.history.replaceState(null, "", currentUrl.toString());
+      }
+    }
+  }, [team, teamId]);
+  
   if (!team) return <Typography sx={{ p: 4, color: "text.secondary" }}>Team not found.</Typography>;
 
   return (
@@ -59,6 +86,31 @@ export function ProjectPortalWrapper({ teams, projects }: { teams: any[], projec
   
   const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
   const project = projects.find(p => p.id === projectId || p.abbreviation === projectId);
+  
+  useEffect(() => {
+    let urlChanged = false;
+    const currentUrl = new URL(window.location.href);
+    const pathParts = currentUrl.pathname.split('/');
+    
+    if (team && teamId && team.abbreviation && team.abbreviation !== teamId) {
+      const teamIndex = pathParts.indexOf('teams') + 1;
+      if (teamIndex > 0 && pathParts[teamIndex] === teamId) {
+        pathParts[teamIndex] = team.abbreviation;
+        urlChanged = true;
+      }
+    }
+    if (project && projectId && project.abbreviation && project.abbreviation !== projectId) {
+      const pIndex = pathParts.indexOf('p') + 1;
+      if (pIndex > 0 && pathParts[pIndex] === projectId) {
+        pathParts[pIndex] = project.abbreviation;
+        urlChanged = true;
+      }
+    }
+    if (urlChanged) {
+      currentUrl.pathname = pathParts.join('/');
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  }, [team, teamId, project, projectId]);
   
   if (!team) return <Typography sx={{ p: 4, color: "text.secondary" }}>Team not found.</Typography>;
   if (!project) return <Typography sx={{ p: 4, color: "text.secondary" }}>Project not found.</Typography>;
@@ -90,6 +142,31 @@ export function ProjectSettingsWrapper({ teams, projects }: { teams: any[], proj
   
   const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
   const project = projects.find(p => p.id === projectId || p.abbreviation === projectId);
+  
+  useEffect(() => {
+    let urlChanged = false;
+    const currentUrl = new URL(window.location.href);
+    const pathParts = currentUrl.pathname.split('/');
+    
+    if (team && teamId && team.abbreviation && team.abbreviation !== teamId) {
+      const teamIndex = pathParts.indexOf('teams') + 1;
+      if (teamIndex > 0 && pathParts[teamIndex] === teamId) {
+        pathParts[teamIndex] = team.abbreviation;
+        urlChanged = true;
+      }
+    }
+    if (project && projectId && project.abbreviation && project.abbreviation !== projectId) {
+      const pIndex = pathParts.indexOf('p') + 1;
+      if (pIndex > 0 && pathParts[pIndex] === projectId) {
+        pathParts[pIndex] = project.abbreviation;
+        urlChanged = true;
+      }
+    }
+    if (urlChanged) {
+      currentUrl.pathname = pathParts.join('/');
+      window.history.replaceState(null, "", currentUrl.toString());
+    }
+  }, [team, teamId, project, projectId]);
   
   if (!team || !project) return <Typography sx={{ p: 4, color: "text.secondary" }}>Project not found.</Typography>;
 

@@ -54,7 +54,7 @@ func (s *DocumentService) ListDocumentsByTeam(ctx context.Context, teamId string
 	return s.repo.GetByTeamID(ctx, teamId)
 }
 
-func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string) (*domain.Document, error) {
+func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string, content *string) (*domain.Document, error) {
 	if title == "" {
 		return nil, errors.New("title is required")
 	}
@@ -62,13 +62,13 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug
 		return nil, errors.New("either teamId or projectId is required")
 	}
 
+	targetTeam := teamId
 	if s.teamRepo != nil && userID != "" {
 		teams, err := s.teamRepo.GetTeamsByUserID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check team membership: %w", err)
 		}
 
-		targetTeam := teamId
 		if targetTeam == "" && projectId != "" {
 			// If only projectId is provided, we need to find its team.
 			// But for simplicity here if they pass projectId, we check if they have access to the project's team.
@@ -86,18 +86,24 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug
 				break
 			}
 		}
+
 		if !isMember {
 			return nil, errors.New("unauthorized: must be a member of the team to create a document")
 		}
+	}
+
+	docContent := `{"type":"doc","content":[{"type":"paragraph"}]}`
+	if content != nil && *content != "" {
+		docContent = *content
 	}
 
 	doc := &domain.Document{
 		ID:          uuid.New().String(),
 		Title:       title,
 		Slug:        s.GenerateUniqueSlug(ctx, slug, title, ""),
-		Content:     `{"type":"doc","content":[{"type":"paragraph"}]}`, // Default blank content
+		Content:     docContent,
 		ProjectID:   projectId,
-		TeamID:      teamId,
+		TeamID:      targetTeam,
 		ParentID:    parentId,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),

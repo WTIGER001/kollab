@@ -97,3 +97,27 @@ CREATE TABLE IF NOT EXISTS user_favorites (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, document_id)
 );
+
+DO $$ BEGIN
+    CREATE TYPE template_scope AS ENUM ('system', 'team', 'personal');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE template_type AS ENUM ('page', 'block');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS templates (
+    id VARCHAR(255) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    content TEXT NOT NULL,
+    scope template_scope NOT NULL DEFAULT 'system',
+    template_type template_type NOT NULL DEFAULT 'page',
+    team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

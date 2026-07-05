@@ -63,6 +63,14 @@ export const usePresence = (
       return;
     }
 
+    if (activeDocId.startsWith('template_')) {
+      // Templates do not use real-time presence/sync
+      setActiveUsers([]);
+      // Call onSyncReady immediately to load initialContent
+      onSyncReadyRef.current(true);
+      return;
+    }
+
     const connect = () => {
       if (wsRef.current) {
         wsRef.current.onclose = null;

@@ -28,6 +28,8 @@ interface InsertLinkDialogProps {
   initialUrl?: string;
   initialText?: string;
   projectId: string | null;
+  teams?: any[];
+  projects?: any[];
 }
 
 export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
@@ -36,7 +38,9 @@ export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
   onSubmit,
   initialUrl = "",
   initialText = "",
-  projectId
+  projectId,
+  teams = [],
+  projects = [],
 }) => {
   const [tab, setTab] = useState(0); // 0 = Search, 1 = Web Link
   const [url, setUrl] = useState(initialUrl);
@@ -92,8 +96,18 @@ export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
     onClose();
   };
 
-  const handleSelectDocument = (doc: Document) => {
-    const docUrl = `/teams/${doc.teamId}/p/${doc.projectId || "none"}/docs/${doc.id}`;
+  const handleSelectDocument = (doc: any) => {
+    // Note: since doc is returned from search API, we cast to any since it might contain teamId which isn't in api.ts Document yet
+    const teamId = doc.teamId || "none";
+    const projId = doc.projectId || "none";
+    
+    const team = teams.find(t => t.id === teamId);
+    const proj = projects.find(p => p.id === projId);
+    
+    const tAbbr = team?.abbreviation || teamId;
+    const pAbbr = proj?.abbreviation || projId;
+    
+    const docUrl = `/teams/${tAbbr}/p/${pAbbr}/docs/${doc.id}`;
     setUrl(docUrl);
     if (!text) {
       setText(doc.title);

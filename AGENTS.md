@@ -75,6 +75,16 @@ To ensure a seamless user experience across the dynamic Theme Engine and Light/D
 
 ---
 
+## 🧪 Automated Testing Policy
+
+All AI agents must enforce and maintain our automated testing standard:
+
+- **Backend (Go)**: Maintain >60% statement coverage. Use the dual-repository pattern in `api/internal/http/handler/handler_test.go` (`runIntegrationTests`) to verify endpoints against both in-memory mocks and a real Postgres database via `testcontainers-go`.
+- **Frontend (React)**: Use Vitest and React Testing Library (RTL) for component logic. The UI should be testable via Mock Mode (`isMockMode = true`) without requiring the Go backend to be active.
+- **Coverage Check**: Always run `go test -coverpkg=./... -coverprofile=coverage.out ./... && go tool cover -func=coverage.out | grep total` when modifying backend logic to ensure coverage does not drop.
+
+---
+
 ## 🛠️ Checklist for Agents
 
 Before completing a turn, verify:

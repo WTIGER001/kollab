@@ -21,7 +21,8 @@ import {
   Clock,
   Search,
   BarChart3,
-  Layers
+  Layers,
+  FileText
 } from "lucide-react";
 
 import { HelpOverview } from "./help/HelpOverview";
@@ -31,13 +32,14 @@ import { HelpModes } from "./help/HelpModes";
 import { HelpSearch } from "./help/HelpSearch";
 import { HelpVersions } from "./help/HelpVersions";
 import { HelpAnalytics } from "./help/HelpAnalytics";
+import { HelpTemplates } from "./help/HelpTemplates";
 
 interface HelpDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-type HelpCategory = "overview" | "macros" | "previews" | "modes" | "search" | "versions" | "analytics";
+type HelpCategory = "overview" | "macros" | "previews" | "modes" | "search" | "versions" | "analytics" | "templates";
 
 export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
   const theme = useTheme();
@@ -53,6 +55,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
     { id: "modes" as HelpCategory, label: "Editing Modes", icon: <Edit3 size={16} /> },
     { id: "search" as HelpCategory, label: "Search & Navigation", icon: <Search size={16} /> },
     { id: "versions" as HelpCategory, label: "Version Control", icon: <Clock size={16} /> },
+    { id: "templates" as HelpCategory, label: "Templates & Snippets", icon: <FileText size={16} /> },
     { id: "analytics" as HelpCategory, label: "Page Analytics", icon: <BarChart3 size={16} /> },
   ];
 
@@ -105,6 +108,13 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
       categoryLabel: "Drawing & Macros",
       description: "Automatically render a nested directory outline of page headings that updates in real-time.",
       keywords: ["toc", "table of contents", "outline", "heading", "navigation"]
+    },
+    {
+      title: "Page Templates & Block Snippets",
+      category: "templates",
+      categoryLabel: "Templates & Snippets",
+      description: "Manage and insert reusable document layouts or block snippets via the slash menu and Template Library.",
+      keywords: ["templates", "snippets", "reusable", "layout", "blocks", "slash", "library", "system", "team", "personal"]
     },
     {
       title: "Draw.io Diagram Macro",
@@ -274,6 +284,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
         return <HelpSearch />;
       case "versions":
         return <HelpVersions />;
+      case "templates":
+        return <HelpTemplates />;
       case "analytics":
         return <HelpAnalytics />;
       default:

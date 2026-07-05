@@ -178,6 +178,7 @@ func main() {
 	attachmentRepo := pgrepo.NewPostgresAttachmentRepository(db)
 	taskRepo := pgrepo.NewPostgresTaskRepository(db)
 	tagRepo := pgrepo.NewPostgresTagRepository(db)
+	templateRepo := pgrepo.NewPostgresTemplateRepository(db)
 
 	storageProvider, err := storage.NewLocalStorage("./uploads")
 	if err != nil {
@@ -235,6 +236,7 @@ func main() {
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 	tagHandler := handler.NewTagHandler(tagService)
+	templateHandler := handler.NewTemplateHandler(templateRepo)
 
 	aiClient := ai.NewLLMClient()
 	aiHandler := handler.NewAIHandler(systemService, aiClient)
@@ -243,7 +245,7 @@ func main() {
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, evaluator)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, evaluator)
 
 	port := os.Getenv("PORT")
 	if port == "" {

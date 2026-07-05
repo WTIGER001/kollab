@@ -464,7 +464,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
-                    onClick={() => setAnalyticsOpen(true)}
+                    onClick={() => setAnalyticsDialogOpen(true)}
                     sx={{
                       fontSize: "11px",
                       fontWeight: 600,

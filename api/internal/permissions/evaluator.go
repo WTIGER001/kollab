@@ -37,10 +37,6 @@ type AncestryNode struct {
 
 // EvaluateDocumentAccess evaluates if a user can perform an action on a document.
 func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID string, docID string, action string, shareToken string, sharePassword string) (bool, string, error) {
-	if e.db == nil {
-		return true, "In-memory test bypass allowed", nil
-	}
-
 	// Action mapped to granular wiki.document permission
 	var docPerm string
 	switch action {
@@ -56,6 +52,10 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		docPerm = DocumentPermissions.Grant.ID()
 	default:
 		return false, "Invalid action", fmt.Errorf("unsupported action: %s", action)
+	}
+
+	if e.db == nil {
+		return true, "In-memory test bypass allowed", nil
 	}
 
 	// 1. SuperAdmin / Global Admin Override Check

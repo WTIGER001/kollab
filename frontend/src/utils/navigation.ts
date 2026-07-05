@@ -13,7 +13,8 @@ export const getLegacyNavigateFn = (navigate: NavigateFunction) => {
     isTrashPage = false,
     isTasksPage = false,
     isMentionsPage = false,
-    isImagesPage = false
+    isImagesPage = false,
+    isTemplatesPage = false
   ) => {
     let url = "/";
     if (team === "_admin") url = "/_admin/settings";
@@ -26,6 +27,7 @@ export const getLegacyNavigateFn = (navigate: NavigateFunction) => {
       if (team === "personal" || team.startsWith("personal_")) {
         if (isTrashPage) url = "/personal/trash";
         else if (isImagesPage) url = "/personal/_images";
+        else if (isTemplatesPage) url = "/personal/_templates";
         else if (isSettings || isTeamSettings) url = "/personal/_settings";
         else if (page) url = `/personal/docs/${page}${isAuditPage ? "/viewers" : ""}`;
         else url = "/personal";
@@ -33,12 +35,14 @@ export const getLegacyNavigateFn = (navigate: NavigateFunction) => {
         if (project) {
           if (isTrashPage) url = `/teams/${team}/p/${project}/trash`;
           else if (isImagesPage) url = `/teams/${team}/p/${project}/_images`;
+          else if (isTemplatesPage) url = `/teams/${team}/p/${project}/_templates`;
           else if (isSettings) url = `/teams/${team}/p/${project}/_settings`;
           else if (page) url = `/teams/${team}/p/${project}/docs/${page}${isAuditPage ? "/viewers" : ""}`;
           else url = `/teams/${team}/p/${project}`;
         } else {
           if (isTrashPage) url = `/teams/${team}/trash`;
           else if (isImagesPage) url = `/teams/${team}/_images`;
+          else if (isTemplatesPage) url = `/teams/${team}/_templates`;
           else if (isSettings || isTeamSettings) url = `/teams/${team}/_settings`;
           else if (page) url = `/teams/${team}/docs/${page}${isAuditPage ? "/viewers" : ""}`;
           else url = `/teams/${team}`;

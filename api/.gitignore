@@ -7,4 +7,4 @@
 # Local environment files
 .env
 .env.local
-uploads/
+uploads/coverage.out

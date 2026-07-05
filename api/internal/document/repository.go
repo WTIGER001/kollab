@@ -167,6 +167,33 @@ func (r *InMemoryDocumentRepository) GetByID(ctx context.Context, id string) (*d
 	return &docCopy, nil
 }
 
+func (r *InMemoryDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug string) (*domain.Document, string, error) {
+	r.mu.Lock()
+
+	// 1. Try to find by exact ID match
+	if doc, exists := r.documents[idOrSlug]; exists {
+		r.mu.Unlock()
+		return doc, "", nil
+	}
+
+	// 2. Try to find by current slug match
+	for _, doc := range r.documents {
+		if doc.Slug != "" && doc.Slug == idOrSlug {
+			r.mu.Unlock()
+			return doc, "", nil
+		}
+	}
+	r.mu.Unlock()
+
+	// 3. Fallback to GetByID to trigger auto-generation for in-memory repo
+	doc, err := r.GetByID(ctx, idOrSlug)
+	if err == nil && doc != nil {
+		return doc, "", nil
+	}
+
+	return nil, "", errors.New("document not found by id or slug")
+}
+
 func (r *InMemoryDocumentRepository) GetByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

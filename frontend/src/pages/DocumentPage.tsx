@@ -50,19 +50,42 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   // Automatically replace URL address bar if navigating via alias or old ID
   useEffect(() => {
     if (activeDoc && docId) {
-      const preferredIdentifier = activeDoc.slug || activeDoc.id;
-      if (docId !== preferredIdentifier) {
-        const currentUrl = new URL(window.location.href);
-        const pathParts = currentUrl.pathname.split('/');
-        // Assuming docId is the last part of the path
-        if (pathParts[pathParts.length - 1] === docId) {
-          pathParts[pathParts.length - 1] = preferredIdentifier;
-          currentUrl.pathname = pathParts.join('/');
-          window.history.replaceState(null, "", currentUrl.toString());
+      let urlChanged = false;
+      const preferredDocId = activeDoc.slug || activeDoc.id;
+      const preferredTeamId = activeTeam?.abbreviation || activeTeam?.id;
+      const preferredProjectId = activeProject?.abbreviation || activeProject?.id;
+      
+      const currentUrl = new URL(window.location.href);
+      const pathParts = currentUrl.pathname.split('/');
+      
+      // Assuming docId is the last part of the path
+      if (docId !== preferredDocId && pathParts[pathParts.length - 1] === docId) {
+        pathParts[pathParts.length - 1] = preferredDocId;
+        urlChanged = true;
+      }
+      
+      if (teamId && preferredTeamId && teamId !== preferredTeamId) {
+        const teamIndex = pathParts.indexOf('teams') + 1;
+        if (teamIndex > 0 && pathParts[teamIndex] === teamId) {
+          pathParts[teamIndex] = preferredTeamId;
+          urlChanged = true;
         }
       }
+
+      if (projectId && preferredProjectId && projectId !== preferredProjectId) {
+        const pIndex = pathParts.indexOf('p') + 1;
+        if (pIndex > 0 && pathParts[pIndex] === projectId) {
+          pathParts[pIndex] = preferredProjectId;
+          urlChanged = true;
+        }
+      }
+
+      if (urlChanged) {
+        currentUrl.pathname = pathParts.join('/');
+        window.history.replaceState(null, "", currentUrl.toString());
+      }
     }
-  }, [activeDoc, docId]);
+  }, [activeDoc, docId, teamId, projectId, activeTeam, activeProject]);
 
   const [isSaving, setIsSaving] = useState(false);
 

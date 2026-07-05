@@ -87,7 +87,7 @@ type DocumentService interface {
 	GetDocument(ctx context.Context, idOrSlug string) (*Document, string, error)
 	ListDocumentsByProject(ctx context.Context, projectId string) ([]*Document, error)
 	ListDocumentsByTeam(ctx context.Context, teamId string) ([]*Document, error)
-	CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string) (*Document, error)
+	CreateDocument(ctx context.Context, title string, slug string, projectId string, teamId string, parentId *string, userID string, content *string) (*Document, error)
 	UpdateDocument(ctx context.Context, id string, title string, slug string, content string, userID string, changeSummary string) (*Document, error)
 	MoveDocument(ctx context.Context, id string, parentID *string, projectID string, teamID string) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) error

@@ -39,7 +39,8 @@ import {
   X,
   AtSign,
   FileUp,
-  Image
+  Image,
+  Grid
 } from "lucide-react";
 import { useDocuments } from "../hooks/queries";
 import { useDocumentTree } from "../hooks/useDocumentTree";
@@ -96,7 +97,7 @@ const isDescendant = (draggedId: string, targetId: string, items: DocumentItem[]
   return checkChildren(targetId, draggedItem.children);
 };
 
-const getMoveCandidates = (items: DocumentItem[], excludeId: string): { id: string; title: string; depth: number }[] => {
+export const getMoveCandidates = (items: DocumentItem[], excludeId: string): { id: string; title: string; depth: number }[] => {
   const candidates: { id: string; title: string; depth: number }[] = [];
 
   const traverse = (list: DocumentItem[], depth = 0) => {
@@ -261,7 +262,7 @@ interface SidebarProps {
   documents: DocumentItem[];
   activeDocId: string | null;
   onSelectDoc: (id: string) => void;
-  onAddDoc: (parentId?: string) => void;
+  onAddDoc: (parentId?: string, bypassWizard?: boolean) => void;
   onImportMarkdown?: (parentId: string | undefined, title: string, markdown: string) => void;
   onDeleteDoc: (id: string) => void;
   onMoveDoc: (id: string, parentId: string | null, projectId?: string, teamId?: string) => Promise<void>;
@@ -283,7 +284,8 @@ interface SidebarProps {
     isTrashPage?: boolean,
     isTasksPage?: boolean,
     isMentionsPage?: boolean,
-    isImagesPage?: boolean
+    isImagesPage?: boolean,
+    isTemplatesPage?: boolean
   ) => void;
   width?: number;
 
@@ -480,7 +482,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAddDoc(doc.id);
+                    onAddDoc(doc.id, true);
                   }}
                   sx={{ p: 0.25, color: "text.secondary", "&:hover": { color: "primary.main" } }}
                 >
@@ -900,6 +902,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={p.id}
                     selected={isProjectSelected}
                     onClick={() => {
+                      onAddDoc(undefined, false);
                       navigateTo(t.abbreviation || t.id, p.abbreviation || p.id, null);
                       handleCloseProjectMenu();
                     }}
@@ -1086,6 +1089,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </ListItemIcon>
           <ListItemText primary={<Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif' }}>Image Library</Typography>} />
         </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (selectedTeamId?.startsWith("personal_")) {
+              navigateTo("personal", null, null, false, false, false, false, false, false, false, false, false, true);
+            } else if (selectedProjectId) {
+              const team = teams.find(t => t.id === selectedTeamId);
+              const proj = projects.find(p => p.id === selectedProjectId);
+              if (team && proj) {
+                navigateTo(team.abbreviation || team.id, proj.abbreviation || proj.id, null, false, false, false, false, false, false, false, false, false, true);
+              }
+            } else if (selectedTeamId) {
+              const team = teams.find(t => t.id === selectedTeamId);
+              if (team) {
+                navigateTo(team.abbreviation || team.id, null, null, false, false, false, false, false, false, false, false, false, true);
+              }
+            }
+            handleCloseProjectMenu();
+          }}
+          sx={{
+            py: 0.75,
+            px: 2,
+            fontSize: "12.5px",
+            fontFamily: '"Outfit", sans-serif',
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 24 }}>
+            <Grid size={12} />
+          </ListItemIcon>
+          <ListItemText primary={<Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif' }}>Template Library</Typography>} />
+        </MenuItem>
       </Menu>
 
       {/* Split Create Button */}
@@ -1103,8 +1136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           size="small"
           disabled={!selectedTeamId}
           onClick={() => {
-            const isDoc = activeDocId && activeDocId !== selectedProjectId && activeDocId !== selectedTeamId;
-            onAddDoc(isDoc ? activeDocId : undefined);
+            onAddDoc(undefined, false);
           }}
           startIcon={<PostAdd sx={{ fontSize: 16 }} />}
           sx={{ 
@@ -1213,9 +1245,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Import Markdown File</Typography>} />
         </MenuItem>
 
-        <MenuItem disabled sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
-          <ListItemIcon sx={{ minWidth: 24 }}><FileText size={12} /></ListItemIcon>
-          <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Templates coming soon</Typography>} />
+        <MenuItem onClick={() => {
+          handleCloseTemplates();
+          onAddDoc(undefined, false);
+        }} sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>
+          <ListItemIcon sx={{ minWidth: 24 }}><Grid size={12} /></ListItemIcon>
+          <ListItemText primary={<Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif' }}>Open Template Gallery</Typography>} />
         </MenuItem>
       </Menu>
 

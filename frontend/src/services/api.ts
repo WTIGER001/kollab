@@ -79,6 +79,21 @@ export interface DocumentVersion {
   createdAt: string;
 }
 
+export type TemplateScope = "system" | "team" | "personal";
+export type TemplateType = "page" | "block";
+
+export interface Template {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  scope: TemplateScope;
+  templateType: TemplateType;
+  teamId?: string;
+  userId?: string;
+  createdAt: string;
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:8080" : window.location.origin);
 export const WS_BASE_URL = import.meta.env.VITE_WS_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "ws://localhost:8080" : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`);
 
@@ -975,6 +990,49 @@ export const updateLibraryImageName = async (id: string, displayName: string): P
 
 export const deleteLibraryImage = async (id: string): Promise<void> => {
   const res = await fetch(`${BASE_URL}/api/library/images/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+  return handleResponse(res);
+};
+
+export const getTemplate = async (id: string): Promise<Template> => {
+  const res = await fetch(`${BASE_URL}/api/templates/${id}`, { headers: getHeaders() });
+  return handleResponse(res);
+};
+
+export const getTemplates = async (params?: { scope?: string; templateType?: string; teamId?: string; userId?: string }): Promise<Template[]> => {
+  const url = new URL(`${BASE_URL}/api/templates`);
+  if (params) {
+    if (params.scope) url.searchParams.append("scope", params.scope);
+    if (params.templateType) url.searchParams.append("templateType", params.templateType);
+    if (params.teamId) url.searchParams.append("teamId", params.teamId);
+    if (params.userId) url.searchParams.append("userId", params.userId);
+  }
+  const res = await fetch(url.toString(), { headers: getHeaders() });
+  return handleResponse(res);
+};
+
+export const createTemplate = async (template: Partial<Template>): Promise<Template> => {
+  const res = await fetch(`${BASE_URL}/api/templates`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(template),
+  });
+  return handleResponse(res);
+};
+
+export const updateTemplate = async (id: string, template: Partial<Template>): Promise<Template> => {
+  const res = await fetch(`${BASE_URL}/api/templates/${id}`, {
+    method: "PUT",
+    headers: getHeaders(),
+    body: JSON.stringify(template),
+  });
+  return handleResponse(res);
+};
+
+export const deleteTemplate = async (id: string): Promise<void> => {
+  const res = await fetch(`${BASE_URL}/api/templates/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
   });

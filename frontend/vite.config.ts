@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -18,5 +19,22 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  resolve: {
+    alias: {
+      'react-transition-group/TransitionGroupContext': 'react-transition-group/cjs/TransitionGroupContext.js',
+      'open-color': '/Users/johnbauer/Dev/Personal/kollab/frontend/src/utils/dummy.ts',
+    }
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    globals: true,
+    exclude: ['tests/**', 'node_modules/**'],
+    server: {
+      deps: {
+        inline: ['@mui/material', '@mui/icons-material', '@mui/system', 'react-transition-group', 'open-color', /@tiptap/]
+      }
+    }
   },
 })

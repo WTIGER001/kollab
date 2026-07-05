@@ -40,3 +40,6 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### 🔗 [11. Page Settings & Custom URLs](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/page_settings.md)
 *Learn how to customize page URL slugs and manage legacy link redirects.*
+
+### 📄 [12. Enterprise Publishing & Templates](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/templates.md)
+*Learn how to use page templates to kickstart new documents and insert block snippets via slash commands.*

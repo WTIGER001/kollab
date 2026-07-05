@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useToastStore } from "../store/useToastStore";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { MacroBlock } from "../editor/extensions/MacroBlock";
@@ -51,13 +52,16 @@ import {
   isFavorite as checkIsFavorite,
   fetchAttachments,
   fetchTeamUsers,
+  getTemplates,
   API_BASE_URL,
 } from "../services/api";
 import type {
   DocumentVersion,
   DocumentAnalytics,
   Attachment,
+  Template,
 } from "../services/api";
+import { PlaceholderBlock } from "../editor/extensions/PlaceholderBlock";
 import { DocumentTags } from "./DocumentTags";
 import { UserAvatar } from "./UserAvatar";
 
@@ -169,6 +173,7 @@ import {
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
   Quote,
+  Copy,
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -320,6 +325,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   projects = [],
 }) => {
   const [title, setTitle] = useState(initialTitle);
+  const { showToast } = useToastStore();
   const lastNonEmptyTitle = React.useRef(initialTitle || "Untitled Document");
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
@@ -381,6 +387,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [teamUsers, setTeamUsers] = useState<
     { id: string; username: string }[]
   >([]);
+  const [blockTemplates, setBlockTemplates] = useState<Template[]>([]);
+
+  useEffect(() => {
+    if (!selectedTeamId) return;
+    getTemplates({ templateType: "block", teamId: selectedTeamId })
+      .then((templates) => {
+        setBlockTemplates(templates || []);
+      })
+      .catch((err) => {
+        console.error("Failed to load block templates", err);
+      });
+  }, [selectedTeamId]);
 
   useEffect(() => {
     if (!selectedTeamId) {
@@ -494,7 +512,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   // Trigger a page view record when activeDocId is retrieved/mounted
   useEffect(() => {
-    if (activeDocId) {
+    if (activeDocId && !activeDocId.startsWith('template_')) {
       fetchDocument(activeDocId).catch((err) => {
         console.error("Failed to record page view:", err);
       });
@@ -534,19 +552,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   // Fetch live page analytics when Dialog is opened
   useEffect(() => {
-    if (analyticsOpen && activeDocId) {
-      setLoadingAnalytics(true);
-      fetchDocumentAnalytics(activeDocId)
-        .then((data) => {
+    const loadAnalytics = async () => {
+      if (analyticsOpen && activeDocId && !activeDocId.startsWith('template_')) {
+        setLoadingAnalytics(true);
+        try {
+          const data = await fetchDocumentAnalytics(activeDocId);
           setAnalyticsData(data);
-        })
-        .catch((err) => {
+        } catch (err) {
           console.error("Failed to fetch live analytics:", err);
-        })
-        .finally(() => {
+        } finally {
           setLoadingAnalytics(false);
-        });
-    }
+        }
+      }
+    };
+
+    loadAnalytics();
   }, [analyticsOpen, activeDocId]);
 
   const triggerImageUpload = (targetEditor: any) => {
@@ -611,6 +631,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       StarterKit.configure({
         // Disable native history since Collaboration takes over undo/redo management
         history: false,
+        undoRedo: false,
         heading: {
           levels: [1, 2, 3, 4, 5, 6, 7, 8] as any,
         },
@@ -618,6 +639,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       Collaboration.configure({
         document: ydoc,
       }),
+      PlaceholderBlock,
       MacroBlock,
       Excerpt,
       LayoutSection,
@@ -838,6 +860,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     extensions: [
       StarterKit.configure({
         history: false,
+        undoRedo: false,
         heading: {
           levels: [1, 2, 3, 4, 5, 6, 7, 8] as any,
         },
@@ -961,7 +984,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   // Page Analytics statistics computation
   const getDocumentStats = () => {
-    if (!editor)
+    if (!editor || editor.isDestroyed || !editor.schema)
       return {
         words: 0,
         characters: 0,
@@ -1188,7 +1211,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setAiPromptOpen(true);
       },
-      category: "advanced",
+      category: "ai",
     },
     {
       id: "status-badge",
@@ -1207,7 +1230,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "tasks",
     },
     {
       id: "markdown-paste",
@@ -1226,7 +1249,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "ai-content",
@@ -1245,7 +1268,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "ai",
     },
     {
       id: "chart-analytics",
@@ -1264,7 +1287,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "roadmap-planner",
@@ -1283,7 +1306,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "team-calendars",
@@ -1302,7 +1325,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "popular-labels",
@@ -1321,7 +1344,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "children-display",
@@ -1345,7 +1368,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "layout",
     },
     {
       id: "page-index",
@@ -1366,7 +1389,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "layout",
     },
     {
       id: "attachments-list",
@@ -1390,7 +1413,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "media",
     },
     {
       id: "file-preview",
@@ -1412,7 +1435,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "media",
     },
     {
       id: "excerpt",
@@ -1433,7 +1456,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "excerpt-include",
@@ -1454,7 +1477,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "mentions-list",
@@ -1478,7 +1501,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "drawio",
@@ -1499,7 +1522,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "excalidraw",
@@ -1520,7 +1543,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "mermaid",
@@ -1541,7 +1564,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "diagrams",
     },
     {
       id: "jira-gitlab-issue",
@@ -1560,7 +1583,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "advanced",
+      category: "integrations",
     },
     {
       id: "table",
@@ -1732,7 +1755,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: (ed) => {
         triggerImageUpload(ed);
       },
-      category: "layout",
+      category: "media",
     },
     {
       id: "inline-status",
@@ -1955,9 +1978,26 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     },
   ];
 
+  const templateCommands: SlashCommandItem[] = blockTemplates.map((t) => ({
+    id: `template_${t.id}`,
+    label: t.title,
+    description: t.description || "Template snippet",
+    icon: <Copy size={16} style={{ color: "var(--primary-color)" }} />,
+    action: (editor) => {
+      try {
+        const json = JSON.parse(t.content);
+        editor.chain().focus().insertContent(json).run();
+      } catch (e) {
+        console.error("Failed to parse template AST", e);
+      }
+    },
+    category: "Snippets",
+  }));
+
+  const allCommands = [...commands, ...templateCommands];
+
   // Filter commands dynamically based on input query
-  // Filter commands dynamically based on input query
-  const filteredCommands = commands.filter(
+  const filteredCommands = allCommands.filter(
     (cmd) =>
       cmd.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cmd.description.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -3999,6 +4039,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         projectId={document.projectId || null}
         initialUrl={linkInitialUrl}
         initialText={linkInitialText}
+        teams={teams}
+        projects={projects}
         onSubmit={(url, text) => {
           if (editor) {
             if (text) {

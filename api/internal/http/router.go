@@ -15,8 +15,9 @@ import (
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,
 // and maps public/protected routes using JWT middleware.
-func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, evaluator *permissions.AccessEvaluator) http.Handler {
+func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, templateH *handler.TemplateHandler, evaluator *permissions.AccessEvaluator) http.Handler {
 	r := chi.NewRouter()
+
 
 	// Standard middleware
 	r.Use(mid.RequestLogger)
@@ -107,6 +108,12 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Get("/system/settings", systemH.GetSettings)
 		r.Put("/system/settings", systemH.UpdateSettings)
+
+		r.Get("/templates", templateH.ListTemplates)
+		r.Post("/templates", templateH.CreateTemplate)
+		r.Get("/templates/{id}", templateH.GetTemplate)
+		r.Put("/templates/{id}", templateH.UpdateTemplate)
+		r.Delete("/templates/{id}", templateH.DeleteTemplate)
 		r.Get("/system/backup", systemH.Backup)
 		r.Post("/system/restore", systemH.Restore)
 		r.Get("/system/sync/export", systemH.ExportSync)

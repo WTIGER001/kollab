@@ -100,6 +100,7 @@ type createDocumentRequest struct {
 	ProjectID string  `json:"projectId"`
 	TeamID    string  `json:"teamId"`
 	ParentID  *string `json:"parentId"`
+	Content   *string `json:"content"`
 }
 
 func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +116,7 @@ func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, _ := middleware.GetUserID(r.Context())
-	doc, err := h.docService.CreateDocument(r.Context(), req.Title, req.Slug, req.ProjectID, req.TeamID, req.ParentID, userID)
+	doc, err := h.docService.CreateDocument(r.Context(), req.Title, req.Slug, req.ProjectID, req.TeamID, req.ParentID, userID, req.Content)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -777,7 +778,7 @@ func (h *DocumentHandler) Import(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *DocumentHandler) importTree(ctx context.Context, node docExporter.JSONTree, teamID, projectID string, parentID *string, userID string) (*domain.Document, error) {
-	doc, err := h.docService.CreateDocument(ctx, node.Title, "", projectID, teamID, parentID, userID)
+	doc, err := h.docService.CreateDocument(ctx, node.Title, "", projectID, teamID, parentID, userID, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -86,12 +86,24 @@ CREATE TABLE IF NOT EXISTS team_members (
 );
 
 CREATE TABLE IF NOT EXISTS images (
-    id VARCHAR(255) PRIMARY KEY,
+    id VARCHAR(50) PRIMARY KEY,
     filename VARCHAR(255) NOT NULL,
-    mime_type VARCHAR(255) NOT NULL,
-    original_width INT NOT NULL,
-    original_height INT NOT NULL,
-    created_at TIMESTAMP NOT NULL
+    mime_type VARCHAR(100) NOT NULL,
+    original_width INT,
+    original_height INT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS library_images (
+    id VARCHAR(50) PRIMARY KEY,
+    image_id VARCHAR(50) NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    display_name VARCHAR(255) NOT NULL,
+    scope VARCHAR(50) NOT NULL DEFAULT 'global', -- global, team, project
+    team_id VARCHAR(50) REFERENCES teams(id) ON DELETE CASCADE,
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
+    user_id VARCHAR(50) REFERENCES users(id) ON DELETE SET NULL,
+    size_bytes BIGINT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS workspace_themes (
@@ -308,3 +320,30 @@ CREATE TRIGGER log_comments AFTER INSERT OR UPDATE OR DELETE ON comments FOR EAC
 
 DROP TRIGGER IF EXISTS log_tags ON tags;
 CREATE TRIGGER log_tags AFTER INSERT OR UPDATE OR DELETE ON tags FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DO $$ BEGIN
+    CREATE TYPE template_scope AS ENUM ('system', 'team', 'personal');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE template_type AS ENUM ('page', 'block');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS templates (
+    id VARCHAR(255) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    content TEXT NOT NULL,
+    scope template_scope NOT NULL DEFAULT 'system',
+    template_type template_type NOT NULL DEFAULT 'page',
+    team_id VARCHAR(255) REFERENCES teams(id) ON DELETE CASCADE,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS log_templates ON templates;
+CREATE TRIGGER log_templates AFTER INSERT OR UPDATE OR DELETE ON templates FOR EACH ROW EXECUTE FUNCTION log_db_operation();

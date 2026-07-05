@@ -20,6 +20,10 @@ import {
   Info,
   ListTodo,
   Layers,
+  Image,
+  Network,
+  Sparkles,
+  Link2,
 } from "lucide-react";
 
 export interface EditorMacroDialogProps {
@@ -80,6 +84,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
       >
         <Typography
           variant="h6"
+          component="div"
           sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif' }}
         >
           Insert Macro or Block
@@ -172,36 +177,14 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
               },
             }}
           >
-            <Tab
-              label="Text & Lists"
-              value="text"
-              icon={<Type size={16} />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Layout & Media"
-              value="layout"
-              icon={<Columns2 size={16} />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Callouts & Details"
-              value="callouts"
-              icon={<Info size={16} />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Task & Status"
-              value="tasks"
-              icon={<ListTodo size={16} />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Advanced Macros"
-              value="advanced"
-              icon={<Layers size={16} />}
-              iconPosition="start"
-            />
+            <Tab label="Text & Lists" value="text" icon={<Type size={16} />} iconPosition="start" />
+            <Tab label="Layout & Structure" value="layout" icon={<Columns2 size={16} />} iconPosition="start" />
+            <Tab label="Media & Attachments" value="media" icon={<Image size={16} />} iconPosition="start" />
+            <Tab label="Callouts & Panels" value="callouts" icon={<Info size={16} />} iconPosition="start" />
+            <Tab label="Task & Status" value="tasks" icon={<ListTodo size={16} />} iconPosition="start" />
+            <Tab label="Diagrams & Charts" value="diagrams" icon={<Network size={16} />} iconPosition="start" />
+            <Tab label="AI & Automation" value="ai" icon={<Sparkles size={16} />} iconPosition="start" />
+            <Tab label="Integrations & Dev" value="integrations" icon={<Link2 size={16} />} iconPosition="start" />
           </Tabs>
         )}
 
@@ -233,6 +216,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
               }
               return cmd.category === activeCategoryTab;
             })
+            .sort((a, b) => a.label.localeCompare(b.label))
             .map((cmd) => {
               const isFav = favorites.includes(cmd.id);
               return (
