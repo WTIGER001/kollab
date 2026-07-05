@@ -299,7 +299,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                 <CircularProgress size={20} />
               </Box>
             ) : links.length === 0 ? (
-              <Box sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(255,255,255,0.01)", border: "1px dashed var(--border-color)", textAlign: "center" }}>
+              <Box sx={{ p: 2, borderRadius: 2, bgcolor: "action.hover", border: "1px dashed var(--border-color)", textAlign: "center" }}>
                 <Typography variant="body2" sx={{ fontSize: "12px", color: "text.secondary" }}>
                   No active share links. Generate a link above to share this document.
                 </Typography>

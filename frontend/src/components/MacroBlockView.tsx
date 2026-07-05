@@ -667,7 +667,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         px: 3,
                         py: config.primaryCtaSubtitle ? 1 : 1.5,
                         borderRadius: "8px",
-                        "&:hover": { backgroundColor: "rgba(255,255,255,0.9)" }
+                        "&:hover": { backgroundColor: "action.hover" }
                       }}
                     >
                       <Typography sx={{ fontWeight: 700, fontSize: "14px" }}>{config.primaryCtaLabel || "Primary Action"}</Typography>
@@ -682,11 +682,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       size="large"
                       onClick={() => window.open(config.secondaryCtaUrl || "#", "_blank")}
                       sx={{
-                        borderColor: "rgba(255,255,255,0.5)",
+                        borderColor: "var(--border-color)",
                         color: "#fff",
                         px: 3,
                         borderRadius: "8px",
-                        "&:hover": { borderColor: "#fff", backgroundColor: "rgba(255,255,255,0.1)" }
+                        "&:hover": { borderColor: "#fff", backgroundColor: "action.hover" }
                       }}
                     >
                       <Typography sx={{ fontWeight: 600, fontSize: "14px" }}>{config.secondaryCtaLabel}</Typography>
@@ -815,13 +815,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                           "& p": { my: 1 },
                           "& ul, & ol": { pl: 2.5, my: 1 },
                           "& li": { my: 0.5 },
-                          "& code": { bgcolor: "rgba(255, 255, 255, 0.05)", p: "2px 4px", borderRadius: "3px", fontSize: "0.9em", fontFamily: "monospace" },
+                          "& code": { bgcolor: "action.hover", p: "2px 4px", borderRadius: "3px", fontSize: "0.9em", fontFamily: "monospace" },
                           "& pre": { bgcolor: "rgba(0, 0, 0, 0.2)", p: 1.5, borderRadius: "6px", overflowX: "auto", my: 1.5 },
                           "& pre code": { p: 0, bgcolor: "transparent", fontSize: "0.85em" },
                           "& blockquote": { borderLeft: "3px solid var(--primary-color)", pl: 2, m: "1em 0", color: "text.secondary", fontStyle: "italic" },
                           "& table": { width: "100%", borderCollapse: "collapse", my: 1.5 },
                           "& th, & td": { border: "1px solid var(--border-color)", p: 1, textAlign: "left" },
-                          "& th": { bgcolor: "rgba(255, 255, 255, 0.02)", fontWeight: 700 }
+                          "& th": { bgcolor: "action.hover", fontWeight: 700 }
                         }}
                       />
                       
@@ -1024,7 +1024,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid var(--border-color)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
                         <Line type="monotone" dataKey="value" stroke="#818cf8" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                       </LineChart>
@@ -1035,7 +1035,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(255,255,255,0.05)" />
                           ))}
                         </Pie>
-                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <RechartsTooltip contentStyle={{ backgroundColor: "#121214", border: "1px solid var(--border-color)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
                       </PieChart>
                     ) : (
@@ -1043,7 +1043,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                        <RechartsTooltip cursor={{ fill: "rgba(255,255,255,0.05)" }} contentStyle={{ backgroundColor: "#121214", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
+                        <RechartsTooltip cursor={{ fill: "rgba(255,255,255,0.05)" }} contentStyle={{ backgroundColor: "#121214", border: "1px solid var(--border-color)", borderRadius: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }} itemStyle={{ color: "#f8fafc" }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
                         <Bar dataKey="value" fill="#818cf8" radius={[4, 4, 0, 0]} maxBarSize={60} />
                       </BarChart>
@@ -1078,7 +1078,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 </Typography>
                 <Box sx={{ minWidth: 600, display: "flex", flexDirection: "column", gap: 1 }}>
                   {/* Timeline Header */}
-                  <Box sx={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.1)", pb: 1, mb: 1 }}>
+                  <Box sx={{ display: "flex", borderBottom: "var(--border-color)", pb: 1, mb: 1 }}>
                     <Box sx={{ width: 150, flexShrink: 0 }} />
                     {Array.from({ length: totalDuration }).map((_, i) => (
                       <Box key={i} sx={{ flex: 1, textAlign: "center", color: "text.secondary", fontSize: "11px", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
@@ -1144,7 +1144,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
                   {config.title || "Team Calendar"}
                 </Typography>
-                <Box sx={{ height: 500, ".rbc-toolbar": { mb: 2 }, ".rbc-event": { bgcolor: "var(--accent-blue)" }, ".rbc-today": { bgcolor: "rgba(255,255,255,0.05)" }, ".rbc-header": { color: "text.secondary", py: 1, fontWeight: 600 } }}>
+                <Box sx={{ height: 500, ".rbc-toolbar": { mb: 2 }, ".rbc-event": { bgcolor: "var(--accent-blue)" }, ".rbc-today": { bgcolor: "action.hover" }, ".rbc-header": { color: "text.secondary", py: 1, fontWeight: 600 } }}>
                   <Calendar
                     localizer={localizer}
                     events={events}
@@ -1224,7 +1224,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 sx={{ 
                   p: 1.5, 
                   borderRadius: 1.5, 
-                  bgcolor: "rgba(255, 255, 255, 0.02)", 
+                  bgcolor: "action.hover", 
                   borderLeft: "3px solid var(--primary-color, #8b5cf6)" 
                 }}
               >
@@ -1440,12 +1440,12 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                           sx={{
                             p: 2,
                             borderRadius: "10px",
-                            bgcolor: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(255, 255, 255, 0.04)",
+                            bgcolor: "action.hover",
+                            border: "1px solid var(--border-color)",
                             cursor: "pointer",
                             transition: "all 0.2s ease",
                             "&:hover": {
-                              bgcolor: "rgba(255, 255, 255, 0.04)",
+                              bgcolor: "action.hover",
                               borderColor: "rgba(139, 92, 246, 0.25)",
                               transform: "translateY(-1px)",
                             }
@@ -1538,7 +1538,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         py: 1,
                         borderRadius: "6px",
                         border: "1px solid var(--border-color)",
-                        bgcolor: "rgba(255, 255, 255, 0.01)",
+                        bgcolor: "action.hover",
                         cursor: "pointer",
                         transition: "all 0.15s ease",
                         "&:hover": {
@@ -1571,7 +1571,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 ? allTags.filter(t => filterTags.includes(t.id)).map(t => t.name).join(", ")
                 : "None";
               return (
-                <Box sx={{ p: 1.5, border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "8px", bgcolor: "rgba(255,255,255,0.01)" }}>
+                <Box sx={{ p: 1.5, border: "1px dashed rgba(255,255,255,0.06)", borderRadius: "8px", bgcolor: "action.hover" }}>
                   <Typography variant="body2" sx={{ color: "text.disabled", fontStyle: "italic", fontSize: "12.5px" }}>
                     Page Index (Directory listing hidden in Edit mode)
                   </Typography>
@@ -1662,8 +1662,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       sx={{
                         p: 1.5,
                         borderRadius: "8px",
-                        bgcolor: "rgba(255, 255, 255, 0.01)",
-                        border: "1px solid rgba(255, 255, 255, 0.02)",
+                        bgcolor: "action.hover",
+                        border: "1px solid var(--border-color)",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
@@ -1723,8 +1723,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       sx={{
                         p: 1.5,
                         borderRadius: "8px",
-                        bgcolor: "rgba(255, 255, 255, 0.01)",
-                        border: "1px solid rgba(255, 255, 255, 0.02)",
+                        bgcolor: "action.hover",
+                        border: "1px solid var(--border-color)",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
@@ -1804,15 +1804,15 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       sx={{
                         p: 1.5,
                         borderRadius: "8px",
-                        bgcolor: "rgba(255, 255, 255, 0.01)",
-                        border: "1px solid rgba(255, 255, 255, 0.03)",
+                        bgcolor: "action.hover",
+                        border: "1px solid var(--border-color)",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
                         gap: 1.5,
                         transition: "all 0.2s ease",
                         "&:hover": {
-                          bgcolor: "rgba(255, 255, 255, 0.02)",
+                          bgcolor: "action.hover",
                           borderColor: "rgba(139, 92, 246, 0.15)",
                         }
                       }}
@@ -1907,8 +1907,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       sx={{
                         p: 1.5,
                         borderRadius: "8px",
-                        bgcolor: "rgba(255, 255, 255, 0.02)",
-                        border: "1px solid rgba(255, 255, 255, 0.04)",
+                        bgcolor: "action.hover",
+                        border: "1px solid var(--border-color)",
                         cursor: "pointer",
                         textDecoration: "none",
                         display: "flex",
@@ -1916,7 +1916,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         gap: 1.5,
                         transition: "all 0.2s ease",
                         "&:hover": {
-                          bgcolor: "rgba(255, 255, 255, 0.05)",
+                          bgcolor: "action.hover",
                           borderColor: "rgba(139, 92, 246, 0.2)",
                           transform: "translateY(-1px)"
                         }
@@ -1961,7 +1961,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   overflowX: "auto",
                   mt: 1,
                   borderRadius: "8px",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  border: "1px solid var(--border-color)",
                   backgroundColor: "rgba(0,0,0,0.1)"
                 }}
               >
@@ -1977,7 +1977,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   }}
                 >
                   <Box component="thead">
-                    <Box component="tr" sx={{ borderBottom: "1px solid rgba(255,255,255,0.06)", bgcolor: "rgba(255,255,255,0.02)" }}>
+                    <Box component="tr" sx={{ borderBottom: "var(--border-color)", bgcolor: "action.hover" }}>
                       <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Name</Box>
                       <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Size</Box>
                       <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Type</Box>
@@ -1990,8 +1990,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         component="tr" 
                         key={att.id} 
                         sx={{ 
-                          borderBottom: "1px solid rgba(255,255,255,0.04)", 
-                          "&:hover": { bgcolor: "rgba(255,255,255,0.01)" } 
+                          borderBottom: "var(--border-color)", 
+                          "&:hover": { bgcolor: "action.hover" } 
                         }}
                       >
                         <Box component="td" sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
@@ -2105,8 +2105,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     p: 2,
                     maxWidth: "320px",
                     borderRadius: "10px",
-                    bgcolor: "rgba(255, 255, 255, 0.02)",
-                    border: "1px solid rgba(255, 255, 255, 0.05)",
+                    bgcolor: "action.hover",
+                    border: "1px solid var(--border-color)",
                     cursor: "pointer",
                     textDecoration: "none",
                     display: "flex",
@@ -2114,7 +2114,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     gap: 2,
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      bgcolor: "rgba(255, 255, 255, 0.04)",
+                      bgcolor: "action.hover",
                       borderColor: "rgba(139, 92, 246, 0.25)",
                       transform: "translateY(-1px)"
                     }
@@ -2659,7 +2659,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       display: "flex", 
                       justifyContent: "center", 
                       alignItems: "center",
-                      bgcolor: "rgba(255, 255, 255, 0.01)",
+                      bgcolor: "action.hover",
                       overflow: "auto"
                     }}>
                       {renderedMermaidSvg ? (
@@ -2713,7 +2713,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       display: "flex", 
                       justifyContent: "center", 
                       alignItems: "center",
-                      bgcolor: "rgba(255, 255, 255, 0.01)",
+                      bgcolor: "action.hover",
                       overflow: "auto",
                       minHeight: "100px"
                     }}
@@ -2917,7 +2917,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         sx={{
           p: 2,
           backgroundColor: "rgba(22, 25, 36, 0.4)",
-          border: "1px solid rgba(255, 255, 255, 0.04)",
+          border: "1px solid var(--border-color)",
           borderRadius: 2.5,
           position: "relative",
           userSelect: "none",
@@ -2929,7 +2929,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         }}
       >
         {/* Macro Header Panel */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, pb: 1, borderBottom: "1px solid rgba(255, 255, 255, 0.03)" }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, pb: 1, borderBottom: "var(--border-color)" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Box sx={{ display: "flex", color: "primary.light" }}>
               {getMacroIcon()}
@@ -3390,7 +3390,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             )}
 
             {type === "popular-labels" && (
-              <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "13px", p: 1, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "13px", p: 1, border: "1px solid var(--border-color)", borderRadius: 1 }}>
                 This macro automatically aggregates all labels used across the current project and displays them as a word cloud. No manual configuration is required.
               </Typography>
             )}

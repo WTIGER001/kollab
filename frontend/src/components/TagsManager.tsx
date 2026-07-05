@@ -197,7 +197,7 @@ export const TagsManager: React.FC = () => {
             textAlign: "center", 
             border: "1.5px dashed var(--border-color)", 
             borderRadius: "8px", 
-            backgroundColor: "rgba(255, 255, 255, 0.01)" 
+            backgroundColor: "action.hover" 
           }}
         >
           <Tag size={32} style={{ margin: "0 auto 12px", color: "var(--text-secondary)", opacity: 0.4 }} />

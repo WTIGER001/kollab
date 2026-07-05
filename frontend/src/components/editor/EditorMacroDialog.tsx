@@ -141,7 +141,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
             sx={{
               borderRight: "1px solid var(--border-color)",
               minWidth: 180,
-              backgroundColor: "rgba(255, 255, 255, 0.01)",
+              backgroundColor: "action.hover",
               "& .MuiTabs-indicator": {
                 left: 0,
                 right: "auto",
@@ -160,14 +160,14 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
                 color: "text.secondary",
                 minHeight: 48,
                 justifyContent: "flex-start",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.02)",
+                borderBottom: "var(--border-color)",
                 "&.Mui-selected": {
                   color: "var(--primary-color)",
                   backgroundColor: "rgba(139, 92, 246, 0.05)",
                 },
                 "&:hover": {
                   color: "text.primary",
-                  backgroundColor: "rgba(255, 255, 255, 0.02)",
+                  backgroundColor: "action.hover",
                 },
               },
             }}
@@ -282,7 +282,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        backgroundColor: "action.hover",
                         border: "1px solid var(--border-color)",
                         color: "text.primary",
                         transition: "all 0.2s ease",

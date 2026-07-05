@@ -91,7 +91,7 @@ export const EditorToolbar = ({
               fontFamily: '"Outfit", sans-serif',
               fontWeight: 500,
               color: "text.primary",
-              backgroundColor: "rgba(255, 255, 255, 0.01)",
+              backgroundColor: "action.hover",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "var(--border-color)",
               },

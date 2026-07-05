@@ -528,7 +528,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
           justifyContent: "space-between",
           px: 2,
           py: 1.25,
-          borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+          borderBottom: "var(--border-color)",
           bgcolor: "rgba(0, 0, 0, 0.25)",
           zIndex: 10
         }}
@@ -619,7 +619,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
 
           {/* Size Selectors (hidden in fullscreen) */}
           {!isFullscreen && onHeightChange && (
-            <ButtonGroup size="small" variant="outlined" sx={{ mr: 1, borderColor: "rgba(255,255,255,0.08)" }}>
+            <ButtonGroup size="small" variant="outlined" sx={{ mr: 1, borderColor: "var(--border-color)" }}>
               {(["sm", "md", "lg"] as const).map((sz) => (
                 <Button
                   key={sz}
@@ -631,7 +631,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     fontWeight: 700,
                     textTransform: "uppercase",
                     minWidth: 32,
-                    borderColor: "rgba(255,255,255,0.08) !important",
+                    borderColor: "var(--border-color) !important",
                     bgcolor: heightSize === sz ? "rgba(139, 92, 246, 0.15)" : "transparent",
                     color: heightSize === sz ? "var(--primary-color)" : "text.secondary",
                     "&:hover": {
@@ -689,7 +689,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     sx={{ 
                       height: 6, 
                       borderRadius: 3, 
-                      bgcolor: "rgba(255,255,255,0.15)",
+                      bgcolor: "action.hover",
                       "& .MuiLinearProgress-bar": { bgcolor: "var(--primary-color)", borderRadius: 3 }
                     }} 
                   />
@@ -735,7 +735,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                   sx={{
                     textTransform: "none",
                     borderRadius: "8px",
-                    borderColor: "rgba(255,255,255,0.15)",
+                    borderColor: "var(--border-color)",
                     color: "text.primary",
                     fontFamily: '"Outfit", sans-serif',
                     "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
@@ -752,7 +752,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                 sx={{
                   textTransform: "none",
                   borderRadius: "8px",
-                  borderColor: "rgba(255,255,255,0.15)",
+                  borderColor: "var(--border-color)",
                   color: "text.primary",
                   fontFamily: '"Outfit", sans-serif',
                   "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
@@ -972,7 +972,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
               <Box 
                 sx={{ 
                   width: "220px", 
-                  borderRight: "1px solid rgba(255,255,255,0.05)", 
+                  borderRight: "var(--border-color)", 
                   bgcolor: "rgba(0,0,0,0.2)",
                   overflowY: "auto", 
                   flexShrink: 0 
@@ -990,7 +990,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                         py: 1,
                         borderLeft: currentSlideIndex === idx ? "3px solid var(--primary-color)" : "3px solid transparent",
                         bgcolor: currentSlideIndex === idx ? "rgba(139, 92, 246, 0.1) !important" : "transparent",
-                        "&:hover": { bgcolor: "rgba(255,255,255,0.03)" }
+                        "&:hover": { bgcolor: "action.hover" }
                       }}
                     >
                       <ListItemText
@@ -1031,7 +1031,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                   width: "100%",
                   maxWidth: "920px",
                   borderRadius: "12px",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid var(--border-color)",
                   boxShadow: "0 12px 48px rgba(0,0,0,0.4)",
                   background: "linear-gradient(135deg, #1f2026 0%, #17181d 100%)",
                   p: 4,
@@ -1081,7 +1081,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                             <Typography 
                               variant="body1" 
                               sx={{ 
-                                color: "rgba(255, 255, 255, 0.85)", 
+                                color: "text.secondary", 
                                 fontFamily: '"Outfit", sans-serif', 
                                 fontSize: "14px",
                                 fontWeight: 500,
@@ -1113,7 +1113,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                         justifyContent: "center", 
                         alignItems: "center",
                         overflowY: "auto",
-                        borderLeft: "1px solid rgba(255,255,255,0.05)",
+                        borderLeft: "var(--border-color)",
                         pl: 3
                       }}
                     >
@@ -1127,7 +1127,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                             maxWidth: "100%",
                             maxHeight: slides[currentSlideIndex].images.length > 1 ? "120px" : "240px",
                             borderRadius: "6px",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            border: "1px solid var(--border-color)",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                             objectFit: "contain",
                             transition: "all 0.2s ease-in-out",
@@ -1143,7 +1143,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                 </Box>
 
                 {/* Footer decorations */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, borderTop: "1px solid rgba(255,255,255,0.05)", pt: 1.5 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, borderTop: "var(--border-color)", pt: 1.5 }}>
                   <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", fontWeight: 600 }}>
                     Kollab Presenter
                   </Typography>

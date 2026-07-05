@@ -61,7 +61,7 @@ export const TableOfContentsView: React.FC<NodeViewProps> = ({ deleteNode, edito
           px: 2,
           my: 1.5,
           borderRadius: "12px",
-          backgroundColor: "rgba(255, 255, 255, 0.01)",
+          backgroundColor: "action.hover",
           border: "1px solid var(--border-color)",
           position: "relative",
           transition: "all 0.2s ease",

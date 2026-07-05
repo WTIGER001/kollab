@@ -28,7 +28,7 @@ import { useToastStore } from "./store/useToastStore";
 import { useTeams, useProjects, useSystemSettings } from "./hooks/queries";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { TeamPortalWrapper, ProjectPortalWrapper, ProjectSettingsWrapper, PersonalPortalWrapper } from "./routes/PortalWrappers";
+import { TeamPortalWrapper, ProjectPortalWrapper, ProjectSettingsWrapper, PersonalPortalWrapper, TeamSettingsWrapper, PersonalSettingsWrapper } from "./routes/PortalWrappers";
 import { AuthGuard } from "./components/AuthGuard";
 
 interface AppProps {
@@ -119,7 +119,7 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
 
             <Route path="personal" element={<PersonalPortalWrapper teams={teams} projects={projects} />} />
             <Route path="personal/_test" element={<div style={{ padding: '40px', color: 'white' }}>TEST.. I WORK</div>} />
-            <Route path="personal/_settings" element={<PersonalSettingsView displayName="User" username="user" themeMode={themeMode} onUpdateThemeMode={() => {}} onBack={() => {}} personalPagesCount={0} />} />
+            <Route path="personal/_settings" element={<PersonalSettingsWrapper />} />
             <Route path="personal/trash" element={<TrashView teamId={null} projectId={null} onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="personal/_images" element={<ImageLibraryView scope="personal" />} />
             <Route path="personal/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
@@ -128,7 +128,7 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="teams" element={<TeamsDirectoryView teams={teams} projects={projects} />} />
             <Route path="teams/:teamId" element={<TeamPortalWrapper teams={teams} projects={projects} />} />
             <Route path="teams/:teamId/p/:projectId" element={<ProjectPortalWrapper teams={teams} projects={projects} />} />
-            <Route path="teams/:teamId/_settings" element={<TeamSettingsView team={teams[0] as any} onUpdateTeam={() => {}} onBack={() => {}} showToast={showToast} />} />
+            <Route path="teams/:teamId/_settings" element={<TeamSettingsWrapper teams={teams} />} />
             <Route path="teams/:teamId/trash" element={<TrashView teamId="mock" projectId={null} onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="teams/:teamId/_images" element={<ImageLibraryView scope="team" />} />
             <Route path="teams/:teamId/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />

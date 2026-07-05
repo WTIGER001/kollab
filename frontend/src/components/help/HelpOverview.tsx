@@ -17,7 +17,7 @@ export const HelpOverview: React.FC = () => {
       </Typography>
       
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>
             <Layers size={18} />
           </Box>
@@ -29,7 +29,7 @@ export const HelpOverview: React.FC = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)" }}>
             <BookOpen size={18} />
           </Box>
@@ -46,11 +46,11 @@ export const HelpOverview: React.FC = () => {
         Quick Keyboard Shortcuts
       </Typography>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1, borderRadius: "4px", backgroundColor: "rgba(255, 255, 255, 0.01)", border: "1px solid var(--border-color)", px: 1.5 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1, borderRadius: "4px", backgroundColor: "action.hover", border: "1px solid var(--border-color)", px: 1.5 }}>
           <Typography variant="caption" sx={{ fontWeight: 500 }}>Global Search</Typography>
           <Typography component="kbd" sx={{ fontSize: "10px", px: 1, py: 0.25, backgroundColor: "var(--panel-color)", border: "1px solid var(--border-color)", borderRadius: 0.5, color: "text.secondary", fontFamily: "monospace" }}>⌘ + P</Typography>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1, borderRadius: "4px", backgroundColor: "rgba(255, 255, 255, 0.01)", border: "1px solid var(--border-color)", px: 1.5 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1, borderRadius: "4px", backgroundColor: "action.hover", border: "1px solid var(--border-color)", px: 1.5 }}>
           <Typography variant="caption" sx={{ fontWeight: 500 }}>Trigger Slash Commands</Typography>
           <Typography component="kbd" sx={{ fontSize: "10px", px: 1, py: 0.25, backgroundColor: "var(--panel-color)", border: "1px solid var(--border-color)", borderRadius: 0.5, color: "text.secondary", fontFamily: "monospace" }}>/</Typography>
         </Box>

@@ -125,7 +125,7 @@ export const TrashView: React.FC<TrashViewProps> = ({
             borderRadius: 1.5,
             "&:hover": {
               color: "text.primary",
-              backgroundColor: "rgba(255, 255, 255, 0.04)"
+              backgroundColor: "action.hover"
             }
           }}
         >

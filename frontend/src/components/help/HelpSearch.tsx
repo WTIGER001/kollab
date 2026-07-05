@@ -13,7 +13,7 @@ export const HelpSearch: React.FC = () => {
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mb: 4 }}>
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
             <Search size={18} />
           </Box>
@@ -25,7 +25,7 @@ export const HelpSearch: React.FC = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)" }}>
             <Sparkles size={18} />
           </Box>

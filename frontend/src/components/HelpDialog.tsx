@@ -223,10 +223,10 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                   borderRadius: "8px", 
                   p: 2, 
                   cursor: "pointer",
-                  bgcolor: "rgba(255, 255, 255, 0.01)",
+                  bgcolor: "action.hover",
                   transition: "all 0.2s ease",
                   "&:hover": {
-                    bgcolor: "rgba(255, 255, 255, 0.03)",
+                    bgcolor: "action.hover",
                     borderColor: "var(--primary-color)",
                     transform: "translateY(-1px)"
                   }
@@ -352,7 +352,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
               sx: { 
                 fontSize: "12.5px", 
                 height: 34,
-                bgcolor: "rgba(255, 255, 255, 0.02)",
+                bgcolor: "action.hover",
                 borderRadius: "8px",
                 "& input::placeholder": { fontSize: "12.5px" }
               }

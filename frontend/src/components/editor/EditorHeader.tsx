@@ -126,7 +126,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             pt: 2,
             pb: 1.5,
             borderBottom: "1px solid var(--border-color)",
-            borderColor: "rgba(255, 255, 255, 0.04)",
+            borderColor: "var(--border-color)",
             gap: { xs: 1.5, sm: 2 },
           }}
         >
@@ -204,7 +204,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     display: "flex",
                     alignItems: "center",
                     ml: 2,
-                    borderLeft: "1px solid rgba(255,255,255,0.08)",
+                    borderLeft: "var(--border-color)",
                     pl: 2,
                   }}
                 >
@@ -437,12 +437,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     px: { xs: 1, sm: 1.25 },
                     minWidth: { xs: 26, sm: "auto" },
                     borderRadius: "5px",
-                    borderColor: "rgba(255, 255, 255, 0.08)",
+                    borderColor: "var(--border-color)",
                     color: "text.secondary",
                     textTransform: "none",
                     "&:hover": {
-                      borderColor: "rgba(255, 255, 255, 0.15)",
-                      backgroundColor: "rgba(255, 255, 255, 0.03)",
+                      borderColor: "var(--border-color)",
+                      backgroundColor: "action.hover",
                     },
                   }}
                 >
@@ -473,12 +473,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       px: { xs: 1, sm: 1.25 },
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
-                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      borderColor: "var(--border-color)",
                       color: "text.secondary",
                       textTransform: "none",
                       "&:hover": {
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "action.hover",
                       },
                     }}
                   >
@@ -506,12 +506,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       px: { xs: 1, sm: 1.25 },
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
-                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      borderColor: "var(--border-color)",
                       color: "text.secondary",
                       textTransform: "none",
                       "&:hover": {
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "action.hover",
                       },
                     }}
                   >
@@ -540,13 +540,13 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         px: { xs: 1, sm: 1.25 },
                         minWidth: { xs: 26, sm: "auto" },
                         borderRadius: "5px",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
+                        borderColor: "var(--border-color)",
                         color: showComments ? "text.primary" : "text.secondary",
                         backgroundColor: showComments ? "rgba(255, 255, 255, 0.05)" : "transparent",
                         textTransform: "none",
                         "&:hover": {
-                          borderColor: "rgba(255, 255, 255, 0.15)",
-                          backgroundColor: "rgba(255, 255, 255, 0.08)",
+                          borderColor: "var(--border-color)",
+                          backgroundColor: "action.hover",
                         },
                       }}
                     >
@@ -570,12 +570,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       px: { xs: 1, sm: 1.25 },
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
-                      borderColor: "rgba(255, 255, 255, 0.08)",
+                      borderColor: "var(--border-color)",
                       color: "text.secondary",
                       textTransform: "none",
                       "&:hover": {
-                        borderColor: "rgba(255, 255, 255, 0.15)",
-                        backgroundColor: "rgba(255, 255, 255, 0.03)",
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "action.hover",
                       },
                     }}
                   >
@@ -596,7 +596,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     mx: 0.5,
                     height: 14,
                     alignSelf: "center",
-                    borderColor: "rgba(255,255,255,0.06)",
+                    borderColor: "var(--border-color)",
                   }}
                 />
 
@@ -659,7 +659,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     mx: 0.5,
                     height: 14,
                     alignSelf: "center",
-                    borderColor: "rgba(255,255,255,0.06)",
+                    borderColor: "var(--border-color)",
                   }}
                 />
 

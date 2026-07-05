@@ -116,28 +116,23 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
       
       {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Button
-          variant="outlined"
+        <IconButton
           size="small"
           onClick={onBack}
-          startIcon={<ArrowLeft size={14} />}
           sx={{
             color: "text.secondary",
-            borderColor: "var(--border-color)",
-            textTransform: "none",
-            fontWeight: 600,
-            fontSize: "12px",
-            fontFamily: '"Outfit", sans-serif',
+            border: "1px solid var(--border-color)",
             "&:hover": {
               borderColor: "primary.main",
-              backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)"
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)",
+              color: "primary.main"
             }
           }}
         >
-          Back to Project
-        </Button>
+          <ArrowLeft size={16} />
+        </IconButton>
         <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>
-          Project Settings: {project.name}
+          Settings: {project.name}
         </Typography>
       </Box>
 

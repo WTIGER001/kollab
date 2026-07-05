@@ -35,7 +35,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
             gap: 0.5,
             backgroundColor: "rgba(16, 18, 26, 0.95)",
             backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            border: "1px solid var(--border-color)",
             borderRadius: 1.5,
             p: 0.5,
             position: "absolute",
@@ -86,7 +86,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                     p: 0.5,
                     color: layout === "twocol" ? "primary.light" : "text.secondary",
                     backgroundColor: layout === "twocol" ? "rgba(139, 92, 246, 0.1)" : "transparent",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+                    "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >
                   <Columns2 size={13} />
@@ -101,7 +101,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                     p: 0.5,
                     color: layout === "asymmetric-left" ? "primary.light" : "text.secondary",
                     backgroundColor: layout === "asymmetric-left" ? "rgba(139, 92, 246, 0.1)" : "transparent",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+                    "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >
                   <Layout size={13} style={{ transform: "rotate(0deg)" }} />
@@ -116,7 +116,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                     p: 0.5,
                     color: layout === "asymmetric-right" ? "primary.light" : "text.secondary",
                     backgroundColor: layout === "asymmetric-right" ? "rgba(139, 92, 246, 0.1)" : "transparent",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+                    "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >
                   <Layout size={13} style={{ transform: "scaleX(-1)" }} />

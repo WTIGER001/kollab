@@ -18,7 +18,7 @@ export const HelpAdmin: React.FC = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
         {/* Branding & Policies */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>
             <Settings size={18} />
           </Box>
@@ -31,7 +31,7 @@ export const HelpAdmin: React.FC = () => {
         </Box>
 
         {/* Audit & Retention */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
             <Shield size={18} />
           </Box>
@@ -44,7 +44,7 @@ export const HelpAdmin: React.FC = () => {
         </Box>
 
         {/* Database Backups */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)" }}>
             <HardDrive size={18} />
           </Box>
@@ -57,7 +57,7 @@ export const HelpAdmin: React.FC = () => {
         </Box>
 
         {/* Air-Gap Sync */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
           <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}>
             <RefreshCw size={18} />
           </Box>

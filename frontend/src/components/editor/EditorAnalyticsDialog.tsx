@@ -119,7 +119,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
             sx={{
               p: 1.75,
               borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "action.hover",
               border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
@@ -156,7 +156,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
             sx={{
               p: 1.75,
               borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "action.hover",
               border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
@@ -193,7 +193,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
             sx={{
               p: 1.75,
               borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "action.hover",
               border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
@@ -246,7 +246,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
             sx={{
               p: 1.75,
               borderRadius: "8px",
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              backgroundColor: "action.hover",
               border: "1px solid var(--border-color)",
               display: "flex",
               flexDirection: "column",
@@ -299,7 +299,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
               height: 10,
               borderRadius: "5px",
               width: "100%",
-              backgroundColor: "rgba(255,255,255,0.03)",
+              backgroundColor: "action.hover",
               display: "flex",
               overflow: "hidden",
             }}

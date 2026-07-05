@@ -3,6 +3,8 @@ import { Typography } from "@mui/material";
 import { TeamPortal } from "../components/TeamPortal";
 import { ProjectPortal } from "../components/ProjectPortal";
 import { ProjectSettingsView } from "../components/ProjectSettingsView";
+import { TeamSettingsView } from "../components/TeamSettingsView";
+import { PersonalSettingsView } from "../components/PersonalSettingsView";
 
 export function TeamPortalWrapper({ teams, projects }: { teams: any[], projects: any[] }) {
   const { teamId } = useParams();
@@ -29,6 +31,24 @@ export function TeamPortalWrapper({ teams, projects }: { teams: any[], projects:
       projects={projects.filter(p => p.teamId === team.id)} 
       onSelectProject={() => {}} 
       navigateTo={handleNavigate} 
+    />
+  );
+}
+
+export function TeamSettingsWrapper({ teams }: { teams: any[] }) {
+  const { teamId } = useParams();
+  const navigate = useNavigate();
+  
+  const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
+  
+  if (!team) return <Typography sx={{ p: 4, color: "text.secondary" }}>Team not found.</Typography>;
+
+  return (
+    <TeamSettingsView
+      team={team}
+      onUpdateTeam={() => {}}
+      onBack={() => navigate(`/teams/${team.abbreviation || team.id}`)}
+      showToast={() => {}}
     />
   );
 }
@@ -102,6 +122,21 @@ export function PersonalPortalWrapper({ teams }: { teams: any[], projects: any[]
       projects={[]} 
       onSelectProject={() => {}} 
       navigateTo={handleNavigate} 
+    />
+  );
+}
+
+export function PersonalSettingsWrapper() {
+  const navigate = useNavigate();
+  // Using default mocked values as in the original hardcoded route
+  return (
+    <PersonalSettingsView 
+      displayName="User" 
+      username="user" 
+      themeMode="light" 
+      onUpdateThemeMode={() => {}} 
+      onBack={() => navigate(`/personal`)} 
+      personalPagesCount={0} 
     />
   );
 }

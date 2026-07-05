@@ -10,6 +10,7 @@ You can access all basic formatting options via the **Editor Toolbar** docked at
 - **Strikethrough (`Cmd/Ctrl + Shift + S`)**: Cross out text that is no longer relevant.
 - **Underline (`Cmd/Ctrl + U`)**: Underline text for emphasis or document styling.
 - **Highlight (`Cmd/Ctrl + Shift + H`)**: Apply a vibrant background highlight to make text stand out.
+- **Quote**: Add blockquotes to format excerpted text or emphasize statements.
 - **Text Color**: Use the palette icon to apply a custom color to the selected text.
 - **Subscript & Superscript**: Ideal for mathematical equations or citations.
 

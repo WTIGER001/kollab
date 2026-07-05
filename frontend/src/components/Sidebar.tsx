@@ -448,7 +448,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     p: 0,
                     borderRadius: 0.5,
                     color: "text.disabled",
-                    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)", color: "text.primary" }
+                    "&:hover": { backgroundColor: "action.hover", color: "text.primary" }
                   }}
                 >
                   {isExpanded ? <ChevronDown size={12} style={{ flexShrink: 0 }} /> : <ChevronRight size={12} style={{ flexShrink: 0 }} />}
@@ -1283,7 +1283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               color: "text.secondary",
               "&:hover": {
                 color: "var(--primary-color, #8b5cf6)",
-                bgcolor: "rgba(255, 255, 255, 0.04)",
+                bgcolor: "action.hover",
               },
             }}
           >
@@ -1312,7 +1312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             color: "text.secondary",
             "&:hover": {
               color: "var(--primary-color, #8b5cf6)",
-              bgcolor: "rgba(255, 255, 255, 0.04)",
+              bgcolor: "action.hover",
             },
           }}
         >

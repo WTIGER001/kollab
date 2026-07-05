@@ -2471,7 +2471,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 fontFamily: '"Outfit", sans-serif',
                 fontWeight: 500,
                 color: "text.primary",
-                backgroundColor: "rgba(255, 255, 255, 0.01)",
+                backgroundColor: "action.hover",
                 "& .MuiOutlinedInput-notchedOutline": {
                   borderColor: "var(--border-color)",
                 },
@@ -3705,7 +3705,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               px: 1.5,
               py: 1,
               mb: 1,
-              "&:hover": { borderColor: "rgba(255,255,255,0.2)" },
+              "&:hover": { borderColor: "var(--border-color)" },
               "&.Mui-focused": {
                 borderColor: "var(--primary-color)",
                 boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)",
@@ -3918,12 +3918,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               sx={{
                 fontSize: "11px",
                 fontFamily: '"Outfit", sans-serif',
-                borderColor: "rgba(255,255,255,0.08)",
+                borderColor: "var(--border-color)",
                 color: "text.secondary",
                 textTransform: "none",
                 "&:hover": {
-                  borderColor: "rgba(255,255,255,0.15)",
-                  backgroundColor: "rgba(255,255,255,0.03)",
+                  borderColor: "var(--border-color)",
+                  backgroundColor: "action.hover",
                 },
               }}
             >
@@ -3940,7 +3940,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         </DialogTitle>
         <DialogContent
           dividers
-          sx={{ borderColor: "rgba(255,255,255,0.06)", p: 0 }}
+          sx={{ borderColor: "var(--border-color)", p: 0 }}
         >
           <Box
             component="pre"

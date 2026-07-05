@@ -81,7 +81,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
               alignItems: "center", 
               gap: 0.5, 
               backgroundColor: "rgba(20, 22, 33, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              border: "1px solid var(--border-color)",
               borderRadius: 2,
               p: 0.5,
               opacity: selected ? 1 : 0,
@@ -108,7 +108,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
               </IconButton>
             </Tooltip>
    
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.25, height: 16, borderColor: "rgba(255,255,255,0.1)" }} />
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.25, height: 16, borderColor: "var(--border-color)" }} />
    
             {/* Size Selectors */}
             {(!originalWidth || originalWidth > 300) && (
@@ -125,7 +125,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
             )}
             <Button size="small" onClick={() => handleSize("O")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "O" ? "primary.light" : "rgba(255,255,255,0.6)" }}>ORIG</Button>
    
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.25, height: 16, borderColor: "rgba(255,255,255,0.1)" }} />
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.25, height: 16, borderColor: "var(--border-color)" }} />
    
             {/* Delete */}
             <Tooltip title="Delete Image" arrow>

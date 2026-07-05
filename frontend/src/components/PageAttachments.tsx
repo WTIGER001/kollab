@@ -262,12 +262,12 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
                     justifyContent: "space-between",
                     p: 1.5,
                     borderRadius: 2,
-                    backgroundColor: "rgba(255, 255, 255, 0.02)",
+                    backgroundColor: "action.hover",
                     border: "1px solid var(--border-color)",
                     transition: "all 0.2s",
                     "&:hover": {
-                      backgroundColor: "rgba(255, 255, 255, 0.04)",
-                      borderColor: "rgba(255, 255, 255, 0.15)"
+                      backgroundColor: "action.hover",
+                      borderColor: "var(--border-color)"
                     }
                   }}
                 >
@@ -431,7 +431,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
             sx: {
               backgroundColor: "rgba(16, 18, 26, 0.95)",
               backdropFilter: "blur(16px)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              border: "1px solid var(--border-color)",
               borderRadius: 3,
               boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
               color: "text.primary",
@@ -457,7 +457,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
               color: "text.secondary",
               textTransform: "none",
               fontFamily: '"Outfit", sans-serif',
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+              "&:hover": { backgroundColor: "action.hover" }
             }}
           >
             Cancel
@@ -493,7 +493,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
             sx: {
               backgroundColor: "rgba(16, 18, 26, 0.95)",
               backdropFilter: "blur(16px)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              border: "1px solid var(--border-color)",
               borderRadius: 3,
               boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
               color: "text.primary",
@@ -516,7 +516,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
             Preview: {previewAttachment?.filename}
           </Typography>
         </DialogTitle>
-        <DialogContent dividers sx={{ flex: 1, p: 0, borderColor: "rgba(255,255,255,0.06)", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
+        <DialogContent dividers sx={{ flex: 1, p: 0, borderColor: "var(--border-color)", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
           {previewAttachment && (
             <Box sx={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
               {previewAttachment.mimeType.startsWith("image/") ? (
@@ -578,7 +578,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
               color: "text.secondary",
               textTransform: "none",
               fontFamily: '"Outfit", sans-serif',
-              "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" }
+              "&:hover": { backgroundColor: "action.hover" }
             }}
           >
             Close

@@ -167,7 +167,7 @@ export const TableBubbleToolbar: React.FC<TableBubbleToolbarProps> = ({ editor }
         p: 0.5,
         backgroundColor: "rgba(16, 18, 26, 0.95)",
         backdropFilter: "blur(12px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        border: "1px solid var(--border-color)",
         borderRadius: 2,
         boxShadow: "0 12px 32px rgba(0, 0, 0, 0.4)",
       }}
@@ -193,7 +193,7 @@ export const TableBubbleToolbar: React.FC<TableBubbleToolbarProps> = ({ editor }
           paper: {
             sx: {
               backgroundColor: "rgba(20, 22, 33, 0.98)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-color)",
               color: "text.primary",
             },
           },
@@ -252,7 +252,7 @@ export const TableBubbleToolbar: React.FC<TableBubbleToolbarProps> = ({ editor }
           paper: {
             sx: {
               backgroundColor: "rgba(20, 22, 33, 0.98)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-color)",
               color: "text.primary",
             },
           },

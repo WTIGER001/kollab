@@ -93,6 +93,9 @@ Native React components (Buttons, Cards, Dialogs) consume these variables direct
 }
 ```
 
+> [!WARNING]
+> **Hover Effects and Light Mode Compatibility:** Never hardcode absolute low-opacity white values (e.g., `backgroundColor: "rgba(255, 255, 255, 0.05)"`) for component hover or selected states. While these values create a faint highlight in dark mode, they add white to white in light mode, making buttons blindingly bright or invisible. Always use theme-aware MUI tokens like `"action.hover"` or injected CSS variables like `"var(--glass-bg)"` which automatically invert and adapt their opacities for the active theme mode.
+
 ### 3.2 Shadow DOM Macro Injection
 Because external plugin scripts execute within an isolated Shadow DOM (`<macro-status-badge>`), they do not naturally inherit CSS variables from the `:root` document. 
 

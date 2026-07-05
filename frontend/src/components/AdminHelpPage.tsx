@@ -20,7 +20,7 @@ export const AdminHelpPage: React.FC<AdminHelpPageProps> = ({ onBack }) => {
       {/* Header Toolbar */}
       <AppBar position="static" sx={{ bgcolor: "var(--panel-color)", borderBottom: "1px solid var(--border-color)", boxShadow: "none" }}>
         <Toolbar sx={{ minHeight: 48, px: 2, display: "flex", alignItems: "center" }}>
-          <IconButton size="small" onClick={onBack} sx={{ mr: 2, color: "text.primary", "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)" } }}>
+          <IconButton size="small" onClick={onBack} sx={{ mr: 2, color: "text.primary", "&:hover": { bgcolor: "action.hover" } }}>
             <ArrowLeft size={18} />
           </IconButton>
           

@@ -58,7 +58,7 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
           sx: {
             backgroundColor: "rgba(16, 18, 26, 0.95)",
             backdropFilter: "blur(16px)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            border: "1px solid var(--border-color)",
             borderRadius: 3,
             boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
             color: "text.primary",
@@ -92,7 +92,7 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
                 p: 1.5,
                 borderRadius: 2,
                 backgroundColor: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.04)",
+                border: "1px solid var(--border-color)",
               }}
             >
               {Array.from({ length: GRID_SIZE }).map((_, rIdx) =>
@@ -150,8 +150,8 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
                 "& .MuiOutlinedInput-root": {
                   color: "text.primary",
                   backgroundColor: "rgba(0,0,0,0.15)",
-                  "& fieldset": { borderColor: "rgba(255,255,255,0.08)" },
-                  "&:hover fieldset": { borderColor: "rgba(255,255,255,0.15)" },
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "var(--border-color)" },
                   "&.Mui-focused fieldset": { borderColor: "primary.light" },
                 },
               }}
@@ -170,8 +170,8 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
                 "& .MuiOutlinedInput-root": {
                   color: "text.primary",
                   backgroundColor: "rgba(0,0,0,0.15)",
-                  "& fieldset": { borderColor: "rgba(255,255,255,0.08)" },
-                  "&:hover fieldset": { borderColor: "rgba(255,255,255,0.15)" },
+                  "& fieldset": { borderColor: "var(--border-color)" },
+                  "&:hover fieldset": { borderColor: "var(--border-color)" },
                   "&.Mui-focused fieldset": { borderColor: "primary.light" },
                 },
               }}
@@ -183,7 +183,7 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
                   checked={withHeaderRow}
                   onChange={(e) => setWithHeaderRow(e.target.checked)}
                   sx={{
-                    color: "rgba(255, 255, 255, 0.3)",
+                    color: "text.secondary",
                     "&.Mui-checked": { color: "primary.light" },
                   }}
                 />
@@ -204,7 +204,7 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
           sx={{
             color: "text.secondary",
             textTransform: "none",
-            "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.05)" },
+            "&:hover": { backgroundColor: "action.hover" },
           }}
         >
           Cancel

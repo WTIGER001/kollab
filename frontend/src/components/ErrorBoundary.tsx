@@ -103,7 +103,7 @@ export class ErrorBoundary extends Component<Props, State> {
               variant="body2"
               sx={{
                 fontFamily: '"Outfit", sans-serif',
-                color: "rgba(255, 255, 255, 0.7)",
+                color: "text.secondary",
                 mb: 4,
                 maxWidth: 450,
                 mx: "auto"
@@ -140,14 +140,14 @@ export class ErrorBoundary extends Component<Props, State> {
                 sx={{
                   fontFamily: '"Outfit", sans-serif',
                   fontWeight: 600,
-                  borderColor: "rgba(255, 255, 255, 0.15)",
-                  color: "rgba(255, 255, 255, 0.8)",
+                  borderColor: "var(--border-color)",
+                  color: "text.secondary",
                   px: 3,
                   py: 1,
                   borderRadius: "8px",
                   "&:hover": {
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)"
+                    borderColor: "var(--border-color)",
+                    backgroundColor: "action.hover"
                   }
                 }}
               >
@@ -161,7 +161,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   mt: 2,
                   p: 2,
                   backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  border: "1px solid rgba(255, 255, 255, 0.05)",
+                  border: "1px solid var(--border-color)",
                   borderRadius: "8px",
                   textAlign: "left",
                   overflowX: "auto",
@@ -177,10 +177,10 @@ export class ErrorBoundary extends Component<Props, State> {
                     onClick={this.handleCopy}
                     startIcon={<Copy size={12} />}
                     sx={{
-                      color: "rgba(255, 255, 255, 0.5)",
+                      color: "text.secondary",
                       textTransform: "none",
                       fontSize: "11px",
-                      "&:hover": { color: "#fff", backgroundColor: "rgba(255, 255, 255, 0.1)" }
+                      "&:hover": { color: "#fff", backgroundColor: "action.hover" }
                     }}
                   >
                     Copy Stack Trace

@@ -23,7 +23,7 @@ flowchart TD
 
 ### 1.1 Core Extensions
 The editor canvas integrates several native Tiptap extensions to provide foundational rich text capabilities:
-* **Standard Formatting**: Bold, Italic, Strikethrough, Underline, Highlight, Subscript, Superscript, Code, Text Align.
+* **Standard Formatting**: Bold, Italic, Strikethrough, Underline, Highlight, Subscript, Superscript, Code, Text Align, Blockquote.
 * **Text Styles**: The `TextStyle` and `Color` extensions enable arbitrary text color hex properties to be stored directly in the document AST.
 * **Hyperlinks**: The `Link` extension maintains URL mapping across the AST, with a custom-built floating action menu and Insert Link dialog handling the user experience.
 
@@ -208,6 +208,9 @@ useEffect(() => {
 ```
 
 ProseMirror dynamically updates the host DOM element attributes, setting `contenteditable="true"` or `contenteditable="false"` accordingly.
+
+### 5.1 Editor Layout: Sticky Header
+The Editor is housed in the `EditorCanvas` component, which manages a highly optimized scroll layout. The `EditorHeader` (title, author, metadata) and the `EditorToolbar` (formatting tools) are wrapped in a sticky container (`position: "sticky", top: 0, zIndex: 10`), keeping the essential document controls and context visible at all times as the user scrolls down long documents.
 
 ---
 

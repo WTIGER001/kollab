@@ -239,14 +239,14 @@ export const TasksView: React.FC<TasksViewProps> = ({ username, onNavigate }) =>
                 sx={{ 
                   px: 3, 
                   py: 1.75, 
-                  backgroundColor: "rgba(255, 255, 255, 0.015)", 
+                  backgroundColor: "action.hover", 
                   borderBottom: "1px solid var(--border-color)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   cursor: "pointer",
                   "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.03)"
+                    backgroundColor: "action.hover"
                   }
                 }}
                 onClick={() => handleTaskClick(docGroup.tasks[0])}

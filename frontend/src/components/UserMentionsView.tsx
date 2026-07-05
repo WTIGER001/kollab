@@ -115,7 +115,7 @@ export const UserMentionsView: React.FC<UserMentionsViewProps> = ({
       }}
     >
       <Table size="small">
-        <TableHead sx={{ backgroundColor: "rgba(255, 255, 255, 0.015)" }}>
+        <TableHead sx={{ backgroundColor: "action.hover" }}>
           <TableRow sx={{ borderBottom: "1px solid var(--border-color)" }}>
             <TableCell sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, color: "var(--text-secondary)", py: 1.25 }}>Page Title</TableCell>
             <TableCell sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, color: "var(--text-secondary)", py: 1.25 }}>Last Updated</TableCell>

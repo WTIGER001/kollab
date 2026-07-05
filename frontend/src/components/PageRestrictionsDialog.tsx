@@ -332,7 +332,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
               </Typography>
               <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
                 <Table size="small">
-                  <TableHead sx={{ bgcolor: "rgba(255, 255, 255, 0.02)" }}>
+                  <TableHead sx={{ bgcolor: "action.hover" }}>
                     <TableRow>
                       <TableCell sx={{ fontSize: "11px", fontWeight: 600 }}>Name / Group</TableCell>
                       <TableCell sx={{ fontSize: "11px", fontWeight: 600 }}>Type</TableCell>

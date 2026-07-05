@@ -147,7 +147,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
           px: { xs: 2, sm: 3, md: 4 },
           py: 2,
           borderBottom: "1px solid var(--border-color)",
-          borderColor: "rgba(255, 255, 255, 0.04)",
+          borderColor: "var(--border-color)",
         }}
       >
         <Tooltip title="Back to document" arrow>
@@ -155,11 +155,11 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
             onClick={onBack}
             sx={{
               color: "text.secondary",
-              backgroundColor: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.04)",
+              backgroundColor: "action.hover",
+              border: "1px solid var(--border-color)",
               "&:hover": {
                 color: "var(--primary-color)",
-                backgroundColor: "rgba(255,255,255,0.06)",
+                backgroundColor: "action.hover",
                 borderColor: "rgba(139, 92, 246, 0.2)"
               }
             }}
@@ -221,7 +221,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
             p: 2,
             backgroundColor: "rgba(22, 25, 36, 0.4)",
             backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.04)",
+            border: "1px solid var(--border-color)",
             borderRadius: "12px",
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
@@ -238,7 +238,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
             size="small"
             sx={{
               backgroundColor: "rgba(0,0,0,0.2)",
-              border: "1px solid rgba(255,255,255,0.03)",
+              border: "1px solid var(--border-color)",
               p: 0.25,
               borderRadius: "8px",
               "& .MuiToggleButton-root": {
@@ -277,7 +277,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
             size="small"
             sx={{
               backgroundColor: "rgba(0,0,0,0.2)",
-              border: "1px solid rgba(255,255,255,0.03)",
+              border: "1px solid var(--border-color)",
               p: 0.25,
               borderRadius: "8px",
               "& .MuiToggleButton-root": {
@@ -292,9 +292,9 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                 color: "text.secondary",
                 "&.Mui-selected": {
                   color: "#ffffff",
-                  backgroundColor: "rgba(255,255,255,0.06)",
+                  backgroundColor: "action.hover",
                   "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.1)"
+                    backgroundColor: "action.hover"
                   }
                 }
               }
@@ -318,7 +318,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
             sx={{
               p: { xs: 2, md: 3 },
               backgroundColor: "rgba(22, 25, 36, 0.2)",
-              border: "1px solid rgba(255, 255, 255, 0.02)",
+              border: "1px solid var(--border-color)",
               borderRadius: "12px",
             }}
           >
@@ -335,8 +335,8 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                         py: 1.5,
                         px: 2,
                         borderRadius: "8px",
-                        bgcolor: "rgba(255, 255, 255, 0.01)",
-                        border: "1px solid rgba(255,255,255,0.01)",
+                        bgcolor: "action.hover",
+                        border: "1px solid var(--border-color)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -378,7 +378,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                         </Typography>
                       </Box>
                     </ListItem>
-                    {index < filteredLogs.length - 1 && <Divider sx={{ borderColor: "rgba(255,255,255,0.02)", my: 0.5 }} />}
+                    {index < filteredLogs.length - 1 && <Divider sx={{ borderColor: "var(--border-color)", my: 0.5 }} />}
                   </Box>
                 ))}
               </List>
@@ -407,7 +407,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                   sx={{
                     p: 2.5,
                     backgroundColor: "rgba(22, 25, 36, 0.3)",
-                    border: "1px solid rgba(255, 255, 255, 0.03)",
+                    border: "1px solid var(--border-color)",
                     borderRadius: "12px",
                     display: "flex",
                     flexDirection: "column",
@@ -442,7 +442,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                     </Box>
                   </Box>
 
-                  <Divider sx={{ borderColor: "rgba(255,255,255,0.03)" }} />
+                  <Divider sx={{ borderColor: "var(--border-color)" }} />
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", gap: 2 }}>

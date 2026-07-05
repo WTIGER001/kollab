@@ -71,7 +71,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           cursor: "pointer",
           borderBottom: isExpanded ? "1px solid var(--border-color)" : "none",
           transition: "background-color 0.2s",
-          "&:hover": { bgcolor: "rgba(255, 255, 255, 0.02)" },
+          "&:hover": { bgcolor: "action.hover" },
         }}
       >
         <ImageIcon size={18} style={{ color: "var(--primary-color)" }} />
@@ -238,14 +238,14 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                     component="a"
                     href={`${apiBaseUrl}/api/attachments/${images[lightboxIndex].id}`}
                     download
-                    sx={{ color: "#fff", bgcolor: "rgba(255,255,255,0.08)", "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}
+                    sx={{ color: "#fff", bgcolor: "action.hover", "&:hover": { bgcolor: "action.hover" } }}
                   >
                     <Download size={18} />
                   </IconButton>
                 </Tooltip>
                 <IconButton
                   onClick={() => setLightboxIndex(null)}
-                  sx={{ color: "#fff", bgcolor: "rgba(255,255,255,0.08)", "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}
+                  sx={{ color: "#fff", bgcolor: "action.hover", "&:hover": { bgcolor: "action.hover" } }}
                 >
                   <X size={18} />
                 </IconButton>
@@ -260,9 +260,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               position: "absolute",
               left: -64,
               color: "#fff",
-              bgcolor: "rgba(255,255,255,0.06)",
+              bgcolor: "action.hover",
               display: { xs: "none", md: "inline-flex" },
-              "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
+              "&:hover": { bgcolor: "action.hover" },
             }}
           >
             <ChevronLeft size={24} />
@@ -300,9 +300,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               position: "absolute",
               right: -64,
               color: "#fff",
-              bgcolor: "rgba(255,255,255,0.06)",
+              bgcolor: "action.hover",
               display: { xs: "none", md: "inline-flex" },
-              "&:hover": { bgcolor: "rgba(255,255,255,0.12)" },
+              "&:hover": { bgcolor: "action.hover" },
             }}
           >
             <ChevronRight size={24} />

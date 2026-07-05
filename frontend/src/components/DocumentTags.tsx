@@ -84,7 +84,7 @@ export const DocumentTags: React.FC<DocumentTagsProps> = ({ docId, readOnly = fa
         px: { xs: 2, sm: 3, md: 4 }, 
         py: 2.5,
         borderTop: "1px solid var(--border-color)",
-        borderColor: "rgba(255, 255, 255, 0.04)",
+        borderColor: "var(--border-color)",
         display: "flex",
         flexDirection: "column",
         gap: 1.5
