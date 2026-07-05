@@ -351,8 +351,8 @@ h7, h8 {
 
 /* Code Blocks */
 .ProseMirror pre {
-  background: #0d0e14;
-  border: 1px solid var(--border-dark);
+  background: color-mix(in srgb, var(--panel-color) 40%, var(--bg-color));
+  border: 1px solid var(--border-color);
   padding: 0.75rem;
   border-radius: 8px;
   font-family: var(--font-mono);
