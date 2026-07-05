@@ -22,6 +22,7 @@ import {
   AlignRight,
   List,
   ListOrdered,
+  Quote,
   Grid3X3,
   Layout,
   Columns2,
@@ -303,6 +304,23 @@ export const EditorToolbar = ({
               }}
             >
               <SquareTerminal size={15} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Blockquote" arrow>
+            <IconButton
+              size="small"
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+              sx={{
+                color: editor.isActive("blockquote")
+                  ? "primary.light"
+                  : "inherit",
+                backgroundColor: editor.isActive("blockquote")
+                  ? "rgba(139, 92, 246, 0.1)"
+                  : "transparent",
+              }}
+            >
+              <Quote size={15} />
             </IconButton>
           </Tooltip>
 

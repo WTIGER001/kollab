@@ -168,6 +168,7 @@ import {
   Highlighter,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
+  Quote,
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -1163,6 +1164,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Syntax highlighted code block",
       icon: <Code size={16} style={{ color: "#2dd4bf" }} />,
       action: (ed) => ed.chain().focus().toggleCodeBlock().run(),
+      category: "text",
+    },
+    {
+      id: "quote",
+      label: "Quote",
+      description: "Blockquote style",
+      icon: <Quote size={16} style={{ color: "#a78bfa" }} />,
+      action: (ed) => ed.chain().focus().toggleBlockquote().run(),
       category: "text",
     },
     {
