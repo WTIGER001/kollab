@@ -7,7 +7,12 @@ echo "🚀 Starting Kollab deployment..."
 # 1. Pull latest code from git (if inside a git repository)
 if [ -d .git ]; then
   echo "📥 Pulling latest code from Git (kollab)..."
+  # Restore package.json to prevent git pull conflicts from previous version bumps
+  git restore frontend/package.json frontend/package-lock.json 2>/dev/null || true
   git pull
+  
+  echo "⬆️ Bumping frontend patch version..."
+  (cd frontend && npm version patch --no-git-tag-version)
 else
   echo "ℹ️ Skipping Git pull (not a Git repository)..."
 fi
