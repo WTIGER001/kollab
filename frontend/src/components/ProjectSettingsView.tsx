@@ -12,7 +12,8 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  Divider
+  Divider,
+  IconButton
 } from "@mui/material";
 import { Save, ArrowLeft, Image, Users } from "lucide-react";
 import { updateProjectSettings, fetchTeamUsers } from "../services/api";
