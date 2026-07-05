@@ -84,6 +84,7 @@ func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		Name         string `json:"name"`
 		Abbreviation string `json:"abbreviation"`
 		Description  string `json:"description"`
+		LogoURL      string `json:"logoUrl"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad Request: invalid request body", http.StatusBadRequest)
@@ -95,6 +96,7 @@ func (h *TeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		Name:         req.Name,
 		Abbreviation: req.Abbreviation,
 		Description:  req.Description,
+		LogoURL:      req.LogoURL,
 	}
 
 	if err := h.teamService.UpdateTeam(r.Context(), userID, team); err != nil {
