@@ -547,13 +547,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeTeam.logoUrl || undefined}
+              variant={activeTeam.logoUrl ? "rounded" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
-                bgcolor: activeTeam.id.startsWith("personal_") ? "secondary.main" : "primary.main", 
+                bgcolor: activeTeam.logoUrl ? "transparent" : (activeTeam.id.startsWith("personal_") ? "secondary.main" : "primary.main"), 
                 fontSize: "10px", 
                 fontWeight: 700,
-                flexShrink: 0
+                flexShrink: 0,
+                "& img": { objectFit: "contain" }
               }}
             >
               {activeTeam.id.startsWith("personal_") ? <User size={12} /> : activeTeam.name.slice(0, 2).toUpperCase()}
@@ -627,13 +629,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeProject.logoUrl || undefined}
+              variant={activeProject.logoUrl ? "rounded" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
-                bgcolor: "secondary.main", 
+                bgcolor: activeProject.logoUrl ? "transparent" : "secondary.main", 
                 fontSize: "11px", 
                 fontWeight: 700,
-                flexShrink: 0
+                flexShrink: 0,
+                "& img": { objectFit: "contain" }
               }}
             >
               {!activeProject.logoUrl && <Briefcase size={12} />}
@@ -707,13 +711,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <Avatar 
               src={activeTeam.logoUrl || undefined}
+              variant={activeTeam.logoUrl ? "rounded" : "circular"}
               sx={{ 
                 width: 24, 
                 height: 24, 
-                bgcolor: activeTeam.id.startsWith("personal_") ? "secondary.main" : "primary.main", 
+                bgcolor: activeTeam.logoUrl ? "transparent" : (activeTeam.id.startsWith("personal_") ? "secondary.main" : "primary.main"), 
                 fontSize: "10px", 
                 fontWeight: 700,
-                flexShrink: 0
+                flexShrink: 0,
+                "& img": { objectFit: "contain" }
               }}
             >
               {activeTeam.id.startsWith("personal_") ? <User size={12} /> : activeTeam.name.slice(0, 2).toUpperCase()}
