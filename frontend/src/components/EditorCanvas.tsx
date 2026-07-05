@@ -207,6 +207,9 @@ interface EditorCanvasProps {
   onNavigateToNormal?: () => void;
   developerMode?: boolean;
   selectedTeamId?: string | null;
+  selectedProjectId?: string | null;
+  teams?: any[];
+  projects?: any[];
 }
 
 interface SlashCommandItem {
@@ -312,6 +315,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onNavigateToNormal,
   developerMode = false,
   selectedTeamId,
+  selectedProjectId,
+  teams = [],
+  projects = [],
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const lastNonEmptyTitle = React.useRef(initialTitle || "Untitled Document");
@@ -3319,6 +3325,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           documentId={activeDocId || ""}
           documentTitle={title}
           documents={documents}
+          teams={teams}
+          projects={projects}
+          currentTeamId={selectedTeamId || undefined}
+          currentProjectId={selectedProjectId || undefined}
           onConfirm={onMoveDoc}
         />
       )}
