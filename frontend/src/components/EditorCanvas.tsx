@@ -2386,8 +2386,19 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           </Box>
         )}
 
-        {/* Top Header Actions Bar */}
-        <EditorHeader
+        {/* Sticky Header Container */}
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            backgroundColor: "var(--panel-color)",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Top Header Actions Bar */}
+          <EditorHeader
           editor={editor}
           activeDocId={activeDocId}
           developerMode={developerMode}
@@ -2433,10 +2444,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               flexWrap: "wrap",
               gap: 0.75,
               color: "text.secondary",
-              position: "sticky",
-              top: 0,
-              zIndex: 10,
-              backgroundColor: "var(--panel-color)",
               px: { xs: 2, sm: 3, md: 4 },
               pt: 1,
               pb: 1,
@@ -3105,8 +3112,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             </Tooltip>
           </Box>
         )}
+        </Box>
 
-        {/* Document Content Area */}
+        {/* Editor Main Content */}
         <Box
           sx={{
             px: { xs: 2, sm: 3, md: 4 },
