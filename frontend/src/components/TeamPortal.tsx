@@ -80,8 +80,19 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 2 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Avatar sx={{ bgcolor: "primary.main", width: 44, height: 44, fontSize: "18px", fontWeight: 700 }}>
-                {team.name.slice(0, 2).toUpperCase()}
+              <Avatar 
+                src={team.logoUrl || undefined}
+                variant={team.logoUrl ? "square" : "circular"}
+                sx={{ 
+                  bgcolor: team.logoUrl ? "transparent" : "primary.main", 
+                  width: 44, 
+                  height: 44, 
+                  fontSize: "18px", 
+                  fontWeight: 700,
+                  "& img": { objectFit: "contain" }
+                }}
+              >
+                {!team.logoUrl && team.name.slice(0, 2).toUpperCase()}
               </Avatar>
               <Box>
                 <Typography variant="h4" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', color: "text.primary", letterSpacing: "-0.02em" }}>
@@ -157,12 +168,14 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar 
                       src={proj.logoUrl || undefined}
+                      variant={proj.logoUrl ? "square" : "circular"}
                       sx={{ 
                         width: 32, 
                         height: 32, 
-                        bgcolor: "secondary.main", 
+                        bgcolor: proj.logoUrl ? "transparent" : "secondary.main", 
                         fontSize: "12px", 
-                        fontWeight: 700 
+                        fontWeight: 700,
+                        "& img": { objectFit: "contain" }
                       }}
                     >
                       {!proj.logoUrl && <Briefcase size={16} />}

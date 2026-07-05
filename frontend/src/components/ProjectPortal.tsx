@@ -77,7 +77,15 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Avatar 
                 src={project.logoUrl || undefined}
-                sx={{ bgcolor: "primary.main", width: 44, height: 44, fontSize: "18px", fontWeight: 700 }}
+                variant={project.logoUrl ? "square" : "circular"}
+                sx={{ 
+                  bgcolor: project.logoUrl ? "transparent" : "primary.main", 
+                  width: 44, 
+                  height: 44, 
+                  fontSize: "18px", 
+                  fontWeight: 700,
+                  "& img": { objectFit: "contain" }
+                }}
               >
                 {!project.logoUrl && <Briefcase size={20} />}
               </Avatar>
