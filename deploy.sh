@@ -12,7 +12,8 @@ if [ -d .git ]; then
   git pull
   
   echo "⬆️ Bumping frontend patch version..."
-  (cd frontend && npm version patch --no-git-tag-version)
+  # Use an ephemeral node container so the host doesn't need npm installed
+  docker run --rm -v "$(pwd)/frontend:/app" -w /app node:20-alpine npm version patch --no-git-tag-version
 else
   echo "ℹ️ Skipping Git pull (not a Git repository)..."
 fi
