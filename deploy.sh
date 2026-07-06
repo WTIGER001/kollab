@@ -57,13 +57,23 @@ EOT
   exit 1
 fi
 
+# 3b. Determine Docker Compose command
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  DOCKER_CMD="docker-compose"
+else
+  echo "❌ Error: Neither 'docker compose' nor 'docker-compose' found on this system."
+  exit 1
+fi
+
 # 4. Build images first (old site stays online during build)
 echo "🐳 Building new Docker images in the background (zero downtime)..."
-docker compose build
+$DOCKER_CMD build
 
 # 5. Recreate containers instantly (switch takes < 2 seconds)
 echo "🔄 Swapping running containers to new versions..."
-docker compose up -d
+$DOCKER_CMD up -d
 
 # 6. Cleanup unused Docker images to save space on small VPS
 echo "🧹 Cleaning up dangling Docker images..."
