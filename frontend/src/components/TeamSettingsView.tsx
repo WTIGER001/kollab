@@ -29,6 +29,7 @@ import {
 } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
 import { TagsManager } from "./TagsManager";
+import { IntegrationsManager } from "./IntegrationsManager";
 import { LogoSelector } from "./LogoSelector";
 
 interface TeamSettingsViewProps {
@@ -190,6 +191,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
           <Tab label="General" />
           <Tab label="Members" />
           <Tab label="Tags" />
+          <Tab label="Integrations" />
         </Tabs>
       </Box>
 
@@ -383,6 +385,11 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
 
       {tabValue === 2 && (
         <TagsManager />
+      )}
+      {tabValue === 3 && (
+        <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
+          <IntegrationsManager scope="team" entityId={team.id} />
+        </Box>
       )}
     </Box>
   );

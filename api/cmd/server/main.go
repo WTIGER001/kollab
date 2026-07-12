@@ -25,6 +25,7 @@ import (
 	"kollab/api/internal/http/handler"
 	"kollab/api/internal/http/middleware"
 	imgrepo "kollab/api/internal/image"
+	integrationrepo "kollab/api/internal/integration"
 	"kollab/api/internal/permissions"
 	pgrepo "kollab/api/internal/postgres"
 	"kollab/api/internal/storage"
@@ -237,6 +238,10 @@ func main() {
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 	tagHandler := handler.NewTagHandler(tagService)
 	templateHandler := handler.NewTemplateHandler(templateRepo)
+	
+	integrationRepo := pgrepo.NewIntegrationRepository(db)
+	integrationService := integrationrepo.NewService(integrationRepo)
+	integrationHandler := handler.NewIntegrationHandler(integrationService)
 
 	aiClient := ai.NewLLMClient()
 	aiHandler := handler.NewAIHandler(systemService, aiClient)
@@ -245,7 +250,7 @@ func main() {
 	jwksURL := oidcConfig["authority"] + "/jwks"
 	jwksCache := middleware.NewJWKSCache(jwksURL)
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
-	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, evaluator)
+	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, integrationHandler, evaluator)
 
 	port := os.Getenv("PORT")
 	if port == "" {

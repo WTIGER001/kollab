@@ -1586,6 +1586,28 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       category: "integrations",
     },
     {
+      id: "gitlab-issue-list",
+      label: "GitLab Issue List",
+      description: "Embed an interactive list of GitLab issues",
+      icon: <List size={16} style={{ color: "#fca121" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "gitlab-issue-list",
+              config: { 
+                url: "",
+                columns: ["key", "title", "status", "assignee", "priority"]
+              },
+            },
+          })
+          .run();
+      },
+      category: "integrations",
+    },
+    {
       id: "table",
       label: "Table",
       description: "Insert an interactive data table",
@@ -3319,6 +3341,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 activeDocId,
                 onSelectDoc: onSelectDoc || (() => {}),
                 selectedTeamId,
+                selectedProjectId,
               }}
             >
               <EditorContent editor={previewVersion ? previewEditor : editor} />

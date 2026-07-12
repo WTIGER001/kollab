@@ -23,7 +23,13 @@ import {
   CircularProgress,
   Tooltip,
   Dialog,
-  useTheme
+  useTheme,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Link
 } from "@mui/material";
 import { 
   Settings, 
@@ -44,12 +50,13 @@ import {
   AtSign,
   Palette,
   Network,
-  PenTool
+  PenTool,
+  List
 } from "lucide-react";
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken } from "../services/api";
 import type { Attachment, Tag as TagType } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
@@ -445,6 +452,46 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [allTags, setAllTags] = useState<TagType[]>([]);
   const [docTagsMap, setDocTagsMap] = useState<Record<string, TagType[]>>({});
   const [tagsLoading, setTagsLoading] = useState(false);
+
+  const [gitlabConnections, setGitlabConnections] = useState<any[]>([]);
+  const [gitlabConnectionsLoading, setGitlabConnectionsLoading] = useState(false);
+
+  useEffect(() => {
+    if (type !== "gitlab-issue-list") return;
+    const fetchConnections = async () => {
+      setGitlabConnectionsLoading(true);
+      try {
+        const scopes = [
+          { scope: "system", entityId: "" },
+          { scope: "user", entityId: auth.user?.profile.sub || "" }
+        ];
+        if (context?.selectedTeamId) {
+          scopes.push({ scope: "team", entityId: context.selectedTeamId });
+        }
+        if (context?.selectedProjectId) {
+          scopes.push({ scope: "project", entityId: context.selectedProjectId });
+        }
+        
+        const promises = scopes.map(s => 
+          fetch(`${API_BASE_URL}/api/integrations/connections?scope=${s.scope}&entityId=${s.entityId}`, {
+            headers: { Authorization: `Bearer ${getApiToken() || ""}` }
+          }).then(r => r.ok ? r.json() : [])
+        );
+
+        const results = await Promise.all(promises);
+        const allConnections = results
+          .map(res => res || [])
+          .flat()
+          .filter(c => c && c.provider === "gitlab");
+        setGitlabConnections(allConnections);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setGitlabConnectionsLoading(false);
+      }
+    };
+    if (isEditable) fetchConnections();
+  }, [type, auth.user, context?.selectedTeamId, context?.selectedProjectId, isEditable]);
 
   useEffect(() => {
     if (type === "page-index") {
@@ -2772,7 +2819,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       try {
                         const res = await fetch(`${API_BASE_URL}/api/integrations/issues?url=${encodeURIComponent(url)}`, {
                           headers: {
-                            Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+                            Authorization: `Bearer ${getApiToken() || ""}`
                           }
                         });
                         const data = await res.json();
@@ -2892,6 +2939,174 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       Import to Page
                     </Button>
                   </Box>
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {type === "gitlab-issue-list" && (
+            <Box sx={{ width: "100%" }}>
+              {!config.integrationId ? (
+                <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+                    GitLab Issue List
+                  </Typography>
+                  <FormControl fullWidth size="small" sx={{ mb: 2, textAlign: "left" }}>
+                    <FormLabel sx={{ fontSize: "12px", mb: 0.5 }}>GitLab Connection</FormLabel>
+                    <Select
+                      id="issue-list-integration-select"
+                      name="issue-list-integration-select"
+                      defaultValue=""
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>Select Connection</MenuItem>
+                      {gitlabConnectionsLoading ? (
+                        <MenuItem disabled>Loading...</MenuItem>
+                      ) : (
+                        gitlabConnections.map(conn => (
+                          <MenuItem key={conn.id} value={conn.id}>
+                            {conn.name} ({conn.scope})
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+                  </FormControl>
+                  
+                  <Box sx={{ textAlign: "left", mb: 2 }}>
+                    <FormLabel sx={{ fontSize: "12px", mb: 0.5, display: "block" }}>Project Path / ID</FormLabel>
+                    <TextField
+                      placeholder="e.g. gitlab-org/gitlab or 278964"
+                      fullWidth
+                      size="small"
+                      id="issue-list-project-input"
+                    />
+                  </Box>
+
+                  <Box sx={{ textAlign: "left", mb: 3 }}>
+                    <FormLabel sx={{ fontSize: "12px", mb: 0.5, display: "block" }}>Labels (comma separated)</FormLabel>
+                    <TextField
+                      placeholder="e.g. bug, priority::high"
+                      fullWidth
+                      size="small"
+                      id="issue-list-labels-input"
+                    />
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={async () => {
+                      const sel = document.getElementById("issue-list-integration-select") as HTMLSelectElement;
+                      const projIn = document.getElementById("issue-list-project-input") as HTMLInputElement;
+                      const lblIn = document.getElementById("issue-list-labels-input") as HTMLInputElement;
+                      
+                      // For MUI Select, getting the value directly via ID doesn't work well if it's uncontrolled.
+                      // Since we're doing this inline without state, we should probably add state or get from hidden input.
+                      // Let's use a quick state for it, or just use DOM query on the hidden input MUI generates.
+                      const hiddenInput = document.querySelector('input[name="issue-list-integration-select"]') as HTMLInputElement;
+                      const integrationId = hiddenInput ? hiddenInput.value : "";
+                      const projectId = projIn?.value || "";
+                      const labels = lblIn?.value || "";
+
+                      if (!integrationId || !projectId) {
+                        alert("Connection and Project ID are required.");
+                        return;
+                      }
+
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/api/integrations/connections/${integrationId}/proxy/gitlab/issues?projectId=${encodeURIComponent(projectId)}&labels=${encodeURIComponent(labels)}`, {
+                          headers: {
+                            Authorization: `Bearer ${getApiToken() || ""}`
+                          }
+                        });
+                        if (!res.ok) throw new Error("Failed to fetch");
+                        const data = await res.json();
+                        updateAttributes({
+                          config: {
+                            ...config,
+                            integrationId,
+                            gitlabProjectId: projectId,
+                            labels,
+                            issues: data.issues
+                          }
+                        });
+                      } catch (err) {
+                        console.error("Failed to fetch issues", err);
+                        alert("Failed to load issues.");
+                      }
+                    }}
+                    sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+                  >
+                    Fetch Issues
+                  </Button>
+                </Box>
+              ) : (
+                <Box sx={{ width: "100%", border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                  <Box sx={{ p: 1.5, bgcolor: "var(--panel-color)", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <List size={16} style={{ color: "#fca121" }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>GitLab Issues</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {/* Column Toggles */}
+                      {["key", "title", "status", "assignee", "priority"].map(col => (
+                        <Chip
+                          key={col}
+                          label={col}
+                          size="small"
+                          onClick={() => {
+                            const cols = config.columns || ["key", "title", "status", "assignee", "priority"];
+                            const newCols = cols.includes(col) ? cols.filter((c: string) => c !== col) : [...cols, col];
+                            updateAttributes({ config: { ...config, columns: newCols } });
+                          }}
+                          variant={config.columns?.includes(col) ? "filled" : "outlined"}
+                          sx={{ textTransform: "capitalize", fontSize: "10px" }}
+                        />
+                      ))}
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`${API_BASE_URL}/api/integrations/connections/${config.integrationId}/proxy/gitlab/issues?projectId=${encodeURIComponent(config.gitlabProjectId || "")}&labels=${encodeURIComponent(config.labels || "")}`, {
+                              headers: { Authorization: `Bearer ${getApiToken() || ""}` }
+                            });
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            updateAttributes({ config: { ...config, issues: data.issues } });
+                          } catch (err) {
+                            console.error("Failed to refresh issues", err);
+                          }
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                    </Box>
+                  </Box>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        {config.columns?.includes("key") && <TableCell>Key</TableCell>}
+                        {config.columns?.includes("title") && <TableCell>Title</TableCell>}
+                        {config.columns?.includes("status") && <TableCell>Status</TableCell>}
+                        {config.columns?.includes("assignee") && <TableCell>Assignee</TableCell>}
+                        {config.columns?.includes("priority") && <TableCell>Priority</TableCell>}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {config.issues?.map((issue: any, idx: number) => (
+                        <TableRow key={idx}>
+                          {config.columns?.includes("key") && <TableCell sx={{ fontFamily: "monospace", fontSize: "12px" }}><Link href={issue.url} target="_blank" rel="noopener noreferrer" underline="hover">{issue.key}</Link></TableCell>}
+                          {config.columns?.includes("title") && <TableCell>{issue.title}</TableCell>}
+                          {config.columns?.includes("status") && <TableCell>
+                            <Chip size="small" label={issue.status} sx={{ height: 20, fontSize: "10px" }} />
+                          </TableCell>}
+                          {config.columns?.includes("assignee") && <TableCell>{issue.assignee}</TableCell>}
+                          {config.columns?.includes("priority") && <TableCell>{issue.priority}</TableCell>}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </Box>
               )}
             </Box>

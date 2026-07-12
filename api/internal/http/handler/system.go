@@ -244,6 +244,57 @@ func (h *SystemHandler) GetIntegrationIssue(w http.ResponseWriter, r *http.Reque
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
+func (h *SystemHandler) GetIntegrationIssueList(w http.ResponseWriter, r *http.Request) {
+	issueURL := r.URL.Query().Get("url")
+	if issueURL == "" {
+		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
+		return
+	}
+
+	source := "gitlab"
+	if strings.Contains(strings.ToLower(issueURL), "jira") {
+		source = "jira"
+	}
+
+	payload := map[string]interface{}{
+		"source": source,
+		"issues": []map[string]interface{}{
+			{
+				"key":      "GL-492",
+				"title":    "Setup automated backup exports cron job",
+				"status":   "Open",
+				"assignee": "Kyle Reese",
+				"priority": "Medium",
+			},
+			{
+				"key":      "GL-495",
+				"title":    "Update frontend dependencies to latest React",
+				"status":   "In Progress",
+				"assignee": "Sarah Connor",
+				"priority": "High",
+			},
+			{
+				"key":      "GL-498",
+				"title":    "Fix CORS preflight options issue on /api/upload",
+				"status":   "Under Review",
+				"assignee": "Miles Dyson",
+				"priority": "Critical",
+			},
+			{
+				"key":      "GL-501",
+				"title":    "Implement GitLab Issue List macro in Tiptap",
+				"status":   "Done",
+				"assignee": "T-800",
+				"priority": "Low",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+
 func (h *SystemHandler) Backup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

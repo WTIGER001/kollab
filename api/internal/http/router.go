@@ -15,7 +15,7 @@ import (
 
 // NewRouter initializes and configures the main chi router with CORS, logger, recovery,
 // and maps public/protected routes using JWT middleware.
-func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, templateH *handler.TemplateHandler, evaluator *permissions.AccessEvaluator) http.Handler {
+func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, templateH *handler.TemplateHandler, integrationH *handler.IntegrationHandler, evaluator *permissions.AccessEvaluator) http.Handler {
 	r := chi.NewRouter()
 
 
@@ -123,7 +123,11 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Post("/ai/generate", aiH.Generate)
 		r.Get("/integrations/issues", systemH.GetIntegrationIssue)
-
+		r.Get("/integrations/issues/list", systemH.GetIntegrationIssueList)
+		
+		r.Route("/integrations/connections", func(r chi.Router) {
+			integrationH.Mount(r)
+		})
 		r.Get("/tags", tagH.List)
 		r.Post("/tags", tagH.Create)
 		r.Get("/tags/document-associations", tagH.ListDocumentAssociations)

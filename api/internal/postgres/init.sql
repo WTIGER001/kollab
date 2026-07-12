@@ -347,3 +347,30 @@ CREATE TABLE IF NOT EXISTS templates (
 
 DROP TRIGGER IF EXISTS log_templates ON templates;
 CREATE TRIGGER log_templates AFTER INSERT OR UPDATE OR DELETE ON templates FOR EACH ROW EXECUTE FUNCTION log_db_operation();
+
+DO $$ BEGIN
+    CREATE TYPE integration_scope AS ENUM ('system', 'team', 'project', 'user');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE integration_provider AS ENUM ('gitlab', 'jira-cloud', 'jira-dc', 'github', 'plane');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS integrations (
+    id VARCHAR(255) PRIMARY KEY,
+    scope integration_scope NOT NULL,
+    entity_id VARCHAR(255),
+    provider integration_provider NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    url VARCHAR(255),
+    credentials JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+DROP TRIGGER IF EXISTS log_integrations ON integrations;
+CREATE TRIGGER log_integrations AFTER INSERT OR UPDATE OR DELETE ON integrations FOR EACH ROW EXECUTE FUNCTION log_db_operation();

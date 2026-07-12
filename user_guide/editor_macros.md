@@ -332,3 +332,23 @@ The Mermaid macro compiles textual diagram definitions (like flowcharts, sequenc
 2. **Live Compiler**: As you type, the right panel compiles the syntax in real time with a 500ms debounce.
 3. **Syntax Errors**: If the compiler encounters a syntax error, a red error alert details the mistake, keeping the previous valid SVG render intact.
 4. **Finish Editing**: Click **Exit Editor** (or press escape) to hide the code editor panel. The block collapses to render only the compiled vector SVG drawing.
+
+---
+
+## 🦊 GitLab Issue List Macro
+
+The GitLab Issue List macro embeds a dynamic table or list of issues (and work items) directly from your GitLab projects or groups.
+
+### How to Insert
+1. Type **`/gitlab`** and press **`Enter`** (or select **GitLab Issue List** from the slash command menu).
+2. A configuration panel will appear.
+
+### Configuration
+1. **Connection**: Select the GitLab connection you configured in your Personal or Workspace Settings.
+2. **Project / Group ID**: Enter the path or ID of the project or group (e.g., `foodmarketmaker`).
+3. **Labels**: (Optional) Enter comma-separated labels to filter issues.
+4. **Display**: Choose whether to render the results as a standard flat list or as a rich data table.
+
+### Features
+- **Automatic Resolution**: You don't need to specify whether the ID belongs to a Project or a Group. The system intelligently detects it.
+- **Clickable Links**: Issue numbers in the data table are clickable links that will open the exact issue in GitLab directly.

@@ -124,8 +124,12 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	userRepo := pgrepo.NewPostgresUserRepository(db)
 	teamRepo := pgrepo.NewPostgresTeamRepository(db)
 	docRepo := pgrepo.NewPostgresDocumentRepository(db)
-	imageRepo := pgrepo.NewPostgresImageRepository(db)
-	themeRepo := pgrepo.NewPostgresThemeRepository(db)
+	// templateRepo := pgrepo.NewTemplateRepository(db)
+	// templateH := handler.NewTemplateHandler(templateRepo)
+	
+	// integrationRepo := pgrepo.NewIntegrationRepository(db)
+	// integrationService := pgrepo.NewIntegrationService(integrationRepo)
+	// integrationH := handler.NewIntegrationHandler(integrationService)
 	systemRepo := pgrepo.NewPostgresSystemRepository(db)
 	commentRepo := pgrepo.NewPostgresCommentRepository(db)
 	attachmentRepo := pgrepo.NewPostgresAttachmentRepository(db)
@@ -141,6 +145,8 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create local storage: %v", err)
 	}
+	imageRepo := pgrepo.NewPostgresImageRepository(db)
+	themeRepo := pgrepo.NewPostgresThemeRepository(db)
 	runIntegrationTests(t, db, userRepo, teamRepo, docRepo, imageRepo, themeRepo, systemRepo, commentRepo, attachmentRepo, taskRepo, storageProvider, jwtSecret)
 }
 
@@ -343,7 +349,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	libImgH := handler.NewLibraryImageHandler(nil)
 
 	// Router
-	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, libImgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, templateH, evaluator)
+	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, libImgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, templateH, integrationH, evaluator)
 
 	// Helper to send requests
 	sendReq := func(method, path string, body []byte, token string) (*httptest.ResponseRecorder, int) {

@@ -19,6 +19,7 @@ import { Save, ArrowLeft, Image, Users } from "lucide-react";
 import { updateProjectSettings, fetchTeamUsers } from "../services/api";
 import type { Project } from "../services/api";
 import { TagsManager } from "./TagsManager";
+import { IntegrationsManager } from "./IntegrationsManager";
 import { UserAvatar } from "./UserAvatar";
 import { LogoSelector } from "./LogoSelector";
 
@@ -155,6 +156,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
           <Tab label="General" />
           <Tab label="Members" />
           <Tab label="Tags" />
+          <Tab label="Integrations" />
         </Tabs>
       </Box>
 
@@ -341,6 +343,11 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
 
       {tabValue === 2 && (
         <TagsManager />
+      )}
+      {tabValue === 3 && (
+        <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
+          <IntegrationsManager scope="project" entityId={project.id} />
+        </Box>
       )}
     </Box>
   );

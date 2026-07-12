@@ -1,0 +1,105 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"kollab/api/internal/domain"
+)
+
+type IntegrationHandler struct {
+	service domain.IntegrationService
+}
+
+func NewIntegrationHandler(service domain.IntegrationService) *IntegrationHandler {
+	return &IntegrationHandler{service: service}
+}
+
+func (h *IntegrationHandler) Mount(r chi.Router) {
+	r.Get("/", h.GetIntegrations)
+	r.Post("/", h.CreateIntegration)
+	r.Delete("/{id}", h.DeleteIntegration)
+	r.Get("/{id}/proxy/gitlab/issues", h.ProxyGitLabIssues)
+}
+
+func (h *IntegrationHandler) GetIntegrations(w http.ResponseWriter, r *http.Request) {
+	scopeStr := r.URL.Query().Get("scope")
+	entityID := r.URL.Query().Get("entityId")
+
+	if scopeStr == "" {
+		http.Error(w, "scope is required", http.StatusBadRequest)
+		return
+	}
+
+	scope := domain.IntegrationScope(scopeStr)
+	
+	// Basic authorization checks would go here based on scope and entityID
+	// e.g. checking if the current user belongs to the team, project, or is the user
+
+	integrations, err := h.service.GetByScope(r.Context(), scope, entityID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Security Rule: Scrub credentials before sending to client
+	for _, integration := range integrations {
+		if integration.Credentials != nil {
+			scrubbed := make(map[string]string)
+			for k := range integration.Credentials {
+				scrubbed[k] = "••••••••••••"
+			}
+			integration.Credentials = scrubbed
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(integrations)
+}
+
+func (h *IntegrationHandler) CreateIntegration(w http.ResponseWriter, r *http.Request) {
+	var integration domain.Integration
+	if err := json.NewDecoder(r.Body).Decode(&integration); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Authorization checks would go here...
+
+	if err := h.service.Create(r.Context(), &integration); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Scrub before returning the newly created object
+	if integration.Credentials != nil {
+		scrubbed := make(map[string]string)
+		for k := range integration.Credentials {
+			scrubbed[k] = "••••••••••••"
+		}
+		integration.Credentials = scrubbed
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(integration)
+}
+
+func (h *IntegrationHandler) DeleteIntegration(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	// Authorization checks would go here...
+
+	if err := h.service.Delete(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -177,7 +177,9 @@ To securely interface with GitLab (SaaS and self-hosted), Kollab implements a la
 2. **Merge Request (MR) Card**: Tracks code changes, CI/CD status, and conflicts.
 3. **Pipeline Status**: Live indicator of a repository's CI state.
 4. **Epic / Roadmap Tracker**: Tracks high-level initiatives with progress bars.
-5. **Issue List / Board View**: Dynamic table of multiple issues using JQL.
+5. **Issue List / Board View**: Dynamic table of multiple issues using the `go-gitlab` API client. 
+    - *Fallback Logic*: The proxy endpoint (`/{id}/proxy/gitlab/issues`) first attempts to resolve the provided ID as a Project. If GitLab returns a `404 Not Found`, the backend gracefully catches the error and queries it as a Group. This allows the frontend to abstract the difference between projects and groups from the user.
+    - *Rendering*: The frontend renders the data using MUI `Table` and `Link` components.
 6. **Code Snippet / File Embed**: Pulls live source code directly from a repository.
 7. **Deployment Environment Status**: Monitors where code is deployed.
 8. **Vulnerability Summary**: Security overview.

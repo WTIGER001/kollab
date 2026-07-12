@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { User, Sun, Moon, ArrowLeft, Paintbrush } from "lucide-react";
 import { TagsManager } from "./TagsManager";
+import { IntegrationsManager } from "./IntegrationsManager";
 
 interface PersonalSettingsViewProps {
   displayName: string;
@@ -89,6 +90,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsViewProps> = ({
         >
           <Tab label="General" />
           <Tab label="Tags" />
+          <Tab label="Integrations" />
         </Tabs>
       </Box>
 
@@ -185,6 +187,11 @@ export const PersonalSettingsView: React.FC<PersonalSettingsViewProps> = ({
 
       {tabValue === 1 && (
         <TagsManager />
+      )}
+      {tabValue === 2 && (
+        <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
+          <IntegrationsManager scope="user" entityId={currentUser.id} />
+        </Box>
       )}
     </Box>
   );

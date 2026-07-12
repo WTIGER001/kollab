@@ -14,9 +14,10 @@ import {
   Switch,
   Divider
 } from "@mui/material";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, AlertCircle, RefreshCw, Eye, EyeOff, Save, Download, FileUp, Database, Activity, RefreshCcw, LogOut, CheckCircle2 } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
 import { API_BASE_URL, downloadBackup, downloadSyncExport, restoreBackup, importSyncPackage } from "../services/api";
+import { IntegrationsManager } from "./IntegrationsManager";
 import { useAppStore } from "../store/useAppStore";
 import { presets } from "../theme/presets";
 import { ThemeSelector } from "./ThemeSelector";
@@ -268,6 +269,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           <Tab label="Aspose & Previews" />
           <Tab label="Backups & Air-Gap Sync" />
           <Tab label="Authentication Branding" />
+          <Tab label="Integrations" />
         </Tabs>
       </Box>
 
@@ -814,6 +816,12 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 }
               }}
             />
+          </Box>
+        )}
+
+        {tabIndex === 6 && (
+          <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
+            <IntegrationsManager scope="system" entityId="" />
           </Box>
         )}
       </Box>
