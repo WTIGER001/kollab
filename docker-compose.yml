@@ -50,9 +50,11 @@ services:
       context: .
       dockerfile: Caddy.Dockerfile
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      - "80:80"
-      - "443:443"
+      - "8081:80"
+      - "8443:443"
     environment:
       DOMAIN: ${DOMAIN}
     volumes:

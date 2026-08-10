@@ -1,4 +1,4 @@
-{$DOMAIN:localhost} {
+kollab.bauerstuff.com {
     # Proxy API and WebSocket connections to the Go backend container
     # (Caddy automatically handles WebSocket connection upgrading out of the box)
     handle /api/* {
@@ -12,3 +12,19 @@
         file_server
     }
 }
+
+# Kavita (Default internal port: 5000)
+kavita.bauerstuff.com {
+    reverse_proxy host.docker.internal:5000
+}
+
+# Audiobookshelf (Default internal port: 13378)
+audiobookshelf.bauerstuff.com {
+    reverse_proxy host.docker.internal:13378
+}
+
+# MyStuff (Host systemd binary on port 8083)
+mystuff.bauerstuff.com {
+    reverse_proxy host.docker.internal:8083
+}
+
