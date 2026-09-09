@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"kollab/api/internal/domain"
 	"kollab/api/internal/permissions"
 	inmemsystem "kollab/api/internal/system"
 	inmemtask "kollab/api/internal/task"
@@ -256,5 +257,46 @@ func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {
 	notifications, _ = service.ListNotifications(context.Background(), "watcher")
 	if !notifications[0].IsRead {
 		t.Fatal("expected notification to be marked read")
+	}
+}
+
+func TestInMemoryDocumentRepositoryCoreQueries(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	ctx := context.Background()
+	document, err := repo.GetByID(ctx, "doc_welcome_eng")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.RecordView(ctx, "view-1", document.ID, "reader", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	analytics, err := repo.GetAnalytics(ctx, document.ID)
+	if err != nil || analytics.TotalViews == 0 {
+		t.Fatalf("analytics: %#v (%v)", analytics, err)
+	}
+	results, err := repo.Search(ctx, "engineering", "proj_wiki", nil)
+	if err != nil || len(results) == 0 {
+		t.Fatalf("search: %#v (%v)", results, err)
+	}
+	if err := repo.Delete(ctx, document.ID); err != nil {
+		t.Fatal(err)
+	}
+	trash, err := repo.GetTrashByProjectID(ctx, "proj_wiki")
+	if err != nil || len(trash) == 0 {
+		t.Fatalf("trash: %#v (%v)", trash, err)
+	}
+	if err := repo.Restore(ctx, document.ID); err != nil {
+		t.Fatal(err)
+	}
+	version := &domain.DocumentVersion{ID: "version-1", DocumentID: document.ID, Content: document.Content, VersionNumber: 1, CreatedAt: time.Now()}
+	if err := repo.SaveVersion(ctx, version); err != nil {
+		t.Fatal(err)
+	}
+	versions, err := repo.GetVersions(ctx, document.ID)
+	if err != nil || len(versions) != 1 {
+		t.Fatalf("versions: %#v (%v)", versions, err)
+	}
+	if _, err := repo.GetRecent(ctx, "reader", "views"); err != nil {
+		t.Fatal(err)
 	}
 }
