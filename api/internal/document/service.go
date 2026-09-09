@@ -428,9 +428,6 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 		return nil, err
 	}
 
-	// Store original team ID before moving to propagate space updates to descendants
-	oldTeamID := doc.TeamID
-
 	// 1. Cycle detection and parent resolution
 	if parentID != nil {
 		if *parentID == id {
@@ -461,7 +458,9 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 	} else {
 		// Moving to root level of space
 		doc.ParentID = nil
-		if teamID != "" {
+		// Omitted destination IDs mean re-parenting at the current space's root.
+		// A personal-space move supplies its personal_<user> team ID explicitly.
+		if teamID != "" || projectID != "" {
 			doc.TeamID = teamID
 			doc.ProjectID = projectID
 		}
@@ -475,34 +474,25 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 	}
 
 	// 3. Propagate space changes recursively to all descendants
-	if err := s.propagateSpaceChange(ctx, doc.ID, oldTeamID, doc.ProjectID, doc.TeamID); err != nil {
+	if err := s.propagateSpaceChange(ctx, doc.ID, doc.ProjectID, doc.TeamID); err != nil {
 		log.Printf("Warning: failed to propagate space updates to descendants of %s: %v", doc.ID, err)
 	}
 
 	return doc, nil
 }
 
-func (s *DocumentService) propagateSpaceChange(ctx context.Context, parentID string, oldTeamID string, newProjectID string, newTeamID string) error {
-	var allDocs []*domain.Document
-	var err error
-	if oldTeamID != "" {
-		allDocs, err = s.repo.GetByTeamID(ctx, oldTeamID)
-	}
+func (s *DocumentService) propagateSpaceChange(ctx context.Context, parentID string, newProjectID string, newTeamID string) error {
+	allDocs, err := s.repo.GetDescendants(ctx, parentID)
 	if err != nil {
 		return err
 	}
 
 	for _, d := range allDocs {
-		if d.ParentID != nil && *d.ParentID == parentID {
-			d.ProjectID = newProjectID
-			d.TeamID = newTeamID
-			d.UpdatedAt = time.Now()
-			if err := s.repo.Update(ctx, d); err != nil {
-				return err
-			}
-			if err := s.propagateSpaceChange(ctx, d.ID, oldTeamID, newProjectID, newTeamID); err != nil {
-				return err
-			}
+		d.ProjectID = newProjectID
+		d.TeamID = newTeamID
+		d.UpdatedAt = time.Now()
+		if err := s.repo.Update(ctx, d); err != nil {
+			return err
 		}
 	}
 	return nil

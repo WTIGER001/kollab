@@ -238,6 +238,31 @@ func (r *InMemoryDocumentRepository) GetByTeamID(ctx context.Context, teamId str
 	return list, nil
 }
 
+func (r *InMemoryDocumentRepository) GetDescendants(ctx context.Context, documentID string) ([]*domain.Document, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	children := make(map[string][]*domain.Document)
+	for _, document := range r.documents {
+		if document.DeletedAt != nil || document.ParentID == nil {
+			continue
+		}
+		children[*document.ParentID] = append(children[*document.ParentID], document)
+	}
+
+	var descendants []*domain.Document
+	var visit func(string)
+	visit = func(parentID string) {
+		for _, child := range children[parentID] {
+			copy := *child
+			descendants = append(descendants, &copy)
+			visit(child.ID)
+		}
+	}
+	visit(documentID)
+	return descendants, nil
+}
+
 func (r *InMemoryDocumentRepository) Create(ctx context.Context, doc *domain.Document) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -272,9 +297,13 @@ func (r *InMemoryDocumentRepository) Update(ctx context.Context, doc *domain.Doc
 	}
 
 	existing.Title = doc.Title
+	existing.Slug = doc.Slug
 	existing.Content = doc.Content
+	existing.ProjectID = doc.ProjectID
+	existing.TeamID = doc.TeamID
 	existing.ParentID = doc.ParentID
 	existing.DeletedAt = doc.DeletedAt
+	existing.UpdatedByID = doc.UpdatedByID
 	existing.UpdatedAt = time.Now()
 
 	return nil

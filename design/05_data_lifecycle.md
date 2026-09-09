@@ -152,7 +152,8 @@ Documents can be seamlessly transferred between entirely different hierarchical 
 When `MoveDocument` is executed:
 1. **Validation**: The system verifies that the document is not being moved inside itself or one of its descendants (preventing cycle loops).
 2. **Space Re-Assignment**: The document's `TeamID` and `ProjectID` columns are updated to match the target space (inheriting from the new `ParentID` or directly via root assignments if `ParentID = nil`).
-3. **Descendant Propagation**: A recursive hook instantly updates the `TeamID` and `ProjectID` of all nested sub-pages, ensuring the entire tree shifts cleanly to the new destination space.
+3. **Descendant Propagation**: The repository obtains the full non-deleted descendant set with a recursive query (or graph walk in memory), then writes each descendant's `TeamID` and `ProjectID`. This avoids relying on the old space's listing filter, which intentionally hides project pages from a team-root listing.
+4. **Root and personal moves**: Omitting destination IDs only re-parents a page at the root of its current space, preserving backward-compatible API behavior. Moving to Personal Space supplies the explicit `personal_<user>` team ID, clears `projectId`, and propagates that location through the branch.
 
 ---
 

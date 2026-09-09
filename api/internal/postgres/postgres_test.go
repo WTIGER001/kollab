@@ -231,4 +231,36 @@ func TestPostgresDocumentRepository(t *testing.T) {
 	if fetched.ID != "new_doc" {
 		t.Errorf("expected new_doc, got %s", fetched.ID)
 	}
+
+	child := &domain.Document{
+		ID:          "new_doc_child",
+		Title:       "New Doc Child",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
+		ParentID:    &doc.ID,
+		CreatedByID: "sh4ag0cxowti",
+		UpdatedByID: "sh4ag0cxowti",
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	if err := repo.Create(ctx, child); err != nil {
+		t.Fatalf("create child document: %v", err)
+	}
+	descendants, err := repo.GetDescendants(ctx, doc.ID)
+	if err != nil || len(descendants) != 1 || descendants[0].ID != child.ID {
+		t.Fatalf("expected persisted descendant, got %#v (%v)", descendants, err)
+	}
+
+	doc.ProjectID = "proj_kollab_test"
+	doc.TeamID = "team_arkloud"
+	doc.Slug = "moved-doc"
+	doc.UpdatedByID = "sh4ag0cxowti"
+	if err := repo.Update(ctx, doc); err != nil {
+		t.Fatalf("update document space: %v", err)
+	}
+	fetched, err = repo.GetByID(ctx, doc.ID)
+	if err != nil || fetched.ProjectID != doc.ProjectID || fetched.TeamID != doc.TeamID || fetched.Slug != doc.Slug {
+		t.Fatalf("expected persisted moved document fields, got %#v (%v)", fetched, err)
+	}
 }

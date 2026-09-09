@@ -300,3 +300,61 @@ func TestInMemoryDocumentRepositoryCoreQueries(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDocumentServiceMovePersistsDestinationAndDescendants(t *testing.T) {
+	ctx := context.Background()
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	content := `{"type":"doc","content":[{"type":"paragraph"}]}`
+
+	root := &domain.Document{ID: "move-root", Title: "Root", Slug: "root", Content: content, ProjectID: "proj_old", TeamID: "team_old", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	child := &domain.Document{ID: "move-child", Title: "Child", Slug: "child", Content: content, ProjectID: "proj_old", TeamID: "team_old", ParentID: &root.ID, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	grandchild := &domain.Document{ID: "move-grandchild", Title: "Grandchild", Slug: "grandchild", Content: content, ProjectID: "proj_old", TeamID: "team_old", ParentID: &child.ID, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	newParent := &domain.Document{ID: "move-new-parent", Title: "New parent", Slug: "new-parent", Content: content, ProjectID: "proj_new", TeamID: "team_new", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	for _, document := range []*domain.Document{root, child, grandchild, newParent} {
+		if err := repo.Create(ctx, document); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	moved, err := service.MoveDocument(ctx, root.ID, nil, "proj_new", "team_new")
+	if err != nil {
+		t.Fatalf("move root: %v", err)
+	}
+	if moved.ProjectID != "proj_new" || moved.TeamID != "team_new" {
+		t.Fatalf("root did not receive destination: %#v", moved)
+	}
+	for _, id := range []string{child.ID, grandchild.ID} {
+		document, err := repo.GetByID(ctx, id)
+		if err != nil || document.ProjectID != "proj_new" || document.TeamID != "team_new" {
+			t.Fatalf("descendant %s was not moved: %#v (%v)", id, document, err)
+		}
+	}
+	if _, err := service.MoveDocument(ctx, root.ID, &grandchild.ID, "", ""); err == nil {
+		t.Fatal("expected moving a page under its descendant to fail")
+	}
+	if moved, err := service.MoveDocument(ctx, root.ID, nil, "", ""); err != nil || moved.ProjectID != "proj_new" || moved.TeamID != "team_new" {
+		t.Fatalf("move to current space root should retain location: %#v (%v)", moved, err)
+	}
+	if _, err := service.MoveDocument(ctx, root.ID, nil, "", "personal_reader"); err != nil {
+		t.Fatalf("move root to personal space: %v", err)
+	}
+	for _, id := range []string{root.ID, child.ID, grandchild.ID} {
+		document, err := repo.GetByID(ctx, id)
+		if err != nil || document.ProjectID != "" || document.TeamID != "personal_reader" {
+			t.Fatalf("document %s did not move to personal space: %#v (%v)", id, document, err)
+		}
+	}
+
+	moved, err = service.MoveDocument(ctx, child.ID, &newParent.ID, "ignored-project", "ignored-team")
+	if err != nil {
+		t.Fatalf("move below parent: %v", err)
+	}
+	if moved.ParentID == nil || *moved.ParentID != newParent.ID || moved.ProjectID != newParent.ProjectID || moved.TeamID != newParent.TeamID {
+		t.Fatalf("child did not inherit parent location: %#v", moved)
+	}
+	grandchildAfterParentMove, err := repo.GetByID(ctx, grandchild.ID)
+	if err != nil || grandchildAfterParentMove.ProjectID != newParent.ProjectID || grandchildAfterParentMove.TeamID != newParent.TeamID {
+		t.Fatalf("grandchild did not follow its moved parent: %#v (%v)", grandchildAfterParentMove, err)
+	}
+}

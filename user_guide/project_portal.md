@@ -34,4 +34,4 @@ You can easily reorganize your document hierarchy or move pages entirely across 
 3. In the Move dialog:
    - **Destination Space**: At the top of the dialog, select the space you want to move the page to. It defaults to the current space, but you can select any Team, Project, or your Personal Space that you have access to.
    - **New Parent Page**: Select the new parent folder within the chosen destination space. Select "Top Level (Root)" to place it at the base of the space.
-4. Click **Move** to finalize. If the page contains sub-pages, they will all be moved together to the new destination.
+4. Click **Move** to finalize. If the page contains sub-pages, they will all be moved together to the new destination. Choosing your Personal Space moves the entire branch out of its former team or project.

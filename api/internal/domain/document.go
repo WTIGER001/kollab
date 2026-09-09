@@ -104,6 +104,10 @@ type DocumentRepository interface {
 	GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Document, string, error) // Returns doc, requested_slug (if alias), err
 	GetByProjectID(ctx context.Context, projectId string) ([]*Document, error)
 	GetByTeamID(ctx context.Context, teamId string) ([]*Document, error)
+	// GetDescendants returns every non-deleted child below a page, irrespective of
+	// the project or team the child currently belongs to. It is used when moving
+	// a tree between spaces.
+	GetDescendants(ctx context.Context, documentID string) ([]*Document, error)
 	Create(ctx context.Context, doc *Document) error
 	Update(ctx context.Context, doc *Document) error
 	Delete(ctx context.Context, id string) error

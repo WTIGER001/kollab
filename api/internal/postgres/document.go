@@ -192,6 +192,42 @@ func (r *PostgresDocumentRepository) GetByTeamID(ctx context.Context, teamId str
 	return docs, nil
 }
 
+func (r *PostgresDocumentRepository) GetDescendants(ctx context.Context, documentID string) ([]*domain.Document, error) {
+	rows, err := r.db.Query(ctx, `
+		WITH RECURSIVE descendants AS (
+			SELECT id, 1 AS depth FROM documents WHERE parent_id = $1 AND deleted_at IS NULL
+			UNION ALL
+			SELECT d.id, descendants.depth + 1
+			FROM documents d
+			JOIN descendants ON d.parent_id = descendants.id
+			WHERE d.deleted_at IS NULL
+		)
+		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
+		       COALESCE(u1.display_name, u1.username, ''),
+		       COALESCE(u2.display_name, u2.username, ''), d.deleted_at
+		FROM descendants
+		JOIN documents d ON d.id = descendants.id
+		LEFT JOIN users u1 ON d.created_by = u1.id
+		LEFT JOIN users u2 ON d.updated_by = u2.id
+		ORDER BY descendants.depth, d.created_at, d.id
+	`, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var documents []*domain.Document
+	for rows.Next() {
+		var document domain.Document
+		if err := rows.Scan(&document.ID, &document.Title, &document.Slug, &document.Content, &document.ProjectID, &document.TeamID, &document.ParentID, &document.CreatedAt, &document.UpdatedAt, &document.CreatedByID, &document.UpdatedByID, &document.CreatedBy, &document.UpdatedBy, &document.DeletedAt); err != nil {
+			return nil, err
+		}
+		documents = append(documents, &document)
+	}
+	return documents, rows.Err()
+}
+
 func (r *PostgresDocumentRepository) Create(ctx context.Context, doc *domain.Document) error {
 	var projID *string
 	if doc.ProjectID != "" {
@@ -231,9 +267,9 @@ func (r *PostgresDocumentRepository) Update(ctx context.Context, doc *domain.Doc
 	// Update document
 	_, err = r.db.Exec(ctx, `
 		UPDATE documents
-		SET title = $2, slug = $3, content = $4, project_id = $5, parent_id = $6, updated_at = $7, updated_by = $8
+		SET title = $2, slug = $3, content = $4, project_id = $5, team_id = $6, parent_id = $7, updated_at = $8, updated_by = $9
 		WHERE id = $1
-	`, doc.ID, doc.Title, slugPtr, doc.Content, projID, doc.ParentID, doc.UpdatedAt, doc.UpdatedByID)
+	`, doc.ID, doc.Title, slugPtr, doc.Content, projID, doc.TeamID, doc.ParentID, doc.UpdatedAt, doc.UpdatedByID)
 
 	if err != nil {
 		return err
