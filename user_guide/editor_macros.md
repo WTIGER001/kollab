@@ -202,6 +202,18 @@ Click the **Gear icon** in the top-right corner of the macro box in edit mode to
 * **Instant Navigation**: Click on any page title in the directory lists to navigate directly to it.
 * **Delete Macro**: In edit mode, click the **Trash icon** in the top-right corner of the macro box.
 
+## 🧾 Page Properties
+
+Use **Page Properties** to keep a small, consistent metadata table with a page.
+
+1. Open the macro picker and select **Page Properties**.
+2. Enter a property name and value, such as `Owner` and `Platform team`.
+3. Select **Add property** for another row. Use its trash icon to remove a row.
+
+These properties stay with the collaborative page content. Use the same names across related pages—for example, always use `Owner` rather than mixing `Owner` and `DRI`—so they are ready for collection reports as that capability is introduced.
+
+To see those values across the current team or project, insert **Properties Report**. Leave its property-name setting empty to list all indexed properties, or enter a name such as `Owner` to narrow the report.
+
 ---
 
 ## 🎨 Hero / Banner Component

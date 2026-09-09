@@ -24,20 +24,30 @@ type InMemoryFavorite struct {
 	CreatedAt  time.Time
 }
 
+type InMemoryDocumentWatch struct {
+	UserID     string
+	DocumentID string
+	CreatedAt  time.Time
+}
+
 type InMemoryDocumentRepository struct {
-	mu        sync.RWMutex
-	documents map[string]*domain.Document
-	versions  map[string]*domain.DocumentVersion
-	views     []InMemoryView
-	favorites []InMemoryFavorite
+	mu         sync.RWMutex
+	documents  map[string]*domain.Document
+	versions   map[string]*domain.DocumentVersion
+	properties map[string][]domain.DocumentProperty
+	views      []InMemoryView
+	favorites  []InMemoryFavorite
+	watches    []InMemoryDocumentWatch
 }
 
 func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
 	repo := &InMemoryDocumentRepository{
-		documents: make(map[string]*domain.Document),
-		versions:  make(map[string]*domain.DocumentVersion),
-		views:     make([]InMemoryView, 0),
-		favorites: make([]InMemoryFavorite, 0),
+		documents:  make(map[string]*domain.Document),
+		versions:   make(map[string]*domain.DocumentVersion),
+		properties: make(map[string][]domain.DocumentProperty),
+		views:      make([]InMemoryView, 0),
+		favorites:  make([]InMemoryFavorite, 0),
+		watches:    make([]InMemoryDocumentWatch, 0),
 	}
 	repo.seed()
 	return repo
@@ -604,6 +614,45 @@ func (r *InMemoryDocumentRepository) IsFavorite(ctx context.Context, userID stri
 	return false, nil
 }
 
+func (r *InMemoryDocumentRepository) AddWatch(ctx context.Context, userID string, documentID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, watch := range r.watches {
+		if watch.UserID == userID && watch.DocumentID == documentID {
+			return nil
+		}
+	}
+	r.watches = append(r.watches, InMemoryDocumentWatch{UserID: userID, DocumentID: documentID, CreatedAt: time.Now()})
+	return nil
+}
+
+func (r *InMemoryDocumentRepository) RemoveWatch(ctx context.Context, userID string, documentID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	remaining := r.watches[:0]
+	for _, watch := range r.watches {
+		if watch.UserID != userID || watch.DocumentID != documentID {
+			remaining = append(remaining, watch)
+		}
+	}
+	r.watches = remaining
+	return nil
+}
+
+func (r *InMemoryDocumentRepository) IsWatching(ctx context.Context, userID string, documentID string) (bool, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, watch := range r.watches {
+		if watch.UserID == userID && watch.DocumentID == documentID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (r *InMemoryDocumentRepository) GetFavorites(ctx context.Context, userID string) ([]*domain.Favorite, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -744,4 +793,38 @@ func (r *InMemoryDocumentRepository) GetDocumentsWithMention(ctx context.Context
 	})
 
 	return list, nil
+}
+
+func (r *InMemoryDocumentRepository) ReplaceProperties(ctx context.Context, documentID string, properties []domain.DocumentProperty) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.documents[documentID]; !exists {
+		return errors.New("document not found")
+	}
+	copyOfProperties := make([]domain.DocumentProperty, len(properties))
+	copy(copyOfProperties, properties)
+	r.properties[documentID] = copyOfProperties
+	return nil
+}
+
+func (r *InMemoryDocumentRepository) ListProperties(ctx context.Context, projectID string, teamID string, key string) ([]domain.DocumentProperty, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	properties := []domain.DocumentProperty{}
+	for documentID, values := range r.properties {
+		document, exists := r.documents[documentID]
+		if !exists || document.DeletedAt != nil || (projectID != "" && document.ProjectID != projectID) || (teamID != "" && document.TeamID != teamID) {
+			continue
+		}
+		for _, property := range values {
+			if key != "" && property.Key != key {
+				continue
+			}
+			property.Title = document.Title
+			property.ProjectID = document.ProjectID
+			property.TeamID = document.TeamID
+			properties = append(properties, property)
+		}
+	}
+	return properties, nil
 }

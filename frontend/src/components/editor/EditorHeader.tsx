@@ -36,6 +36,7 @@ import {
   Users,
   MessageSquare,
   MessageSquareOff,
+  Bell,
 } from "lucide-react";
 import { UserAvatar } from "../UserAvatar";
 
@@ -47,6 +48,8 @@ export interface EditorHeaderProps {
   previewVersion: any;
   isFavorite: boolean;
   setIsFavorite: (val: boolean) => void;
+  isWatching: boolean;
+  setIsWatching: (val: boolean) => void;
   selectedProjectName: string;
   selectedTeamName: string;
   breadcrumbsList: any[];
@@ -74,6 +77,8 @@ export interface EditorHeaderProps {
   setSharingLinksDialogOpen: (val: boolean) => void;
   addFavorite: (id: string) => Promise<any>;
   removeFavorite: (id: string) => Promise<any>;
+  addWatch: (id: string) => Promise<any>;
+  removeWatch: (id: string) => Promise<any>;
 }
 
 export const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -84,6 +89,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   previewVersion,
   isFavorite,
   setIsFavorite,
+  isWatching,
+  setIsWatching,
   selectedProjectName,
   selectedTeamName,
   breadcrumbsList,
@@ -111,6 +118,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   setSharingLinksDialogOpen,
   addFavorite,
   removeFavorite,
+  addWatch,
+  removeWatch,
 }) => {
   return (
     <>
@@ -419,6 +428,37 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 }}
               >
                 <Star size={14} fill={isFavorite ? "#fbbf24" : "none"} />
+              </IconButton>
+            </Tooltip>
+
+            {/* Page watch */}
+            <Tooltip title={isWatching ? "Stop watching this page" : "Watch this page"} arrow>
+              <IconButton
+                size="small"
+                aria-label={isWatching ? "Stop watching this page" : "Watch this page"}
+                onClick={async () => {
+                  if (!activeDocId) return;
+                  try {
+                    if (isWatching) {
+                      await removeWatch(activeDocId);
+                      setIsWatching(false);
+                    } else {
+                      await addWatch(activeDocId);
+                      setIsWatching(true);
+                    }
+                  } catch (err) {
+                    console.error("Failed to toggle page watch:", err);
+                  }
+                }}
+                sx={{
+                  color: isWatching ? "var(--primary-color)" : "var(--text-secondary)",
+                  "&:hover": {
+                    color: "var(--primary-color)",
+                    backgroundColor: "var(--glass-bg)",
+                  },
+                }}
+              >
+                <Bell size={14} fill={isWatching ? "currentColor" : "none"} />
               </IconButton>
             </Tooltip>
 

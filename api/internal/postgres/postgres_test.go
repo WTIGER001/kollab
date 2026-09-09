@@ -33,7 +33,7 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	if err != nil {
 		t.Fatalf("failed to start postgres testcontainer: %v", err)
 	}
-	
+
 	t.Cleanup(func() {
 		if err := pgContainer.Terminate(ctx); err != nil {
 			t.Errorf("failed to terminate container: %v", err)
@@ -65,6 +65,26 @@ func setupTestDB(t *testing.T) (*pgxpool.Pool, context.Context) {
 	return db, ctx
 }
 
+func TestMigrateRecordsBaselineAndIsIdempotent(t *testing.T) {
+	db, ctx := setupTestDB(t)
+
+	if err := Migrate(ctx, db); err != nil {
+		t.Fatalf("second migration run failed: %v", err)
+	}
+
+	var applied int
+	if err := db.QueryRow(ctx, "SELECT COUNT(*) FROM schema_migrations").Scan(&applied); err != nil {
+		t.Fatalf("read migration ledger: %v", err)
+	}
+	migrations, err := registeredMigrations()
+	if err != nil {
+		t.Fatalf("load registered migrations: %v", err)
+	}
+	if applied != len(migrations) {
+		t.Fatalf("expected %d migration records, got %d", len(migrations), applied)
+	}
+}
+
 func TestPostgresUserRepository(t *testing.T) {
 	db, ctx := setupTestDB(t)
 	repo := NewPostgresUserRepository(db)
@@ -80,8 +100,8 @@ func TestPostgresUserRepository(t *testing.T) {
 
 	// Test Create
 	newUser := &domain.User{
-		ID: "new_user",
-		Username: "newuser",
+		ID:           "new_user",
+		Username:     "newuser",
 		PasswordHash: "hash",
 	}
 	if err := repo.Create(ctx, newUser); err != nil {
@@ -125,6 +145,21 @@ func TestPostgresDocumentRepository(t *testing.T) {
 	db, ctx := setupTestDB(t)
 	repo := NewPostgresDocumentRepository(db)
 
+	if err := repo.AddWatch(ctx, "sh4ag0cxowti", "doc_welcome_eng"); err != nil {
+		t.Fatalf("add document watch: %v", err)
+	}
+	isWatching, err := repo.IsWatching(ctx, "sh4ag0cxowti", "doc_welcome_eng")
+	if err != nil || !isWatching {
+		t.Fatalf("expected persisted watch, got %t (%v)", isWatching, err)
+	}
+	if err := repo.RemoveWatch(ctx, "sh4ag0cxowti", "doc_welcome_eng"); err != nil {
+		t.Fatalf("remove document watch: %v", err)
+	}
+	isWatching, err = repo.IsWatching(ctx, "sh4ag0cxowti", "doc_welcome_eng")
+	if err != nil || isWatching {
+		t.Fatalf("expected removed watch, got %t (%v)", isWatching, err)
+	}
+
 	// Get seed documents by project
 	docs, err := repo.GetByProjectID(ctx, "proj_wiki")
 	if err != nil {
@@ -136,16 +171,16 @@ func TestPostgresDocumentRepository(t *testing.T) {
 
 	// Create document
 	doc := &domain.Document{
-		ID: "new_doc",
-		Title: "New Doc",
-		Slug: "new-doc",
-		ProjectID: "proj_wiki",
-		TeamID: "team_eng",
+		ID:          "new_doc",
+		Title:       "New Doc",
+		Slug:        "new-doc",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
 		CreatedByID: "sh4ag0cxowti",
 		UpdatedByID: "sh4ag0cxowti",
-		Content: "{}",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	if err := repo.Create(ctx, doc); err != nil {
 		t.Fatalf("failed to create doc: %v", err)

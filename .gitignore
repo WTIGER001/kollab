@@ -1,6 +1,7 @@
 # Logs
 logs
 *.log
+coverage.out
 npm-debug.log*
 
 # Dependencies

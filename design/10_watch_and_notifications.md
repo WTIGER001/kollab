@@ -7,41 +7,37 @@ This document specifies the architecture for Kollab's Watch system, allowing use
 ## 1. Subscription (Watch) Data Model
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟡 Page-level subscriptions are implemented. Project/team inheritance, automatic subscriptions, and notification delivery remain planned.
 
-A user can "watch" a specific Document, an entire Project, or an entire Team space. When a parent container (like a Project) is watched, the subscription implicitly cascades to all child documents.
+A user can currently watch a specific Document. Project and Team subscriptions will be added as a compatible extension; until then, subscriptions do not inherit from a parent container.
 
 ### 1.1 Database Schema
 ```sql
-CREATE TYPE watch_entity_type AS ENUM ('document', 'project', 'team');
-
-CREATE TABLE IF NOT EXISTS watches (
+CREATE TABLE IF NOT EXISTS document_watches (
     user_id VARCHAR(255) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    entity_id VARCHAR(255) NOT NULL,
-    entity_type watch_entity_type NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (user_id, entity_id, entity_type)
+    document_id VARCHAR(255) NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, document_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_watches_entity ON watches(entity_id, entity_type);
+CREATE INDEX IF NOT EXISTS idx_document_watches_document ON document_watches(document_id);
 ```
+
+Migration `0005_document_watches.sql` installs the table. `DocumentRepository` exposes idempotent `AddWatch`, `RemoveWatch`, and `IsWatching` methods in both the PostgreSQL and in-memory adapters. The protected routes are `POST`, `DELETE`, and `GET /api/watches/{documentId}/status`; they use the same document read check as favorites.
 
 ### 1.2 Frontend UI Integration
 - **Watch Toggle Button**: A top-right header action button (an "Eye" icon or "Bell" icon).
-- **State States**: 
-  - *Watching*: The user explicitly clicked watch on this specific page.
-  - *Inherited Watch*: The user is watching the parent space. The icon shows as active but indicates it's inherited.
-  - *Not Watching*: No subscription.
-- **Auto-Watch Rules**: 
-  - Users are automatically subscribed to pages they create.
-  - Users are automatically subscribed to pages they leave a comment on.
+- **Current state states**:
+  - *Watching*: The user explicitly clicked the Bell icon for this page.
+  - *Not Watching*: No page-specific subscription exists.
+- **Planned**: inherited states and automatic subscriptions for page creators/commenters.
 
 ---
 
 ## 2. Event Triggering & Routing
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** ⚪ Planned. The subscription API intentionally does not claim to deliver notifications until an inbox and event dispatcher exist.
 
 When a mutative action occurs, the backend fires an asynchronous event to an internal Pub/Sub broker or Go channel.
 

@@ -2,6 +2,8 @@
 
 This document specifies the architecture, schemas, and rendering behaviors for Kollab's native rich content extensions, advanced macro plugins, and third-party integrations (like GitLab).
 
+For a living, prioritised catalog of future formatting, engineering, typed-data, and enterprise-integration candidates, see [Macro Roadmap](26_macro_roadmap.md). This document remains the implementation-level source of truth for macros that are accepted into delivery.
+
 ---
 
 ## 1. Native Rich Content Macros
@@ -121,6 +123,8 @@ A highly advanced macro designed for plotting and visualizing geospatial data.
 Equivalents to Confluence's "Page Properties" and "Page Properties Report" macros, designed to extract and aggregate metadata across multiple spaces.
 - **Page Properties Macro (`pageProperties`)**: A block macro where authors define a hidden or visible table of key-value pairs (e.g., `Owner: Jane`, `Status: Pending`). The backend parses this node upon saving and indexes the key-value pairs in a dedicated `document_properties` PostgreSQL table.
 - **Properties Rollup Macro (`pagePropertiesRollup`)**: A reporting macro that queries the `document_properties` table (along with tags and ILIKE search patterns) to generate a dynamic, sortable dashboard table aggregating the properties from multiple pages across the workspace.
+
+Current implementation note: `macroBlock` supports `page-properties`, whose `config.properties` is an ordered array of `{ key, value, type }` entries. On document create and update, `DocumentService` traverses the Tiptap AST and replaces the document's rows in `document_properties` (migration `0004_document_properties.sql`). `GET /api/documents/properties?projectId=…&key=…` returns the indexed rows for a selected space, and the `page-properties-report` macro renders that query as a page collection. The macro JSON remains the source of truth; the index is rebuilt on each successful save.
 
 ### 2.8 Rich Layout & Storytelling Macros
 A suite of interactive layout tools designed to transform standard documentation into engaging, landing-page quality content.

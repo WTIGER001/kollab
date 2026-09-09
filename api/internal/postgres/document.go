@@ -99,7 +99,7 @@ func (r *PostgresDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug
 		LEFT JOIN users u2 ON d.updated_by = u2.id
 		WHERE d.id = $1 OR d.slug = $1
 	`, idOrSlug)
-	
+
 	var doc domain.Document
 	err := row.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
 	if err == nil {
@@ -701,6 +701,25 @@ func (r *PostgresDocumentRepository) IsFavorite(ctx context.Context, userID stri
 	return exists, nil
 }
 
+func (r *PostgresDocumentRepository) AddWatch(ctx context.Context, userID string, documentID string) error {
+	_, err := r.db.Exec(ctx,
+		"INSERT INTO document_watches (user_id, document_id, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (user_id, document_id) DO NOTHING",
+		userID, documentID,
+	)
+	return err
+}
+
+func (r *PostgresDocumentRepository) RemoveWatch(ctx context.Context, userID string, documentID string) error {
+	_, err := r.db.Exec(ctx, "DELETE FROM document_watches WHERE user_id = $1 AND document_id = $2", userID, documentID)
+	return err
+}
+
+func (r *PostgresDocumentRepository) IsWatching(ctx context.Context, userID string, documentID string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM document_watches WHERE user_id = $1 AND document_id = $2)", userID, documentID).Scan(&exists)
+	return exists, err
+}
+
 func (r *PostgresDocumentRepository) GetFavorites(ctx context.Context, userID string) ([]*domain.Favorite, error) {
 	query := `
 		SELECT 
@@ -886,4 +905,51 @@ func (r *PostgresDocumentRepository) GetDocumentsWithMention(ctx context.Context
 		return nil, err
 	}
 	return list, nil
+}
+
+func (r *PostgresDocumentRepository) ReplaceProperties(ctx context.Context, documentID string, properties []domain.DocumentProperty) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, "DELETE FROM document_properties WHERE document_id = $1", documentID); err != nil {
+		return err
+	}
+	for _, property := range properties {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO document_properties (document_id, property_key, property_value, value_type, updated_at)
+			VALUES ($1, $2, $3, $4, $5)
+		`, documentID, property.Key, property.Value, property.ValueType, property.UpdatedAt); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+func (r *PostgresDocumentRepository) ListProperties(ctx context.Context, projectID string, teamID string, key string) ([]domain.DocumentProperty, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT p.document_id, d.title, COALESCE(d.project_id, ''), d.team_id,
+		       p.property_key, p.property_value, p.value_type, p.updated_at
+		FROM document_properties p
+		JOIN documents d ON d.id = p.document_id
+		WHERE d.deleted_at IS NULL
+		  AND ($1 = '' OR d.project_id = $1)
+		  AND ($2 = '' OR d.team_id = $2)
+		  AND ($3 = '' OR p.property_key = $3)
+		ORDER BY p.property_key, d.title
+	`, projectID, teamID, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	properties := []domain.DocumentProperty{}
+	for rows.Next() {
+		var property domain.DocumentProperty
+		if err := rows.Scan(&property.DocumentID, &property.Title, &property.ProjectID, &property.TeamID, &property.Key, &property.Value, &property.ValueType, &property.UpdatedAt); err != nil {
+			return nil, err
+		}
+		properties = append(properties, property)
+	}
+	return properties, rows.Err()
 }

@@ -50,6 +50,9 @@ import {
   addFavorite,
   removeFavorite,
   isFavorite as checkIsFavorite,
+  addWatch,
+  removeWatch,
+  isWatching as checkIsWatching,
   fetchAttachments,
   fetchTeamUsers,
   getTemplates,
@@ -429,6 +432,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   }, [selectedTeamId]);
   const [auditOpen, setAuditOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
   const [aiPromptOpen, setAiPromptOpen] = useState(false);
   const [jsonDialogOpen, setJsonDialogOpen] = useState(false);
   const [isTitleFocused, setIsTitleFocused] = useState(false);
@@ -454,6 +458,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   useEffect(() => {
     loadAttachments();
+  }, [activeDocId]);
+
+  // Fetch the page-specific watch state independently of favorites.
+  useEffect(() => {
+    if (!activeDocId) {
+      setIsWatching(false);
+      return;
+    }
+
+    checkIsWatching(activeDocId)
+      .then(setIsWatching)
+      .catch((err) => {
+        console.error("Failed to check watch status:", err);
+        setIsWatching(false);
+      });
   }, [activeDocId]);
 
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
@@ -1345,6 +1364,33 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .run();
       },
       category: "integrations",
+    },
+    {
+      id: "page-properties",
+      label: "Page Properties",
+      description: "Add typed, reusable metadata to this page",
+      icon: <List size={16} style={{ color: "var(--accent-color)" }} />,
+      action: (ed) => {
+        ed.chain()
+          .focus()
+          .insertContent({
+            type: "macroBlock",
+            attrs: {
+              type: "page-properties",
+              config: { properties: [{ key: "Owner", value: "", type: "text" }] },
+            },
+          })
+          .run();
+      },
+      category: "layout",
+    },
+    {
+      id: "page-properties-report",
+      label: "Properties Report",
+      description: "List indexed page properties in this space",
+      icon: <List size={16} style={{ color: "var(--accent-color)" }} />,
+      action: (ed) => ed.chain().focus().insertContent({ type: "macroBlock", attrs: { type: "page-properties-report", config: { key: "" } } }).run(),
+      category: "layout",
     },
     {
       id: "children-display",
@@ -2474,6 +2520,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           previewVersion={previewVersion}
           isFavorite={isFavorite}
           setIsFavorite={setIsFavorite}
+          isWatching={isWatching}
+          setIsWatching={setIsWatching}
           selectedProjectName={selectedProjectName || ""}
           selectedTeamName={selectedTeamName || ""}
           breadcrumbsList={breadcrumbsList}
@@ -2501,6 +2549,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           setPageSettingsDialogOpen={setPageSettingsDialogOpen}
           addFavorite={addFavorite}
           removeFavorite={removeFavorite}
+          addWatch={addWatch}
+          removeWatch={removeWatch}
         />
 
         {/* Formatting Quick Toolbar */}

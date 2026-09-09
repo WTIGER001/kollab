@@ -41,6 +41,10 @@ func NewDocumentHandler(docService domain.DocumentService, hub *ws.Hub, db *pgxp
 	}
 }
 
+// Service exposes the application service for handlers composed by the router.
+// It avoids duplicating document authorization, snapshots, and audit behavior.
+func (h *DocumentHandler) Service() domain.DocumentService { return h.docService }
+
 func (h *DocumentHandler) List(w http.ResponseWriter, r *http.Request) {
 	projectId := r.URL.Query().Get("projectId")
 	teamId := r.URL.Query().Get("teamId")
@@ -66,6 +70,22 @@ func (h *DocumentHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(docs)
+}
+
+func (h *DocumentHandler) ListProperties(w http.ResponseWriter, r *http.Request) {
+	projectID := r.URL.Query().Get("projectId")
+	teamID := r.URL.Query().Get("teamId")
+	if projectID == "" && teamID == "" {
+		http.Error(w, "Bad Request: projectId or teamId query parameter is required", http.StatusBadRequest)
+		return
+	}
+	properties, err := h.docService.ListDocumentProperties(r.Context(), projectID, teamID, r.URL.Query().Get("key"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(properties)
 }
 
 func (h *DocumentHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -587,6 +607,64 @@ func (h *DocumentHandler) IsFavorite(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]bool{"isFavorite": isFav})
+}
+
+func (h *DocumentHandler) AddWatch(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	documentID := chi.URLParam(r, "documentId")
+	if documentID == "" {
+		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.docService.AddWatch(r.Context(), userID, documentID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func (h *DocumentHandler) RemoveWatch(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	documentID := chi.URLParam(r, "documentId")
+	if documentID == "" {
+		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.docService.RemoveWatch(r.Context(), userID, documentID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+func (h *DocumentHandler) IsWatching(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	documentID := chi.URLParam(r, "documentId")
+	if documentID == "" {
+		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
+		return
+	}
+	isWatching, err := h.docService.IsWatching(r.Context(), userID, documentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]bool{"isWatching": isWatching})
 }
 
 func (h *DocumentHandler) GetTasks(w http.ResponseWriter, r *http.Request) {

@@ -20,7 +20,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 	r := chi.NewRouter()
 
 	confluenceImporter := migration.NewConfluenceImporter()
-	migrationH := handler.NewMigrationHandler(confluenceImporter)
+	migrationH := handler.NewMigrationHandler(confluenceImporter, docH.Service())
 
 	// Standard middleware
 	r.Use(mid.RequestLogger)
@@ -76,6 +76,12 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 			r.Post("/", docH.AddFavorite)
 			r.Delete("/", docH.RemoveFavorite)
 			r.Get("/status", docH.IsFavorite)
+		})
+		r.Route("/watches/{documentId}", func(r chi.Router) {
+			r.Use(readCheck)
+			r.Post("/", docH.AddWatch)
+			r.Delete("/", docH.RemoveWatch)
+			r.Get("/status", docH.IsWatching)
 		})
 
 		r.Get("/teams", teamH.ListTeams)
@@ -136,7 +142,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Route("/migration/confluence", func(r chi.Router) {
 			r.Post("/import", migrationH.ImportConfluenceSpace)
-			r.Get("/preview", migrationH.PreviewConfluenceSpace)
+			r.Post("/preview", migrationH.PreviewConfluenceSpace)
 		})
 
 		r.Route("/integrations/connections", func(r chi.Router) {
@@ -152,6 +158,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Route("/documents", func(r chi.Router) {
 			r.Get("/", docH.List)
+			r.Get("/properties", docH.ListProperties)
 			r.Get("/recent", docH.ListRecent)
 			r.Get("/trash", docH.ListTrash)
 			r.Get("/check-slug", docH.CheckSlug)

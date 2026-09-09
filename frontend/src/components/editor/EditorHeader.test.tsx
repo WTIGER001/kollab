@@ -5,6 +5,7 @@ import { EditorHeader } from './EditorHeader';
 
 describe('EditorHeader', () => {
   const mockSetIsFavorite = vi.fn();
+  const mockSetIsWatching = vi.fn();
   const mockSetIsEditing = vi.fn();
   const mockSetShowComments = vi.fn();
   const mockHandleToggleHistory = vi.fn();
@@ -22,6 +23,8 @@ describe('EditorHeader', () => {
   const mockSetSharingLinksDialogOpen = vi.fn();
   const mockAddFavorite = vi.fn().mockResolvedValue({});
   const mockRemoveFavorite = vi.fn().mockResolvedValue({});
+  const mockAddWatch = vi.fn().mockResolvedValue({});
+  const mockRemoveWatch = vi.fn().mockResolvedValue({});
 
   const defaultProps = {
     editor: {}, // truthy to render
@@ -31,6 +34,8 @@ describe('EditorHeader', () => {
     previewVersion: null,
     isFavorite: false,
     setIsFavorite: mockSetIsFavorite,
+    isWatching: false,
+    setIsWatching: mockSetIsWatching,
     selectedProjectName: 'Frontend',
     selectedTeamName: 'Engineering',
     breadcrumbsList: [{ id: 'b1', title: 'Home' }, { id: 'b2', title: 'Current Page' }],
@@ -58,6 +63,8 @@ describe('EditorHeader', () => {
     setSharingLinksDialogOpen: mockSetSharingLinksDialogOpen,
     addFavorite: mockAddFavorite,
     removeFavorite: mockRemoveFavorite,
+    addWatch: mockAddWatch,
+    removeWatch: mockRemoveWatch,
   };
 
   beforeEach(() => {

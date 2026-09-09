@@ -114,6 +114,10 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug
 	if err := s.repo.Create(ctx, doc); err != nil {
 		return nil, err
 	}
+	if err := s.repo.ReplaceProperties(ctx, doc.ID, extractDocumentProperties(doc.ID, doc.Content)); err != nil {
+		_ = s.repo.DeletePermanently(ctx, doc.ID)
+		return nil, fmt.Errorf("index document properties: %w", err)
+	}
 	if userID != "" && permissions.DocumentPermissions != nil {
 		if err := permissions.DocumentPermissions.GrantRole(ctx, "builtin.wiki.document.owner", goperm.PrincipalUser, userID, doc.ID); err != nil {
 			_ = s.repo.DeletePermanently(ctx, doc.ID) // rollback
@@ -256,6 +260,9 @@ func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title s
 
 	if err := s.repo.Update(ctx, doc); err != nil {
 		return nil, err
+	}
+	if err := s.repo.ReplaceProperties(ctx, doc.ID, extractDocumentProperties(doc.ID, doc.Content)); err != nil {
+		return nil, fmt.Errorf("index document properties: %w", err)
 	}
 
 	if s.systemService != nil {
@@ -714,6 +721,27 @@ func (s *DocumentService) IsFavorite(ctx context.Context, userID string, documen
 	return s.repo.IsFavorite(ctx, userID, documentID)
 }
 
+func (s *DocumentService) AddWatch(ctx context.Context, userID string, documentID string) error {
+	if userID == "" || documentID == "" {
+		return errors.New("userID and documentID are required")
+	}
+	return s.repo.AddWatch(ctx, userID, documentID)
+}
+
+func (s *DocumentService) RemoveWatch(ctx context.Context, userID string, documentID string) error {
+	if userID == "" || documentID == "" {
+		return errors.New("userID and documentID are required")
+	}
+	return s.repo.RemoveWatch(ctx, userID, documentID)
+}
+
+func (s *DocumentService) IsWatching(ctx context.Context, userID string, documentID string) (bool, error) {
+	if userID == "" || documentID == "" {
+		return false, errors.New("userID and documentID are required")
+	}
+	return s.repo.IsWatching(ctx, userID, documentID)
+}
+
 func (s *DocumentService) ListRecentDocuments(ctx context.Context, userID string, filterType string) ([]*domain.Document, error) {
 	if userID == "" {
 		return nil, errors.New("userID is required")
@@ -828,4 +856,62 @@ func (s *DocumentService) GetTasksByAssignee(ctx context.Context, username strin
 
 func (s *DocumentService) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
 	return s.repo.GetDocumentsWithMention(ctx, username)
+}
+
+func (s *DocumentService) ListDocumentProperties(ctx context.Context, projectID string, teamID string, key string) ([]domain.DocumentProperty, error) {
+	if projectID == "" && teamID == "" {
+		return nil, errors.New("projectId or teamId is required")
+	}
+	return s.repo.ListProperties(ctx, projectID, teamID, strings.TrimSpace(key))
+}
+
+func extractDocumentProperties(documentID string, content string) []domain.DocumentProperty {
+	var root map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &root); err != nil {
+		return []domain.DocumentProperty{}
+	}
+	properties := make(map[string]domain.DocumentProperty)
+	var visit func(map[string]interface{})
+	visit = func(node map[string]interface{}) {
+		if nodeType, _ := node["type"].(string); nodeType == "macroBlock" {
+			if attributes, ok := node["attrs"].(map[string]interface{}); ok {
+				if macroType, _ := attributes["type"].(string); macroType == "page-properties" {
+					if config, ok := attributes["config"].(map[string]interface{}); ok {
+						if values, ok := config["properties"].([]interface{}); ok {
+							for _, rawProperty := range values {
+								property, ok := rawProperty.(map[string]interface{})
+								if !ok {
+									continue
+								}
+								key, _ := property["key"].(string)
+								key = strings.TrimSpace(key)
+								if key == "" {
+									continue
+								}
+								value, _ := property["value"].(string)
+								valueType, _ := property["type"].(string)
+								if valueType == "" {
+									valueType = "text"
+								}
+								properties[key] = domain.DocumentProperty{DocumentID: documentID, Key: key, Value: strings.TrimSpace(value), ValueType: valueType, UpdatedAt: time.Now()}
+							}
+						}
+					}
+				}
+			}
+		}
+		if children, ok := node["content"].([]interface{}); ok {
+			for _, child := range children {
+				if childNode, ok := child.(map[string]interface{}); ok {
+					visit(childNode)
+				}
+			}
+		}
+	}
+	visit(root)
+	result := make([]domain.DocumentProperty, 0, len(properties))
+	for _, property := range properties {
+		result = append(result, property)
+	}
+	return result
 }

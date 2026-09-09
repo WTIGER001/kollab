@@ -32,6 +32,19 @@ type DocumentVersion struct {
 	CreatedAt     time.Time `json:"createdAt"`
 }
 
+// DocumentProperty is a typed, indexed value projected from a page-properties
+// macro. The source of truth remains the collaborative document JSON.
+type DocumentProperty struct {
+	DocumentID string    `json:"documentId"`
+	Title      string    `json:"title,omitempty"`
+	ProjectID  string    `json:"projectId,omitempty"`
+	TeamID     string    `json:"teamId,omitempty"`
+	Key        string    `json:"key"`
+	Value      string    `json:"value"`
+	ValueType  string    `json:"valueType"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
 type Favorite struct {
 	UserID         string    `json:"userId"`
 	DocumentID     string    `json:"documentId"`
@@ -42,6 +55,15 @@ type Favorite struct {
 	ProjectID      string    `json:"projectId"`
 	LastAccessedAt time.Time `json:"lastAccessedAt"`
 	CreatedAt      time.Time `json:"createdAt"`
+}
+
+// DocumentWatch records an explicit subscription to changes on one page.
+// Container-level inheritance and notification delivery are intentionally
+// separate concerns so a page subscription remains cheap to query.
+type DocumentWatch struct {
+	UserID     string    `json:"userId"`
+	DocumentID string    `json:"documentId"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 type DocumentRepository interface {
@@ -81,6 +103,15 @@ type DocumentRepository interface {
 	GetFavorites(ctx context.Context, userID string) ([]*Favorite, error)
 	IsFavorite(ctx context.Context, userID string, documentID string) (bool, error)
 	GetDocumentsWithMention(ctx context.Context, username string) ([]*Document, error)
+
+	// Watches
+	AddWatch(ctx context.Context, userID string, documentID string) error
+	RemoveWatch(ctx context.Context, userID string, documentID string) error
+	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+
+	// Structured knowledge projection
+	ReplaceProperties(ctx context.Context, documentID string, properties []DocumentProperty) error
+	ListProperties(ctx context.Context, projectID string, teamID string, key string) ([]DocumentProperty, error)
 }
 
 type DocumentService interface {
@@ -120,6 +151,10 @@ type DocumentService interface {
 	IsFavorite(ctx context.Context, userID string, documentID string) (bool, error)
 	GetTasksByAssignee(ctx context.Context, username string) ([]*Task, error)
 	GetDocumentsWithMention(ctx context.Context, username string) ([]*Document, error)
+	AddWatch(ctx context.Context, userID string, documentID string) error
+	RemoveWatch(ctx context.Context, userID string, documentID string) error
+	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+	ListDocumentProperties(ctx context.Context, projectID string, teamID string, key string) ([]DocumentProperty, error)
 }
 
 type AnalyticsDataPoint struct {

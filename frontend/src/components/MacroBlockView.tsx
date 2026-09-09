@@ -56,8 +56,8 @@ import {
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken } from "../services/api";
-import type { Attachment, Tag as TagType } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocumentProperties } from "../services/api";
+import type { Attachment, Tag as TagType, DocumentProperty } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
 import { Excalidraw, exportToSvg } from "@excalidraw/excalidraw";
@@ -210,6 +210,17 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const openSettings = Boolean(anchorEl);
   const [uniqueId] = useState(() => `macro-uniq-${Math.random().toString(36).substring(2, 9)}`);
+  const [propertyReport, setPropertyReport] = useState<DocumentProperty[]>([]);
+  const [propertyReportError, setPropertyReportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (type !== "page-properties-report" || (!context?.selectedProjectId && !context?.selectedTeamId)) return;
+    let cancelled = false;
+    fetchDocumentProperties(context.selectedProjectId, context.selectedTeamId, config.key || "")
+      .then((properties) => { if (!cancelled) { setPropertyReport(properties); setPropertyReportError(null); } })
+      .catch(() => { if (!cancelled) setPropertyReportError("Properties could not be loaded."); });
+    return () => { cancelled = true; };
+  }, [type, config.key, context?.selectedProjectId, context?.selectedTeamId]);
 
   // Draw.io States & Effects
   const [isDrawioEditing, setIsDrawioEditing] = useState(false);
@@ -744,6 +755,47 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             </Box>
           )}
 
+          {type === "page-properties" && (() => {
+            const properties = Array.isArray(config.properties) ? config.properties : [];
+            const updateProperty = (index: number, field: string, value: string) => {
+              updateConfig("properties", properties.map((property: any, propertyIndex: number) => propertyIndex === index ? { ...property, [field]: value } : property));
+            };
+            return (
+              <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
+                <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Page properties</Typography>
+                  {isEditable && <Button size="small" onClick={() => updateConfig("properties", [...properties, { key: "", value: "", type: "text" }])} sx={{ color: "var(--primary-color)", minWidth: 0 }}>Add property</Button>}
+                </Box>
+                {properties.length === 0 ? (
+                  <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No properties have been added.</Typography>
+                ) : (
+                  <Table size="small" aria-label="Page properties">
+                    <TableBody>
+                      {properties.map((property: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell sx={{ width: "35%", borderColor: "var(--border-color)", fontWeight: 600, color: "var(--text-primary)" }}>
+                            {isEditable ? <TextField value={property.key || ""} onChange={(event) => updateProperty(index, "key", event.target.value)} variant="standard" placeholder="Property" fullWidth inputProps={{ "aria-label": `Property name ${index + 1}` }} /> : property.key || "Untitled property"}
+                          </TableCell>
+                          <TableCell sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}>
+                            {isEditable ? <TextField value={property.value || ""} onChange={(event) => updateProperty(index, "value", event.target.value)} variant="standard" placeholder="Value" fullWidth inputProps={{ "aria-label": `Property value ${index + 1}` }} /> : property.value || "—"}
+                          </TableCell>
+                          {isEditable && <TableCell sx={{ width: 40, borderColor: "var(--border-color)" }}><IconButton aria-label={`Remove property ${index + 1}`} size="small" onClick={() => updateConfig("properties", properties.filter((_: unknown, propertyIndex: number) => propertyIndex !== index))}><Trash2 size={14} /></IconButton></TableCell>}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </Paper>
+            );
+          })()}
+
+          {type === "page-properties-report" && (
+            <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
+              <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)" }}><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Properties report{config.key ? `: ${config.key}` : ""}</Typography></Box>
+              {propertyReportError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{propertyReportError}</Typography> : propertyReport.length === 0 ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No matching page properties yet.</Typography> : <Table size="small" aria-label="Page properties report"><TableHead><TableRow><TableCell>Page</TableCell><TableCell>Property</TableCell><TableCell>Value</TableCell></TableRow></TableHead><TableBody>{propertyReport.map((property) => <TableRow key={`${property.documentId}-${property.key}`}><TableCell><Button variant="text" onClick={() => context?.onSelectDoc(property.documentId)} sx={{ textTransform: "none", color: "var(--primary-color)" }}>{property.title}</Button></TableCell><TableCell>{property.key}</TableCell><TableCell>{property.value || "—"}</TableCell></TableRow>)}</TableBody></Table>}
+            </Paper>
+          )}
+
           {type === "markdown-paste" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               {isEditable && (!config.isBlockMode || !config.markdown) ? (
@@ -1244,7 +1296,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           })()}
 
           {type === "excerpt-include" && (() => {
-            const context = useContext(DocumentContext);
             if (!context) return null;
             const targetPageId = config.pageId || "";
             if (!targetPageId) {
@@ -1298,7 +1349,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           })()}
 
           {type === "children-display" && (() => {
-            const context = useContext(DocumentContext);
             if (!context) return null;
             const currentDoc = findDocNode(context.documents, context.activeDocId || "");
             const rawChildren = currentDoc?.children || [];
@@ -1629,7 +1679,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               );
             }
 
-            const context = useContext(DocumentContext);
             if (!context) return null;
             const flatDocs = flattenTree(context.documents);
             
@@ -3403,7 +3452,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             )}
 
             {type === "excerpt-include" && (() => {
-              const context = useContext(DocumentContext);
               if (!context) return null;
               const flatDocs = flattenTree(context.documents);
               return (
@@ -3495,6 +3543,10 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   </Select>
                 </FormControl>
               </>
+            )}
+
+            {type === "page-properties-report" && (
+              <TextField fullWidth label="Property name (optional)" size="small" value={config.key || ""} onChange={(event) => updateConfig("key", event.target.value)} placeholder="For example, Owner" helperText="Leave empty to show every indexed property in this space." />
             )}
 
             {type === "chart-analytics" && (

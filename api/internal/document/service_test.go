@@ -5,22 +5,22 @@ import (
 	"strings"
 	"testing"
 
+	"kollab/api/internal/permissions"
 	inmemsystem "kollab/api/internal/system"
 	inmemtask "kollab/api/internal/task"
 	inmemteam "kollab/api/internal/team"
-	"kollab/api/internal/permissions"
 )
 
 func TestDocumentService(t *testing.T) {
 	_ = permissions.InitPermissions(context.Background(), nil)
-	
+
 	repo := NewInMemoryDocumentRepository()
 	systemRepo := inmemsystem.NewInMemorySystemRepository()
 	systemService := inmemsystem.NewSystemService(systemRepo)
 	taskRepo := inmemtask.NewInMemoryTaskRepository()
 	teamRepo := inmemteam.NewInMemoryTeamRepository()
 	_ = teamRepo.AddTeamMember(context.Background(), "team_eng", "user1")
-	
+
 	service := NewDocumentService(repo, systemService, taskRepo, teamRepo)
 	ctx := context.Background()
 
@@ -100,7 +100,23 @@ func TestDocumentService(t *testing.T) {
 	}
 	_ = service.RemoveFavorite(ctx, "user1", doc.ID)
 
-	// 8. Test trash and delete
+	// 8. Test watches
+	if err = service.AddWatch(ctx, "user1", doc.ID); err != nil {
+		t.Fatalf("expected no error adding watch, got %v", err)
+	}
+	isWatching, err := service.IsWatching(ctx, "user1", doc.ID)
+	if err != nil || !isWatching {
+		t.Fatalf("expected document to be watched, got %t (%v)", isWatching, err)
+	}
+	if err = service.RemoveWatch(ctx, "user1", doc.ID); err != nil {
+		t.Fatalf("expected no error removing watch, got %v", err)
+	}
+	isWatching, err = service.IsWatching(ctx, "user1", doc.ID)
+	if err != nil || isWatching {
+		t.Fatalf("expected document to be unwatched, got %t (%v)", isWatching, err)
+	}
+
+	// 9. Test trash and delete
 	err = service.DeleteDocument(ctx, doc.ID)
 	if err != nil {
 		t.Fatalf("expected no err deleting doc, got %v", err)
@@ -120,13 +136,13 @@ func TestDocumentService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no err restoring doc, got %v", err)
 	}
-	
+
 	_ = service.DeleteDocumentPermanently(ctx, doc.ID)
 
 	// 9. Milestone and Versions
 	doc2, _ := service.CreateDocument(ctx, "Test Doc 2", "test-doc-2", "proj_wiki", "team_eng", nil, "user1", &content)
 	_, _ = service.CreateManualMilestone(ctx, doc2.ID, "user1", "Milestone 1")
-	
+
 	vers, _ := service.GetDocumentVersions(ctx, doc2.ID)
 	if len(vers) > 0 {
 		_, _ = service.GetDocumentVersion(ctx, vers[0].ID)
@@ -144,8 +160,37 @@ func TestDocumentService(t *testing.T) {
 
 	// 12. Record View
 	_ = service.RecordView(ctx, doc2.ID, "user1")
-	
+
 	// 13. Tasks
 	_, _ = service.GetTasksByAssignee(ctx, "user1")
 	_, _ = service.GetDocumentsWithMention(ctx, "user1")
+}
+
+func TestDocumentServiceIndexesPageProperties(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	content := `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":"Owner","value":"Platform","type":"text"},{"key":"Status","value":"Active","type":"status"}]}}}]}`
+	document, err := service.CreateDocument(context.Background(), "Service overview", "", "proj_wiki", "team_eng", nil, "", &content)
+	if err != nil {
+		t.Fatalf("create document: %v", err)
+	}
+	properties, err := service.ListDocumentProperties(context.Background(), "proj_wiki", "", "")
+	if err != nil {
+		t.Fatalf("list properties: %v", err)
+	}
+	if len(properties) != 2 {
+		t.Fatalf("expected two properties, got %#v", properties)
+	}
+	if properties[0].DocumentID != document.ID && properties[1].DocumentID != document.ID {
+		t.Fatalf("properties do not belong to created document: %#v", properties)
+	}
+
+	updatedContent := `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":"Owner","value":"Infrastructure","type":"text"}]}}}]}`
+	if _, err := service.UpdateDocument(context.Background(), document.ID, document.Title, "", updatedContent, "", ""); err != nil {
+		t.Fatalf("update document: %v", err)
+	}
+	properties, err = service.ListDocumentProperties(context.Background(), "proj_wiki", "", "")
+	if err != nil || len(properties) != 1 || properties[0].Value != "Infrastructure" {
+		t.Fatalf("expected replacement property projection, got %#v (%v)", properties, err)
+	}
 }

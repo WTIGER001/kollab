@@ -111,7 +111,9 @@ export const setOnUnauthorized = (cb: () => void) => {
 
 const request = async (path: string, options: RequestInit & { suppress401?: boolean } = {}) => {
   const headers = new Headers(options.headers || {});
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   if (apiToken) {
     headers.set("Authorization", `Bearer ${apiToken}`);
   }
@@ -136,6 +138,68 @@ const request = async (path: string, options: RequestInit & { suppress401?: bool
   }
 
   return res.json();
+};
+
+export interface MigrationIssue {
+  level: "info" | "warning" | "error";
+  code: string;
+  entry?: string;
+  message: string;
+}
+
+export interface ConfluencePreflightReport {
+  spaceKey: string;
+  spaceName: string;
+  totalPages: number;
+  totalAttachments: number;
+  pages: Array<{ sourcePath: string; title: string }>;
+  detectedMacros: Array<{ macro: string; count: number; supported: boolean }>;
+  issues: MigrationIssue[];
+}
+
+export interface ConfluenceMigrationSummary {
+  spaceKey: string;
+  spaceName: string;
+  totalPages: number;
+  totalAttachments: number;
+  successCount: number;
+  skippedCount: number;
+  durationMs: number;
+  warnings: string[];
+  issues: MigrationIssue[];
+}
+
+const confluenceForm = (file: File, teamId?: string, projectId?: string) => {
+  const form = new FormData();
+  form.append("backup", file);
+  if (teamId) form.append("teamId", teamId);
+  if (projectId) form.append("projectId", projectId);
+  return form;
+};
+
+export const preflightConfluenceImport = (file: File): Promise<ConfluencePreflightReport> =>
+  request("/api/migration/confluence/preview", { method: "POST", body: confluenceForm(file) });
+
+export const importConfluenceArchive = (file: File, teamId: string, projectId: string): Promise<ConfluenceMigrationSummary> =>
+  request("/api/migration/confluence/import", { method: "POST", body: confluenceForm(file, teamId, projectId) });
+
+export interface DocumentProperty {
+  documentId: string;
+  title: string;
+  projectId: string;
+  teamId: string;
+  key: string;
+  value: string;
+  valueType: string;
+  updatedAt: string;
+}
+
+export const fetchDocumentProperties = (projectId?: string | null, teamId?: string | null, key?: string): Promise<DocumentProperty[]> => {
+  const parameters = new URLSearchParams();
+  if (projectId) parameters.set("projectId", projectId);
+  if (teamId) parameters.set("teamId", teamId);
+  if (key) parameters.set("key", key);
+  return request(`/api/documents/properties?${parameters.toString()}`);
 };
 
 export const fetchTeams = (): Promise<Team[]> => {
@@ -455,6 +519,23 @@ export const removeFavorite = (documentId: string): Promise<{ status: string }> 
 export const isFavorite = (documentId: string): Promise<boolean> => {
   return request(`/api/favorites/${encodeURIComponent(documentId)}/status`)
     .then(res => !!res.isFavorite);
+};
+
+export const addWatch = (documentId: string): Promise<{ status: string }> => {
+  return request(`/api/watches/${encodeURIComponent(documentId)}`, {
+    method: "POST"
+  });
+};
+
+export const removeWatch = (documentId: string): Promise<{ status: string }> => {
+  return request(`/api/watches/${encodeURIComponent(documentId)}`, {
+    method: "DELETE"
+  });
+};
+
+export const isWatching = (documentId: string): Promise<boolean> => {
+  return request(`/api/watches/${encodeURIComponent(documentId)}/status`)
+    .then(res => !!res.isWatching);
 };
 
 export const fetchRecentDocuments = (type: "views" | "edits" | "both" = "both"): Promise<Document[]> => {
