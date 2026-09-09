@@ -22,6 +22,8 @@ This guide walks administrators and space owners through exporting spaces from C
 5. Click **🚀 Start Confluence Migration**.
 6. **Step 4: Summary Report**: Compare **Pages Created** with the number found during preflight and review every warning before considering the move complete.
 
+If you retry the exact same archive in the same team or project, Kollab skips pages it already created and identifies them as skipped in the summary. A changed archive is treated as a new import and should be reviewed through preflight first.
+
 ## 3. What to check after the import
 
 - Open several imported pages to check titles and converted callouts, expand sections, status badges, and code blocks.

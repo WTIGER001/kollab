@@ -754,6 +754,31 @@ func (r *PostgresDocumentRepository) SaveReview(ctx context.Context, review *dom
 	return err
 }
 
+func (r *PostgresDocumentRepository) FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*domain.ConfluenceImportRecord, error) {
+	record := &domain.ConfluenceImportRecord{}
+	err := r.db.QueryRow(ctx, `
+		SELECT archive_sha256, source_path, team_id, project_id, document_id, created_at
+		FROM confluence_import_records
+		WHERE archive_sha256 = $1 AND source_path = $2 AND team_id = $3 AND project_id = $4
+	`, archiveSHA256, sourcePath, teamID, projectID).Scan(&record.ArchiveSHA256, &record.SourcePath, &record.TeamID, &record.ProjectID, &record.DocumentID, &record.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
+
+func (r *PostgresDocumentRepository) RecordConfluenceImport(ctx context.Context, record *domain.ConfluenceImportRecord) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO confluence_import_records (archive_sha256, source_path, team_id, project_id, document_id, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (archive_sha256, source_path, team_id, project_id) DO NOTHING
+	`, record.ArchiveSHA256, record.SourcePath, record.TeamID, record.ProjectID, record.DocumentID, record.CreatedAt)
+	return err
+}
+
 func (r *PostgresDocumentRepository) GetFavorites(ctx context.Context, userID string) ([]*domain.Favorite, error) {
 	query := `
 		SELECT 

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -69,6 +71,8 @@ func (h *MigrationHandler) ImportConfluenceSpace(w http.ResponseWriter, r *http.
 
 	userID, _ := middleware.GetUserID(r.Context())
 	startedAt := time.Now()
+	archiveDigest := sha256.Sum256(zipBytes)
+	archiveSHA256 := hex.EncodeToString(archiveDigest[:])
 
 	// Document creation is intentionally sequential: if one page is rejected by
 	// target-space authorization, the response identifies the exact source entry
@@ -77,6 +81,16 @@ func (h *MigrationHandler) ImportConfluenceSpace(w http.ResponseWriter, r *http.
 	warnings := make([]string, 0)
 	createdPages := make(map[string]string, len(report.Pages))
 	for _, page := range report.Pages {
+		existing, lookupErr := h.documentService.FindConfluenceImport(r.Context(), archiveSHA256, page.SourcePath, teamID, projectID)
+		if lookupErr != nil {
+			warnings = append(warnings, fmt.Sprintf("%s could not be checked for an earlier import: %v", page.SourcePath, lookupErr))
+			continue
+		}
+		if existing != nil {
+			createdPages[page.SourcePath] = existing.DocumentID
+			warnings = append(warnings, fmt.Sprintf("%s was skipped because this archive page was already imported.", page.SourcePath))
+			continue
+		}
 		var parentID *string
 		if page.ParentSourcePath != "" {
 			createdParentID, found := createdPages[page.ParentSourcePath]
@@ -92,6 +106,9 @@ func (h *MigrationHandler) ImportConfluenceSpace(w http.ResponseWriter, r *http.
 			continue
 		}
 		createdPages[page.SourcePath] = createdDocument.ID
+		if recordErr := h.documentService.RecordConfluenceImport(r.Context(), &domain.ConfluenceImportRecord{ArchiveSHA256: archiveSHA256, SourcePath: page.SourcePath, TeamID: teamID, ProjectID: projectID, DocumentID: createdDocument.ID, CreatedAt: time.Now()}); recordErr != nil {
+			warnings = append(warnings, fmt.Sprintf("%s was created but could not be marked as imported: %v", page.SourcePath, recordErr))
+		}
 		created++
 	}
 	for _, issue := range report.Issues {

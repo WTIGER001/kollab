@@ -76,6 +76,17 @@ type DocumentReview struct {
 	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
+// ConfluenceImportRecord maps a page inside one archive to the durable target
+// document it created. It makes retries safe without relying on page titles.
+type ConfluenceImportRecord struct {
+	ArchiveSHA256 string    `json:"archiveSha256"`
+	SourcePath    string    `json:"sourcePath"`
+	TeamID        string    `json:"teamId"`
+	ProjectID     string    `json:"projectId"`
+	DocumentID    string    `json:"documentId"`
+	CreatedAt     time.Time `json:"createdAt"`
+}
+
 type DocumentRepository interface {
 	GetByID(ctx context.Context, id string) (*Document, error)
 	GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Document, string, error) // Returns doc, requested_slug (if alias), err
@@ -122,6 +133,10 @@ type DocumentRepository interface {
 	// Content lifecycle
 	GetReview(ctx context.Context, documentID string) (*DocumentReview, error)
 	SaveReview(ctx context.Context, review *DocumentReview) error
+
+	// Confluence migration idempotency
+	FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*ConfluenceImportRecord, error)
+	RecordConfluenceImport(ctx context.Context, record *ConfluenceImportRecord) error
 
 	// Structured knowledge projection
 	ReplaceProperties(ctx context.Context, documentID string, properties []DocumentProperty) error
@@ -170,6 +185,8 @@ type DocumentService interface {
 	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
 	GetDocumentReview(ctx context.Context, documentID string) (*DocumentReview, error)
 	UpdateDocumentReview(ctx context.Context, documentID string, status string, nextReviewAt *time.Time, userID string) (*DocumentReview, error)
+	FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*ConfluenceImportRecord, error)
+	RecordConfluenceImport(ctx context.Context, record *ConfluenceImportRecord) error
 	ListDocumentProperties(ctx context.Context, projectID string, teamID string, key string) ([]DocumentProperty, error)
 }
 

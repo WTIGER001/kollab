@@ -774,6 +774,23 @@ func (s *DocumentService) UpdateDocumentReview(ctx context.Context, documentID s
 	return s.GetDocumentReview(ctx, documentID)
 }
 
+func (s *DocumentService) FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*domain.ConfluenceImportRecord, error) {
+	if archiveSHA256 == "" || sourcePath == "" || (teamID == "" && projectID == "") {
+		return nil, errors.New("archive SHA, source path, and target are required")
+	}
+	return s.repo.FindConfluenceImport(ctx, archiveSHA256, sourcePath, teamID, projectID)
+}
+
+func (s *DocumentService) RecordConfluenceImport(ctx context.Context, record *domain.ConfluenceImportRecord) error {
+	if record == nil || record.ArchiveSHA256 == "" || record.SourcePath == "" || record.DocumentID == "" || (record.TeamID == "" && record.ProjectID == "") {
+		return errors.New("complete confluence import record and target are required")
+	}
+	if record.CreatedAt.IsZero() {
+		record.CreatedAt = time.Now()
+	}
+	return s.repo.RecordConfluenceImport(ctx, record)
+}
+
 func (s *DocumentService) ListRecentDocuments(ctx context.Context, userID string, filterType string) ([]*domain.Document, error) {
 	if userID == "" {
 		return nil, errors.New("userID is required")

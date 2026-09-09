@@ -167,6 +167,20 @@ func TestPostgresDocumentRepository(t *testing.T) {
 	if err != nil || review.Status != "in_review" || review.NextReviewAt == nil {
 		t.Fatalf("expected persisted review, got %#v (%v)", review, err)
 	}
+	importRecord := &domain.ConfluenceImportRecord{
+		ArchiveSHA256: "0123456789012345678901234567890123456789012345678901234567890123",
+		SourcePath:    "docs/overview.xhtml",
+		TeamID:        "team_eng",
+		DocumentID:    "doc_welcome_eng",
+		CreatedAt:     time.Now(),
+	}
+	if err := repo.RecordConfluenceImport(ctx, importRecord); err != nil {
+		t.Fatalf("record confluence import: %v", err)
+	}
+	foundImport, err := repo.FindConfluenceImport(ctx, importRecord.ArchiveSHA256, importRecord.SourcePath, importRecord.TeamID, importRecord.ProjectID)
+	if err != nil || foundImport == nil || foundImport.DocumentID != importRecord.DocumentID {
+		t.Fatalf("expected persisted import record, got %#v (%v)", foundImport, err)
+	}
 
 	// Get seed documents by project
 	docs, err := repo.GetByProjectID(ctx, "proj_wiki")

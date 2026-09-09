@@ -39,6 +39,7 @@ type InMemoryDocumentRepository struct {
 	favorites  []InMemoryFavorite
 	watches    []InMemoryDocumentWatch
 	reviews    map[string]*domain.DocumentReview
+	imports    map[string]*domain.ConfluenceImportRecord
 }
 
 func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
@@ -50,6 +51,7 @@ func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
 		favorites:  make([]InMemoryFavorite, 0),
 		watches:    make([]InMemoryDocumentWatch, 0),
 		reviews:    make(map[string]*domain.DocumentReview),
+		imports:    make(map[string]*domain.ConfluenceImportRecord),
 	}
 	repo.seed()
 	return repo
@@ -677,6 +679,36 @@ func (r *InMemoryDocumentRepository) SaveReview(ctx context.Context, review *dom
 	}
 	copy := *review
 	r.reviews[review.DocumentID] = &copy
+	return nil
+}
+
+func confluenceImportKey(archiveSHA256, sourcePath, teamID, projectID string) string {
+	return strings.Join([]string{archiveSHA256, sourcePath, teamID, projectID}, "\x00")
+}
+
+func (r *InMemoryDocumentRepository) FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*domain.ConfluenceImportRecord, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	record, exists := r.imports[confluenceImportKey(archiveSHA256, sourcePath, teamID, projectID)]
+	if !exists {
+		return nil, nil
+	}
+	copy := *record
+	return &copy, nil
+}
+
+func (r *InMemoryDocumentRepository) RecordConfluenceImport(ctx context.Context, record *domain.ConfluenceImportRecord) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.documents[record.DocumentID]; !exists {
+		return errors.New("document not found")
+	}
+	key := confluenceImportKey(record.ArchiveSHA256, record.SourcePath, record.TeamID, record.ProjectID)
+	if _, exists := r.imports[key]; exists {
+		return nil
+	}
+	copy := *record
+	r.imports[key] = &copy
 	return nil
 }
 

@@ -7,7 +7,7 @@ This document details the technical design, XML parsing algorithms, XHTML storag
 ## 1. Architecture Overview
 
 > [!NOTE]
-> **Status:** 🟡 Page migration, archive preflight, and HTML directory-index hierarchy recovery are implemented. Attachment transfer, `entities.xml` hierarchy parsing, and durable import idempotency remain planned work.
+> **Status:** 🟡 Page migration, archive preflight, HTML directory-index hierarchy recovery, and archive-scoped idempotency are implemented. Attachment transfer and `entities.xml` hierarchy parsing remain planned work.
 
 The Confluence Migration Engine (`api/internal/migration/confluence.go`) enables automated migration from **Confluence Cloud** and **Confluence Data Center / Server** into Kollab.
 
@@ -51,6 +51,8 @@ flowchart TD
 ## 3. Archive preflight and migration summary
 
 `POST /api/migration/confluence/preview` accepts the archive as multipart field `backup` and returns facts from that archive. It rejects unsafe entries, caps the archive at 10,000 entries and source pages at 10 MiB, detects supported and unsupported macros, and reports missing local HTML links. It does not create documents.
+
+Imports calculate a SHA-256 digest of the uploaded archive and write one record per source path to `confluence_import_records` (migration `0007`). The record is scoped to the requested team/project target and target document ID. Retrying the identical archive in the same target safely returns the earlier page as skipped; it does not create another page based on the same source path.
 
 `POST /api/migration/confluence/import` runs the same preflight and only creates pages if it has no error-level findings. The handler calls `DocumentService.CreateDocument`, preserving normal membership checks, owner grants, versioning, and audit events. A page that cannot be created is listed in `warnings`; the response does not report it as a success.
 
