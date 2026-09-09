@@ -44,8 +44,20 @@ Explore the following help pages to learn how to use the wiki features:
 ### 📄 [12. Enterprise Publishing & Templates](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/templates.md)
 *Learn how to use page templates to kickstart new documents and insert block snippets via slash commands.*
 
-### 🔐 [22. Page access](page_access.md)
-*Use familiar space access and page restrictions to control who can view or edit a page.*
+### 💾 [13. Backups & Azure Storage](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/backups_and_restores.md)
+*Preview only: Azure backup configuration is not available for production use yet.*
+
+### 📌 [15. Jira & Confluence Integrations](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/jira_confluence_integrations.md)
+*Preview only: live Jira and Confluence connections are not available yet.*
+
+### 🚀 [16. Confluence Migration Wizard](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/confluence_import_guide.md)
+*Learn how to export spaces from Confluence and run the Kollab migration wizard to import pages, hierarchies, and attachments.*
+
+### 🧪 [17. Testing & Verification Manual](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/testing_and_verification.md)
+*Learn how to verify the supported Kollab feature set and identify prototype-only features.*
+
+### ☁️ [18. Administration & Deployment Guide](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/admin_deployment_guide.md)
+*Reference only: Azure and Kubernetes deployment manifests are not included yet.*
 
 ### 🗄️ [19. Database Migrations](database_migrations.md)
 *Learn how Kollab applies safe database updates during a release.*
@@ -55,3 +67,9 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### 👤 [21. Local User Management](local_user_management.md)
 *Learn how to run an offline local-account deployment and safely bootstrap its first administrator.*
+
+### 🔐 [22. Page access](page_access.md)
+*Use familiar space access and page restrictions to control who can view or edit a page.*
+
+### 🔔 [23. Watching Pages](watching_pages.md)
+*Learn how to subscribe to an individual page from its editor header.*

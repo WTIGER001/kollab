@@ -21,6 +21,9 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🔐 [26. Confluence-Style Permissions](26_confluence_style_permissions.md)
 *Space roles, page general/specific access, and inherited view restrictions.*
 
+### 🧭 [26. Macro Roadmap](26_macro_roadmap.md)
+*Living, prioritised catalog of formatting, engineering, typed-data, and enterprise-integration macros.*
+
 ### 🎨 [2. Editor Core & Canvas](file:///Users/johnbauer/Dev/Personal/kollab/design/02_editor_core.md)
 *Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 
@@ -28,6 +31,10 @@ This directory contains the hierarchical technical specifications of Project Kol
 - [15. Server Settings & Branding](file:///Users/johnbauer/Dev/Personal/kollab/design/15_server_settings_and_branding.md) - Site title, welcome messages, auth background imagery.
 - [16. URL Slugs & Aliases](file:///Users/johnbauer/Dev/Personal/kollab/design/16_url_slugs.md) - Dynamic slug auto-generation, uniqueness constraints, and old-alias redirection routing.
 - [17. Automated Testing Strategy](file:///Users/johnbauer/Dev/Personal/kollab/design/17_automated_testing.md) - Dual-execution backend E2E testing, testcontainers-go, and frontend component mocking.
+- [18. Enterprise System & Scoped Backups with Azure](file:///Users/johnbauer/Dev/Personal/kollab/design/18_enterprise_backups_and_azure.md) - Proposed Azure backup architecture; current adapters are prototypes.
+- [20. Jira & Confluence Live Integrations](file:///Users/johnbauer/Dev/Personal/kollab/design/20_jira_confluence_integrations.md) - Proposed integration architecture; current transport is placeholder-only.
+- [21. Confluence Space Migration Engine](file:///Users/johnbauer/Dev/Personal/kollab/design/21_confluence_migration_engine.md) - Confluence ZIP export parser, XHTML to Tiptap AST transformer, media attachment migration.
+- [22. Kubernetes & Azure Deployment Architecture](file:///Users/johnbauer/Dev/Personal/kollab/design/22_kubernetes_and_azure_deployment.md) - Future AKS/Azure reference; deployment manifests are not included.
 
 ### 🧩 [3. Macros & Plugins](file:///Users/johnbauer/Dev/Personal/kollab/design/03_macros_and_plugins.md)
 *Native rich content macros (Callouts, Status Badges), advanced plugins (Polyglot blocks, Data tables), and external integrations (GitLab).*
