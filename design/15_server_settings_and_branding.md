@@ -1,75 +1,53 @@
-# Technical Design: Server Settings & Authentication Branding
+# Technical Design: Server Settings, Branding & Security Classification Banner
+
+This document specifies the technical design, payload schemas, and UI components for global Server Settings, custom branding, and the Security Classification Top Banner in Kollab.
+
+---
 
 > [!NOTE]
 > **Status:** 🟢 Implemented
 
-This document outlines the architecture for managing global server settings in Kollab, specifically focusing on authentication branding, data retention policies, and third-party integrations (like Aspose).
-
----
-
 ## 1. Data Architecture
 
-All global server settings are stored in the PostgreSQL database within the `system_settings` table as simple Key-Value pairs. This provides an easily extensible schema for adding new global configurations without requiring schema migrations.
+All global server settings are stored in PostgreSQL's `system_settings` key-value table. This permits additive settings without a schema migration.
 
-### 1.1 `system_settings` Table
-```sql
-CREATE TABLE IF NOT EXISTS system_settings (
-    key VARCHAR(255) PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-```
+### 1.1 `SystemSettings` model
 
-### 1.2 Domain Model (`SystemSettings`)
-The `domain.SystemSettings` struct provides a strongly-typed Go interface to these key-value pairs:
-```go
-type SystemSettings struct {
-	AuditRetentionPolicy     string `json:"auditRetentionPolicy"`
-	AuditRetentionCustomDays int    `json:"auditRetentionCustomDays"`
-	AuditLogDestination      string `json:"auditLogDestination"`
-	TrashRetentionPolicy     string `json:"trashRetentionPolicy"`
-	TrashRetentionCustomDays int    `json:"trashRetentionCustomDays"`
-	AIRateLimit              int    `json:"aiRateLimit"`
-	WelcomeTitle             string `json:"welcomeTitle"`
-	WelcomeText              string `json:"welcomeText"`
-	AuthLogoURL              string `json:"authLogoUrl"`
-	AuthLogoSize             string `json:"authLogoSize"`
-	AuthLegalDisclaimer      string `json:"authLegalDisclaimer"`
-	AuthLoginButtonText      string `json:"authLoginButtonText"`
-	AsposeEnabled            bool   `json:"asposeEnabled"`
-	AsposeLicense            string `json:"asposeLicense"`
-}
-```
-
----
+The backend serializes a strongly typed `SystemSettings` payload. The banner adds `classificationBannerEnabled`, `classificationBannerText`, `classificationBannerBgColor`, and `classificationBannerTextColor` alongside the existing retention, branding, AI, and Aspose settings.
 
 ## 2. Authentication Branding Pipeline
 
-The public login screen must render *before* a user is authenticated. Therefore, the frontend needs a way to fetch the workspace's branding information anonymously.
+`GET /api/auth/config` is intentionally public so the unauthenticated login screen can render its workspace branding. It returns only safe OIDC and branding configuration; licenses, retention settings, and other administrative data remain protected. `main.tsx` hydrates that response before rendering the sign-in experience.
 
-### 2.1 The `GET /api/auth/config` Endpoint
-When the Kollab frontend boots up in an unauthenticated state, it calls `fetchOIDCConfig()` which hits `GET /api/auth/config`.
+## 3. Server Settings Page
 
-This endpoint returns:
-- OIDC Configuration (Authority URL, Client ID, Redirect URIs)
-- The Workspace Theme (from `ThemeEngine`)
-- **Authentication Branding Properties** (Logo, Title, Text, Disclaimer, Button Text)
+Administrators with `system.admin` use `/_admin/settings`. `GET /api/system/settings` returns the full protected settings payload and `PUT /api/system/settings` persists it atomically before the frontend invalidates its settings query.
 
-Because this endpoint is unprotected, the backend explicitly maps *only* the safe branding settings into the JSON response. Sensitive settings (like `AsposeLicense` or internal retention policies) are intentionally excluded.
+## 4. Security Classification Top Banner Architecture
 
-### 2.2 Frontend Hydration
-In `main.tsx`, the `fetchOIDCConfig` response is parsed and stored in a top-level React state object (`config`). This `config` object is passed down as props to the root `<App />` component, which then conditionally renders the `authLogoUrl`, `welcomeTitle`, `welcomeText`, `authLoginButtonText`, and `legalDisclaimer` on the Login View.
+> [!NOTE]
+> **Status:** 🟢 Completed
 
----
+Kollab supports an admin-configurable thin Security Classification Top Banner rendered at the root of the application layout shell (`MainLayout.tsx`).
 
-## 3. Server Settings Page (Admin Panel)
+```mermaid
+flowchart TD
+    AdminUI["Admin Server Settings Page<br/>(/_admin/settings)"] -- "PUT /api/system/settings" --> API["System Handler<br/>(system.go)"]
+    API -- "Save to Postgres" --> DB[("system_settings table")]
 
-Workspace Administrators (users with the `system.admin` permission) can manage these settings via the `/_admin/settings` route.
+    AppShell["Main Layout App Shell<br/>(MainLayout.tsx)"] -- "useSystemSettings Hook" --> Banner["ClassificationBanner Component<br/>(Slim 26px top banner)"]
+```
 
-### 3.1 `GET /api/system/settings`
-The settings page fetches the complete `SystemSettings` object. This endpoint requires an active session token and the `system.admin` role.
+### 4.1 `SystemSettings` Data Schema Extensions
+- `classificationBannerEnabled`: (`boolean`) Controls whether the security banner is visible.
+- `classificationBannerText`: (`string`) Text string displayed in the banner (e.g. `UNCLASSIFIED`, `COMPANY PROPRIETARY`, `CONFIDENTIAL`, `RESTRICTED / SECRET`).
+- `classificationBannerBgColor`: (`string`) injected theme variable for the banner background (for example, `var(--primary-color)`).
+- `classificationBannerTextColor`: (`string`) injected theme variable for the banner text (for example, `var(--bg-color)`).
 
-### 3.2 `PUT /api/system/settings`
-When the Admin clicks "Save Changes", the frontend sends the entire settings object to the backend.
+### 4.2 Preset Quick-Select Configurations
+- 🟢 **UNCLASSIFIED**: `var(--primary-color)`, text `var(--bg-color)`
+- 🟡 **PROPRIETARY**: `var(--accent-color)`, text `var(--bg-color)`
+- 🟠 **CONFIDENTIAL**: `var(--secondary-color)`, text `var(--bg-color)`
+- 🔴 **RESTRICTED / SECRET**: `var(--text-primary)`, text `var(--bg-color)`
 
-The backend uses an `INSERT ... ON CONFLICT DO UPDATE` pattern within a single transaction to securely update all key-value pairs simultaneously. If the transaction succeeds, the frontend invalidates the React Query cache and hot-reloads the settings into the UI.
+Persisted literal colors from older settings are deliberately ignored and fall back to the active theme. This keeps banner contrast and visual language aligned with every supported theme preset.

@@ -20,6 +20,10 @@ type SystemSettings struct {
 	AuthLoginButtonText      string `json:"authLoginButtonText"`
 	AsposeEnabled            bool   `json:"asposeEnabled"`
 	AsposeLicense            string `json:"asposeLicense"`
+	ClassificationBannerEnabled   bool   `json:"classificationBannerEnabled"`
+	ClassificationBannerText      string `json:"classificationBannerText"`
+	ClassificationBannerBgColor   string `json:"classificationBannerBgColor"`
+	ClassificationBannerTextColor string `json:"classificationBannerTextColor"`
 }
 
 type AuditLog struct {

@@ -625,6 +625,10 @@ export interface SystemSettings {
   aiRateLimit: number;
   asposeEnabled: boolean;
   asposeLicense: string;
+  classificationBannerEnabled?: boolean;
+  classificationBannerText?: string;
+  classificationBannerBgColor?: string;
+  classificationBannerTextColor?: string;
 }
 
 export interface AuditLogEntry {

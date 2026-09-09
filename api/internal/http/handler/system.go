@@ -109,6 +109,16 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		settings.WelcomeTitle = "Welcome to Kollab"
 	}
 
+	if settings.ClassificationBannerText == "" {
+		settings.ClassificationBannerText = "UNCLASSIFIED"
+	}
+	if settings.ClassificationBannerBgColor == "" {
+		settings.ClassificationBannerBgColor = "var(--primary-color)"
+	}
+	if settings.ClassificationBannerTextColor == "" {
+		settings.ClassificationBannerTextColor = "var(--bg-color)"
+	}
+
 	if err := h.systemService.UpdateSettings(r.Context(), &settings); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

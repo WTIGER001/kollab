@@ -32,6 +32,9 @@ interface ServerSettingsPageProps {
   showToast: (message: string, severity: "success" | "error" | "info" | "warning") => void;
 }
 
+const themeVariableOr = (value: string | undefined, fallback: string) =>
+  value?.startsWith("var(--") ? value : fallback;
+
 export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   currentTheme,
   onSave,
@@ -63,6 +66,12 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   const [aiRateLimit, setAiRateLimit] = useState(10);
   const [asposeEnabled, setAsposeEnabled] = useState(true);
   const [asposeLicense, setAsposeLicense] = useState("");
+  const [classificationBannerEnabled, setClassificationBannerEnabled] = useState(false);
+  const [classificationBannerText, setClassificationBannerText] = useState("UNCLASSIFIED");
+  const [classificationBannerBgColor, setClassificationBannerBgColor] = useState("var(--primary-color)");
+  const [classificationBannerTextColor, setClassificationBannerTextColor] = useState("var(--bg-color)");
+  const effectiveBannerBgColor = themeVariableOr(classificationBannerBgColor, "var(--primary-color)");
+  const effectiveBannerTextColor = themeVariableOr(classificationBannerTextColor, "var(--bg-color)");
 
   // Color scheme state defaults (based on Tailwind/harmony palettes)
   const [lightColors, setLightColors] = useState<ColorScheme>({
@@ -110,6 +119,10 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setAiRateLimit(systemSettings.aiRateLimit || 10);
       setAsposeEnabled(systemSettings.asposeEnabled !== false);
       setAsposeLicense(systemSettings.asposeLicense || "");
+      setClassificationBannerEnabled(!!systemSettings.classificationBannerEnabled);
+      setClassificationBannerText(systemSettings.classificationBannerText || "UNCLASSIFIED");
+      setClassificationBannerBgColor(themeVariableOr(systemSettings.classificationBannerBgColor, "var(--primary-color)"));
+      setClassificationBannerTextColor(themeVariableOr(systemSettings.classificationBannerTextColor, "var(--bg-color)"));
     }
   }, [currentTheme, systemSettings]);
 
@@ -134,7 +147,11 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         authLoginButtonText: authLoginButtonText,
         aiRateLimit: aiRateLimit,
         asposeEnabled: asposeEnabled,
-        asposeLicense: asposeLicense
+        asposeLicense: asposeLicense,
+        classificationBannerEnabled: classificationBannerEnabled,
+        classificationBannerText: classificationBannerText,
+        classificationBannerBgColor: effectiveBannerBgColor,
+        classificationBannerTextColor: effectiveBannerTextColor
       });
       showToast("Server settings saved successfully", "success");
     } catch (err: any) {
@@ -320,6 +337,138 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 }
               }}
             />
+
+            <Divider sx={{ my: 1 }} />
+
+            {/* Security Classification Top Banner Card */}
+            <Box sx={{ p: 3, border: "1px solid var(--border-color)", borderRadius: 2, bgcolor: "var(--glass-bg)" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+                    Security Classification Banner
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    Display an optional thin classification banner across the top of all pages (e.g., UNCLASSIFIED, PROPRIETARY, RESTRICTED).
+                  </Typography>
+                </Box>
+                <Switch
+                  checked={classificationBannerEnabled}
+                  onChange={(e) => setClassificationBannerEnabled(e.target.checked)}
+                  color="primary"
+                />
+              </Box>
+
+              {classificationBannerEnabled && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
+                  {/* Banner Presets */}
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 1 }}>
+                      QUICK PRESETS
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setClassificationBannerText("UNCLASSIFIED");
+                          setClassificationBannerBgColor("var(--primary-color)");
+                          setClassificationBannerTextColor("var(--bg-color)");
+                        }}
+                        sx={{ borderColor: "var(--primary-color)", color: "var(--primary-color)", fontWeight: 700 }}
+                      >
+                        🟢 UNCLASSIFIED
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setClassificationBannerText("COMPANY PROPRIETARY");
+                          setClassificationBannerBgColor("var(--accent-color)");
+                          setClassificationBannerTextColor("var(--bg-color)");
+                        }}
+                        sx={{ borderColor: "var(--accent-color)", color: "var(--accent-color)", fontWeight: 700 }}
+                      >
+                        🟡 PROPRIETARY
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setClassificationBannerText("CONFIDENTIAL");
+                          setClassificationBannerBgColor("var(--secondary-color)");
+                          setClassificationBannerTextColor("var(--bg-color)");
+                        }}
+                        sx={{ borderColor: "var(--secondary-color)", color: "var(--secondary-color)", fontWeight: 700 }}
+                      >
+                        🟠 CONFIDENTIAL
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          setClassificationBannerText("RESTRICTED / SECRET");
+                          setClassificationBannerBgColor("var(--text-primary)");
+                          setClassificationBannerTextColor("var(--bg-color)");
+                        }}
+                        sx={{ borderColor: "var(--text-primary)", color: "var(--text-primary)", fontWeight: 700 }}
+                      >
+                        🔴 RESTRICTED
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {/* Banner Text & Theme Tokens */}
+                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 2 }}>
+                    <TextField
+                      label="Classification Text"
+                      value={classificationBannerText}
+                      onChange={(e) => setClassificationBannerText(e.target.value)}
+                      placeholder="UNCLASSIFIED"
+                      size="small"
+                    />
+                    <TextField
+                      label="Background theme variable"
+                      value={classificationBannerBgColor}
+                      onChange={(e) => setClassificationBannerBgColor(e.target.value)}
+                      helperText="Example: var(--primary-color)"
+                      size="small"
+                    />
+                    <TextField
+                      label="Text theme variable"
+                      value={classificationBannerTextColor}
+                      onChange={(e) => setClassificationBannerTextColor(e.target.value)}
+                      helperText="Example: var(--bg-color)"
+                      size="small"
+                    />
+                  </Box>
+
+                  {/* Banner Live Preview */}
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 1 }}>
+                      LIVE PREVIEW
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: 26,
+                        backgroundColor: effectiveBannerBgColor,
+                        color: effectiveBannerTextColor,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700,
+                        fontSize: "12px",
+                        letterSpacing: "1.5px",
+                        borderRadius: "var(--border-radius-card)",
+                        textTransform: "uppercase"
+                      }}
+                    >
+                      {classificationBannerText || "UNCLASSIFIED"}
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </Box>
           </Box>
         )}
 
