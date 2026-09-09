@@ -109,6 +109,28 @@ export const setOnUnauthorized = (cb: () => void) => {
   onUnauthorizedCallback = cb;
 };
 
+export const loginLocal = (username: string, password: string): Promise<{ token: string }> =>
+  request("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }), suppress401: true });
+
+export const setupInitialLocalAdmin = (user: { username: string; password: string; email: string; displayName: string }): Promise<{ token: string }> =>
+  request("/api/auth/setup", { method: "POST", body: JSON.stringify(user), suppress401: true });
+
+export interface LocalUser {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  isActive: boolean;
+}
+
+export const fetchLocalUsers = (): Promise<LocalUser[]> => request("/api/admin/users");
+export const createLocalUser = (user: Omit<LocalUser, "id" | "isActive"> & { password: string }): Promise<LocalUser> =>
+  request("/api/admin/users", { method: "POST", body: JSON.stringify(user) });
+export const setLocalUserActive = (id: string, isActive: boolean): Promise<void> =>
+  request(`/api/admin/users/${encodeURIComponent(id)}/active`, { method: "PUT", body: JSON.stringify({ isActive }) });
+export const setLocalUserPassword = (id: string, password: string): Promise<void> =>
+  request(`/api/admin/users/${encodeURIComponent(id)}/password`, { method: "PUT", body: JSON.stringify({ password }) });
+
 const request = async (path: string, options: RequestInit & { suppress401?: boolean } = {}) => {
   const headers = new Headers(options.headers || {});
   if (!(options.body instanceof FormData)) {

@@ -13,12 +13,12 @@ func TestAuthService(t *testing.T) {
 
 	// 1. Register with short password
 	_, err := service.Register(ctx, "testuser1", "short")
-	if err == nil || !strings.Contains(err.Error(), "password must be at least 6 characters") {
+	if err == nil || !strings.Contains(err.Error(), "password must be at least 12 characters") {
 		t.Errorf("expected error for short password, got %v", err)
 	}
 
 	// 2. Register successful
-	user, err := service.Register(ctx, "testuser1", "password123")
+	user, err := service.Register(ctx, "testuser1", "SecurePassword123")
 	if err != nil {
 		t.Fatalf("expected no error during register, got %v", err)
 	}
@@ -27,23 +27,30 @@ func TestAuthService(t *testing.T) {
 	}
 
 	// 3. Login with invalid username
-	_, err = service.Login(ctx, "unknown_user", "password123")
+	_, err = service.Login(ctx, "unknown_user", "SecurePassword123")
 	if err == nil {
 		t.Error("expected error for invalid username")
 	}
 
 	// 4. Login with invalid password
-	_, err = service.Login(ctx, "testuser1", "wrongpassword")
+	_, err = service.Login(ctx, "testuser1", "WrongPassword123")
 	if err == nil {
 		t.Error("expected error for wrong password")
 	}
 
 	// 5. Login successful
-	token, err := service.Login(ctx, "testuser1", "password123")
+	token, err := service.Login(ctx, "testuser1", "SecurePassword123")
 	if err != nil {
 		t.Fatalf("expected no error during login, got %v", err)
 	}
 	if token == "" {
 		t.Error("expected non-empty token")
+	}
+
+	if err := service.SetLocalUserActive(ctx, user.ID, false); err != nil {
+		t.Fatalf("disable user: %v", err)
+	}
+	if _, err := service.Login(ctx, "testuser1", "SecurePassword123"); err == nil {
+		t.Error("disabled user was allowed to sign in")
 	}
 }

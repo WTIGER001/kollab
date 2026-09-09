@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, CircularProgress } from '@mui/material';
 import { EditorCanvas } from '../components/EditorCanvas';
 import { CommentDrawer } from '../components/CommentDrawer';
@@ -20,7 +20,7 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
 
   const { developerMode } = useAppStore();
   
-  const auth = isMockMode ? null : useAuth();
+	const auth = useAuth();
   const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
 
   const { data: teams = [] } = useTeams();

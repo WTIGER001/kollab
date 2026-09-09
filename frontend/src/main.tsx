@@ -21,6 +21,8 @@ const queryClient = new QueryClient({
 });
 
 interface OidcConfig {
+  authMode?: "oidc" | "local";
+  localSetupRequired?: boolean;
   authority: string;
   clientId: string;
   redirectUri: string;
@@ -35,6 +37,7 @@ interface OidcConfig {
 function Root() {
   const [config, setConfig] = useState<OidcConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [localToken, setLocalToken] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOIDCConfig()
@@ -42,6 +45,8 @@ function Root() {
         setConfig({
           authority: cfg.authority,
           clientId: cfg.clientId,
+          authMode: cfg.authMode,
+          localSetupRequired: cfg.localSetupRequired,
           redirectUri: cfg.redirectUri,
           welcomeTitle: cfg.welcomeTitle,
           welcomeText: cfg.welcomeText,
@@ -71,7 +76,8 @@ function Root() {
     );
   }
 
-  const isMock = config?.clientId === "mock-client-id" || config?.authority.includes("mock");
+  const authMode = config?.authMode || "oidc";
+  const isMock = authMode !== "local" && (config?.clientId === "mock-client-id" || config?.authority.includes("mock"));
 
   const oidcConfig = {
     authority: config!.authority,
@@ -85,34 +91,18 @@ function Root() {
     }
   };
 
-  if (isMock) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <ThemeEngine>
-          <CssBaseline />
-          <BrowserRouter>
-            <App 
-              isMockMode={true} 
-              welcomeTitle={config?.welcomeTitle}
-              welcomeText={config?.welcomeText}
-              authLogoUrl={config?.authLogoUrl}
-              authLogoSize={config?.authLogoSize}
-              legalDisclaimer={config?.legalDisclaimer}
-            />
-          </BrowserRouter>
-        </ThemeEngine>
-      </QueryClientProvider>
-    );
-  }
-
   return (
     <AuthProvider {...oidcConfig}>
       <QueryClientProvider client={queryClient}>
         <ThemeEngine>
           <CssBaseline />
           <BrowserRouter>
-            <App 
-              isMockMode={false} 
+            <App
+              isMockMode={isMock}
+              authMode={authMode}
+              localSetupRequired={config?.localSetupRequired}
+              localToken={localToken}
+              onLocalToken={setLocalToken}
               welcomeTitle={config!.welcomeTitle}
               welcomeText={config!.welcomeText}
               authLogoUrl={config!.authLogoUrl}

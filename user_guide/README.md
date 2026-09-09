@@ -43,3 +43,12 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### 📄 [12. Enterprise Publishing & Templates](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/templates.md)
 *Learn how to use page templates to kickstart new documents and insert block snippets via slash commands.*
+
+### 🗄️ [19. Database Migrations](database_migrations.md)
+*Learn how Kollab applies safe database updates during a release.*
+
+### 🔐 [20. OpenID Connect Single Sign-On](oidc_sso.md)
+*Learn how to connect Kollab to a corporate or self-hosted OIDC identity provider.*
+
+### 👤 [21. Local User Management](local_user_management.md)
+*Learn how to run an offline local-account deployment and safely bootstrap its first administrator.*

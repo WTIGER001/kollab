@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -13,6 +15,56 @@ import (
 	"kollab/api/internal/domain"
 )
 
+func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate test key: %v", err)
+	}
+	cache := &JWKSCache{
+		issuer:   "https://identity.example.test",
+		audience: "kollab-web",
+		keys:     map[string]any{"key-1": &privateKey.PublicKey},
+	}
+
+	makeToken := func(claims jwt.MapClaims) string {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		token.Header["kid"] = "key-1"
+		raw, err := token.SignedString(privateKey)
+		if err != nil {
+			t.Fatalf("sign test token: %v", err)
+		}
+		return raw
+	}
+
+	valid := makeToken(jwt.MapClaims{
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "kollab-web",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	if _, err := ValidateToken(context.Background(), valid, nil, cache); err != nil {
+		t.Fatalf("valid OIDC token rejected: %v", err)
+	}
+
+	wrongAudience := makeToken(jwt.MapClaims{
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "another-client",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	if _, err := ValidateToken(context.Background(), wrongAudience, nil, cache); err == nil {
+		t.Fatal("token for another audience was accepted")
+	}
+
+	hmacToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "kollab-web",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	rawHMAC, err := hmacToken.SignedString([]byte("not-a-production-token-secret"))
+	if err != nil {
+		t.Fatalf("sign HMAC token: %v", err)
+	}
+	if _, err := ValidateToken(context.Background(), rawHMAC, []byte("not-a-production-token-secret"), cache); err == nil {
+		t.Fatal("HMAC token was accepted in OIDC mode")
+	}
+}
+
 type mockUserRepository struct {
 	mu      sync.Mutex
 	upserts []*domain.User
@@ -21,6 +73,10 @@ type mockUserRepository struct {
 func (m *mockUserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	return nil, nil
 }
+func (m *mockUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
+	return nil, nil
+}
+func (m *mockUserRepository) List(ctx context.Context) ([]*domain.User, error) { return nil, nil }
 
 func (m *mockUserRepository) Create(ctx context.Context, user *domain.User) error {
 	return nil
@@ -31,6 +87,13 @@ func (m *mockUserRepository) Upsert(ctx context.Context, user *domain.User) erro
 	defer m.mu.Unlock()
 	m.upserts = append(m.upserts, user)
 	return nil
+}
+func (m *mockUserRepository) SetActive(ctx context.Context, id string, active bool) error { return nil }
+func (m *mockUserRepository) UpdatePassword(ctx context.Context, id, passwordHash string) error {
+	return nil
+}
+func (m *mockUserRepository) CreateInitialLocalAdmin(ctx context.Context, user *domain.User) (bool, error) {
+	return true, nil
 }
 
 func TestAuthMiddlewareUpsert(t *testing.T) {

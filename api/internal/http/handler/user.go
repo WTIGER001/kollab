@@ -2,25 +2,89 @@ package handler
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 
+	"github.com/go-chi/chi/v5"
+	goperm "github.com/wtiger001/go-permissions"
 	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type UserHandler struct {
-	authService   domain.AuthService
-	themeService  domain.ThemeService
-	systemService domain.SystemService
-	oidcConfig    map[string]string
+	authService        domain.AuthService
+	themeService       domain.ThemeService
+	systemService      domain.SystemService
+	oidcConfig         map[string]string
+	loginAttempts      map[string]loginAttempt
+	loginMu            sync.Mutex
+	localSetupRequired bool
+	localSetupMu       sync.RWMutex
+}
+
+type loginAttempt struct {
+	failures     int
+	blockedUntil time.Time
 }
 
 func NewUserHandler(authService domain.AuthService, themeService domain.ThemeService, systemService domain.SystemService, oidcConfig map[string]string) *UserHandler {
 	return &UserHandler{
-		authService:   authService,
-		themeService:  themeService,
-		systemService: systemService,
-		oidcConfig:    oidcConfig,
+		authService:        authService,
+		themeService:       themeService,
+		systemService:      systemService,
+		oidcConfig:         oidcConfig,
+		loginAttempts:      make(map[string]loginAttempt),
+		localSetupRequired: oidcConfig["localSetupRequired"] == "true",
 	}
+}
+
+const localLoginMaxFailures = 5
+const localLoginBlockDuration = 15 * time.Minute
+
+func (h *UserHandler) loginAttemptKey(r *http.Request, username string) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	return strings.ToLower(strings.TrimSpace(username)) + "|" + host
+}
+
+func (h *UserHandler) localLoginBlocked(key string) bool {
+	h.loginMu.Lock()
+	defer h.loginMu.Unlock()
+	attempt, ok := h.loginAttempts[key]
+	if !ok {
+		return false
+	}
+	if attempt.blockedUntil.IsZero() {
+		return false
+	}
+	if time.Now().After(attempt.blockedUntil) {
+		delete(h.loginAttempts, key)
+		return false
+	}
+	return attempt.blockedUntil.After(time.Now())
+}
+
+func (h *UserHandler) recordLocalLoginFailure(key string) {
+	h.loginMu.Lock()
+	defer h.loginMu.Unlock()
+	attempt := h.loginAttempts[key]
+	attempt.failures++
+	if attempt.failures >= localLoginMaxFailures {
+		attempt.blockedUntil = time.Now().Add(localLoginBlockDuration)
+	}
+	h.loginAttempts[key] = attempt
+}
+
+func (h *UserHandler) clearLocalLoginAttempts(key string) {
+	h.loginMu.Lock()
+	defer h.loginMu.Unlock()
+	delete(h.loginAttempts, key)
 }
 
 func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
@@ -45,10 +109,15 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	h.localSetupMu.RLock()
+	localSetupRequired := h.localSetupRequired
+	h.localSetupMu.RUnlock()
 	resp := map[string]interface{}{
-		"authority":       h.oidcConfig["authority"],
-		"clientId":        h.oidcConfig["clientId"],
-		"redirectUri":     h.oidcConfig["redirectUri"],
+		"authority":           h.oidcConfig["authority"],
+		"clientId":            h.oidcConfig["clientId"],
+		"redirectUri":         h.oidcConfig["redirectUri"],
+		"authMode":            h.oidcConfig["authMode"],
+		"localSetupRequired":  localSetupRequired,
 		"theme":               theme,
 		"welcomeTitle":        welcomeTitle,
 		"welcomeText":         welcomeText,
@@ -65,6 +134,145 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 type authRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type localUserRequest struct {
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
+}
+
+func (h *UserHandler) SetupInitialLocalAdmin(w http.ResponseWriter, r *http.Request) {
+	h.localSetupMu.RLock()
+	setupRequired := h.localSetupRequired
+	h.localSetupMu.RUnlock()
+	if !setupRequired {
+		http.NotFound(w, r)
+		return
+	}
+	var req localUserRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	user, created, err := h.authService.CreateInitialLocalAdmin(r.Context(), req.Username, req.Password, req.Email, req.DisplayName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !created {
+		http.Error(w, "Initial administrator has already been created", http.StatusConflict)
+		return
+	}
+	if err := permissions.Service.AssignRoleToUser(r.Context(), user.ID, "builtin.admin", nil); err != nil {
+		http.Error(w, "Unable to grant administrator access", http.StatusInternalServerError)
+		return
+	}
+	token, err := h.authService.Login(r.Context(), user.Username, req.Password)
+	if err != nil {
+		http.Error(w, "Account created but sign-in failed", http.StatusInternalServerError)
+		return
+	}
+	h.localSetupMu.Lock()
+	h.localSetupRequired = false
+	h.localSetupMu.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+func requireSystemAdmin(w http.ResponseWriter, r *http.Request) bool {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return false
+	}
+	allowed, err := permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: userID, Perm: "system.admin"})
+	if err != nil || !allowed {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
+func (h *UserHandler) ListLocalUsers(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	users, err := h.authService.ListLocalUsers(r.Context())
+	if err != nil {
+		http.Error(w, "Unable to list users", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(users)
+}
+
+func (h *UserHandler) CreateLocalUser(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	var req localUserRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	req.Username = strings.TrimSpace(req.Username)
+	user, err := h.authService.CreateLocalUser(r.Context(), req.Username, req.Password, strings.TrimSpace(req.Email), strings.TrimSpace(req.DisplayName))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) SetLocalUserActive(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	var req struct {
+		IsActive bool `json:"isActive"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+	if id == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.authService.SetLocalUserActive(r.Context(), id, req.IsActive); err != nil {
+		http.Error(w, "Unable to update user", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) SetLocalUserPassword(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	var req struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+	if id == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+	if err := h.authService.SetLocalUserPassword(r.Context(), id, req.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -101,12 +309,20 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Username and password are required", http.StatusBadRequest)
 		return
 	}
+	key := h.loginAttemptKey(r, req.Username)
+	if h.localLoginBlocked(key) {
+		w.Header().Set("Retry-After", "900")
+		http.Error(w, "Too many sign-in attempts. Try again later.", http.StatusTooManyRequests)
+		return
+	}
 
 	token, err := h.authService.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		h.recordLocalLoginFailure(key)
+		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		return
 	}
+	h.clearLocalLoginAttempts(key)
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"token": token})

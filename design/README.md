@@ -9,6 +9,15 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🖥️ [1. System Architecture Overview](file:///Users/johnbauer/Dev/Personal/kollab/design/01_system_overview.md)
 *High-level architecture, technology stack details, database indexing strategy, and Gantt charts.*
 
+### 🗄️ [23. Database Migrations](23_database_migrations.md)
+*Append-only PostgreSQL migration ledger, checksums, and transactional application lifecycle.*
+
+### 🔐 [24. OIDC Authentication](24_oidc_authentication.md)
+*OIDC discovery, JWKS verification, issuer/audience binding, and local-development isolation.*
+
+### 👤 [25. Local Identity](25_local_identity.md)
+*Explicit local-account mode, bootstrap administration, password controls, and account suspension.*
+
 ### 🎨 [2. Editor Core & Canvas](file:///Users/johnbauer/Dev/Personal/kollab/design/02_editor_core.md)
 *Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 

@@ -1,9 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { Box, CircularProgress, Typography, Button } from "@mui/material";
 
 interface AuthGuardProps {
   isMockMode: boolean;
+  authMode?: "oidc" | "local";
+  localSetupRequired?: boolean;
+  localToken?: string | null;
+  onLocalLogin?: (username: string, password: string) => Promise<void>;
+  onInitialAdminSetup?: (user: { username: string; password: string; email: string; displayName: string }) => Promise<void>;
   welcomeTitle?: string;
   welcomeText?: string;
   authLogoUrl?: string;
@@ -16,6 +21,11 @@ interface AuthGuardProps {
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({
   isMockMode,
+  authMode = "oidc",
+  localSetupRequired = false,
+  localToken,
+  onLocalLogin,
+  onInitialAdminSetup,
   welcomeTitle,
   welcomeText,
   authLogoUrl,
@@ -25,7 +35,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   apiAuthError,
   children
 }) => {
-  const auth = isMockMode ? null : useAuth();
+	const auth = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isMockMode && auth?.isAuthenticated && auth?.user?.expired) {
@@ -33,7 +49,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     }
   }, [auth?.isAuthenticated, auth?.user?.expired, isMockMode, auth]);
 
-  if (!isMockMode && auth?.isLoading) {
+  if (!isMockMode && authMode === "oidc" && auth?.isLoading) {
     return (
       <Box sx={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
         <CircularProgress />
@@ -41,7 +57,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     );
   }
 
-  if (!isMockMode && auth?.error) {
+  if (!isMockMode && authMode === "oidc" && auth?.error) {
     setTimeout(() => {
       auth.removeUser().then(() => {
         window.location.href = "/";
@@ -72,7 +88,33 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     );
   }
 
-  if (!isMockMode && !auth?.isAuthenticated) {
+  if (!isMockMode && (authMode === "local" ? !localToken : !auth?.isAuthenticated)) {
+    const submitLocalLogin = async (event: React.FormEvent) => {
+      event.preventDefault();
+      if (!onLocalLogin) return;
+      setIsSubmitting(true);
+      setLoginError(null);
+      try {
+        await onLocalLogin(username, password);
+      } catch {
+        setLoginError("Invalid username or password.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+    const submitInitialSetup = async (event: React.FormEvent) => {
+      event.preventDefault();
+      if (!onInitialAdminSetup) return;
+      setIsSubmitting(true);
+      setLoginError(null);
+      try {
+        await onInitialAdminSetup({ username, password, displayName, email });
+      } catch (err) {
+        setLoginError(err instanceof Error ? err.message : "Could not create the administrator.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
     return (
       <Box sx={{ 
         display: 'flex', 
@@ -134,7 +176,17 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
             )}
           </Box>
 
-          <Button 
+          {authMode === "local" ? (
+            <Box component="form" onSubmit={localSetupRequired ? submitInitialSetup : submitLocalLogin} sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
+              {localSetupRequired && <Typography sx={{ color: "var(--text-secondary)", textAlign: "left" }}>Create the first administrator for this Kollab installation.</Typography>}
+              <input aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />
+              {localSetupRequired && <input aria-label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} autoComplete="name" style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />}
+              {localSetupRequired && <input aria-label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />}
+              <input aria-label="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />
+              {loginError && <Typography color="error" variant="body2">{loginError}</Typography>}
+              <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>{isSubmitting ? "Working…" : localSetupRequired ? "Create administrator" : "Sign in"}</Button>
+            </Box>
+          ) : <Button
             variant="contained" 
             size="large"
             onClick={() => auth?.signinRedirect({ state: window.location.pathname })}
@@ -151,7 +203,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
             }}
           >
             {authLoginButtonText || "Log In to Workspace"}
-          </Button>
+          </Button>}
 
           {legalDisclaimer && (
             <Typography variant="caption" sx={{ color: 'text.disabled', mt: 2, display: 'block', px: 2, lineHeight: 1.5 }}>

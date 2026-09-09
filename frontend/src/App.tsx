@@ -18,6 +18,7 @@ import { UserMentionsView } from "./components/UserMentionsView";
 import { NotificationsView } from "./components/NotificationsView";
 import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { AdminHelpPage } from "./components/AdminHelpPage";
+import { AdminLocalUsersPage } from "./components/AdminLocalUsersPage";
 import { ImageLibraryView } from "./components/ImageLibraryView";
 import { TemplateLibraryView } from "./components/TemplateLibraryView";
 import { TeamsDirectoryView } from "./components/TeamsDirectoryView";
@@ -25,7 +26,7 @@ import { SearchPage } from "./pages/SearchPage";
 import { HelpDialog } from "./components/HelpDialog";
 import { CreateSpaceDialog } from "./components/CreateSpaceDialog";
 
-import { setApiToken, setOnUnauthorized, createTeam, createProject, updateSystemSettings } from "./services/api";
+import { setApiToken, setOnUnauthorized, createTeam, createProject, updateSystemSettings, loginLocal, setupInitialLocalAdmin } from "./services/api";
 import { useAppStore } from "./store/useAppStore";
 import { useToastStore } from "./store/useToastStore";
 import { useTeams, useProjects, useSystemSettings } from "./hooks/queries";
@@ -41,14 +42,18 @@ interface AppProps {
   authLogoUrl?: string;
   authLogoSize?: string;
   legalDisclaimer?: string;
+  authMode?: "oidc" | "local";
+  localSetupRequired?: boolean;
+  localToken?: string | null;
+  onLocalToken?: (token: string | null) => void;
   authLoginButtonText?: string;
 }
 
-export default function App({ isMockMode = false, welcomeTitle, welcomeText, authLogoUrl, authLogoSize, legalDisclaimer, authLoginButtonText }: AppProps) {
-  const auth = isMockMode ? null : useAuth();
+export default function App({ isMockMode = false, welcomeTitle, welcomeText, authLogoUrl, authLogoSize, legalDisclaimer, authLoginButtonText, authMode = "oidc", localSetupRequired = false, localToken = null, onLocalToken }: AppProps) {
+	const auth = useAuth();
   
   // Try to grab token if authenticatedo free tier does not support API resources, so we can't get a JWT access_token.
-  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
+  const userToken = isMockMode ? "mock-jwt-token" : authMode === "local" ? localToken : auth?.user?.id_token || null;
   setApiToken(userToken);
 
   const queryClient = useQueryClient();
@@ -57,7 +62,17 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
   const { open: toastOpen, message: toastMessage, severity: toastSeverity, showToast, hideToast } = useToastStore();
   
   // Only enable data fetching when fully authenticated and not currently processing a login/redirect
-  const isAuthenticated = isMockMode || (!!auth?.isAuthenticated && !auth?.isLoading && !auth?.activeNavigator && !auth?.error);
+  const isAuthenticated = isMockMode || (authMode === "local" ? !!localToken : !!auth?.isAuthenticated && !auth?.isLoading && !auth?.activeNavigator && !auth?.error);
+  const handleLocalLogin = async (username: string, password: string) => {
+    const result = await loginLocal(username, password);
+    setApiToken(result.token);
+    onLocalToken?.(result.token);
+  };
+  const handleInitialAdminSetup = async (user: { username: string; password: string; email: string; displayName: string }) => {
+    const result = await setupInitialLocalAdmin(user);
+    setApiToken(result.token);
+    onLocalToken?.(result.token);
+  };
   
   const { data: teams = [] } = useTeams({ enabled: isAuthenticated && !!userToken });
   const { data: projects = [] } = useProjects("all", { enabled: isAuthenticated && !!userToken });
@@ -101,6 +116,11 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
         navigate(`/teams/${tId}/docs/${documentId}`);
       }
     }
+        authMode={authMode}
+        localSetupRequired={localSetupRequired}
+        localToken={localToken}
+        onLocalLogin={handleLocalLogin}
+        onInitialAdminSetup={handleInitialAdminSetup}
   };
 
   return (
@@ -152,6 +172,7 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="teams/:teamId/p/:projectId/trash" element={<TrashView teamId="mock" projectId="mock" onRestore={async () => {}} onDeletePermanently={async () => {}} navigateTo={() => {}} />} />
             <Route path="teams/:teamId/p/:projectId/_images" element={<ImageLibraryView scope="project" />} />
             <Route path="teams/:teamId/p/:projectId/_templates" element={<TemplateLibraryView scope="team" />} />
+            <Route path="_admin/users" element={authMode === "local" ? <AdminLocalUsersPage /> : <Navigate to="/_admin/settings" replace />} />
             <Route path="teams/:teamId/p/:projectId/template/:templateId" element={<TemplatePage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/p/:projectId/docs/:docId" element={<DocumentPage isMockMode={isMockMode} />} />
             <Route path="teams/:teamId/p/:projectId/docs/:docId/viewers" element={<PageAuditView docId="docId" docTitle="Title" selectedTeamName="Team" onBack={() => {}} />} />
