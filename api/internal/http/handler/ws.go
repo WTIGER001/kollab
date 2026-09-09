@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 
 	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 	"kollab/api/internal/ws"
 )
 
@@ -17,8 +18,12 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		// Allow standard local development origins
-		return true
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true
+		}
+		u, err := url.Parse(origin)
+		return err == nil && u.Host == r.Host
 	},
 }
 
@@ -26,13 +31,15 @@ type WSHandler struct {
 	jwtSecret []byte
 	jwksCache *middleware.JWKSCache
 	hub       *ws.Hub
+	evaluator *permissions.AccessEvaluator
 }
 
-func NewWSHandler(jwtSecret []byte, jwksCache *middleware.JWKSCache, hub *ws.Hub) *WSHandler {
+func NewWSHandler(jwtSecret []byte, jwksCache *middleware.JWKSCache, hub *ws.Hub, evaluator *permissions.AccessEvaluator) *WSHandler {
 	return &WSHandler{
 		jwtSecret: jwtSecret,
 		jwksCache: jwksCache,
 		hub:       hub,
+		evaluator: evaluator,
 	}
 }
 
@@ -53,6 +60,15 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("WebSocket auth validation failed: %v", err)
 		http.Error(w, "Unauthorized: invalid token", http.StatusUnauthorized)
+		return
+	}
+	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, docID, "read", "", "")
+	if err != nil {
+		http.Error(w, "Unable to verify document access", http.StatusInternalServerError)
+		return
+	}
+	if !allowed {
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -79,31 +95,9 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WSHandler) validateToken(ctx context.Context, tokenString string) (string, string, error) {
-	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
-			return h.jwtSecret, nil
-		}
-
-		kidVal, ok := token.Header["kid"]
-		if !ok {
-			return nil, fmt.Errorf("missing kid in token header")
-		}
-
-		kid, ok := kidVal.(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid kid header type")
-		}
-
-		if h.jwksCache == nil {
-			return nil, fmt.Errorf("JWKS cache is not initialized")
-		}
-
-		return h.jwksCache.GetKey(ctx, kid)
-	})
-
-	if err != nil || !token.Valid {
-		return "", "", fmt.Errorf("invalid token: %w", err)
+	claims, err := middleware.ValidateToken(ctx, tokenString, h.jwtSecret, h.jwksCache)
+	if err != nil {
+		return "", "", err
 	}
 
 	var userID, username string

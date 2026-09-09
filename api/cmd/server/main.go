@@ -281,7 +281,7 @@ func main() {
 			log.Fatalf("OIDC configuration is invalid: %v", err)
 		}
 	}
-	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
+	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub, evaluator)
 	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, integrationHandler, evaluator)
 
 	port := os.Getenv("PORT")

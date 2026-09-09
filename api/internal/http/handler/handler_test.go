@@ -331,7 +331,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	docH := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imgH := handler.NewImageHandler(imageService)
 	themeH := handler.NewThemeHandler(themeService)
-	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub)
+	wsH := handler.NewWSHandler([]byte(jwtSecret), nil, wsHub, evaluator)
 	systemH := handler.NewSystemHandler(systemService, attachmentService)
 	commentService := inmemcomment.NewCommentService(commentRepo)
 	commentH := handler.NewCommentHandler(commentService, userRepo)

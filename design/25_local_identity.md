@@ -30,3 +30,5 @@ The login handler limits an in-process `(normalized username, remote address)` p
 ## Attachment authorization
 
 Attachment file, preview, preview-status, retry, and preview-asset endpoints execute behind the standard authentication middleware and resolve the attachment's `document_id` before responding. The access evaluator then applies `read`, `write`, or `delete` against that parent document. Browser elements that cannot set an `Authorization` header may provide `authToken` only on `/api/attachments/` routes; the token is still fully validated before the document authorization check.
+
+WebSocket upgrades validate the token and `read` access to the requested `docId` before the socket is accepted. Cross-origin upgrades are rejected unless the request origin matches the serving host.
