@@ -678,8 +678,17 @@ func (h *DocumentHandler) ListNotifications(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Watches can outlive a user's document access. Filter at read time so an
+	// old notification cannot disclose a page title after access is revoked.
+	visibleNotifications := make([]*domain.DocumentNotification, 0, len(notifications))
+	for _, notification := range notifications {
+		allowed, _, accessErr := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, notification.DocumentID, "read", "", "")
+		if accessErr == nil && allowed {
+			visibleNotifications = append(visibleNotifications, notification)
+		}
+	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(notifications)
+	_ = json.NewEncoder(w).Encode(visibleNotifications)
 }
 
 func (h *DocumentHandler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {

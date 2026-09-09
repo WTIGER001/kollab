@@ -7,7 +7,7 @@ This document specifies the architecture for Kollab's Watch system, allowing use
 ## 1. Subscription (Watch) Data Model
 
 > [!NOTE]
-> **Status:** 🟡 Page-level subscriptions are implemented. Project/team inheritance, automatic subscriptions, and notification delivery remain planned.
+> **Status:** 🟡 Page-level subscriptions and a persisted in-app inbox are implemented. Project/team inheritance, automatic subscriptions, real-time push, and email delivery remain planned.
 
 A user can currently watch a specific Document. Project and Team subscriptions will be added as a compatible extension; until then, subscriptions do not inherit from a parent container.
 
@@ -37,9 +37,9 @@ Migration `0005_document_watches.sql` installs the table. `DocumentRepository` e
 ## 2. Event Triggering & Routing
 
 > [!NOTE]
-> **Status:** 🟡 Watched-page edits now create persisted in-app notification records. A dedicated inbox UI, real-time push, email digest, and inherited/container watches remain planned.
+> **Status:** 🟡 Watched-page edits create persisted in-app notifications and the account-menu inbox renders them. Real-time push, email digest, and inherited/container watches remain planned.
 
-Migration `0008_document_notifications.sql` stores the recipient, actor, document title/ID, event type, read state, and timestamp. `DocumentService.UpdateDocument` resolves page watchers after a successful save, excludes the editor, and creates a `document_updated` notification for each other watcher. `GET /api/notifications` lists the current user's latest records; `PUT /api/notifications/{notificationId}/read` marks only that user's record read.
+Migration `0008_document_notifications.sql` stores the recipient, actor, document title/ID, event type, read state, and timestamp. `DocumentService.UpdateDocument` resolves page watchers after a successful save, excludes the editor, and creates a `document_updated` notification for each other watcher. `GET /api/notifications` returns only the current user's records for documents they can still read, preventing a stale record from leaking a revoked page title; `PUT /api/notifications/{notificationId}/read` marks only that user's record read.
 
 When a mutative action occurs, the backend fires an asynchronous event to an internal Pub/Sub broker or Go channel.
 
@@ -70,7 +70,7 @@ graph TD
 ## 3. In-App Notification Delivery
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟡 Implemented as a persisted account-menu inbox. WebSocket push and email delivery are planned.
 
 Notifications are stored persistently to power an in-app "Notification Inbox" (the bell icon).
 
