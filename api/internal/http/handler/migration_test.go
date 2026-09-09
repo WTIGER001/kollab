@@ -8,11 +8,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	inmematt "kollab/api/internal/attachment"
 	documentService "kollab/api/internal/document"
 	"kollab/api/internal/http/handler"
 	"kollab/api/internal/migration"
+	"kollab/api/internal/storage"
 )
 
 func TestConfluencePreviewUsesUploadedArchive(t *testing.T) {
@@ -190,5 +193,85 @@ func TestConfluenceImportIsIdempotentForTheSameArchiveAndTarget(t *testing.T) {
 	created, err := repo.GetByTeamID(context.Background(), "team-1")
 	if err != nil || len(created) != 1 {
 		t.Fatalf("expected exactly one page after retry, got %#v (%v)", created, err)
+	}
+}
+
+func TestConfluenceImportUploadsReferencedAttachments(t *testing.T) {
+	archiveBuffer := new(bytes.Buffer)
+	archiveWriter := zip.NewWriter(archiveBuffer)
+	page, err := archiveWriter.Create("pages/architecture.xhtml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = page.Write([]byte(`<title>Architecture</title><ri:attachment ri:filename="diagram.png"/>`))
+	attachment, err := archiveWriter.Create("attachments/assets/diagram.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = attachment.Write([]byte("png-bytes"))
+	_ = archiveWriter.Close()
+
+	body := new(bytes.Buffer)
+	form := multipart.NewWriter(body)
+	file, err := form.CreateFormFile("backup", "space.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = file.Write(archiveBuffer.Bytes())
+	_ = form.WriteField("teamId", "team-1")
+	_ = form.Close()
+
+	temporaryDirectory, err := os.MkdirTemp("", "kollab-confluence-attachments-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(temporaryDirectory)
+	fileStorage, err := storage.NewLocalStorage(temporaryDirectory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attachmentService := inmematt.NewAttachmentService(inmematt.NewInMemoryAttachmentRepository(), fileStorage)
+	documentRepository := documentService.NewInMemoryDocumentRepository()
+	documents := documentService.NewDocumentService(documentRepository, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/migration/confluence/import", body)
+	req.Header.Set("Content-Type", form.FormDataContentType())
+	response := httptest.NewRecorder()
+	handler.NewMigrationHandler(migration.NewConfluenceImporter(), documents, attachmentService).ImportConfluenceSpace(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	created, err := documentRepository.GetByTeamID(context.Background(), "team-1")
+	if err != nil || len(created) != 1 {
+		t.Fatalf("expected one document, got %#v (%v)", created, err)
+	}
+	attachments, err := attachmentService.ListAttachments(context.Background(), created[0].ID)
+	if err != nil || len(attachments) != 1 || attachments[0].Filename != "diagram.png" {
+		t.Fatalf("expected mapped attachment, got %#v (%v)", attachments, err)
+	}
+	data, _, err := attachmentService.GetAttachmentFile(context.Background(), attachments[0].ID)
+	if err != nil || string(data) != "png-bytes" {
+		t.Fatalf("expected preserved attachment bytes, got %q (%v)", string(data), err)
+	}
+
+	// A retry reuses both the page and its byte-identical attachment.
+	retryBody := new(bytes.Buffer)
+	retryForm := multipart.NewWriter(retryBody)
+	retryFile, err := retryForm.CreateFormFile("backup", "space.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = retryFile.Write(archiveBuffer.Bytes())
+	_ = retryForm.WriteField("teamId", "team-1")
+	_ = retryForm.Close()
+	retryRequest := httptest.NewRequest(http.MethodPost, "/api/migration/confluence/import", retryBody)
+	retryRequest.Header.Set("Content-Type", retryForm.FormDataContentType())
+	retryResponse := httptest.NewRecorder()
+	handler.NewMigrationHandler(migration.NewConfluenceImporter(), documents, attachmentService).ImportConfluenceSpace(retryResponse, retryRequest)
+	if retryResponse.Code != http.StatusOK {
+		t.Fatalf("retry expected 200, got %d: %s", retryResponse.Code, retryResponse.Body.String())
+	}
+	attachments, err = attachmentService.ListAttachments(context.Background(), created[0].ID)
+	if err != nil || len(attachments) != 1 {
+		t.Fatalf("expected retry to preserve one attachment, got %#v (%v)", attachments, err)
 	}
 }

@@ -20,7 +20,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 	r := chi.NewRouter()
 
 	confluenceImporter := migration.NewConfluenceImporter()
-	migrationH := handler.NewMigrationHandler(confluenceImporter, docH.Service())
+	migrationH := handler.NewMigrationHandler(confluenceImporter, docH.Service(), attH.Service())
 
 	// Standard middleware
 	r.Use(mid.RequestLogger)

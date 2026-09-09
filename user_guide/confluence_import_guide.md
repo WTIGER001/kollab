@@ -20,7 +20,7 @@ This guide walks administrators and space owners through exporting spaces from C
 3. **Step 2: Destination**: Select a Team and one of its Projects. Pages are created in that selected project, so choose an existing project where you have permission to create pages.
 4. **Step 3: Review and import**: Read the archive findings before you click **Start Confluence Migration**. Unsupported macros are kept as readable source text and broken internal links are shown in the audit list.
 5. Click **🚀 Start Confluence Migration**.
-6. **Step 4: Summary Report**: Compare **Pages Created** with the number found during preflight and review every warning before considering the move complete.
+6. **Step 4: Summary Report**: Compare **Pages Created** with the number found during preflight and review every warning before considering the move complete. Files referenced from a page through Confluence attachment markup are uploaded to that page automatically.
 
 If you retry the exact same archive in the same team or project, Kollab skips pages it already created and identifies them as skipped in the summary. A changed archive is treated as a new import and should be reviewed through preflight first.
 

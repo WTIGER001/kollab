@@ -28,6 +28,9 @@ func NewAttachmentHandler(attachmentService domain.AttachmentService, evaluator 
 	}
 }
 
+// Service exposes the application service to composed import handlers.
+func (h *AttachmentHandler) Service() domain.AttachmentService { return h.attachmentService }
+
 func (h *AttachmentHandler) requireAttachmentAccess(w http.ResponseWriter, r *http.Request, action string) (*domain.Attachment, bool) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok || userID == "" {

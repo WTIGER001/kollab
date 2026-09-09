@@ -36,10 +36,11 @@ type MacroSummary struct {
 }
 
 type PreflightPage struct {
-	SourcePath       string `json:"sourcePath"`
-	ParentSourcePath string `json:"parentSourcePath,omitempty"`
-	Title            string `json:"title"`
-	Content          string `json:"-"`
+	SourcePath       string   `json:"sourcePath"`
+	ParentSourcePath string   `json:"parentSourcePath,omitempty"`
+	Title            string   `json:"title"`
+	Content          string   `json:"-"`
+	AttachmentNames  []string `json:"-"`
 }
 
 // PreflightReport contains facts derived from the uploaded archive. It never
@@ -91,6 +92,7 @@ var (
 	htmlTagPattern   = regexp.MustCompile(`(?is)<[^>]+>`)
 	hrefPattern      = regexp.MustCompile(`(?i)\bhref\s*=\s*["']([^"'#?]+)[^"']*["']`)
 	contentTitle     = regexp.MustCompile(`(?i)<ri:page\b[^>]*\bri:content-title\s*=\s*["']([^"']+)["']`)
+	attachmentName   = regexp.MustCompile(`(?i)<ri:attachment\b[^>]*\bri:filename\s*=\s*["']([^"']+)["']`)
 )
 
 var supportedMacros = map[string]bool{
@@ -103,7 +105,7 @@ func isPageEntry(name string) bool {
 	return ext == ".html" || ext == ".htm" || ext == ".xhtml"
 }
 
-func validArchivePath(name string) bool {
+func ValidArchivePath(name string) bool {
 	clean := path.Clean(strings.ReplaceAll(name, "\\", "/"))
 	return name != "" && !strings.HasPrefix(clean, "../") && clean != ".." && !strings.HasPrefix(clean, "/")
 }
@@ -192,7 +194,7 @@ func (c *ConfluenceImporter) Preflight(ctx context.Context, zipBytes []byte) (*P
 		if file.FileInfo().IsDir() {
 			continue
 		}
-		if !validArchivePath(file.Name) {
+		if !ValidArchivePath(file.Name) {
 			report.Issues = append(report.Issues, MigrationIssue{Level: "error", Code: "unsafe-archive-path", Entry: file.Name, Message: fmt.Sprintf("Archive entry %q has an unsafe path and will not be imported.", file.Name)})
 			continue
 		}
@@ -214,7 +216,21 @@ func (c *ConfluenceImporter) Preflight(ctx context.Context, zipBytes []byte) (*P
 		pageNames[file.Name] = struct{}{}
 		pageContents[file.Name] = content
 		title := titleForEntry(file.Name, content)
-		report.Pages = append(report.Pages, PreflightPage{SourcePath: file.Name, Title: title, Content: c.ConvertXHTMLToTiptapAST(string(content), title)})
+		attachmentNames := make([]string, 0)
+		seenAttachmentNames := make(map[string]struct{})
+		for _, match := range attachmentName.FindAllStringSubmatch(string(content), -1) {
+			name := strings.TrimSpace(match[1])
+			if name == "" {
+				continue
+			}
+			key := strings.ToLower(name)
+			if _, seen := seenAttachmentNames[key]; seen {
+				continue
+			}
+			seenAttachmentNames[key] = struct{}{}
+			attachmentNames = append(attachmentNames, name)
+		}
+		report.Pages = append(report.Pages, PreflightPage{SourcePath: file.Name, Title: title, Content: c.ConvertXHTMLToTiptapAST(string(content), title), AttachmentNames: attachmentNames})
 		for _, match := range macroNamePattern.FindAllStringSubmatch(string(content), -1) {
 			macroCounts[strings.ToLower(strings.TrimSpace(match[1]))]++
 		}
