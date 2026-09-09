@@ -37,23 +37,21 @@ func NewMigrationHandler(importer *migration.ConfluenceImporter, documentService
 	}
 }
 
-func attachmentFiles(zipBytes []byte) (map[string]*zip.File, error) {
+func attachmentFiles(zipBytes []byte) (map[string][]*zip.File, error) {
 	archive, err := zip.NewReader(bytes.NewReader(zipBytes), int64(len(zipBytes)))
 	if err != nil {
 		return nil, err
 	}
-	files := make(map[string]*zip.File)
+	files := make(map[string][]*zip.File)
 	for _, file := range archive.File {
-		if file.FileInfo().IsDir() || !migration.ValidArchivePath(file.Name) {
+		if file.FileInfo().IsDir() || !migration.ValidArchivePath(file.Name) || !strings.HasPrefix(strings.ToLower(file.Name), "attachments/") {
 			continue
 		}
 		name := strings.ToLower(path.Base(file.Name))
 		if name == "" || name == "." {
 			continue
 		}
-		if _, exists := files[name]; !exists {
-			files[name] = file
-		}
+		files[name] = append(files[name], file)
 	}
 	return files, nil
 }
@@ -67,7 +65,14 @@ func readAttachmentFile(file *zip.File) ([]byte, error) {
 		return nil, err
 	}
 	defer reader.Close()
-	return io.ReadAll(io.LimitReader(reader, 10<<20+1))
+	data, err := io.ReadAll(io.LimitReader(reader, 10<<20+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > 10<<20 {
+		return nil, fmt.Errorf("attachment exceeds the 10 MiB import limit")
+	}
+	return data, nil
 }
 
 func (h *MigrationHandler) ImportConfluenceSpace(w http.ResponseWriter, r *http.Request) {
@@ -168,11 +173,16 @@ func (h *MigrationHandler) ImportConfluenceSpace(w http.ResponseWriter, r *http.
 				warnings = append(warnings, fmt.Sprintf("%s attachments could not be checked for an earlier import: %v", page.SourcePath, listErr))
 			}
 			for _, attachmentName := range page.AttachmentNames {
-				archiveFile, found := archiveAttachments[strings.ToLower(path.Base(attachmentName))]
-				if !found {
+				matchingFiles := archiveAttachments[strings.ToLower(path.Base(attachmentName))]
+				if len(matchingFiles) == 0 {
 					warnings = append(warnings, fmt.Sprintf("%s references attachment %q, but no matching archive file was found.", page.SourcePath, attachmentName))
 					continue
 				}
+				if len(matchingFiles) > 1 {
+					warnings = append(warnings, fmt.Sprintf("%s references attachment %q, but it matches %d archive files and was not imported.", page.SourcePath, attachmentName, len(matchingFiles)))
+					continue
+				}
+				archiveFile := matchingFiles[0]
 				data, readErr := readAttachmentFile(archiveFile)
 				if readErr != nil {
 					warnings = append(warnings, fmt.Sprintf("%s attachment %q was not imported: %v", page.SourcePath, attachmentName, readErr))

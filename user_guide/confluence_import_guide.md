@@ -31,5 +31,5 @@ If you retry the exact same archive in the same team or project, Kollab skips pa
 - Open several imported pages to check titles and converted callouts, expand sections, status badges, and code blocks.
 - For HTML exports, a folder's `index.html`/`index.xhtml` page becomes the parent of pages in that folder. Confirm this recovered hierarchy in the target project; archives without directory index pages are imported as root-level pages.
 - Repair each internal-link warning in the audit list. A warning means the referenced source page was not found in the uploaded archive.
-- Attachment files are counted during preflight, but they are not copied into the target project yet. Upload any required files through the page attachment control after the page migration.
+- Referenced attachment files are copied to their imported page automatically. If an attachment is missing, too large, unreadable, or has the same filename as more than one archive file, the summary leaves it out and tells you what to repair before uploading a replacement.
 - Data Center exports containing only `entities.xml` cannot be imported yet. Include XHTML/HTML page files in the archive.

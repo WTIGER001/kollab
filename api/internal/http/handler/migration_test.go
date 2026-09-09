@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	inmematt "kollab/api/internal/attachment"
@@ -273,5 +274,74 @@ func TestConfluenceImportUploadsReferencedAttachments(t *testing.T) {
 	attachments, err = attachmentService.ListAttachments(context.Background(), created[0].ID)
 	if err != nil || len(attachments) != 1 {
 		t.Fatalf("expected retry to preserve one attachment, got %#v (%v)", attachments, err)
+	}
+}
+
+func TestConfluenceImportDoesNotGuessBetweenDuplicateAttachmentNames(t *testing.T) {
+	archiveBuffer := new(bytes.Buffer)
+	archiveWriter := zip.NewWriter(archiveBuffer)
+	page, err := archiveWriter.Create("pages/architecture.xhtml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = page.Write([]byte(`<title>Architecture</title><ri:attachment ri:filename="diagram.png"/>`))
+	for _, entry := range []struct {
+		name string
+		data string
+	}{
+		{"attachments/diagrams/diagram.png", "first-copy"},
+		{"attachments/legacy/diagram.png", "second-copy"},
+	} {
+		file, err := archiveWriter.Create(entry.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = file.Write([]byte(entry.data))
+	}
+	_ = archiveWriter.Close()
+
+	body := new(bytes.Buffer)
+	form := multipart.NewWriter(body)
+	file, err := form.CreateFormFile("backup", "space.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = file.Write(archiveBuffer.Bytes())
+	_ = form.WriteField("teamId", "team-1")
+	_ = form.Close()
+
+	temporaryDirectory, err := os.MkdirTemp("", "kollab-confluence-duplicate-attachments-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(temporaryDirectory)
+	fileStorage, err := storage.NewLocalStorage(temporaryDirectory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attachmentService := inmematt.NewAttachmentService(inmematt.NewInMemoryAttachmentRepository(), fileStorage)
+	documentRepository := documentService.NewInMemoryDocumentRepository()
+	documents := documentService.NewDocumentService(documentRepository, nil, nil, nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/migration/confluence/import", body)
+	req.Header.Set("Content-Type", form.FormDataContentType())
+	response := httptest.NewRecorder()
+	handler.NewMigrationHandler(migration.NewConfluenceImporter(), documents, attachmentService).ImportConfluenceSpace(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var summary migration.MigrationSummary
+	if err := json.NewDecoder(response.Body).Decode(&summary); err != nil {
+		t.Fatal(err)
+	}
+	if len(summary.Warnings) == 0 || !strings.Contains(summary.Warnings[0], "matches 2 archive files") {
+		t.Fatalf("expected an ambiguity warning, got %#v", summary.Warnings)
+	}
+	created, err := documentRepository.GetByTeamID(context.Background(), "team-1")
+	if err != nil || len(created) != 1 {
+		t.Fatalf("expected one document, got %#v (%v)", created, err)
+	}
+	attachments, err := attachmentService.ListAttachments(context.Background(), created[0].ID)
+	if err != nil || len(attachments) != 0 {
+		t.Fatalf("expected ambiguous attachment to be skipped, got %#v (%v)", attachments, err)
 	}
 }

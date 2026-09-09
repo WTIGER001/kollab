@@ -54,7 +54,7 @@ flowchart TD
 
 Imports calculate a SHA-256 digest of the uploaded archive and write one record per source path to `confluence_import_records` (migration `0007`). The record is scoped to the requested team/project target and target document ID. Retrying the identical archive in the same target safely returns the earlier page as skipped; it does not create another page based on the same source path.
 
-For each page, preflight retains unique `<ri:attachment ri:filename="…">` references. Import matches those filenames to safe archive entries and sends their bytes through `AttachmentService`, preserving the page association and normal storage/preview behavior. An unmatched reference or an oversized/unreadable attachment is a per-page warning, not a hidden partial success.
+For each page, preflight retains unique `<ri:attachment ri:filename="…">` references. Import matches those filenames to safe entries below `attachments/` and sends their bytes through `AttachmentService`, preserving the page association and normal storage/preview behavior. An unmatched, oversized, unreadable, or duplicate-name reference is a per-page warning, not a hidden partial success. A duplicate basename is deliberately skipped rather than selecting an arbitrary archive file.
 
 `POST /api/migration/confluence/import` runs the same preflight and only creates pages if it has no error-level findings. The handler calls `DocumentService.CreateDocument`, preserving normal membership checks, owner grants, versioning, and audit events. A page that cannot be created is listed in `warnings`; the response does not report it as a success.
 
