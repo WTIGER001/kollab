@@ -70,6 +70,8 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Get("/favorites", docH.ListFavorites)
 		r.Get("/tasks", docH.GetTasks)
 		r.Get("/mentions", docH.GetMentions)
+		r.Get("/notifications", docH.ListNotifications)
+		r.Put("/notifications/{notificationId}/read", docH.MarkNotificationRead)
 
 		r.Route("/favorites/{documentId}", func(r chi.Router) {
 			r.Use(readCheck)

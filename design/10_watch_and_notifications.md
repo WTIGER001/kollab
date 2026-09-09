@@ -37,7 +37,9 @@ Migration `0005_document_watches.sql` installs the table. `DocumentRepository` e
 ## 2. Event Triggering & Routing
 
 > [!NOTE]
-> **Status:** ⚪ Planned. The subscription API intentionally does not claim to deliver notifications until an inbox and event dispatcher exist.
+> **Status:** 🟡 Watched-page edits now create persisted in-app notification records. A dedicated inbox UI, real-time push, email digest, and inherited/container watches remain planned.
+
+Migration `0008_document_notifications.sql` stores the recipient, actor, document title/ID, event type, read state, and timestamp. `DocumentService.UpdateDocument` resolves page watchers after a successful save, excludes the editor, and creates a `document_updated` notification for each other watcher. `GET /api/notifications` lists the current user's latest records; `PUT /api/notifications/{notificationId}/read` marks only that user's record read.
 
 When a mutative action occurs, the backend fires an asynchronous event to an internal Pub/Sub broker or Go channel.
 

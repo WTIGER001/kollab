@@ -181,6 +181,21 @@ func TestPostgresDocumentRepository(t *testing.T) {
 	if err != nil || foundImport == nil || foundImport.DocumentID != importRecord.DocumentID {
 		t.Fatalf("expected persisted import record, got %#v (%v)", foundImport, err)
 	}
+	notification := &domain.DocumentNotification{ID: "notification-1", UserID: "sh4ag0cxowti", ActorID: "sh4ag0cxowti", DocumentID: "doc_welcome_eng", DocumentTitle: "Welcome", EventType: "document_updated", CreatedAt: time.Now()}
+	if err := repo.CreateNotification(ctx, notification); err != nil {
+		t.Fatalf("create notification: %v", err)
+	}
+	notifications, err := repo.ListNotifications(ctx, "sh4ag0cxowti")
+	if err != nil || len(notifications) != 1 || notifications[0].ID != notification.ID {
+		t.Fatalf("expected persisted notification, got %#v (%v)", notifications, err)
+	}
+	if err := repo.MarkNotificationRead(ctx, "sh4ag0cxowti", notification.ID); err != nil {
+		t.Fatalf("mark notification read: %v", err)
+	}
+	notifications, _ = repo.ListNotifications(ctx, "sh4ag0cxowti")
+	if !notifications[0].IsRead {
+		t.Fatal("expected notification to be marked read")
+	}
 
 	// Get seed documents by project
 	docs, err := repo.GetByProjectID(ctx, "proj_wiki")

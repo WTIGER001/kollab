@@ -720,6 +720,56 @@ func (r *PostgresDocumentRepository) IsWatching(ctx context.Context, userID stri
 	return exists, err
 }
 
+func (r *PostgresDocumentRepository) ListWatchers(ctx context.Context, documentID string) ([]string, error) {
+	rows, err := r.db.Query(ctx, "SELECT user_id FROM document_watches WHERE document_id = $1", documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	watchers := []string{}
+	for rows.Next() {
+		var userID string
+		if err := rows.Scan(&userID); err != nil {
+			return nil, err
+		}
+		watchers = append(watchers, userID)
+	}
+	return watchers, rows.Err()
+}
+
+func (r *PostgresDocumentRepository) CreateNotification(ctx context.Context, notification *domain.DocumentNotification) error {
+	_, err := r.db.Exec(ctx, `INSERT INTO document_notifications (id, user_id, actor_id, document_id, document_title, event_type, is_read, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, notification.ID, notification.UserID, notification.ActorID, notification.DocumentID, notification.DocumentTitle, notification.EventType, notification.IsRead, notification.CreatedAt)
+	return err
+}
+
+func (r *PostgresDocumentRepository) ListNotifications(ctx context.Context, userID string) ([]*domain.DocumentNotification, error) {
+	rows, err := r.db.Query(ctx, `SELECT id, user_id, COALESCE(actor_id,''), document_id, document_title, event_type, is_read, created_at FROM document_notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := []*domain.DocumentNotification{}
+	for rows.Next() {
+		notification := &domain.DocumentNotification{}
+		if err := rows.Scan(&notification.ID, &notification.UserID, &notification.ActorID, &notification.DocumentID, &notification.DocumentTitle, &notification.EventType, &notification.IsRead, &notification.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, notification)
+	}
+	return result, rows.Err()
+}
+
+func (r *PostgresDocumentRepository) MarkNotificationRead(ctx context.Context, userID string, notificationID string) error {
+	command, err := r.db.Exec(ctx, "UPDATE document_notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2", notificationID, userID)
+	if err != nil {
+		return err
+	}
+	if command.RowsAffected() == 0 {
+		return errors.New("notification not found")
+	}
+	return nil
+}
+
 func (r *PostgresDocumentRepository) GetReview(ctx context.Context, documentID string) (*domain.DocumentReview, error) {
 	review := &domain.DocumentReview{DocumentID: documentID, Status: "draft"}
 	err := r.db.QueryRow(ctx, `

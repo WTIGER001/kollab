@@ -223,3 +223,38 @@ func TestDocumentServiceReviewLifecycle(t *testing.T) {
 		t.Fatal("expected invalid review status to be rejected")
 	}
 }
+
+func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	content := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"before"}]}]}`
+	document, err := service.CreateDocument(context.Background(), "Watched page", "", "proj_wiki", "team_eng", nil, "author", &content)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := service.AddWatch(context.Background(), "author", document.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.AddWatch(context.Background(), "watcher", document.ID); err != nil {
+		t.Fatal(err)
+	}
+	updated := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"after"}]}]}`
+	if _, err := service.UpdateDocument(context.Background(), document.ID, document.Title, "", updated, "author", ""); err != nil {
+		t.Fatal(err)
+	}
+	notifications, err := service.ListNotifications(context.Background(), "watcher")
+	if err != nil || len(notifications) != 1 || notifications[0].DocumentID != document.ID || notifications[0].ActorID != "author" {
+		t.Fatalf("expected one watcher notification, got %#v (%v)", notifications, err)
+	}
+	authorNotifications, err := service.ListNotifications(context.Background(), "author")
+	if err != nil || len(authorNotifications) != 0 {
+		t.Fatalf("actor should not notify themself: %#v (%v)", authorNotifications, err)
+	}
+	if err := service.MarkNotificationRead(context.Background(), "watcher", notifications[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	notifications, _ = service.ListNotifications(context.Background(), "watcher")
+	if !notifications[0].IsRead {
+		t.Fatal("expected notification to be marked read")
+	}
+}

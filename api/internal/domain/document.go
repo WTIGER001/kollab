@@ -76,6 +76,18 @@ type DocumentReview struct {
 	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
+// DocumentNotification is an in-app event generated for a user watching a page.
+type DocumentNotification struct {
+	ID            string    `json:"id"`
+	UserID        string    `json:"userId"`
+	ActorID       string    `json:"actorId"`
+	DocumentID    string    `json:"documentId"`
+	DocumentTitle string    `json:"documentTitle"`
+	EventType     string    `json:"eventType"`
+	IsRead        bool      `json:"isRead"`
+	CreatedAt     time.Time `json:"createdAt"`
+}
+
 // ConfluenceImportRecord maps a page inside one archive to the durable target
 // document it created. It makes retries safe without relying on page titles.
 type ConfluenceImportRecord struct {
@@ -129,6 +141,10 @@ type DocumentRepository interface {
 	AddWatch(ctx context.Context, userID string, documentID string) error
 	RemoveWatch(ctx context.Context, userID string, documentID string) error
 	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+	ListWatchers(ctx context.Context, documentID string) ([]string, error)
+	CreateNotification(ctx context.Context, notification *DocumentNotification) error
+	ListNotifications(ctx context.Context, userID string) ([]*DocumentNotification, error)
+	MarkNotificationRead(ctx context.Context, userID string, notificationID string) error
 
 	// Content lifecycle
 	GetReview(ctx context.Context, documentID string) (*DocumentReview, error)
@@ -183,6 +199,8 @@ type DocumentService interface {
 	AddWatch(ctx context.Context, userID string, documentID string) error
 	RemoveWatch(ctx context.Context, userID string, documentID string) error
 	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+	ListNotifications(ctx context.Context, userID string) ([]*DocumentNotification, error)
+	MarkNotificationRead(ctx context.Context, userID string, notificationID string) error
 	GetDocumentReview(ctx context.Context, documentID string) (*DocumentReview, error)
 	UpdateDocumentReview(ctx context.Context, documentID string, status string, nextReviewAt *time.Time, userID string) (*DocumentReview, error)
 	FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*ConfluenceImportRecord, error)

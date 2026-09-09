@@ -268,6 +268,7 @@ func (s *DocumentService) UpdateDocument(ctx context.Context, id string, title s
 	if s.systemService != nil {
 		_ = s.systemService.RecordAuditLog(ctx, id, userID, "edit")
 	}
+	s.notifyWatchers(ctx, doc, userID)
 
 	// Sync tasks
 	s.syncTasks(ctx, id, content)
@@ -740,6 +741,40 @@ func (s *DocumentService) IsWatching(ctx context.Context, userID string, documen
 		return false, errors.New("userID and documentID are required")
 	}
 	return s.repo.IsWatching(ctx, userID, documentID)
+}
+
+func (s *DocumentService) notifyWatchers(ctx context.Context, document *domain.Document, actorID string) {
+	if actorID == "" {
+		return
+	}
+	watchers, err := s.repo.ListWatchers(ctx, document.ID)
+	if err != nil {
+		return
+	}
+	for _, watcherID := range watchers {
+		if watcherID == "" || watcherID == actorID {
+			continue
+		}
+		_ = s.repo.CreateNotification(ctx, &domain.DocumentNotification{
+			ID: uuid.New().String(), UserID: watcherID, ActorID: actorID,
+			DocumentID: document.ID, DocumentTitle: document.Title,
+			EventType: "document_updated", CreatedAt: time.Now(),
+		})
+	}
+}
+
+func (s *DocumentService) ListNotifications(ctx context.Context, userID string) ([]*domain.DocumentNotification, error) {
+	if userID == "" {
+		return nil, errors.New("userID is required")
+	}
+	return s.repo.ListNotifications(ctx, userID)
+}
+
+func (s *DocumentService) MarkNotificationRead(ctx context.Context, userID string, notificationID string) error {
+	if userID == "" || notificationID == "" {
+		return errors.New("userID and notificationID are required")
+	}
+	return s.repo.MarkNotificationRead(ctx, userID, notificationID)
 }
 
 var validReviewStatuses = map[string]bool{

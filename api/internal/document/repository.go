@@ -31,27 +31,29 @@ type InMemoryDocumentWatch struct {
 }
 
 type InMemoryDocumentRepository struct {
-	mu         sync.RWMutex
-	documents  map[string]*domain.Document
-	versions   map[string]*domain.DocumentVersion
-	properties map[string][]domain.DocumentProperty
-	views      []InMemoryView
-	favorites  []InMemoryFavorite
-	watches    []InMemoryDocumentWatch
-	reviews    map[string]*domain.DocumentReview
-	imports    map[string]*domain.ConfluenceImportRecord
+	mu            sync.RWMutex
+	documents     map[string]*domain.Document
+	versions      map[string]*domain.DocumentVersion
+	properties    map[string][]domain.DocumentProperty
+	views         []InMemoryView
+	favorites     []InMemoryFavorite
+	watches       []InMemoryDocumentWatch
+	reviews       map[string]*domain.DocumentReview
+	imports       map[string]*domain.ConfluenceImportRecord
+	notifications []*domain.DocumentNotification
 }
 
 func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
 	repo := &InMemoryDocumentRepository{
-		documents:  make(map[string]*domain.Document),
-		versions:   make(map[string]*domain.DocumentVersion),
-		properties: make(map[string][]domain.DocumentProperty),
-		views:      make([]InMemoryView, 0),
-		favorites:  make([]InMemoryFavorite, 0),
-		watches:    make([]InMemoryDocumentWatch, 0),
-		reviews:    make(map[string]*domain.DocumentReview),
-		imports:    make(map[string]*domain.ConfluenceImportRecord),
+		documents:     make(map[string]*domain.Document),
+		versions:      make(map[string]*domain.DocumentVersion),
+		properties:    make(map[string][]domain.DocumentProperty),
+		views:         make([]InMemoryView, 0),
+		favorites:     make([]InMemoryFavorite, 0),
+		watches:       make([]InMemoryDocumentWatch, 0),
+		reviews:       make(map[string]*domain.DocumentReview),
+		imports:       make(map[string]*domain.ConfluenceImportRecord),
+		notifications: make([]*domain.DocumentNotification, 0),
 	}
 	repo.seed()
 	return repo
@@ -655,6 +657,52 @@ func (r *InMemoryDocumentRepository) IsWatching(ctx context.Context, userID stri
 		}
 	}
 	return false, nil
+}
+
+func (r *InMemoryDocumentRepository) ListWatchers(ctx context.Context, documentID string) ([]string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	watchers := make([]string, 0)
+	for _, watch := range r.watches {
+		if watch.DocumentID == documentID {
+			watchers = append(watchers, watch.UserID)
+		}
+	}
+	return watchers, nil
+}
+
+func (r *InMemoryDocumentRepository) CreateNotification(ctx context.Context, notification *domain.DocumentNotification) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	copy := *notification
+	r.notifications = append(r.notifications, &copy)
+	return nil
+}
+
+func (r *InMemoryDocumentRepository) ListNotifications(ctx context.Context, userID string) ([]*domain.DocumentNotification, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	result := make([]*domain.DocumentNotification, 0)
+	for index := len(r.notifications) - 1; index >= 0; index-- {
+		notification := r.notifications[index]
+		if notification.UserID == userID {
+			copy := *notification
+			result = append(result, &copy)
+		}
+	}
+	return result, nil
+}
+
+func (r *InMemoryDocumentRepository) MarkNotificationRead(ctx context.Context, userID string, notificationID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, notification := range r.notifications {
+		if notification.ID == notificationID && notification.UserID == userID {
+			notification.IsRead = true
+			return nil
+		}
+	}
+	return errors.New("notification not found")
 }
 
 func (r *InMemoryDocumentRepository) GetReview(ctx context.Context, documentID string) (*domain.DocumentReview, error) {

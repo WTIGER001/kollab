@@ -667,6 +667,34 @@ func (h *DocumentHandler) IsWatching(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]bool{"isWatching": isWatching})
 }
 
+func (h *DocumentHandler) ListNotifications(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	notifications, err := h.docService.ListNotifications(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(notifications)
+}
+
+func (h *DocumentHandler) MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if err := h.docService.MarkNotificationRead(r.Context(), userID, chi.URLParam(r, "notificationId")); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 type documentReviewRequest struct {
 	Status       string     `json:"status"`
 	NextReviewAt *time.Time `json:"nextReviewAt"`
