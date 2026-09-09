@@ -73,13 +73,6 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 		return fmt.Errorf("failed to bootstrap team permissions: %w", err)
 	}
 
-	// Always assign system administrator role to john bauer (developer user) on startup
-	if err := Service.AssignRoleToUser(ctx, "sh4ag0cxowti", "builtin.admin", nil); err != nil {
-		fmt.Printf("WARNING: failed to assign builtin.admin to developer user: %v\n", err)
-	} else {
-		fmt.Println("SUCCESS: Assigned builtin.admin to developer user 'sh4ag0cxowti'")
-	}
-
 	return nil
 }
 

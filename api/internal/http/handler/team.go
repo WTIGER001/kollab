@@ -8,6 +8,9 @@ import (
 
 	"kollab/api/internal/domain"
 	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
+
+	goperm "github.com/wtiger001/go-permissions"
 )
 
 type TeamHandler struct {
@@ -195,6 +198,10 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if err := permissions.TeamPermissions.GrantRole(r.Context(), permissions.TeamPermissions.OwnerRole.ID, goperm.PrincipalUser, userID, team.ID); err != nil {
+		http.Error(w, "Failed to assign space owner role", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -223,6 +230,10 @@ func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	project, err := h.teamService.CreateProject(r.Context(), userID, req.TeamID, req.Name, req.LogoURL, req.Abbreviation, req.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := permissions.ProjectPermissions.GrantRole(r.Context(), permissions.ProjectPermissions.OwnerRole.ID, goperm.PrincipalUser, userID, project.ID); err != nil {
+		http.Error(w, "Failed to assign project owner role", http.StatusInternalServerError)
 		return
 	}
 

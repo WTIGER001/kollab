@@ -18,6 +18,9 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 👤 [25. Local Identity](25_local_identity.md)
 *Explicit local-account mode, bootstrap administration, password controls, and account suspension.*
 
+### 🔐 [26. Confluence-Style Permissions](26_confluence_style_permissions.md)
+*Space roles, page general/specific access, and inherited view restrictions.*
+
 ### 🎨 [2. Editor Core & Canvas](file:///Users/johnbauer/Dev/Personal/kollab/design/02_editor_core.md)
 *Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 

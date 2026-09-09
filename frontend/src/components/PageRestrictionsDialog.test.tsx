@@ -111,7 +111,7 @@ describe('PageRestrictionsDialog', () => {
     
     await waitFor(() => {
       expect(api.updatePermissionSettings).toHaveBeenCalledWith(mockDocId, 'internal', false);
-      expect(screen.getByText('Permissions settings updated successfully.')).toBeInTheDocument();
+      expect(screen.getByText('Page access settings updated successfully.')).toBeInTheDocument();
     });
   });
 

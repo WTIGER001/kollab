@@ -145,8 +145,9 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		return false, reason, nil
 	}
 
-	// 5. Hierarchical Ancestor Restriction Check (Confluence-style)
-	// Iterate ancestors from root down to parent
+	// 5. Confluence-style inherited view restrictions. A child cannot be
+	// viewed if a restricted parent cannot be viewed, but edit rights do not
+	// inherit from a parent's edit setting.
 	for i := len(nodes) - 1; i > 0; i-- {
 		ancestor := nodes[i]
 		restricted, err := e.isObjectRestricted(ctx, ancestor.ID)
@@ -155,7 +156,7 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		}
 
 		if restricted {
-			// User must have explicit read access on this restricted ancestor
+			// User must have explicit read access on this restricted ancestor.
 			hasRead, err := Service.HasPermission(ctx, goperm.Request{
 				UserID: userID,
 				Object: ancestor.ID,
@@ -186,27 +187,7 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		return true, "Explicit page grant allowed", nil
 	}
 
-	// 7. Inherit from Parent Restrictions (if any parent is restricted, find nearest restricted parent)
-	for i := 1; i < len(nodes); i++ {
-		ancestor := nodes[i]
-		parentRestricted, err := e.isObjectRestricted(ctx, ancestor.ID)
-		if err != nil {
-			return false, "Failed to check parent restriction", err
-		}
-		if parentRestricted {
-			hasAccess, err := Service.HasPermission(ctx, goperm.Request{
-				UserID: userID,
-				Object: ancestor.ID,
-				Perm:   docPerm,
-			})
-			if err != nil || !hasAccess {
-				return false, "Access denied: inherited restrictions from parent", nil
-			}
-			return true, "Inherited parent grant allowed", nil
-		}
-	}
-
-	// 8. Fallback to containing Project role
+	// 7. Fallback to containing Project role
 	if targetNode.ProjectID != "" {
 		var projectPerm string
 		switch action {
@@ -225,19 +206,10 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 			return true, "Inherited project permissions allowed", nil
 		}
 
-		// Fallback: check if the user belongs to the project's team
-		var projectTeamID string
-		errProj := e.db.QueryRow(ctx, "SELECT team_id FROM projects WHERE id = $1", targetNode.ProjectID).Scan(&projectTeamID)
-		if errProj == nil && projectTeamID != "" {
-			var isMember bool
-			errMember := e.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2)", projectTeamID, userID).Scan(&isMember)
-			if errMember == nil && isMember {
-				return true, "Inherited project team membership allowed", nil
-			}
-		}
 	}
 
-	// 9. Fallback to containing Team role
+	// 8. Fallback to containing Team (space) role. Membership alone is not a
+	// role assignment and never grants content access.
 	if targetNode.TeamID != "" {
 		var teamPerm string
 		switch action {
@@ -256,12 +228,6 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 			return true, "Inherited team permissions allowed", nil
 		}
 
-		// Fallback: check if the user is a member of the team
-		var isMember bool
-		errMember := e.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM team_members WHERE team_id = $1 AND user_id = $2)", targetNode.TeamID, userID).Scan(&isMember)
-		if errMember == nil && isMember {
-			return true, "Inherited team membership allowed", nil
-		}
 	}
 
 	return false, "No matching permissions found", nil

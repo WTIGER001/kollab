@@ -129,7 +129,6 @@ func (h *DocumentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
-
 	if req.Title == "" || (req.TeamID == "" && req.ProjectID == "") {
 		http.Error(w, "Title and either projectId or teamId are required", http.StatusBadRequest)
 		return
@@ -1083,6 +1082,15 @@ func (h *DocumentHandler) AddPermissionGrant(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	allowedRoles := map[string]bool{
+		permissions.DocumentPermissions.ViewerRole.ID:    true,
+		permissions.DocumentPermissions.CommenterRole.ID: true,
+		permissions.DocumentPermissions.EditorRole.ID:    true,
+	}
+	if !allowedRoles[req.RoleID] {
+		http.Error(w, "Only viewer, commenter, and editor page access can be granted", http.StatusBadRequest)
+		return
+	}
 
 	var kind goperm.PrincipalKind
 	switch req.GranteeType {
@@ -1111,7 +1119,8 @@ func (h *DocumentHandler) DeletePermissionGrant(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	_, err := h.db.Exec(r.Context(), "DELETE FROM principal_roles WHERE id = $1", grantId)
+	documentID := chi.URLParam(r, "id")
+	_, err := h.db.Exec(r.Context(), "DELETE FROM principal_roles WHERE id = $1 AND binding_values->>'id' = $2", grantId, documentID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to delete grant: %v", err), http.StatusInternalServerError)
 		return
@@ -1133,6 +1142,10 @@ func (h *DocumentHandler) UpdatePermissionSettings(w http.ResponseWriter, r *htt
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Classification != "public" && req.Classification != "internal" && req.Classification != "confidential" && req.Classification != "pii" {
+		http.Error(w, "Invalid classification", http.StatusBadRequest)
 		return
 	}
 

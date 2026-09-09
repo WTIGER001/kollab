@@ -137,7 +137,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
     setSuccess(null);
     try {
       await updatePermissionSettings(documentId, classification, inheritanceBroken);
-      setSuccess("Permissions settings updated successfully.");
+      setSuccess("Page access settings updated successfully.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err?.message || "Failed to update settings.");
@@ -155,7 +155,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
 
     try {
       await addPermissionGrant(documentId, granteeType, targetId, selectedRoleId);
-      setSuccess(`Explicit ${selectedRoleId.split(".").pop()} role granted.`);
+      setSuccess(`Specific ${getRoleFriendlyName(selectedRoleId).toLowerCase()} access granted.`);
       setSelectedTeamId("");
       setSelectedUserId("");
       loadPermissions();
@@ -170,7 +170,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
     setSuccess(null);
     try {
       await deletePermissionGrant(documentId, grantId);
-      setSuccess("Revoked permission grant.");
+      setSuccess("Removed specific access.");
       loadPermissions();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -273,13 +273,13 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
 
             {/* Title display */}
             <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "13px" }}>
-              Manage access settings and explicit role customizations for <strong>{documentTitle}</strong>.
+              Manage general access and specific people for <strong>{documentTitle}</strong>.
             </Typography>
 
             {/* General settings & classification */}
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, fontSize: "13px", display: "flex", alignItems: "center", gap: 0.5 }}>
-                <ShieldCheck size={16} /> Security Classification & Inheritance
+                <ShieldCheck size={16} /> General access
               </Typography>
               <Stack spacing={2}>
                 <FormControl size="small" fullWidth>
@@ -308,8 +308,8 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                   }
                   label={
                     <Box>
-                      <Typography variant="body2" sx={{ fontSize: "13px", fontWeight: 500 }}>Inherit access from parent pages</Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>When checked, users with permissions on ancestor pages also see this page.</Typography>
+                      <Typography variant="body2" sx={{ fontSize: "13px", fontWeight: 500 }}>Anyone with parent access can view</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>Turn this off to restrict viewing to the specific people and groups below. View restrictions cascade to child pages.</Typography>
                     </Box>
                   }
                 />
@@ -348,10 +348,10 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                           <Users size={16} style={{ color: "var(--primary-color)" }} />
                           <Box>
                             <Typography variant="body2" sx={{ fontSize: "13px", fontWeight: 600 }}>
-                              All Team / Project Users
+                              General space access
                             </Typography>
                             <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                              Default access for containing team
+                              This is an explicit group grant, not automatic team membership
                             </Typography>
                           </Box>
                         </Stack>
@@ -366,12 +366,11 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                             onChange={(e) => handleTeamRoleChange(e.target.value)}
                             sx={{ fontSize: "12px" }}
                           >
-                            <MenuItem value="inherit" sx={{ fontSize: "12px" }}>Inherit (View & Edit)</MenuItem>
+                            <MenuItem value="inherit" sx={{ fontSize: "12px" }}>No explicit group access</MenuItem>
                             <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
                             <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
                             <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
-                            <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
-                            <MenuItem value="none" sx={{ fontSize: "12px" }}>No Access (Restricted)</MenuItem>
+                            <MenuItem value="none" sx={{ fontSize: "12px" }}>Restricted (specific access only)</MenuItem>
                           </Select>
                         </FormControl>
                       </TableCell>
@@ -410,8 +409,6 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                                 <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "12px" }}>Viewer (Read only)</MenuItem>
                                 <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "12px" }}>Commenter (Read & Comment)</MenuItem>
                                 <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "12px" }}>Editor (Read & Write)</MenuItem>
-                                <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "12px" }}>Manager (Share & Edit)</MenuItem>
-                                <MenuItem value="builtin.wiki.document.owner" sx={{ fontSize: "12px" }}>Owner (Full Owner)</MenuItem>
                               </Select>
                             </FormControl>
                           </TableCell>
@@ -434,7 +431,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
             {/* Add direct grant */}
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, borderColor: "var(--border-color)", bgcolor: "var(--bg-color)" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, fontSize: "13px", display: "flex", alignItems: "center", gap: 0.5 }}>
-                <UserPlus size={16} /> Grant Direct Access
+                <UserPlus size={16} /> Specific access
               </Typography>
               <Stack spacing={2}>
                 <Tabs
@@ -495,8 +492,6 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                     <MenuItem value="builtin.wiki.document.viewer" sx={{ fontSize: "13px" }}>Viewer (Can only read)</MenuItem>
                     <MenuItem value="builtin.wiki.document.commenter" sx={{ fontSize: "13px" }}>Commenter (Can read and write comments)</MenuItem>
                     <MenuItem value="builtin.wiki.document.editor" sx={{ fontSize: "13px" }}>Editor (Can read and write/edit)</MenuItem>
-                    <MenuItem value="builtin.wiki.document.manager" sx={{ fontSize: "13px" }}>Manager (Can edit, share, and delete)</MenuItem>
-                    <MenuItem value="builtin.wiki.document.owner" sx={{ fontSize: "13px" }}>Owner (Full admin ownership)</MenuItem>
                   </Select>
                 </FormControl>
 

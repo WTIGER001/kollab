@@ -44,6 +44,9 @@ Explore the following help pages to learn how to use the wiki features:
 ### 📄 [12. Enterprise Publishing & Templates](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/templates.md)
 *Learn how to use page templates to kickstart new documents and insert block snippets via slash commands.*
 
+### 🔐 [22. Page access](page_access.md)
+*Use familiar space access and page restrictions to control who can view or edit a page.*
+
 ### 🗄️ [19. Database Migrations](database_migrations.md)
 *Learn how Kollab applies safe database updates during a release.*
 
