@@ -8,6 +8,16 @@ export const Excerpt = Node.create({
   content: "block+", // Allows paragraphs, task lists, unformatted panels etc.
   defining: true,
 
+  addAttributes() {
+    return {
+      excerptId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-excerpt-id"),
+        renderHTML: (attributes) => attributes.excerptId ? { "data-excerpt-id": attributes.excerptId } : {},
+      },
+    };
+  },
+
   parseHTML() {
     return [
       {

@@ -22,12 +22,12 @@ export const ExcerptView: React.FC<NodeViewProps> = ({ editor }) => {
     <NodeViewWrapper className="excerpt-node-view-edit">
       <Box 
         sx={{
-          border: "1px dashed rgba(139, 92, 246, 0.4)", // violet-dashed border
-          borderRadius: "6px",
+          border: "var(--border-width) var(--border-style) var(--border-color)",
+          borderRadius: "var(--border-radius-card)",
           p: 1.5,
           my: 1.5,
           position: "relative",
-          backgroundColor: "rgba(139, 92, 246, 0.02)",
+          backgroundColor: "var(--glass-bg)",
           "&::before": {
             content: '"Excerpt Area"',
             position: "absolute",
@@ -35,11 +35,11 @@ export const ExcerptView: React.FC<NodeViewProps> = ({ editor }) => {
             left: 10,
             fontSize: "9px",
             fontWeight: 700,
-            backgroundColor: "var(--bg-color, #0a0b10)",
-            color: "var(--accent-purple, #8b5cf6)",
+            backgroundColor: "var(--bg-color)",
+            color: "var(--primary-color)",
             px: 0.75,
-            borderRadius: "4px",
-            border: "1px solid rgba(139, 92, 246, 0.2)",
+            borderRadius: "var(--border-radius-button)",
+            border: "var(--border-width) var(--border-style) var(--border-color)",
             textTransform: "uppercase",
             letterSpacing: "0.04em",
           }

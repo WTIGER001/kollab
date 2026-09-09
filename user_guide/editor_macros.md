@@ -216,6 +216,18 @@ To see those values across the current team or project, insert **Properties Repo
 
 ---
 
+## 📎 Reusable Excerpts
+
+Use an **Excerpt Area** to maintain a short policy, disclaimer, or instruction in one place and reuse it from another page.
+
+1. On the source page, insert **Excerpt Area** and write the content inside its outlined block.
+2. On the destination page, insert **Excerpt Include**.
+3. Select the source page in the macro settings. If it contains several excerpt areas, choose the specific source excerpt.
+
+The include reads the latest saved source page, so changes to the source are reflected wherever it is included. Kollab only shows an included excerpt when you can still open its source page. A page cannot include an excerpt from itself.
+
+---
+
 ## 🎨 Hero / Banner Component
 
 The Hero macro allows you to create premium, full-width headers for team homepages, campaign hubs, or special announcements.

@@ -1507,6 +1507,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .focus()
           .insertContent({
             type: "excerpt",
+			attrs: { excerptId: `excerpt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}` },
             content: [{ type: "paragraph" }],
           })
           .run();

@@ -31,6 +31,7 @@ vi.mock('../services/api', () => ({
   fetchTeamUsers: vi.fn().mockResolvedValue([]),
   fetchTeams: vi.fn().mockResolvedValue([]),
   fetchUserMentions: vi.fn().mockResolvedValue([]),
+	fetchDocument: vi.fn().mockResolvedValue({ id: 'source-page', title: 'Source page', content: JSON.stringify({ type: 'doc', content: [{ type: 'excerpt', attrs: { excerptId: 'excerpt-1' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Live policy text' }] }] }] }) }),
 }));
 
 describe('MacroBlockView', () => {
@@ -81,4 +82,10 @@ describe('MacroBlockView', () => {
     expect(screen.getByPlaceholderText(/# Heading 1/)).toBeInTheDocument();
     expect(screen.getByText('Upload .md File')).toBeInTheDocument();
   });
+
+	it('resolves an excerpt include from its protected source document', async () => {
+		renderMacro('excerpt-include', { pageId: 'source-page', excerptId: 'excerpt-1' });
+		expect(await screen.findByText('Live policy text')).toBeInTheDocument();
+		expect(screen.getByText('Excerpt from Source page')).toBeInTheDocument();
+	});
 });

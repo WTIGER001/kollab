@@ -7,7 +7,7 @@ This document outlines the architecture for advanced enterprise features inspire
 ## 1. Draft vs. Published Separation
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟡 Live excerpt includes are implemented. Whole-page includes, revision-pinned references, and publish-state rendering remain planned.
 
 To support large-scale enterprise editing without exposing incomplete thoughts to a wide audience, the collaborative Yjs state is formally separated from the "Published" state that read-only viewers see.
 
@@ -90,16 +90,19 @@ Used by authors to define a fragment of content that can be referenced elsewhere
 Used to embed an entire external document.
 - **Node Type**: `includePage` (Group: `block`, `atom: true`)
 - **Attributes**: `documentId`
+- **Status**: Planned.
 
 #### 3. The `includeExcerpt` Macro
 Used to embed a specific fragment from an external document.
-- **Node Type**: `includeExcerpt` (Group: `block`, `atom: true`)
-- **Attributes**: `documentId`, `excerptId`
+- **Node Type**: `macroBlock` with `type: "excerpt-include"`
+- **Attributes**: `config.pageId`, with optional `config.excerptId`
+- **Resolution**: The React macro view reads the current source through `GET /api/documents/{pageId}`. The existing document read middleware therefore remains the authorization boundary; a missing or revoked source renders an access-safe message rather than cached source text.
 
 ### 3.2 Transclusion Rendering Engine
 Because transclusions must be resolved before the user sees them, the backend or the React NodeView must fetch the target content.
 
-1. **Client-Side Resolution**: When the `includePage` React NodeView mounts, it fires `GET /api/documents/{documentId}/published`.
-2. **Recursive Loop Prevention**: The request payload includes an `X-Transclusion-Path` header (e.g., `docA -> docB`). The backend rejects the request if a cycle is detected.
-3. **AST Injection**: The fetched AST is rendered within a read-only, nested `<EditorContent>` instance. It is styled with a "Link" icon to indicate to the reader that the block is sourced from elsewhere.
-4. **Excerpt Filtering**: For `includeExcerpt`, the backend traverses the requested document's AST, isolates the node matching `attrs.excerptId`, and returns only that fragment.
+1. **Stable source blocks**: New `excerpt` nodes receive a generated `excerptId` serialized in `data-excerpt-id`. Existing excerpts without an ID remain readable and can be selected as the first excerpt on a source page.
+2. **Client-side resolution**: `excerpt-include` fetches the source page from the ordinary protected document endpoint; no local sidebar-tree cache is trusted as source content.
+3. **Excerpt filtering**: The macro traverses the returned Tiptap JSON and renders the selected `attrs.excerptId`, or the first explicit excerpt for backward-compatible includes.
+4. **Cycle safety**: A macro rejects a direct self-include. Included content is text-only rather than recursively rendering nested include macros, so a longer include cycle cannot recurse through the renderer.
+5. **Future expansion**: Whole-page embeds, revision IDs, server-side fragment responses, and published-state snapshots will add explicit provenance/version labels without changing the saved excerpt ID format.

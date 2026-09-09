@@ -56,8 +56,8 @@ import {
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
-import type { Attachment, Tag as TagType, DocumentProperty, DocumentReview } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocument, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
+import type { Attachment, Tag as TagType, Document as SourceDocument, DocumentProperty, DocumentReview } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
 import { Excalidraw, exportToSvg } from "@excalidraw/excalidraw";
@@ -80,7 +80,7 @@ const localizer = dateFnsLocalizer({
 });
 
 // Helper to extract explicit excerpt container text if present in Tiptap JSON content string
-const extractExplicitExcerpt = (contentStr: string): string | null => {
+const extractExplicitExcerpt = (contentStr: string, excerptId?: string): string | null => {
   if (!contentStr) return null;
   try {
     const parsed = JSON.parse(contentStr);
@@ -88,7 +88,7 @@ const extractExplicitExcerpt = (contentStr: string): string | null => {
     let found = false;
 
     const findExcerptNode = (node: any) => {
-      if (node.type === "excerpt") {
+      if (node.type === "excerpt" && (!excerptId || node.attrs?.excerptId === excerptId)) {
         const gatherText = (n: any) => {
           if (n.type === "text" && n.text) {
             excerptText += n.text + " ";
@@ -115,6 +115,25 @@ const extractExplicitExcerpt = (contentStr: string): string | null => {
     return found ? excerptText.replace(/\s+/g, " ").trim() : null;
   } catch (e) {
     return null;
+  }
+};
+
+const listExplicitExcerpts = (contentStr: string): Array<{ id: string; text: string }> => {
+  if (!contentStr) return [];
+  try {
+    const parsed = JSON.parse(contentStr);
+    const excerpts: Array<{ id: string; text: string }> = [];
+    const visit = (node: any) => {
+      if (node.type === "excerpt" && typeof node.attrs?.excerptId === "string") {
+        const text = extractExplicitExcerpt(JSON.stringify(node), node.attrs.excerptId) || "Untitled excerpt";
+        excerpts.push({ id: node.attrs.excerptId, text });
+      }
+      node.content?.forEach(visit);
+    };
+    visit(parsed);
+    return excerpts;
+  } catch {
+    return [];
   }
 };
 
@@ -214,6 +233,29 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [propertyReportError, setPropertyReportError] = useState<string | null>(null);
   const [documentReview, setDocumentReview] = useState<DocumentReview | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
+	const [includedDocument, setIncludedDocument] = useState<SourceDocument | null>(null);
+	const [excerptIncludeError, setExcerptIncludeError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const sourcePageID = config.pageId as string | undefined;
+		if (type !== "excerpt-include" || !sourcePageID) {
+			setIncludedDocument(null);
+			setExcerptIncludeError(null);
+			return;
+		}
+		if (sourcePageID === context?.activeDocId) {
+			setIncludedDocument(null);
+			setExcerptIncludeError("A page cannot include an excerpt from itself.");
+			return;
+		}
+		let cancelled = false;
+		setIncludedDocument(null);
+		setExcerptIncludeError(null);
+		fetchDocument(sourcePageID)
+			.then((document) => { if (!cancelled) setIncludedDocument(document); })
+			.catch(() => { if (!cancelled) setExcerptIncludeError("The source page is unavailable or you no longer have access to it."); });
+		return () => { cancelled = true; };
+	}, [type, config.pageId, context?.activeDocId]);
 
   useEffect(() => {
     if (type !== "page-properties-report" || (!context?.selectedProjectId && !context?.selectedTeamId)) return;
@@ -1341,43 +1383,43 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               );
             }
 
-            const targetDoc = findDocNode(context.documents, targetPageId);
-            if (!targetDoc) {
-              return (
-                <Typography variant="body2" sx={{ color: "error.main", fontStyle: "italic", fontSize: "13px" }}>
-                  Selected page not found or deleted.
-                </Typography>
-              );
-            }
+			if (excerptIncludeError) {
+				return (
+					<Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: "13px" }}>
+						{excerptIncludeError}
+					</Typography>
+				);
+			}
+			if (!includedDocument) return <Box sx={{ py: 1 }}><CircularProgress size={16} /></Box>;
 
-            const explicitExcerpt = extractExplicitExcerpt(targetDoc.content || "");
+			const explicitExcerpt = extractExplicitExcerpt(includedDocument.content || "", config.excerptId);
             
             return (
               <Box 
                 sx={{ 
                   p: 1.5, 
                   borderRadius: 1.5, 
-                  bgcolor: "action.hover", 
-                  borderLeft: "3px solid var(--primary-color, #8b5cf6)" 
+					bgcolor: "var(--glass-bg)",
+					borderLeft: "3px solid var(--primary-color)"
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                   <FileText size={12} style={{ color: "var(--text-secondary)" }} />
                   <Typography 
                     variant="caption" 
-                    onClick={() => context.onSelectDoc(targetDoc.id)}
+					onClick={() => context.onSelectDoc(includedDocument.id)}
                     sx={{ 
                       fontWeight: 700, 
                       color: "text.secondary", 
                       cursor: "pointer",
-                      "&:hover": { color: "var(--primary-color, #8b5cf6)", textDecoration: "underline" }
+						"&:hover": { color: "var(--primary-color)", textDecoration: "underline" }
                     }}
                   >
-                    Excerpt from {targetDoc.title}
+					Excerpt from {includedDocument.title}
                   </Typography>
                 </Box>
                 <Typography variant="body2" sx={{ color: "text.primary", fontSize: "13.5px", fontStyle: explicitExcerpt ? "normal" : "italic" }}>
-                  {explicitExcerpt ? explicitExcerpt : `[No excerpt defined - displaying title] ${targetDoc.title}`}
+					{explicitExcerpt ? explicitExcerpt : config.excerptId ? "The selected excerpt no longer exists on the source page." : `[No excerpt defined - displaying title] ${includedDocument.title}`}
                 </Typography>
               </Box>
             );
@@ -3488,9 +3530,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
             {type === "excerpt-include" && (() => {
               if (!context) return null;
-              const flatDocs = flattenTree(context.documents);
+				const flatDocs = flattenTree(context.documents || []);
+				const availableExcerpts = includedDocument ? listExplicitExcerpts(includedDocument.content || "") : [];
               return (
-                <FormControl fullWidth variant="outlined" size="small">
+				<Stack spacing={1.5}>
+				<FormControl fullWidth variant="outlined" size="small">
                   <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Select Source Page</FormLabel>
                   <Select
                     value={config.pageId || ""}
@@ -3505,7 +3549,15 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       </MenuItem>
                     ))}
                   </Select>
-                </FormControl>
+				</FormControl>
+				<FormControl fullWidth variant="outlined" size="small" disabled={!config.pageId || availableExcerpts.length === 0}>
+					<FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Source excerpt</FormLabel>
+					<Select value={config.excerptId || ""} onChange={(e) => updateConfig("excerptId", e.target.value)} sx={{ fontSize: "13px", height: 36 }}>
+						<MenuItem value="" sx={{ fontSize: "13px" }}>First excerpt on the page</MenuItem>
+						{availableExcerpts.map((excerpt) => <MenuItem key={excerpt.id} value={excerpt.id} sx={{ fontSize: "13px" }}>{excerpt.text.slice(0, 80)}</MenuItem>)}
+					</Select>
+				</FormControl>
+				</Stack>
               );
             })()}
 
