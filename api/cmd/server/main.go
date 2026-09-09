@@ -236,16 +236,20 @@ func main() {
 		"authority":          os.Getenv("OIDC_AUTHORITY"),
 		"clientId":           os.Getenv("OIDC_CLIENT_ID"),
 		"redirectUri":        os.Getenv("OIDC_REDIRECT_URI"),
+		"apiAudience":        os.Getenv("OIDC_API_AUDIENCE"),
+		"apiScope":           os.Getenv("OIDC_API_SCOPE"),
 		"authMode":           authMode,
 		"localSetupRequired": localSetupRequired,
 	}
-	if authMode == "oidc" && (oidcConfig["authority"] == "" || oidcConfig["clientId"] == "" || oidcConfig["redirectUri"] == "") {
-		log.Fatal("OIDC_AUTHORITY, OIDC_CLIENT_ID, and OIDC_REDIRECT_URI are required in OIDC mode")
+	if authMode == "oidc" && (oidcConfig["authority"] == "" || oidcConfig["clientId"] == "" || oidcConfig["redirectUri"] == "" || oidcConfig["apiAudience"] == "" || oidcConfig["apiScope"] == "") {
+		log.Fatal("OIDC_AUTHORITY, OIDC_CLIENT_ID, OIDC_REDIRECT_URI, OIDC_API_AUDIENCE, and OIDC_API_SCOPE are required in OIDC mode")
 	}
 	if authMode == "local" {
 		oidcConfig["authority"] = "mock"
 		oidcConfig["clientId"] = "mock-client-id"
 		oidcConfig["redirectUri"] = "http://localhost:5173"
+		oidcConfig["apiAudience"] = "mock-api"
+		oidcConfig["apiScope"] = "mock-api.read"
 	}
 
 	// Instantiate WebSocket Hub
@@ -272,11 +276,12 @@ func main() {
 	aiClient := ai.NewLLMClient()
 	aiHandler := handler.NewAIHandler(systemService, aiClient)
 
-	// Discover the provider metadata once at startup. This binds token
-	// validation to the provider's declared issuer and rotating JWKS endpoint.
+	// Discover the provider metadata once at startup. This binds API access-token
+	// validation to the provider's declared issuer, API audience, API scope, and
+	// rotating JWKS endpoint.
 	var jwksCache *middleware.JWKSCache
 	if authMode == "oidc" {
-		jwksCache, err = middleware.NewOIDCJWKSCache(ctx, oidcConfig["authority"], oidcConfig["clientId"])
+		jwksCache, err = middleware.NewOIDCJWKSCache(ctx, oidcConfig["authority"], oidcConfig["apiAudience"], oidcConfig["apiScope"])
 		if err != nil {
 			log.Fatalf("OIDC configuration is invalid: %v", err)
 		}

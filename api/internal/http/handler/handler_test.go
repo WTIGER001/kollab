@@ -324,6 +324,8 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 		"authority":          "https://mock-authority.logto.app/oidc",
 		"clientId":           "mock-client-id",
 		"redirectUri":        "http://localhost:5173",
+		"apiAudience":        "api://kollab",
+		"apiScope":           "kollab.access",
 		"localSetupRequired": "true",
 	}
 	userH := handler.NewUserHandler(authService, themeService, systemService, mockOidcConfig)
@@ -402,7 +404,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if err := json.Unmarshal(wConfig.Body.Bytes(), &resConfig); err != nil {
 		t.Fatalf("failed to decode config response: %v", err)
 	}
-	if resConfig["authority"] != "https://mock-authority.logto.app/oidc" || resConfig["clientId"] != "mock-client-id" {
+	if resConfig["authority"] != "https://mock-authority.logto.app/oidc" || resConfig["clientId"] != "mock-client-id" || resConfig["apiAudience"] != "api://kollab" || resConfig["apiScope"] != "kollab.access" {
 		t.Errorf("unexpected OIDC config returned: %+v", resConfig)
 	}
 

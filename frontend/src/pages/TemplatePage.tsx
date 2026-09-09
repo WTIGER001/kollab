@@ -16,7 +16,7 @@ export const TemplatePage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   const { developerMode } = useAppStore();
   
 	const auth = useAuth();
-  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
+  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.access_token || null;
 
   const { data: activeTemplate, isLoading } = useQuery({
     queryKey: ['template', templateId],

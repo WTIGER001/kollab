@@ -26,6 +26,8 @@ interface OidcConfig {
   authority: string;
   clientId: string;
   redirectUri: string;
+  apiAudience?: string;
+  apiScope?: string;
   welcomeTitle?: string;
   welcomeText?: string;
   authLogoUrl?: string;
@@ -48,6 +50,8 @@ function Root() {
           authMode: cfg.authMode,
           localSetupRequired: cfg.localSetupRequired,
           redirectUri: cfg.redirectUri,
+          apiAudience: cfg.apiAudience,
+          apiScope: cfg.apiScope,
           welcomeTitle: cfg.welcomeTitle,
           welcomeText: cfg.welcomeText,
           authLogoUrl: cfg.authLogoUrl,
@@ -84,7 +88,7 @@ function Root() {
     client_id: config!.clientId,
     redirect_uri: config!.redirectUri,
     response_type: "code",
-    scope: "openid profile email",
+    scope: ["openid", "profile", "email", config!.apiScope].filter(Boolean).join(" "),
     onSigninCallback: (user: any) => {
       const returnTo = user?.state || window.location.pathname;
       window.history.replaceState({}, document.title, returnTo);

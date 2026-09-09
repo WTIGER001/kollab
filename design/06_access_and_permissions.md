@@ -56,7 +56,7 @@ flowchart TD
 > **Status:** 🟢 Completed
 
 ### 2.1 Users & Groups (Teams)
-- Group memberships are synchronized upon user login based on OIDC/SAML `groups` claims and persisted in `team_members`.
+- Group memberships may be synchronized upon user login based on OIDC `groups` claims and persisted in `team_members`.
 - Standard roles can be assigned directly to a group for a specific object.
 
 ### 2.2 Object-Scoped Roles & Template Bindings

@@ -21,7 +21,7 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   const { developerMode } = useAppStore();
   
 	const auth = useAuth();
-  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.id_token || null;
+  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.access_token || null;
 
   const { data: teams = [] } = useTeams();
   const { data: allProjects = [] } = useAllProjects();

@@ -21,9 +21,10 @@ func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 		t.Fatalf("generate test key: %v", err)
 	}
 	cache := &JWKSCache{
-		issuer:   "https://identity.example.test",
-		audience: "kollab-web",
-		keys:     map[string]any{"key-1": &privateKey.PublicKey},
+		issuer:        "https://identity.example.test",
+		audience:      "api://kollab",
+		requiredScope: "kollab.access",
+		keys:          map[string]any{"key-1": &privateKey.PublicKey},
 	}
 
 	makeToken := func(claims jwt.MapClaims) string {
@@ -37,7 +38,7 @@ func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 	}
 
 	valid := makeToken(jwt.MapClaims{
-		"sub": "user-1", "iss": "https://identity.example.test", "aud": "kollab-web",
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "api://kollab", "scp": "kollab.access",
 		"exp": time.Now().Add(time.Hour).Unix(),
 	})
 	if _, err := ValidateToken(context.Background(), valid, nil, cache); err != nil {
@@ -45,7 +46,7 @@ func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 	}
 
 	wrongAudience := makeToken(jwt.MapClaims{
-		"sub": "user-1", "iss": "https://identity.example.test", "aud": "another-client",
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "another-client", "scp": "kollab.access",
 		"exp": time.Now().Add(time.Hour).Unix(),
 	})
 	if _, err := ValidateToken(context.Background(), wrongAudience, nil, cache); err == nil {
@@ -53,7 +54,7 @@ func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 	}
 
 	hmacToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": "user-1", "iss": "https://identity.example.test", "aud": "kollab-web",
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "api://kollab", "scp": "kollab.access",
 		"exp": time.Now().Add(time.Hour).Unix(),
 	})
 	rawHMAC, err := hmacToken.SignedString([]byte("not-a-production-token-secret"))
@@ -62,6 +63,14 @@ func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 	}
 	if _, err := ValidateToken(context.Background(), rawHMAC, []byte("not-a-production-token-secret"), cache); err == nil {
 		t.Fatal("HMAC token was accepted in OIDC mode")
+	}
+
+	missingScope := makeToken(jwt.MapClaims{
+		"sub": "user-1", "iss": "https://identity.example.test", "aud": "api://kollab",
+		"exp": time.Now().Add(time.Hour).Unix(),
+	})
+	if _, err := ValidateToken(context.Background(), missingScope, nil, cache); err == nil {
+		t.Fatal("access token without the API scope was accepted")
 	}
 }
 

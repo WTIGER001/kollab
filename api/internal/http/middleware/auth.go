@@ -35,6 +35,7 @@ type JWKSCache struct {
 	jwksURL        string
 	issuer         string
 	audience       string
+	requiredScope  string
 	allowLocalHMAC bool
 	keys           map[string]any // kid -> public key (*rsa.PublicKey or *ecdsa.PublicKey)
 	httpClient     *http.Client
@@ -51,11 +52,13 @@ func NewJWKSCache(jwksURL string) *JWKSCache {
 }
 
 // NewOIDCJWKSCache discovers a provider's JWKS URI and binds all accepted
-// tokens to its issuer and this application's client ID.
-func NewOIDCJWKSCache(ctx context.Context, issuer, audience string) (*JWKSCache, error) {
+// API access tokens to its issuer, dedicated API audience, and required scope.
+func NewOIDCJWKSCache(ctx context.Context, issuer, audience, requiredScope string) (*JWKSCache, error) {
 	issuer = strings.TrimRight(strings.TrimSpace(issuer), "/")
-	if issuer == "" || audience == "" {
-		return nil, fmt.Errorf("OIDC issuer and audience are required")
+	audience = strings.TrimSpace(audience)
+	requiredScope = strings.TrimSpace(requiredScope)
+	if issuer == "" || audience == "" || requiredScope == "" {
+		return nil, fmt.Errorf("OIDC issuer, API audience, and API scope are required")
 	}
 	issuerURL, err := url.Parse(issuer)
 	if err != nil || issuerURL.Scheme != "https" || issuerURL.Host == "" {
@@ -89,11 +92,12 @@ func NewOIDCJWKSCache(ctx context.Context, issuer, audience string) (*JWKSCache,
 		return nil, fmt.Errorf("OIDC discovery returned an invalid JWKS URI")
 	}
 	return &JWKSCache{
-		jwksURL:    discovery.JWKSURI,
-		issuer:     issuer,
-		audience:   audience,
-		keys:       make(map[string]any),
-		httpClient: client,
+		jwksURL:       discovery.JWKSURI,
+		issuer:        issuer,
+		audience:      audience,
+		requiredScope: requiredScope,
+		keys:          make(map[string]any),
+		httpClient:    client,
 	}, nil
 }
 
@@ -261,7 +265,36 @@ func ValidateToken(ctx context.Context, tokenString string, jwtSecret []byte, jw
 	if err != nil || !token.Valid {
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
+	if jwksCache != nil && !jwksCache.allowLocalHMAC && !hasRequiredScope(claims, jwksCache.requiredScope) {
+		return nil, fmt.Errorf("access token does not include required scope")
+	}
 	return claims, nil
+}
+
+func hasRequiredScope(claims jwt.MapClaims, requiredScope string) bool {
+	for _, claimName := range []string{"scope", "scp"} {
+		switch value := claims[claimName].(type) {
+		case string:
+			for _, scope := range strings.Fields(value) {
+				if scope == requiredScope {
+					return true
+				}
+			}
+		case []string:
+			for _, scope := range value {
+				if scope == requiredScope {
+					return true
+				}
+			}
+		case []any:
+			for _, item := range value {
+				if scope, ok := item.(string); ok && scope == requiredScope {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.UserRepository) func(http.Handler) http.Handler {

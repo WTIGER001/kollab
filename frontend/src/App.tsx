@@ -53,7 +53,9 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
 	const auth = useAuth();
   
   // Try to grab token if authenticatedo free tier does not support API resources, so we can't get a JWT access_token.
-  const userToken = isMockMode ? "mock-jwt-token" : authMode === "local" ? localToken : auth?.user?.id_token || null;
+  // API calls use the access token issued for Kollab's API resource. ID tokens
+  // prove sign-in to the SPA and must never be forwarded to an API as bearer tokens.
+  const userToken = isMockMode ? "mock-jwt-token" : authMode === "local" ? localToken : auth?.user?.access_token || null;
   setApiToken(userToken);
 
   const queryClient = useQueryClient();

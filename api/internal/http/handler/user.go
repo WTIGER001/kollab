@@ -116,6 +116,8 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 		"authority":           h.oidcConfig["authority"],
 		"clientId":            h.oidcConfig["clientId"],
 		"redirectUri":         h.oidcConfig["redirectUri"],
+		"apiAudience":         h.oidcConfig["apiAudience"],
+		"apiScope":            h.oidcConfig["apiScope"],
 		"authMode":            h.oidcConfig["authMode"],
 		"localSetupRequired":  localSetupRequired,
 		"theme":               theme,
