@@ -196,7 +196,7 @@ interface EditorCanvasProps {
   authToken: string | null;
   initialTitle: string;
   initialContent: string;
-  onSave: (title: string, content: string, changeSummary?: string) => void;
+  onSave: (title: string, content: string, changeSummary?: string) => void | Promise<void>;
   isSaving: boolean;
   documents?: DocumentItem[];
   selectedTeamName?: string;
@@ -955,21 +955,32 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   };
 
-	const publishCurrentDraft = async () => {
-		if (!activeDocId || !editor || editor.isDestroyed) return;
-		setIsPublishing(true);
-		saveDocument(title, commitDescription || "Published version");
-		// Save uses a debounce to avoid collaboration write storms. Publish only
-		// after that durable draft update has been dispatched.
-		await new Promise((resolve) => window.setTimeout(resolve, 1100));
-		try {
-			await publishDocument(activeDocId);
-			setIsEditing(false);
-			setCommitModalOpen(false);
-		} finally {
-			setIsPublishing(false);
-		}
-	};
+  const saveDocumentNow = async (customTitle?: string, customDescription?: string) => {
+    const activeTitle = customTitle !== undefined ? customTitle : title;
+    const titleToSave = activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
+    if (!editor || editor.isDestroyed) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    await Promise.resolve(onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription));
+  };
+
+  const publishCurrentDraft = async () => {
+    if (!activeDocId || !editor || editor.isDestroyed) return;
+    setIsPublishing(true);
+    try {
+      // Publishing must snapshot the confirmed draft, never a debounced save
+      // that has merely been queued in the browser.
+      await saveDocumentNow(title, commitDescription || "Published version");
+      await publishDocument(activeDocId);
+      showToast("Published current draft", "success");
+      setIsEditing(false);
+      setCommitModalOpen(false);
+    } catch (err) {
+      console.error("Failed to publish document:", err);
+      showToast("Could not publish the draft. Keep editing and try again.", "error");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   // Expose editor globally for E2E testing convenience
   useEffect(() => {

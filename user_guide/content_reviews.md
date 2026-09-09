@@ -16,4 +16,4 @@ An approved page automatically displays as **Stale** after its next-review date 
 
 Publishing saves the current page as the reader-safe version. Later edits remain in the draft until you publish again, so readers using the published page do not see unfinished changes.
 
-Use the page's **Publish** action when the content is ready. The published snapshot is retained in version history and can be safely replaced by a newer publication.
+Use the page's **Publish** action when the content is ready. Kollab first confirms the current draft has saved, then creates the published snapshot. If either step fails, the editor remains open and shows an error so you can retry without losing your work. The published snapshot is retained in version history and can be safely replaced by a newer publication.

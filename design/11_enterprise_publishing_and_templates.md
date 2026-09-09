@@ -27,7 +27,7 @@ ADD COLUMN has_unpublished_changes BOOLEAN NOT NULL DEFAULT FALSE;
 ### 1.3 Publishing Lifecycle
 1. Authors collaborate in real-time in the Yjs room (`has_unpublished_changes = TRUE`).
 2. An author clicks the **"Publish"** button.
-3. The backend generates a new `document_versions` row, capturing the current Yjs AST.
+3. The editor flushes and awaits the ordinary draft-save request, then the backend generates a new `document_versions` row, capturing that confirmed AST. A failed save or publish leaves the editor open; it never promotes a merely queued debounce timer to a publication.
 4. The backend updates `documents.published_version_id` to this new version ID and sets `has_unpublished_changes = FALSE`.
 
 ---
@@ -74,7 +74,7 @@ While Page Blueprints define an entire new document, Block Templates (or Snippet
 ## 3. Transclusion: Include Page & Excerpt Macros
 
 > [!NOTE]
-> **Status:** ⚪ Planned
+> **Status:** 🟡 Excerpt definitions and live excerpt includes are implemented. Whole-page includes and revision-pinned references remain planned.
 
 Transclusion allows authors to define a single source of truth and embed it across multiple pages to prevent duplicate data maintenance.
 
