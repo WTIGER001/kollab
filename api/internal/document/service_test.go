@@ -2,6 +2,7 @@ package document
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +13,21 @@ import (
 	inmemtask "kollab/api/internal/task"
 	inmemteam "kollab/api/internal/team"
 )
+
+type stubLLMClient struct {
+	text      string
+	textErr   error
+	embedding []float32
+	embedErr  error
+}
+
+func (c stubLLMClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	return c.text, c.textErr
+}
+
+func (c stubLLMClient) GenerateTextEmbeddings(ctx context.Context, text string) ([]float32, error) {
+	return c.embedding, c.embedErr
+}
 
 func TestDocumentService(t *testing.T) {
 	_ = permissions.InitPermissions(context.Background(), nil)
@@ -356,5 +372,52 @@ func TestDocumentServiceMovePersistsDestinationAndDescendants(t *testing.T) {
 	grandchildAfterParentMove, err := repo.GetByID(ctx, grandchild.ID)
 	if err != nil || grandchildAfterParentMove.ProjectID != newParent.ProjectID || grandchildAfterParentMove.TeamID != newParent.TeamID {
 		t.Fatalf("grandchild did not follow its moved parent: %#v (%v)", grandchildAfterParentMove, err)
+	}
+}
+
+func TestDocumentServiceSummariesTasksMentionsAndSearch(t *testing.T) {
+	ctx := context.Background()
+	repo := NewInMemoryDocumentRepository()
+	tasks := inmemtask.NewInMemoryTaskRepository()
+	service := &DocumentService{
+		repo:     repo,
+		taskRepo: tasks,
+		aiClient: stubLLMClient{embedding: []float32{0.1, 0.2}},
+	}
+
+	fallbackService := &DocumentService{aiClient: stubLLMClient{textErr: errors.New("unavailable")}}
+	fallback, err := fallbackService.GenerateSummary(ctx, "Plan", `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"one"}]}]}`, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"one two"}]}]}`)
+	if err != nil || fallback != "Added text (+1 words)" {
+		t.Fatalf("unexpected fallback summary %q (%v)", fallback, err)
+	}
+	service.aiClient = stubLLMClient{text: "  Clarified the release plan.  ", embedding: []float32{0.1}}
+	summary, err := service.GenerateSummary(ctx, "Plan", "old", "new")
+	if err != nil || summary != "Clarified the release plan." {
+		t.Fatalf("unexpected generated summary %q (%v)", summary, err)
+	}
+
+	content := `{"type":"doc","content":[{"type":"taskItem","attrs":{"checked":true},"content":[{"type":"text","text":"Ship @alice "},{"type":"inlineDate","attrs":{"date":"2026-10-01"}}]},{"type":"paragraph","content":[{"type":"mention","attrs":{"username":"alice"}}]}]}`
+	document := &domain.Document{ID: "task-document", Title: "Release task", Content: `{"type":"doc","content":[{"type":"paragraph"}]}`, ProjectID: "proj_wiki", TeamID: "team_eng", CreatedAt: time.Now(), UpdatedAt: time.Now()}
+	if err := repo.Create(ctx, document); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.UpdateDocument(ctx, document.ID, document.Title, "", content, "author", "task update"); err != nil {
+		t.Fatalf("update document with task: %v", err)
+	}
+	assignedTasks, err := service.GetTasksByAssignee(ctx, "alice")
+	if err != nil || len(assignedTasks) != 1 || !assignedTasks[0].Completed || assignedTasks[0].DueDate == nil || *assignedTasks[0].DueDate != "2026-10-01" {
+		t.Fatalf("expected synced assigned task, got %#v (%v)", assignedTasks, err)
+	}
+	mentioned, err := service.GetDocumentsWithMention(ctx, "alice")
+	if err != nil || len(mentioned) != 1 || mentioned[0].ID != document.ID {
+		t.Fatalf("expected mention lookup result, got %#v (%v)", mentioned, err)
+	}
+	searchResults, err := service.SearchDocuments(ctx, "release", "proj_wiki", "semantic")
+	if err != nil || len(searchResults) != 1 || searchResults[0].ID != document.ID {
+		t.Fatalf("expected semantic search result, got %#v (%v)", searchResults, err)
+	}
+	emptyResults, err := service.SearchDocuments(ctx, "", "all", "keyword")
+	if err != nil || len(emptyResults) != 0 {
+		t.Fatalf("expected empty all-space query result, got %#v (%v)", emptyResults, err)
 	}
 }

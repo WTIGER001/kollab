@@ -603,6 +603,69 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 		t.Errorf("expected recent documents list to contain Doc A and Doc B, got: %+v", recentDocs)
 	}
 
+	// 11c-1. Verify page-property, watch, review, task, and mention endpoints
+	// against both the in-memory and PostgreSQL integration repositories.
+	_, code = sendReq("GET", "/api/documents/properties?projectId=proj_wiki", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected properties endpoint code 200, got %d", code)
+	}
+	_, code = sendReq("POST", "/api/watches/"+docA.ID, nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected add watch code 200, got %d", code)
+	}
+	watchStatus, code := sendReq("GET", "/api/watches/"+docA.ID+"/status", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected watch status code 200, got %d", code)
+	}
+	var watchPayload map[string]bool
+	if err := json.Unmarshal(watchStatus.Body.Bytes(), &watchPayload); err != nil || !watchPayload["isWatching"] {
+		t.Fatalf("expected watched status, got %s (%v)", watchStatus.Body.String(), err)
+	}
+	_, code = sendReq("DELETE", "/api/watches/"+docA.ID, nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected remove watch code 200, got %d", code)
+	}
+
+	reviewResponse, code := sendReq("GET", "/api/documents/"+docA.ID+"/review", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected review endpoint code 200, got %d", code)
+	}
+	var review domain.DocumentReview
+	if err := json.Unmarshal(reviewResponse.Body.Bytes(), &review); err != nil || review.Status != "draft" {
+		t.Fatalf("expected draft review, got %s (%v)", reviewResponse.Body.String(), err)
+	}
+	reviewResponse, code = sendReq("PUT", "/api/documents/"+docA.ID+"/review", []byte(`{"status":"in_review"}`), token)
+	if code != http.StatusOK {
+		t.Fatalf("expected update review code 200, got %d", code)
+	}
+	if err := json.Unmarshal(reviewResponse.Body.Bytes(), &review); err != nil || review.Status != "in_review" {
+		t.Fatalf("expected in_review response, got %s (%v)", reviewResponse.Body.String(), err)
+	}
+	notificationID := "watch-notification-" + docA.ID
+	if err := docRepo.CreateNotification(context.Background(), &domain.DocumentNotification{ID: notificationID, UserID: regRes.ID, ActorID: regRes.ID, DocumentID: docA.ID, DocumentTitle: docA.Title, EventType: "document_updated", CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("seed notification: %v", err)
+	}
+	notificationsResponse, code := sendReq("GET", "/api/notifications", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected notification list code 200, got %d", code)
+	}
+	var notifications []*domain.DocumentNotification
+	if err := json.Unmarshal(notificationsResponse.Body.Bytes(), &notifications); err != nil || len(notifications) == 0 || notifications[0].ID != notificationID {
+		t.Fatalf("expected seeded notification, got %s (%v)", notificationsResponse.Body.String(), err)
+	}
+	_, code = sendReq("PUT", "/api/notifications/"+notificationID+"/read", nil, token)
+	if code != http.StatusNoContent {
+		t.Fatalf("expected mark notification read code 204, got %d", code)
+	}
+	_, code = sendReq("GET", "/api/tasks?username=testuser", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected task list code 200, got %d", code)
+	}
+	_, code = sendReq("GET", "/api/mentions?username=testuser", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected mention list code 200, got %d", code)
+	}
+
 	// Clean up docs (using permanent delete to keep clean state)
 	_, _ = sendReq("DELETE", "/api/documents/"+docA.ID+"?permanent=true", nil, token)
 	_, _ = sendReq("DELETE", "/api/documents/"+docB.ID+"?permanent=true", nil, token)
