@@ -39,6 +39,7 @@ type InMemoryDocumentRepository struct {
 	favorites     []InMemoryFavorite
 	watches       []InMemoryDocumentWatch
 	reviews       map[string]*domain.DocumentReview
+	publications  map[string]*domain.DocumentPublication
 	imports       map[string]*domain.ConfluenceImportRecord
 	notifications []*domain.DocumentNotification
 }
@@ -52,6 +53,7 @@ func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
 		favorites:     make([]InMemoryFavorite, 0),
 		watches:       make([]InMemoryDocumentWatch, 0),
 		reviews:       make(map[string]*domain.DocumentReview),
+		publications:  make(map[string]*domain.DocumentPublication),
 		imports:       make(map[string]*domain.ConfluenceImportRecord),
 		notifications: make([]*domain.DocumentNotification, 0),
 	}
@@ -756,6 +758,31 @@ func (r *InMemoryDocumentRepository) SaveReview(ctx context.Context, review *dom
 	}
 	copy := *review
 	r.reviews[review.DocumentID] = &copy
+	return nil
+}
+
+func (r *InMemoryDocumentRepository) GetPublication(ctx context.Context, documentID string) (*domain.DocumentPublication, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	publication, exists := r.publications[documentID]
+	if !exists {
+		return nil, nil
+	}
+	copy := *publication
+	return &copy, nil
+}
+
+func (r *InMemoryDocumentRepository) SavePublication(ctx context.Context, publication *domain.DocumentPublication) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.documents[publication.DocumentID]; !exists {
+		return errors.New("document not found")
+	}
+	if _, exists := r.versions[publication.VersionID]; !exists {
+		return errors.New("version not found")
+	}
+	copy := *publication
+	r.publications[publication.DocumentID] = &copy
 	return nil
 }
 

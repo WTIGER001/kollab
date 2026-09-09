@@ -241,6 +241,29 @@ func TestDocumentServiceReviewLifecycle(t *testing.T) {
 	}
 }
 
+func TestDocumentServicePublishesAnImmutableSnapshot(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	ctx := context.Background()
+	draft := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"published"}]}]}`
+	document, err := service.CreateDocument(ctx, "Publishable", "", "proj_wiki", "team_eng", nil, "author", &draft)
+	if err != nil {
+		t.Fatal(err)
+	}
+	publication, err := service.PublishDocument(ctx, document.ID, "author")
+	if err != nil || publication.VersionID == "" {
+		t.Fatalf("publish: %#v (%v)", publication, err)
+	}
+	draftAfterPublish := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"unpublished draft"}]}]}`
+	if _, err := service.UpdateDocument(ctx, document.ID, document.Title, "", draftAfterPublish, "author", ""); err != nil {
+		t.Fatal(err)
+	}
+	published, savedPublication, err := service.GetPublishedDocument(ctx, document.ID)
+	if err != nil || savedPublication.VersionID != publication.VersionID || published.Content != draft {
+		t.Fatalf("published snapshot changed with draft: %#v %#v (%v)", published, savedPublication, err)
+	}
+}
+
 func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {
 	repo := NewInMemoryDocumentRepository()
 	service := NewDocumentService(repo, nil, nil, nil)

@@ -344,6 +344,34 @@ func (h *DocumentHandler) GetVersions(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(versions)
 }
 
+func (h *DocumentHandler) GetPublished(w http.ResponseWriter, r *http.Request) {
+	document, publication, err := h.docService.GetPublishedDocument(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(struct {
+		Document    *domain.Document            `json:"document"`
+		Publication *domain.DocumentPublication `json:"publication"`
+	}{Document: document, Publication: publication})
+}
+
+func (h *DocumentHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	publication, err := h.docService.PublishDocument(r.Context(), chi.URLParam(r, "id"), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(publication)
+}
+
 func (h *DocumentHandler) GetVersion(w http.ResponseWriter, r *http.Request) {
 	versionID := chi.URLParam(r, "versionId")
 	if versionID == "" {

@@ -478,6 +478,27 @@ func (r *PostgresDocumentRepository) GetVersionByID(ctx context.Context, version
 	return &v, nil
 }
 
+func (r *PostgresDocumentRepository) GetPublication(ctx context.Context, documentID string) (*domain.DocumentPublication, error) {
+	publication := &domain.DocumentPublication{DocumentID: documentID}
+	err := r.db.QueryRow(ctx, `SELECT document_id, version_id, COALESCE(published_by, ''), published_at FROM document_publications WHERE document_id = $1`, documentID).Scan(&publication.DocumentID, &publication.VersionID, &publication.PublishedBy, &publication.PublishedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return publication, nil
+}
+
+func (r *PostgresDocumentRepository) SavePublication(ctx context.Context, publication *domain.DocumentPublication) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO document_publications (document_id, version_id, published_by, published_at)
+		VALUES ($1, $2, NULLIF($3, ''), $4)
+		ON CONFLICT (document_id) DO UPDATE SET version_id = EXCLUDED.version_id, published_by = EXCLUDED.published_by, published_at = EXCLUDED.published_at
+	`, publication.DocumentID, publication.VersionID, publication.PublishedBy, publication.PublishedAt)
+	return err
+}
+
 func (r *PostgresDocumentRepository) GetLatestVersion(ctx context.Context, docID string) (*domain.DocumentVersion, error) {
 	row := r.db.QueryRow(ctx,
 		`SELECT id, document_id, content, version_number, created_by, change_summary, created_at

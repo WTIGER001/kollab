@@ -7,12 +7,12 @@ This document outlines the architecture for advanced enterprise features inspire
 ## 1. Draft vs. Published Separation
 
 > [!NOTE]
-> **Status:** 🟡 Live excerpt includes are implemented. Whole-page includes, revision-pinned references, and publish-state rendering remain planned.
+> **Status:** 🟡 Publication snapshots and live excerpt includes are implemented. Reader-mode routing, whole-page includes, and revision-pinned references remain planned.
 
 To support large-scale enterprise editing without exposing incomplete thoughts to a wide audience, the collaborative Yjs state is formally separated from the "Published" state that read-only viewers see.
 
 ### 1.1 Database Schema Enhancements
-The `documents` table tracks the active draft, while the `published_version_id` points to the safe, readable snapshot.
+The `documents` table tracks the active draft. Migration `0009_document_publications.sql` stores the safe, readable snapshot in a separate one-row-per-document mapping, avoiding a disruptive rewrite of existing document scans.
 
 ```sql
 ALTER TABLE documents 

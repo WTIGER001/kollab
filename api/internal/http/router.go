@@ -177,6 +177,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 					r.Get("/attachments", attH.List)
 					r.Get("/tags", tagH.GetDocumentTags)
 					r.Get("/review", docH.GetReview)
+					r.Get("/published", docH.GetPublished)
 				})
 
 				// Comment routes
@@ -191,6 +192,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 					r.Put("/", docH.Update)
 					r.Put("/move", docH.Move)
 					r.Put("/review", docH.UpdateReview)
+					r.Post("/publish", docH.Publish)
 					r.Post("/restore", docH.Restore)
 					r.Post("/autogen-summary", docH.AutogenSummary)
 					r.Get("/versions", docH.GetVersions)

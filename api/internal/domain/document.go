@@ -76,6 +76,15 @@ type DocumentReview struct {
 	UpdatedAt    time.Time  `json:"updatedAt"`
 }
 
+// DocumentPublication points to the immutable version readers may use as the
+// approved published representation while authors continue editing the draft.
+type DocumentPublication struct {
+	DocumentID  string    `json:"documentId"`
+	VersionID   string    `json:"versionId"`
+	PublishedBy string    `json:"publishedBy"`
+	PublishedAt time.Time `json:"publishedAt"`
+}
+
 // DocumentNotification is an in-app event generated for a user watching a page.
 type DocumentNotification struct {
 	ID            string    `json:"id"`
@@ -153,6 +162,8 @@ type DocumentRepository interface {
 	// Content lifecycle
 	GetReview(ctx context.Context, documentID string) (*DocumentReview, error)
 	SaveReview(ctx context.Context, review *DocumentReview) error
+	GetPublication(ctx context.Context, documentID string) (*DocumentPublication, error)
+	SavePublication(ctx context.Context, publication *DocumentPublication) error
 
 	// Confluence migration idempotency
 	FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*ConfluenceImportRecord, error)
@@ -182,6 +193,8 @@ type DocumentService interface {
 	// Versioning
 	GetDocumentVersions(ctx context.Context, docID string) ([]*DocumentVersion, error)
 	GetDocumentVersion(ctx context.Context, versionID string) (*DocumentVersion, error)
+	GetPublishedDocument(ctx context.Context, documentID string) (*Document, *DocumentPublication, error)
+	PublishDocument(ctx context.Context, documentID string, userID string) (*DocumentPublication, error)
 	RestoreDocumentVersion(ctx context.Context, docID string, versionID string, userID string) (*Document, error)
 	CreateManualMilestone(ctx context.Context, docID string, summary string, userID string) (*DocumentVersion, error)
 	GenerateSummary(ctx context.Context, title string, oldContent string, newContent string) (string, error)

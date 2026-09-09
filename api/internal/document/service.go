@@ -366,6 +366,61 @@ func (s *DocumentService) GetDocumentVersion(ctx context.Context, versionID stri
 	return s.repo.GetVersionByID(ctx, versionID)
 }
 
+func (s *DocumentService) GetPublishedDocument(ctx context.Context, documentID string) (*domain.Document, *domain.DocumentPublication, error) {
+	if documentID == "" {
+		return nil, nil, errors.New("document ID is required")
+	}
+	publication, err := s.repo.GetPublication(ctx, documentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if publication == nil {
+		return nil, nil, errors.New("document has not been published")
+	}
+	version, err := s.repo.GetVersionByID(ctx, publication.VersionID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if version.DocumentID != documentID {
+		return nil, nil, errors.New("published version does not belong to document")
+	}
+	document, err := s.repo.GetByID(ctx, documentID)
+	if err != nil {
+		return nil, nil, err
+	}
+	document.Content = version.Content
+	return document, publication, nil
+}
+
+func (s *DocumentService) PublishDocument(ctx context.Context, documentID string, userID string) (*domain.DocumentPublication, error) {
+	if documentID == "" || userID == "" {
+		return nil, errors.New("document ID and user ID are required")
+	}
+	document, err := s.repo.GetByID(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+	latest, err := s.repo.GetLatestVersion(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+	versionNumber := 1
+	if latest != nil {
+		versionNumber = latest.VersionNumber + 1
+	}
+	summary := "Published version"
+	publisher := userID
+	version := &domain.DocumentVersion{ID: uuid.New().String(), DocumentID: documentID, Content: document.Content, VersionNumber: versionNumber, CreatedBy: &publisher, ChangeSummary: &summary, CreatedAt: time.Now()}
+	if err := s.repo.SaveVersion(ctx, version); err != nil {
+		return nil, err
+	}
+	publication := &domain.DocumentPublication{DocumentID: documentID, VersionID: version.ID, PublishedBy: userID, PublishedAt: time.Now()}
+	if err := s.repo.SavePublication(ctx, publication); err != nil {
+		return nil, err
+	}
+	return publication, nil
+}
+
 func (s *DocumentService) RestoreDocumentVersion(ctx context.Context, docID string, versionID string, userID string) (*domain.Document, error) {
 	version, err := s.repo.GetVersionByID(ctx, versionID)
 	if err != nil {
