@@ -641,6 +641,30 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if err := json.Unmarshal(reviewResponse.Body.Bytes(), &review); err != nil || review.Status != "in_review" {
 		t.Fatalf("expected in_review response, got %s (%v)", reviewResponse.Body.String(), err)
 	}
+	publishedResponse, code := sendReq("POST", "/api/documents/"+docA.ID+"/publish", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected publish code 200, got %d: %s", code, publishedResponse.Body.String())
+	}
+	var publication domain.DocumentPublication
+	if err := json.Unmarshal(publishedResponse.Body.Bytes(), &publication); err != nil || publication.DocumentID != docA.ID || publication.VersionID == "" {
+		t.Fatalf("expected publication response, got %s (%v)", publishedResponse.Body.String(), err)
+	}
+	updatedDraft := `{"title":"Doc A draft after publication","content":"{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"unpublished\"}]}]}"}`
+	_, code = sendReq("PUT", "/api/documents/"+docA.ID, []byte(updatedDraft), token)
+	if code != http.StatusOK {
+		t.Fatalf("expected draft update code 200, got %d", code)
+	}
+	publishedResponse, code = sendReq("GET", "/api/documents/"+docA.ID+"/published", nil, token)
+	if code != http.StatusOK {
+		t.Fatalf("expected published read code 200, got %d: %s", code, publishedResponse.Body.String())
+	}
+	var publishedPayload struct {
+		Document    domain.Document            `json:"document"`
+		Publication domain.DocumentPublication `json:"publication"`
+	}
+	if err := json.Unmarshal(publishedResponse.Body.Bytes(), &publishedPayload); err != nil || publishedPayload.Publication.VersionID != publication.VersionID || strings.Contains(publishedPayload.Document.Content, "unpublished") {
+		t.Fatalf("published endpoint leaked draft content: %s (%v)", publishedResponse.Body.String(), err)
+	}
 	notificationID := "watch-notification-" + docA.ID
 	if err := docRepo.CreateNotification(context.Background(), &domain.DocumentNotification{ID: notificationID, UserID: regRes.ID, ActorID: regRes.ID, DocumentID: docA.ID, DocumentTitle: docA.Title, EventType: "document_updated", CreatedAt: time.Now()}); err != nil {
 		t.Fatalf("seed notification: %v", err)
