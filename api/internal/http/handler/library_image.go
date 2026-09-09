@@ -22,17 +22,22 @@ func NewLibraryImageHandler(service domain.LibraryImageService) *LibraryImageHan
 }
 
 func (h *LibraryImageHandler) List(w http.ResponseWriter, r *http.Request) {
+	if h.service == nil {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode([]*domain.LibraryImage{})
+		return
+	}
 	scope := r.URL.Query().Get("scope")
 	if scope == "" {
 		scope = "personal" // Default to personal
 	}
-	
+
 	teamIDStr := r.URL.Query().Get("teamId")
 	var teamID *string
 	if teamIDStr != "" {
 		teamID = &teamIDStr
 	}
-	
+
 	projectIDStr := r.URL.Query().Get("projectId")
 	var projectID *string
 	if projectIDStr != "" {
@@ -53,6 +58,10 @@ func (h *LibraryImageHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LibraryImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
+	if h.service == nil {
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		return
+	}
 	// Parse multipart form
 	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max upload size
 		http.Error(w, "Bad Request: failed to parse multipart form", http.StatusBadRequest)
@@ -81,13 +90,13 @@ func (h *LibraryImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	if scope == "" {
 		scope = "personal"
 	}
-	
+
 	teamIDStr := r.FormValue("teamId")
 	var teamID *string
 	if teamIDStr != "" {
 		teamID = &teamIDStr
 	}
-	
+
 	projectIDStr := r.FormValue("projectId")
 	var projectID *string
 	if projectIDStr != "" {
@@ -116,6 +125,10 @@ type UpdateLibraryImageRequest struct {
 }
 
 func (h *LibraryImageHandler) UpdateName(w http.ResponseWriter, r *http.Request) {
+	if h.service == nil {
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		return
+	}
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "Bad Request: id is required", http.StatusBadRequest)
@@ -144,6 +157,10 @@ func (h *LibraryImageHandler) UpdateName(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *LibraryImageHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	if h.service == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "Bad Request: id is required", http.StatusBadRequest)

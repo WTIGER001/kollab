@@ -21,3 +21,6 @@ Once inside the library, you can:
 - **Delete**: Click the trash can icon to delete an image. *(Warning: Deleting an image will break it on any document where it is currently being used!)*
 
 Images uploaded to the library can be quickly accessed when inserting Hero Banners or standard images into your documents.
+
+## If the Library Is Unavailable
+If your administrator has not enabled image-library storage yet, the library opens empty. Uploading or renaming is unavailable until storage is configured; deleting an image that is no longer available remains safe.

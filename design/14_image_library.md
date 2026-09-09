@@ -68,3 +68,7 @@ CREATE TABLE library_images (
   - Usage: Allows users to update the simple name of the image.
 - `DELETE /api/library/images/:id`
   - Deletes the database record and initiates a cascade delete to the underlying File Storage.
+
+### 4.2 Optional Service Boundary
+
+`LibraryImageHandler` accepts an optional `domain.LibraryImageService` so the core API can run before a media-store implementation is configured. In that state, `GET` responds with an empty JSON array, while upload and rename respond with `503 Service Unavailable`. Delete is idempotent and returns `204 No Content`. This keeps library routes safe in mock and incremental deployments without presenting a transport failure as a successful upload.
