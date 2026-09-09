@@ -79,11 +79,18 @@ func loadLocalEnv() {
 func main() {
 	loadLocalEnv()
 
-	// Retrieve secret key from environment, fallback to development default
+	// Local identity is the first-run default. OIDC remains explicit so an
+	// incomplete provider configuration never silently redirects sign-in.
+	authMode := os.Getenv("AUTH_MODE")
+	if authMode == "" {
+		authMode = "local"
+	}
+	if authMode != "oidc" && authMode != "local" {
+		log.Fatalf("AUTH_MODE must be either oidc or local")
+	}
 	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "kollab-dev-secret-key-change-in-production"
-		log.Println("WARNING: JWT_SECRET environment variable not set. Using development default.")
+	if authMode == "local" && len(jwtSecret) < 32 {
+		log.Fatal("local authentication requires a JWT_SECRET of at least 32 bytes")
 	}
 
 	var db *pgxpool.Pool
@@ -133,7 +140,7 @@ func main() {
 	log.Println("PostgreSQL connection established successfully.")
 
 	// Initialize database schema
-	if err := pgrepo.InitSchema(ctx, db); err != nil {
+	if err := pgrepo.Migrate(ctx, db); err != nil {
 		log.Fatalf("Failed to initialize database schema: %v", err)
 	}
 	log.Println("Database schema initialized successfully.")
@@ -141,6 +148,12 @@ func main() {
 	// Initialize permissions schema and standard roles
 	if err := permissions.InitPermissions(ctx, db); err != nil {
 		log.Fatalf("Failed to initialize permissions system: %v", err)
+	}
+	if bootstrapAdminID := os.Getenv("BOOTSTRAP_ADMIN_USER_ID"); bootstrapAdminID != "" {
+		if err := permissions.Service.AssignRoleToUser(ctx, bootstrapAdminID, "builtin.admin", nil); err != nil {
+			log.Fatalf("Failed to grant the configured bootstrap administrator: %v", err)
+		}
+		log.Printf("Granted system administrator role to configured bootstrap user %q", bootstrapAdminID)
 	}
 	log.Println("Permissions system initialized successfully.")
 
@@ -188,6 +201,17 @@ func main() {
 
 	// Instantiate services
 	authService := userrepo.NewAuthService(userRepo, jwtSecret)
+	localSetupRequired := "false"
+	if authMode == "local" {
+		users, err := authService.ListLocalUsers(ctx)
+		if err != nil {
+			log.Fatalf("Failed to inspect local users: %v", err)
+		}
+		if len(users) == 0 {
+			localSetupRequired = "true"
+			log.Println("No users found; first browser to connect will be prompted to create the administrator")
+		}
+	}
 	teamService := teamrepo.NewTeamService(teamRepo)
 	systemService := systemrepo.NewSystemService(systemRepo)
 	docService := docrepo.NewDocumentService(docRepo, systemService, taskRepo, teamRepo)
@@ -206,19 +230,21 @@ func main() {
 	// Start daily system cleanup worker
 	systemService.StartCleanupWorker(ctx, 24*time.Hour)
 
-	// Load OIDC config from environment, fallback to defaults
+	// Load OIDC config. No hosted-provider defaults are used so a deployment
+	// cannot accidentally authenticate against the wrong tenant.
 	oidcConfig := map[string]string{
-		"authority":   os.Getenv("OIDC_AUTHORITY"),
-		"clientId":    os.Getenv("OIDC_CLIENT_ID"),
-		"redirectUri": os.Getenv("OIDC_REDIRECT_URI"),
+		"authority":          os.Getenv("OIDC_AUTHORITY"),
+		"clientId":           os.Getenv("OIDC_CLIENT_ID"),
+		"redirectUri":        os.Getenv("OIDC_REDIRECT_URI"),
+		"authMode":           authMode,
+		"localSetupRequired": localSetupRequired,
 	}
-	if oidcConfig["authority"] == "" {
-		oidcConfig["authority"] = "https://h20g6c.logto.app/oidc"
+	if authMode == "oidc" && (oidcConfig["authority"] == "" || oidcConfig["clientId"] == "" || oidcConfig["redirectUri"] == "") {
+		log.Fatal("OIDC_AUTHORITY, OIDC_CLIENT_ID, and OIDC_REDIRECT_URI are required in OIDC mode")
 	}
-	if oidcConfig["clientId"] == "" {
-		oidcConfig["clientId"] = "ckjs7u46o27bhrf0jepzg"
-	}
-	if oidcConfig["redirectUri"] == "" {
+	if authMode == "local" {
+		oidcConfig["authority"] = "mock"
+		oidcConfig["clientId"] = "mock-client-id"
 		oidcConfig["redirectUri"] = "http://localhost:5173"
 	}
 
@@ -235,10 +261,10 @@ func main() {
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService, attachmentService)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
-	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
+	attachmentHandler := handler.NewAttachmentHandler(attachmentService, evaluator)
 	tagHandler := handler.NewTagHandler(tagService)
 	templateHandler := handler.NewTemplateHandler(templateRepo)
-	
+
 	integrationRepo := pgrepo.NewIntegrationRepository(db)
 	integrationService := integrationrepo.NewService(integrationRepo)
 	integrationHandler := handler.NewIntegrationHandler(integrationService)
@@ -246,9 +272,15 @@ func main() {
 	aiClient := ai.NewLLMClient()
 	aiHandler := handler.NewAIHandler(systemService, aiClient)
 
-	// Configure router with JWKS cache
-	jwksURL := oidcConfig["authority"] + "/jwks"
-	jwksCache := middleware.NewJWKSCache(jwksURL)
+	// Discover the provider metadata once at startup. This binds token
+	// validation to the provider's declared issuer and rotating JWKS endpoint.
+	var jwksCache *middleware.JWKSCache
+	if authMode == "oidc" {
+		jwksCache, err = middleware.NewOIDCJWKSCache(ctx, oidcConfig["authority"], oidcConfig["clientId"])
+		if err != nil {
+			log.Fatalf("OIDC configuration is invalid: %v", err)
+		}
+	}
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub)
 	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, integrationHandler, evaluator)
 

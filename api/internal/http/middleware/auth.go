@@ -8,9 +8,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -29,17 +31,76 @@ const (
 
 // JWKSCache handles fetching and caching JWK public keys from the OIDC provider.
 type JWKSCache struct {
-	mu      sync.RWMutex
-	jwksURL string
-	keys    map[string]any // kid -> public key (*rsa.PublicKey or *ecdsa.PublicKey)
+	mu             sync.RWMutex
+	jwksURL        string
+	issuer         string
+	audience       string
+	allowLocalHMAC bool
+	keys           map[string]any // kid -> public key (*rsa.PublicKey or *ecdsa.PublicKey)
+	httpClient     *http.Client
 }
 
 // NewJWKSCache creates a new instance of JWKSCache.
 func NewJWKSCache(jwksURL string) *JWKSCache {
 	return &JWKSCache{
-		jwksURL: jwksURL,
-		keys:    make(map[string]any),
+		jwksURL:        jwksURL,
+		allowLocalHMAC: true,
+		keys:           make(map[string]any),
+		httpClient:     &http.Client{Timeout: 10 * time.Second},
 	}
+}
+
+// NewOIDCJWKSCache discovers a provider's JWKS URI and binds all accepted
+// tokens to its issuer and this application's client ID.
+func NewOIDCJWKSCache(ctx context.Context, issuer, audience string) (*JWKSCache, error) {
+	issuer = strings.TrimRight(strings.TrimSpace(issuer), "/")
+	if issuer == "" || audience == "" {
+		return nil, fmt.Errorf("OIDC issuer and audience are required")
+	}
+	issuerURL, err := url.Parse(issuer)
+	if err != nil || issuerURL.Scheme != "https" || issuerURL.Host == "" {
+		return nil, fmt.Errorf("OIDC issuer must be an absolute HTTPS URL")
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, issuer+"/.well-known/openid-configuration", nil)
+	if err != nil {
+		return nil, fmt.Errorf("create OIDC discovery request: %w", err)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetch OIDC discovery document: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("OIDC discovery returned status %d", resp.StatusCode)
+	}
+	var discovery struct {
+		Issuer  string `json:"issuer"`
+		JWKSURI string `json:"jwks_uri"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&discovery); err != nil {
+		return nil, fmt.Errorf("decode OIDC discovery document: %w", err)
+	}
+	if strings.TrimRight(discovery.Issuer, "/") != issuer {
+		return nil, fmt.Errorf("OIDC discovery issuer does not match configured issuer")
+	}
+	jwksURL, err := url.Parse(discovery.JWKSURI)
+	if err != nil || jwksURL.Scheme != "https" || jwksURL.Host == "" {
+		return nil, fmt.Errorf("OIDC discovery returned an invalid JWKS URI")
+	}
+	return &JWKSCache{
+		jwksURL:    discovery.JWKSURI,
+		issuer:     issuer,
+		audience:   audience,
+		keys:       make(map[string]any),
+		httpClient: client,
+	}, nil
+}
+
+// AllowsLocalCredentials reports whether development-only HMAC authentication
+// is active. Production OIDC caches always return false.
+func (c *JWKSCache) AllowsLocalCredentials() bool {
+	return c == nil || c.allowLocalHMAC
 }
 
 // fetchKeys fetches public keys from the OIDC JWKS endpoint and updates the cache.
@@ -53,7 +114,7 @@ func (c *JWKSCache) fetchKeys(ctx context.Context) error {
 		return fmt.Errorf("failed to create JWKS request: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
@@ -168,49 +229,64 @@ func (c *JWKSCache) GetKey(ctx context.Context, kid string) (any, error) {
 
 // AuthMiddleware returns a middleware that validates a JWT token and adds user claims to the context.
 // It supports verifying OIDC tokens using a JWKS cache with an HMAC fallback for local development and testing.
+func ValidateToken(ctx context.Context, tokenString string, jwtSecret []byte, jwksCache *JWKSCache) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	validMethods := []string{"HS256", "HS384", "HS512"}
+	parseOptions := []jwt.ParserOption{jwt.WithLeeway(30 * time.Second), jwt.WithValidMethods(validMethods)}
+	if jwksCache != nil && !jwksCache.allowLocalHMAC {
+		validMethods = []string{"RS256", "RS384", "RS512", "ES256", "ES384", "ES512"}
+		parseOptions = []jwt.ParserOption{
+			jwt.WithLeeway(30 * time.Second),
+			jwt.WithValidMethods(validMethods),
+			jwt.WithIssuer(jwksCache.issuer),
+			jwt.WithAudience(jwksCache.audience),
+		}
+	}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
+			if jwksCache != nil && !jwksCache.allowLocalHMAC {
+				return nil, fmt.Errorf("HMAC tokens are not accepted in OIDC mode")
+			}
+			if jwksCache != nil && len(jwtSecret) < 32 {
+				return nil, fmt.Errorf("local JWT secret is not configured securely")
+			}
+			return jwtSecret, nil
+		}
+		kid, ok := token.Header["kid"].(string)
+		if !ok || kid == "" || jwksCache == nil {
+			return nil, fmt.Errorf("OIDC token is missing a usable key identifier")
+		}
+		return jwksCache.GetKey(ctx, kid)
+	}, parseOptions...)
+	if err != nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token: %w", err)
+	}
+	return claims, nil
+}
+
 func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.UserRepository) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
-				http.Error(w, "Unauthorized: Authorization header is required", http.StatusUnauthorized)
-				return
+			tokenString := ""
+			if authHeader != "" {
+				parts := strings.Split(authHeader, " ")
+				if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+					http.Error(w, "Unauthorized: Authorization header must be Bearer <token>", http.StatusUnauthorized)
+					return
+				}
+				tokenString = parts[1]
+			} else if strings.HasPrefix(r.URL.Path, "/api/attachments/") {
+				// Browser elements cannot send Authorization headers. This narrow
+				// exception is limited to attachment rendering routes.
+				tokenString = r.URL.Query().Get("authToken")
 			}
-
-			parts := strings.Split(authHeader, " ")
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+			if tokenString == "" {
 				http.Error(w, "Unauthorized: Authorization header must be Bearer <token>", http.StatusUnauthorized)
 				return
 			}
-
-			tokenString := parts[1]
-			claims := jwt.MapClaims{}
-
-			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-				// 1. Check if token is signed with HMAC (used in test suite and local dev mode)
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
-					return jwtSecret, nil
-				}
-
-				// 2. Otherwise, look up public key in the JWKS cache
-				kidVal, ok := token.Header["kid"]
-				if !ok {
-					return nil, fmt.Errorf("missing kid in token header")
-				}
-
-				kid, ok := kidVal.(string)
-				if !ok {
-					return nil, fmt.Errorf("invalid kid header type")
-				}
-
-				if jwksCache == nil {
-					return nil, fmt.Errorf("JWKS cache is not initialized")
-				}
-
-				return jwksCache.GetKey(r.Context(), kid)
-			}, jwt.WithLeeway(5*time.Minute))
-
-			if err != nil || !token.Valid {
+			claims, err := ValidateToken(r.Context(), tokenString, jwtSecret, jwksCache)
+			if err != nil {
 				log.Printf("JWT validation failed: %v", err)
 				http.Error(w, "Unauthorized: Invalid or expired token", http.StatusUnauthorized)
 				return

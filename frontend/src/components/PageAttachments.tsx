@@ -50,6 +50,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
   onRefresh,
   loading = false
 }) => {
+	const attachmentUrl = (id: string) => `${API_BASE_URL}/api/attachments/${id}?authToken=${encodeURIComponent(authToken || "")}`;
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
   const [isDragActive, setIsDragActive] = useState<boolean>(false);
@@ -137,7 +138,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
     if (isText) {
       setPreviewLoading(true);
       try {
-        const downloadUrl = `${API_BASE_URL}/api/attachments/${attachment.id}`;
+		const downloadUrl = attachmentUrl(attachment.id);
         const headers: HeadersInit = {};
         if (authToken) {
           headers["Authorization"] = `Bearer ${authToken}`;
@@ -322,7 +323,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
                       <IconButton 
                         size="small" 
                         component="a"
-                        href={`${API_BASE_URL}/api/attachments/${att.id}`}
+						href={attachmentUrl(att.id)}
                         download={att.filename}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -522,7 +523,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
               {previewAttachment.mimeType.startsWith("image/") ? (
                 <Box 
                   component="img"
-                  src={`${API_BASE_URL}/api/attachments/${previewAttachment.id}`}
+				  src={attachmentUrl(previewAttachment.id)}
                   alt={previewAttachment.filename}
                   sx={{
                     maxWidth: "100%",
@@ -534,7 +535,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
               ) : previewAttachment.mimeType === "application/pdf" ? (
                 <Box 
                   component="iframe"
-                  src={`${API_BASE_URL}/api/attachments/${previewAttachment.id}`}
+				  src={attachmentUrl(previewAttachment.id)}
                   title={previewAttachment.filename}
                   sx={{
                     width: "100%",
@@ -587,7 +588,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
             <Button
               variant="contained"
               component="a"
-              href={`${API_BASE_URL}/api/attachments/${previewAttachment.id}`}
+			  href={attachmentUrl(previewAttachment.id)}
               download={previewAttachment.filename}
               target="_blank"
               rel="noopener noreferrer"

@@ -37,6 +37,7 @@ type AttachmentRepository interface {
 type AttachmentService interface {
 	UploadAttachment(ctx context.Context, docID string, filename string, mimeType string, data []byte, userID string) (*Attachment, error)
 	GetAttachmentFile(ctx context.Context, id string) ([]byte, *Attachment, error)
+	GetAttachment(ctx context.Context, id string) (*Attachment, error)
 	GetAttachmentPreview(ctx context.Context, id string) ([]byte, *Attachment, error)
 	ListAttachments(ctx context.Context, docID string) ([]*Attachment, error)
 	DeleteAttachment(ctx context.Context, id string) error

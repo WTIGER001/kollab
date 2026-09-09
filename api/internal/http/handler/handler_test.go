@@ -126,7 +126,7 @@ func TestPostgresAuthAndProtectedEndpoints(t *testing.T) {
 	docRepo := pgrepo.NewPostgresDocumentRepository(db)
 	// templateRepo := pgrepo.NewTemplateRepository(db)
 	// templateH := handler.NewTemplateHandler(templateRepo)
-	
+
 	// integrationRepo := pgrepo.NewIntegrationRepository(db)
 	// integrationService := pgrepo.NewIntegrationService(integrationRepo)
 	// integrationH := handler.NewIntegrationHandler(integrationService)
@@ -288,8 +288,6 @@ func TestSystemHealthHandler(t *testing.T) {
 	}
 }
 
-
-
 func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRepository, teamRepo domain.TeamRepository, docRepo domain.DocumentRepository, imageRepo domain.ImageRepository, themeRepo domain.ThemeRepository, systemRepo domain.SystemRepository, commentRepo domain.CommentRepository, attachmentRepo domain.AttachmentRepository, taskRepo domain.TaskRepository, storageProvider domain.FileStorage, jwtSecret string) {
 	// Initialize permissions
 	if err := permissions.InitPermissions(context.Background(), db); err != nil {
@@ -323,9 +321,10 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	// Handlers
 	mockOidcConfig := map[string]string{
-		"authority":   "https://mock-authority.logto.app/oidc",
-		"clientId":    "mock-client-id",
-		"redirectUri": "http://localhost:5173",
+		"authority":          "https://mock-authority.logto.app/oidc",
+		"clientId":           "mock-client-id",
+		"redirectUri":        "http://localhost:5173",
+		"localSetupRequired": "true",
 	}
 	userH := handler.NewUserHandler(authService, themeService, systemService, mockOidcConfig)
 	teamH := handler.NewTeamHandler(teamService)
@@ -336,7 +335,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	systemH := handler.NewSystemHandler(systemService, attachmentService)
 	commentService := inmemcomment.NewCommentService(commentRepo)
 	commentH := handler.NewCommentHandler(commentService, userRepo)
-	attachmentH := handler.NewAttachmentHandler(attachmentService)
+	attachmentH := handler.NewAttachmentHandler(attachmentService, evaluator)
 
 	aiClient := &mockLLMClient{generateTextVal: "Mock AI generated response"}
 	aiH := handler.NewAIHandler(systemService, aiClient)
@@ -347,6 +346,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	templateH := handler.NewTemplateHandler(nil)
 	libImgH := handler.NewLibraryImageHandler(nil)
+	integrationH := handler.NewIntegrationHandler(nil)
 
 	// Router
 	router := apihttp.NewRouter([]byte(jwtSecret), nil, userRepo, userH, teamH, docH, imgH, libImgH, themeH, wsH, systemH, commentH, attachmentH, aiH, tagH, templateH, integrationH, evaluator)
@@ -363,19 +363,27 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 		return w, w.Code
 	}
 
-	// 1. Test register user
-	regPayload := `{"username": "testuser", "password": "password123"}`
-	wReg, code := sendReq("POST", "/api/auth/register", []byte(regPayload), "")
-	if code != http.StatusCreated {
-		t.Fatalf("expected register code 201, got %d", code)
+	// 1. Test one-time first administrator setup. The Postgres fixture carries
+	// seeded users, so it creates the test principal directly instead.
+	regPayload := `{"username": "testuser", "password": "SecurePassword123"}`
+	var regRes *domain.User
+	var err error
+	if db == nil {
+		_, code := sendReq("POST", "/api/auth/setup", []byte(regPayload), "")
+		if code != http.StatusCreated {
+			t.Fatalf("expected setup code 201, got %d", code)
+		}
+		regRes, err = userRepo.GetByUsername(context.Background(), "testuser")
+		if err != nil {
+			t.Fatalf("failed to retrieve setup user: %v", err)
+		}
+	} else {
+		regRes, err = authService.CreateLocalUser(context.Background(), "testuser", "SecurePassword123", "", "testuser")
+		if err != nil {
+			t.Fatalf("failed to create Postgres test user: %v", err)
+		}
 	}
-
-	var regRes struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(wReg.Body.Bytes(), &regRes); err != nil {
-		t.Fatalf("failed to decode register response: %v", err)
-	}
+	var token string
 
 	// Add testuser to all seeded teams so they have proper access under the permissions model
 	_ = teamRepo.AddTeamMember(context.Background(), "team_eng", regRes.ID)
@@ -399,7 +407,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	// 2. Test login user (valid)
-	loginPayload := `{"username": "testuser", "password": "password123"}`
+	loginPayload := `{"username": "testuser", "password": "SecurePassword123"}`
 	w, code := sendReq("POST", "/api/auth/login", []byte(loginPayload), "")
 	if code != http.StatusOK {
 		t.Fatalf("expected login code 200, got %d", code)
@@ -410,13 +418,13 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 		t.Fatalf("failed to decode login response: %v", err)
 	}
 
-	token := loginRes["token"]
+	token = loginRes["token"]
 	if token == "" {
 		t.Fatal("expected JWT token in response, got empty")
 	}
 
 	// 3. Test login user (invalid credentials)
-	badLoginPayload := `{"username": "testuser", "password": "wrongpassword"}`
+	badLoginPayload := `{"username": "testuser", "password": "WrongPassword123"}`
 	_, code = sendReq("POST", "/api/auth/login", []byte(badLoginPayload), "")
 	if code != http.StatusUnauthorized {
 		t.Fatalf("expected code 401 for bad login, got %d", code)
@@ -1054,11 +1062,11 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	// I. Verify user privacy boundary checks:
-	// Register and login second user
-	regPayload2 := `{"username": "otheruser", "password": "password123"}`
-	wReg2, code := sendReq("POST", "/api/auth/register", []byte(regPayload2), "")
+	// Create and login a second user through the administrator endpoint.
+	regPayload2 := `{"username": "otheruser", "password": "SecurePassword123"}`
+	wReg2, code := sendReq("POST", "/api/admin/users", []byte(regPayload2), token)
 	if code != http.StatusCreated {
-		t.Fatalf("expected registration of user 2 to succeed, got %d", code)
+		t.Fatalf("expected creation of user 2 to succeed, got %d", code)
 	}
 
 	var regRes2 struct {
@@ -1073,7 +1081,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = teamRepo.AddTeamMember(context.Background(), "team_mkt", regRes2.ID)
 	_ = teamRepo.AddTeamMember(context.Background(), "team_arkloud", regRes2.ID)
 
-	loginPayload2 := `{"username": "otheruser", "password": "password123"}`
+	loginPayload2 := `{"username": "otheruser", "password": "SecurePassword123"}`
 	wLogin2, code := sendReq("POST", "/api/auth/login", []byte(loginPayload2), "")
 	if code != http.StatusOK {
 		t.Fatalf("expected login of user 2 to succeed, got %d", code)
@@ -1425,7 +1433,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if codeDel != http.StatusNoContent {
 		t.Errorf("expected DELETE document to return 204, got %d", codeDel)
 	}
-	
+
 	// Remove Favorite
 	_, _ = sendReq("DELETE", "/api/favorites/doc_guides_eng", nil, token)
 
@@ -1556,13 +1564,13 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 	var tag domain.Tag
 	_ = json.Unmarshal(wTag.Body.Bytes(), &tag)
-	
+
 	// List Tags
 	_, tagListCode := sendReq("GET", "/api/tags", nil, token)
 	if tagListCode != http.StatusOK {
 		t.Errorf("expected GET tags to return 200, got %d", tagListCode)
 	}
-	
+
 	// Update Tag
 	tagUpPayload := `{"name":"TestTag2", "color":"#00ff00"}`
 	_, tagUpCode := sendReq("PUT", "/api/tags/"+tag.ID, []byte(tagUpPayload), token)
@@ -1580,19 +1588,19 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if tagDocCode != http.StatusCreated && tagDocCode != http.StatusOK && tagDocCode != http.StatusNoContent {
 		t.Errorf("expected POST doc tag to return 200, 201 or 204, got %d", tagDocCode)
 	}
-	
+
 	// List Doc Tags
 	_, tagDocListCode := sendReq("GET", "/api/documents/"+hDoc.ID+"/tags", nil, token)
 	if tagDocListCode != http.StatusOK {
 		t.Errorf("expected GET doc tags to return 200, got %d", tagDocListCode)
 	}
-	
+
 	// Remove Tag from Doc
 	_, tagDocRmCode := sendReq("DELETE", "/api/documents/"+hDoc.ID+"/tags/"+tag.ID, nil, token)
 	if tagDocRmCode != http.StatusNoContent {
 		t.Errorf("expected DELETE doc tag to return 204, got %d", tagDocRmCode)
 	}
-	
+
 	// Delete Tag
 	_, tagDelCode := sendReq("DELETE", "/api/tags/"+tag.ID, nil, token)
 	if tagDelCode != http.StatusNoContent {
@@ -1604,108 +1612,108 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if attCodeNoAuth != http.StatusUnauthorized {
 		t.Errorf("expected POST attachment without auth to be 401, got %d", attCodeNoAuth)
 	}
-	
+
 	// Assuming sendImageUpload posts to /api/images, we need one for /api/attachments
 	sendAttachmentUpload := func(docID, filename, mimeType string, data []byte, authToken string) (*httptest.ResponseRecorder, int) {
 		var reqBuf bytes.Buffer
 		mw := multipart.NewWriter(&reqBuf)
-		
+
 		_ = mw.WriteField("documentId", docID)
-		
+
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="file"; filename="%s"`, filename))
 		h.Set("Content-Type", mimeType)
-		
+
 		part, _ := mw.CreatePart(h)
 		_, _ = part.Write(data)
 		_ = mw.Close()
-		
+
 		req := httptest.NewRequest("POST", "/api/documents/"+docID+"/attachments", &reqBuf)
 		req.Header.Set("Content-Type", mw.FormDataContentType())
 		if authToken != "" {
 			req.Header.Set("Authorization", "Bearer "+authToken)
 		}
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 		return w, w.Code
 	}
-	
+
 	wAtt, attCode := sendAttachmentUpload(hDoc.ID, "test.txt", "text/plain", []byte("hello"), token)
 	if attCode != http.StatusCreated {
 		t.Errorf("expected POST attachment to return 201, got %d. body: %s", attCode, wAtt.Body.String())
 	} else {
 		var att domain.Attachment
 		_ = json.Unmarshal(wAtt.Body.Bytes(), &att)
-		
+
 		// List
 		_, attListCode := sendReq("GET", "/api/documents/"+hDoc.ID+"/attachments", nil, token)
 		if attListCode != http.StatusOK {
 			t.Errorf("expected GET attachments to return 200, got %d", attListCode)
 		}
-		
+
 		// Get File
-		_, attGetCode := sendReq("GET", "/api/attachments/"+att.ID, nil, "")
+		_, attGetCode := sendReq("GET", "/api/attachments/"+att.ID, nil, token)
 		if attGetCode != http.StatusOK {
 			t.Errorf("expected GET attachment file to return 200, got %d", attGetCode)
 		}
-		
+
 		// Get Preview Status
-		_, attStatusCode := sendReq("GET", "/api/attachments/"+att.ID+"/preview/status", nil, "")
+		_, attStatusCode := sendReq("GET", "/api/attachments/"+att.ID+"/preview/status", nil, token)
 		if attStatusCode != http.StatusOK && attStatusCode != http.StatusInternalServerError && attStatusCode != http.StatusNotFound {
 			t.Errorf("expected GET attachment preview status to return 200, 404 or 500, got %d", attStatusCode)
 		}
-		
+
 		// Retry Preview
-		_, attRetryCode := sendReq("POST", "/api/attachments/"+att.ID+"/preview/retry", nil, "")
+		_, attRetryCode := sendReq("POST", "/api/attachments/"+att.ID+"/preview/retry", nil, token)
 		if attRetryCode != http.StatusNoContent && attRetryCode != http.StatusOK && attRetryCode != http.StatusInternalServerError {
 			t.Errorf("expected POST preview retry to return 204, 200 or 500, got %d", attRetryCode)
 		}
-		
+
 		// Delete
 		_, attDelCode := sendReq("DELETE", "/api/attachments/"+att.ID, nil, token)
 		if attDelCode != http.StatusNoContent {
 			t.Errorf("expected DELETE attachment to return 204, got %d", attDelCode)
 		}
 	}
-	
+
 	// 19. Additional coverage endpoints
 	// CheckSlug
 	_, _ = sendReq("GET", "/api/documents/check-slug?slug=test-slug&projectId=proj_wiki", nil, token)
-	
+
 	// AutogenSummary
 	_, _ = sendReq("POST", "/api/documents/"+hDoc.ID+"/summary", nil, token)
-	
+
 	// GetTasks
 	_, _ = sendReq("GET", "/api/tasks?assigneeId="+regRes.ID, nil, token)
-	
+
 	// GetMentions
 	_, _ = sendReq("GET", "/api/users/mentions", nil, token)
-	
+
 	// GetPermissions
 	_, _ = sendReq("GET", "/api/documents/"+hDoc.ID+"/permissions", nil, token)
-	
+
 	// AddPermissionGrant
 	permPayload := `{"userId": "` + regRes.ID + `", "permission": "viewer"}`
 	_, _ = sendReq("POST", "/api/documents/"+hDoc.ID+"/permissions", []byte(permPayload), token)
-	
+
 	// UpdatePermissionSettings
 	permSetPayload := `{"isPublic": true}`
 	_, _ = sendReq("PUT", "/api/documents/"+hDoc.ID+"/permissions/settings", []byte(permSetPayload), token)
-	
+
 	// CreateShareLink
 	_, _ = sendReq("POST", "/api/documents/"+hDoc.ID+"/share-links", nil, token)
-	
+
 	// ListShareLinks
 	_, _ = sendReq("GET", "/api/documents/"+hDoc.ID+"/share-links", nil, token)
-	
+
 	// User endpoints
 	_, _ = sendReq("GET", "/api/users/me", nil, token)
 	_, _ = sendReq("GET", "/api/users", nil, token)
 	_, _ = sendReq("GET", "/api/users/"+regRes.ID, nil, token)
 	_, _ = sendReq("PUT", "/api/users/"+regRes.ID, []byte(`{"firstName": "Test"}`), token)
 	_, _ = sendReq("PUT", "/api/auth/password", []byte(`{"oldPassword": "password123", "newPassword": "newpassword"}`), token)
-	
+
 	// Task endpoints
 	taskPayload := `{"title": "Test Task", "documentId": "` + hDoc.ID + `", "assigneeId": "` + regRes.ID + `"}`
 	wTask, _ := sendReq("POST", "/api/tasks", []byte(taskPayload), token)
@@ -1713,18 +1721,18 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = json.Unmarshal(wTask.Body.Bytes(), &task)
 	_, _ = sendReq("PUT", "/api/tasks/"+task.ID, []byte(`{"status": "completed"}`), token)
 	_, _ = sendReq("DELETE", "/api/tasks/"+task.ID, nil, token)
-	
+
 	// Theme endpoints
 	_, _ = sendReq("GET", "/api/theme", nil, "")
 	_, _ = sendReq("DELETE", "/api/theme/logo", nil, token)
-	
+
 	// Image Library
 	_, _ = sendReq("GET", "/api/library/images", nil, token)
-	
+
 	// Permissions Evaluation
 	evalPayload := `{"permission": "document.view", "documentId": "` + hDoc.ID + `"}`
 	_, _ = sendReq("POST", "/api/permissions/evaluate", []byte(evalPayload), token)
-	
+
 	// Teams & Projects endpoints
 	tPayload := `{"name": "New Team", "abbreviation": "NT", "color": "#000000"}`
 	wTeam, _ := sendReq("POST", "/api/teams", []byte(tPayload), token)
@@ -1734,13 +1742,13 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_, _ = sendReq("GET", "/api/teams/abbrev/NT", nil, token)
 	_, _ = sendReq("POST", "/api/teams/"+nTeam.ID+"/users", []byte(`{"userId": "`+regRes.ID+`"}`), token)
 	_, _ = sendReq("DELETE", "/api/teams/"+nTeam.ID+"/users/"+regRes.ID, nil, token)
-	
+
 	pPayload := `{"name": "New Project", "teamId": "` + nTeam.ID + `"}`
 	wProj, _ := sendReq("POST", "/api/projects", []byte(pPayload), token)
 	var nProj domain.Project
 	_ = json.Unmarshal(wProj.Body.Bytes(), &nProj)
 	_, _ = sendReq("PUT", "/api/projects/"+nProj.ID, []byte(`{"name": "Updated Project"}`), token)
-	
+
 	// Template endpoints
 	tplPayload := `{"title": "My Template", "description": "desc", "content": "{}", "scope": "system", "templateType": "page"}`
 	wTpl, _ := sendReq("POST", "/api/templates", []byte(tplPayload), token)
@@ -1782,7 +1790,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	// ==========================================
 	// Extra Document Endpoints Tests
 	// ==========================================
-	
+
 	// Create a new document just for these tests
 	wTestDoc, _ := sendReq("POST", "/api/documents", []byte(`{"title": "Test Doc for Extra", "projectId": "proj_wiki"}`), token)
 	var testDoc domain.Document

@@ -18,12 +18,37 @@ import (
 
 type AttachmentHandler struct {
 	attachmentService domain.AttachmentService
+	evaluator         *permissions.AccessEvaluator
 }
 
-func NewAttachmentHandler(attachmentService domain.AttachmentService) *AttachmentHandler {
+func NewAttachmentHandler(attachmentService domain.AttachmentService, evaluator *permissions.AccessEvaluator) *AttachmentHandler {
 	return &AttachmentHandler{
 		attachmentService: attachmentService,
+		evaluator:         evaluator,
 	}
+}
+
+func (h *AttachmentHandler) requireAttachmentAccess(w http.ResponseWriter, r *http.Request, action string) (*domain.Attachment, bool) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return nil, false
+	}
+	attachment, err := h.attachmentService.GetAttachment(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Attachment not found", http.StatusNotFound)
+		return nil, false
+	}
+	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, attachment.DocumentID, action, "", "")
+	if err != nil {
+		http.Error(w, "Unable to verify attachment access", http.StatusInternalServerError)
+		return nil, false
+	}
+	if !allowed {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return nil, false
+	}
+	return attachment, true
 }
 
 func (h *AttachmentHandler) Upload(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +121,9 @@ func (h *AttachmentHandler) Download(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
 		return
 	}
+	if _, ok := h.requireAttachmentAccess(w, r, "read"); !ok {
+		return
+	}
 
 	data, att, err := h.attachmentService.GetAttachmentFile(r.Context(), id)
 	if err != nil {
@@ -125,6 +153,9 @@ func (h *AttachmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
 		return
 	}
+	if _, ok := h.requireAttachmentAccess(w, r, "delete"); !ok {
+		return
+	}
 
 	_, ok := middleware.GetUserID(r.Context())
 	if !ok {
@@ -145,6 +176,9 @@ func (h *AttachmentHandler) Preview(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
+	if _, ok := h.requireAttachmentAccess(w, r, "read"); !ok {
 		return
 	}
 
@@ -176,6 +210,9 @@ func (h *AttachmentHandler) PreviewStatus(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
 		return
 	}
+	if _, ok := h.requireAttachmentAccess(w, r, "read"); !ok {
+		return
+	}
 
 	status, err := h.attachmentService.GetPreviewStatus(r.Context(), id)
 	if err != nil {
@@ -193,6 +230,9 @@ func (h *AttachmentHandler) Retry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
 		return
 	}
+	if _, ok := h.requireAttachmentAccess(w, r, "write"); !ok {
+		return
+	}
 
 	err := h.attachmentService.RetryPreviewGeneration(r.Context(), id)
 	if err != nil {
@@ -207,6 +247,9 @@ func (h *AttachmentHandler) PreviewView(w http.ResponseWriter, r *http.Request) 
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "Bad Request: id path parameter is required", http.StatusBadRequest)
+		return
+	}
+	if _, ok := h.requireAttachmentAccess(w, r, "read"); !ok {
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 	"kollab/api/internal/domain"
 	"kollab/api/internal/http/handler"
 	mid "kollab/api/internal/http/middleware"
+	"kollab/api/internal/migration"
 	"kollab/api/internal/permissions"
 )
 
@@ -18,6 +19,8 @@ import (
 func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, templateH *handler.TemplateHandler, integrationH *handler.IntegrationHandler, evaluator *permissions.AccessEvaluator) http.Handler {
 	r := chi.NewRouter()
 
+	confluenceImporter := migration.NewConfluenceImporter()
+	migrationH := handler.NewMigrationHandler(confluenceImporter)
 
 	// Standard middleware
 	r.Use(mid.RequestLogger)
@@ -35,8 +38,10 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 	// Public routes
 	r.Route("/api/auth", func(r chi.Router) {
-		r.Post("/register", userH.Register)
-		r.Post("/login", userH.Login)
+		if jwksCache.AllowsLocalCredentials() {
+			r.Post("/login", userH.Login)
+			r.Post("/setup", userH.SetupInitialLocalAdmin)
+		}
 		r.Get("/config", userH.GetOIDCConfig)
 	})
 
@@ -47,13 +52,6 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 	// Public image retrieval route (no auth header needed for <img> elements in canvas)
 	r.Get("/api/images/{id}/{size}", imgH.GetImage)
 	r.Get("/api/images/{id}", imgH.GetImage) // Fallback for URLs without size param
-
-	// Public attachment download/preview route
-	r.Get("/api/attachments/{id}", attH.Download)
-	r.Get("/api/attachments/{id}/preview", attH.Preview)
-	r.Get("/api/attachments/{id}/preview/status", attH.PreviewStatus)
-	r.Post("/api/attachments/{id}/preview/retry", attH.Retry)
-	r.Get("/api/attachments/{id}/preview/view/*", attH.PreviewView)
 
 	// WebSocket presence connection route (handles auth internally via token query param)
 	r.Get("/api/ws", wsH.ServeWS)
@@ -88,6 +86,12 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Post("/teams/{teamId}/users", teamH.AddTeamMember)
 		r.Delete("/teams/{teamId}/users/{userId}", teamH.RemoveTeamMember)
 		r.Get("/users", teamH.ListAllUsers)
+		if jwksCache.AllowsLocalCredentials() {
+			r.Get("/admin/users", userH.ListLocalUsers)
+			r.Post("/admin/users", userH.CreateLocalUser)
+			r.Put("/admin/users/{id}/active", userH.SetLocalUserActive)
+			r.Put("/admin/users/{id}/password", userH.SetLocalUserPassword)
+		}
 		r.Get("/projects", teamH.ListProjects)
 		r.Post("/projects", teamH.CreateProject)
 		r.Put("/projects/{id}", teamH.UpdateProject)
@@ -101,6 +105,11 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Delete("/library/images/{id}", libImgH.Delete)
 
 		r.Delete("/attachments/{id}", attH.Delete)
+		r.Get("/attachments/{id}", attH.Download)
+		r.Get("/attachments/{id}/preview", attH.Preview)
+		r.Get("/attachments/{id}/preview/status", attH.PreviewStatus)
+		r.Post("/attachments/{id}/preview/retry", attH.Retry)
+		r.Get("/attachments/{id}/preview/view/*", attH.PreviewView)
 
 		r.Put("/theme", themeH.UpdateTheme)
 		r.Get("/users/preferences", themeH.GetUserPreference)
@@ -124,7 +133,12 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Post("/ai/generate", aiH.Generate)
 		r.Get("/integrations/issues", systemH.GetIntegrationIssue)
 		r.Get("/integrations/issues/list", systemH.GetIntegrationIssueList)
-		
+
+		r.Route("/migration/confluence", func(r chi.Router) {
+			r.Post("/import", migrationH.ImportConfluenceSpace)
+			r.Get("/preview", migrationH.PreviewConfluenceSpace)
+		})
+
 		r.Route("/integrations/connections", func(r chi.Router) {
 			integrationH.Mount(r)
 		})

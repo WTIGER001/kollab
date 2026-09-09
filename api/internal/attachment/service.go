@@ -111,6 +111,10 @@ func (s *AttachmentService) GetAttachmentFile(ctx context.Context, id string) ([
 	return data, att, nil
 }
 
+func (s *AttachmentService) GetAttachment(ctx context.Context, id string) (*domain.Attachment, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
 func (s *AttachmentService) GetAttachmentPreview(ctx context.Context, id string) ([]byte, *domain.Attachment, error) {
 	att, err := s.repo.GetByID(ctx, id)
 	if err != nil {

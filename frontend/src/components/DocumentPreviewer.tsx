@@ -90,7 +90,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
   const [csvRows, setCsvRows] = useState<string[][]>([]);
 
   const objectUrlsRef = useRef<string[]>([]);
-  const downloadUrl = `${apiBaseUrl}/api/attachments/${attachmentId}`;
+	const downloadUrl = `${apiBaseUrl}/api/attachments/${attachmentId}?authToken=${encodeURIComponent(getApiToken() || "")}`;
 
   // Map sizing to pixel heights
   const heightMap = {
@@ -777,8 +777,8 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
               (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf"))
                 ? downloadUrl
                 : previewStatus?.format === "html"
-                  ? `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/index.html?token=${encodeURIComponent(getApiToken() || "")}`
-                  : `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/document.pdf?token=${encodeURIComponent(getApiToken() || "")}`
+					? `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/index.html?authToken=${encodeURIComponent(getApiToken() || "")}`
+					: `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/document.pdf?authToken=${encodeURIComponent(getApiToken() || "")}`
             }
             width="100%"
             height="100%"
@@ -865,7 +865,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
             ) : (
               <Box sx={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <img
-                  src={`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/thumbnail.png?token=${encodeURIComponent(getApiToken() || "")}`}
+				  src={`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/thumbnail.png?authToken=${encodeURIComponent(getApiToken() || "")}`}
                   alt="3D Model Thumbnail"
                   style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain", borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
                 />
