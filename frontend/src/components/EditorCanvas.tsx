@@ -47,6 +47,7 @@ import {
   fetchDocument,
   fetchDocumentAnalytics,
   autogenSummary,
+	publishDocument,
   addFavorite,
   removeFavorite,
   isFavorite as checkIsFavorite,
@@ -940,6 +941,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   }, [editor, isEditing]);
 
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+	const [isPublishing, setIsPublishing] = useState(false);
 
   const saveDocument = (customTitle?: string, customDescription?: string) => {
     const activeTitle = customTitle !== undefined ? customTitle : title;
@@ -952,6 +954,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       }, 1000);
     }
   };
+
+	const publishCurrentDraft = async () => {
+		if (!activeDocId || !editor || editor.isDestroyed) return;
+		setIsPublishing(true);
+		saveDocument(title, commitDescription || "Published version");
+		// Save uses a debounce to avoid collaboration write storms. Publish only
+		// after that durable draft update has been dispatched.
+		await new Promise((resolve) => window.setTimeout(resolve, 1100));
+		try {
+			await publishDocument(activeDocId);
+			setIsEditing(false);
+			setCommitModalOpen(false);
+		} finally {
+			setIsPublishing(false);
+		}
+	};
 
   // Expose editor globally for E2E testing convenience
   useEffect(() => {
@@ -3924,14 +3942,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                // Publish & Save Checkpoint
-                saveDocument(title, commitDescription || "Auto-saved snapshot");
-                setIsEditing(false);
-                setCommitModalOpen(false);
-              }}
+			  onClick={publishCurrentDraft}
               variant="contained"
-              disabled={isGeneratingSummary}
+			  disabled={isGeneratingSummary || isPublishing}
               sx={{
                 backgroundColor: "var(--primary-color)",
                 color: "white",
@@ -3945,7 +3958,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 },
               }}
             >
-              Publish & Save
+			  {isPublishing ? "Publishing..." : "Publish & Save"}
             </Button>
           </Box>
         </DialogActions>

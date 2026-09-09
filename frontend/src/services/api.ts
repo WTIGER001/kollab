@@ -282,6 +282,16 @@ export const autogenSummary = (
   });
 };
 
+export interface DocumentPublication {
+  documentId: string;
+  versionId: string;
+  publishedBy: string;
+  publishedAt: string;
+}
+
+export const publishDocument = (documentId: string): Promise<DocumentPublication> =>
+  request(`/api/documents/${documentId}/publish`, { method: "POST" });
+
 export const deleteDocument = (id: string, permanent?: boolean): Promise<void> => {
   const url = permanent ? `/api/documents/${id}?permanent=true` : `/api/documents/${id}`;
   return request(url, {
