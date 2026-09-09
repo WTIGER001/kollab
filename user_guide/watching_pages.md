@@ -12,6 +12,6 @@ Your choice is saved to your account, so it is available on another device after
 
 ## What watching does today
 
-Watching records your subscription to that specific page. When another person saves an edit, Kollab creates an in-app notification for you. Project-wide/team-wide inherited watches, real-time alerts, and email delivery will be introduced in a later update.
+Watching records your subscription to that specific page. When another person saves an edit, Kollab creates an in-app notification for you. Open **Notifications** from your account menu to open the changed page; opening it also marks the item read. Project-wide/team-wide inherited watches, real-time alerts, and email delivery will be introduced in a later update.
 
 Favorites and watches are independent: use the Star for quick access and the Bell for a saved subscription.

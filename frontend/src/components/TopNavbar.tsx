@@ -47,6 +47,7 @@ interface TopNavbarProps {
   onOpenRecents?: () => void;
   onOpenTasks?: () => void;
   onOpenMentions?: () => void;
+  onOpenNotifications?: () => void;
   activeUsers?: any[];
   developerMode?: boolean;
   onToggleDeveloperMode?: (enabled: boolean) => void;
@@ -70,6 +71,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onOpenRecents,
   onOpenTasks,
   onOpenMentions,
+  onOpenNotifications,
   activeUsers = [],
   developerMode = false,
   onToggleDeveloperMode,
@@ -439,6 +441,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             >
               <ListItemIcon sx={{ minWidth: 28 }}><AtSign size={14} style={{ color: "#8b5cf6" }} /></ListItemIcon>
               <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>My Mentions</Typography>} />
+            </MenuItem>
+          )}
+
+          {onOpenNotifications && (
+            <MenuItem onClick={() => { handleCloseProfileMenu(); onOpenNotifications(); }} sx={{ py: 1, fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>
+              <ListItemIcon sx={{ minWidth: 28 }}><BookOpen size={14} style={{ color: "var(--primary-color)" }} /></ListItemIcon>
+              <ListItemText primary={<Typography sx={{ fontSize: "13px", fontFamily: '"Outfit", sans-serif' }}>Notifications</Typography>} />
             </MenuItem>
           )}
 

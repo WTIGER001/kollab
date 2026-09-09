@@ -559,6 +559,21 @@ export const updateDocumentReview = (
     body: JSON.stringify({ status, nextReviewAt: nextReviewAt || null }),
   });
 
+export interface DocumentNotification {
+  id: string;
+  userId: string;
+  actorId: string;
+  documentId: string;
+  documentTitle: string;
+  eventType: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const fetchNotifications = (): Promise<DocumentNotification[]> => request("/api/notifications");
+export const markNotificationRead = (notificationId: string): Promise<void> =>
+  request(`/api/notifications/${encodeURIComponent(notificationId)}/read`, { method: "PUT" });
+
 export const fetchRecentDocuments = (type: "views" | "edits" | "both" = "both"): Promise<Document[]> => {
   return request(`/api/documents/recent?type=${encodeURIComponent(type)}`);
 };

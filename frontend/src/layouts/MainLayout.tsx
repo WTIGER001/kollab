@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Box, useMediaQuery, Fab } from '@mui/material';
+import { Box, useMediaQuery } from '@mui/material';
 import { GripVertical, ChevronsLeftRight } from 'lucide-react';
 import { TopNavbar } from '../components/TopNavbar';
 import { Sidebar } from '../components/Sidebar';
+import { ClassificationBanner } from '../components/ClassificationBanner';
 import { useAppStore } from '../store/useAppStore';
-import { useTeams, useAllProjects, useDocuments } from '../hooks/queries';
+import { useTeams, useAllProjects, useDocuments, useSystemSettings } from '../hooks/queries';
 import { useDocumentTree } from '../hooks/useDocumentTree';
 import { getLegacyNavigateFn } from '../utils/navigation';
 import { useAuth } from 'react-oidc-context';
 import { createDocument, deleteDocument, moveDocument, restoreDocument, updateDocument } from '../services/api';
-import { presets } from '../theme/presets';
 import { useRecentSpacesStore } from '../store/useRecentSpacesStore';
 import { CreatePageWizardModal } from '../components/CreatePageWizardModal';
 import type { Template } from '../services/api';
@@ -23,6 +23,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   
   const { data: teams = [] } = useTeams();
   const { data: allProjects = [] } = useAllProjects();
+  const { data: systemSettings } = useSystemSettings();
 
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [pendingParentId, setPendingParentId] = useState<string | undefined>(undefined);
@@ -58,7 +59,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   const filteredDocs = (flatDocs || []).filter(d => d.id !== actualTeamId && d.id !== projectId);
   const documentsTree = useDocumentTree(filteredDocs);
   
-  const auth = isMockMode ? null : useAuth();
+	const auth = useAuth();
   const displayName = isMockMode ? "Developer Admin" : auth?.user?.profile.name || auth?.user?.profile.preferred_username || "User";
   const username = isMockMode ? "dev_admin" : auth?.user?.profile.preferred_username || auth?.user?.profile.username || "user";
 
@@ -205,6 +206,9 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden", bgcolor: "background.default", fontFamily: "var(--font-sans)" }}>
+      {/* Classification Security Banner */}
+      <ClassificationBanner systemSettings={systemSettings} />
+
       {/* Top Navbar */}
       <TopNavbar
         teams={teams}
@@ -221,6 +225,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         onOpenRecents={() => legacyNavigate(null, null, null, false, false, false, true)}
         onOpenTasks={() => legacyNavigate(null, null, null, false, false, false, false, false, false, true)}
         onOpenMentions={() => legacyNavigate(null, null, null, false, false, false, false, false, false, false, true)}
+        onOpenNotifications={() => navigate("/my/notifications")}
         developerMode={developerMode}
         onToggleDeveloperMode={toggleDeveloperMode}
         sidebarOpen={sidebarOpen}

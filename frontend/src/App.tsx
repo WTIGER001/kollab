@@ -15,6 +15,7 @@ import { PageAuditView } from "./components/PageAuditView";
 import { TrashView } from "./components/TrashView";
 import { TasksView } from "./components/TasksView";
 import { UserMentionsView } from "./components/UserMentionsView";
+import { NotificationsView } from "./components/NotificationsView";
 import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { AdminHelpPage } from "./components/AdminHelpPage";
 import { ImageLibraryView } from "./components/ImageLibraryView";
@@ -124,6 +125,7 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="my/favorites" element={<FavoritesView onNavigate={handleGlobalNavigate} onUnfavoriteActive={() => {}} />} />
             <Route path="my/tasks" element={<TasksView username="user" onNavigate={handleGlobalNavigate} />} />
             <Route path="my/mentions" element={<UserMentionsView username="user" onNavigate={handleGlobalNavigate} teams={teams} projects={projects} />} />
+            <Route path="my/notifications" element={<NotificationsView onOpenDocument={handleGlobalNavigate} />} />
 
             <Route path="personal" element={<PersonalPortalWrapper teams={teams} projects={projects} />} />
             <Route path="personal/_test" element={<div style={{ padding: '40px', color: 'white' }}>TEST.. I WORK</div>} />
