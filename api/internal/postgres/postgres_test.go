@@ -159,6 +159,14 @@ func TestPostgresDocumentRepository(t *testing.T) {
 	if err != nil || isWatching {
 		t.Fatalf("expected removed watch, got %t (%v)", isWatching, err)
 	}
+	nextReview := time.Now().Add(24 * time.Hour)
+	if err := repo.SaveReview(ctx, &domain.DocumentReview{DocumentID: "doc_welcome_eng", Status: "in_review", NextReviewAt: &nextReview, UpdatedByID: "sh4ag0cxowti", UpdatedAt: time.Now()}); err != nil {
+		t.Fatalf("save document review: %v", err)
+	}
+	review, err := repo.GetReview(ctx, "doc_welcome_eng")
+	if err != nil || review.Status != "in_review" || review.NextReviewAt == nil {
+		t.Fatalf("expected persisted review, got %#v (%v)", review, err)
+	}
 
 	// Get seed documents by project
 	docs, err := repo.GetByProjectID(ctx, "proj_wiki")

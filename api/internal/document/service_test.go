@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"kollab/api/internal/permissions"
 	inmemsystem "kollab/api/internal/system"
@@ -192,5 +193,33 @@ func TestDocumentServiceIndexesPageProperties(t *testing.T) {
 	properties, err = service.ListDocumentProperties(context.Background(), "proj_wiki", "", "")
 	if err != nil || len(properties) != 1 || properties[0].Value != "Infrastructure" {
 		t.Fatalf("expected replacement property projection, got %#v (%v)", properties, err)
+	}
+}
+
+func TestDocumentServiceReviewLifecycle(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	content := `{"type":"doc","content":[{"type":"paragraph"}]}`
+	document, err := service.CreateDocument(context.Background(), "Reviewed page", "", "proj_wiki", "team_eng", nil, "user1", &content)
+	if err != nil {
+		t.Fatalf("create document: %v", err)
+	}
+
+	nextReview := time.Now().Add(7 * 24 * time.Hour)
+	review, err := service.UpdateDocumentReview(context.Background(), document.ID, "approved", &nextReview, "user1")
+	if err != nil || review.Status != "approved" || review.NextReviewAt == nil {
+		t.Fatalf("save approved review: %#v (%v)", review, err)
+	}
+
+	overdue := time.Now().Add(-time.Hour)
+	if _, err := service.UpdateDocumentReview(context.Background(), document.ID, "approved", &overdue, "user1"); err != nil {
+		t.Fatalf("save overdue review: %v", err)
+	}
+	review, err = service.GetDocumentReview(context.Background(), document.ID)
+	if err != nil || review.Status != "stale" {
+		t.Fatalf("expected stale derived status, got %#v (%v)", review, err)
+	}
+	if _, err := service.UpdateDocumentReview(context.Background(), document.ID, "unknown", nil, "user1"); err == nil {
+		t.Fatal("expected invalid review status to be rejected")
 	}
 }

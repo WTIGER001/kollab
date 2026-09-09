@@ -720,6 +720,40 @@ func (r *PostgresDocumentRepository) IsWatching(ctx context.Context, userID stri
 	return exists, err
 }
 
+func (r *PostgresDocumentRepository) GetReview(ctx context.Context, documentID string) (*domain.DocumentReview, error) {
+	review := &domain.DocumentReview{DocumentID: documentID, Status: "draft"}
+	err := r.db.QueryRow(ctx, `
+		SELECT document_id, review_status, next_review_at, COALESCE(updated_by, ''), updated_at
+		FROM document_reviews WHERE document_id = $1
+	`, documentID).Scan(&review.DocumentID, &review.Status, &review.NextReviewAt, &review.UpdatedByID, &review.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		var exists bool
+		if checkErr := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM documents WHERE id = $1)", documentID).Scan(&exists); checkErr != nil {
+			return nil, checkErr
+		} else if !exists {
+			return nil, errors.New("document not found")
+		}
+		return review, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return review, nil
+}
+
+func (r *PostgresDocumentRepository) SaveReview(ctx context.Context, review *domain.DocumentReview) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO document_reviews (document_id, review_status, next_review_at, updated_by, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (document_id) DO UPDATE SET
+			review_status = EXCLUDED.review_status,
+			next_review_at = EXCLUDED.next_review_at,
+			updated_by = EXCLUDED.updated_by,
+			updated_at = EXCLUDED.updated_at
+	`, review.DocumentID, review.Status, review.NextReviewAt, review.UpdatedByID, review.UpdatedAt)
+	return err
+}
+
 func (r *PostgresDocumentRepository) GetFavorites(ctx context.Context, userID string) ([]*domain.Favorite, error) {
 	query := `
 		SELECT 

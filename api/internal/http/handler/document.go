@@ -667,6 +667,41 @@ func (h *DocumentHandler) IsWatching(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]bool{"isWatching": isWatching})
 }
 
+type documentReviewRequest struct {
+	Status       string     `json:"status"`
+	NextReviewAt *time.Time `json:"nextReviewAt"`
+}
+
+func (h *DocumentHandler) GetReview(w http.ResponseWriter, r *http.Request) {
+	review, err := h.docService.GetDocumentReview(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(review)
+}
+
+func (h *DocumentHandler) UpdateReview(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var request documentReviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	review, err := h.docService.UpdateDocumentReview(r.Context(), chi.URLParam(r, "id"), request.Status, request.NextReviewAt, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(review)
+}
+
 func (h *DocumentHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	if username == "" {

@@ -38,6 +38,7 @@ type InMemoryDocumentRepository struct {
 	views      []InMemoryView
 	favorites  []InMemoryFavorite
 	watches    []InMemoryDocumentWatch
+	reviews    map[string]*domain.DocumentReview
 }
 
 func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
@@ -48,6 +49,7 @@ func NewInMemoryDocumentRepository() *InMemoryDocumentRepository {
 		views:      make([]InMemoryView, 0),
 		favorites:  make([]InMemoryFavorite, 0),
 		watches:    make([]InMemoryDocumentWatch, 0),
+		reviews:    make(map[string]*domain.DocumentReview),
 	}
 	repo.seed()
 	return repo
@@ -651,6 +653,31 @@ func (r *InMemoryDocumentRepository) IsWatching(ctx context.Context, userID stri
 		}
 	}
 	return false, nil
+}
+
+func (r *InMemoryDocumentRepository) GetReview(ctx context.Context, documentID string) (*domain.DocumentReview, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if _, exists := r.documents[documentID]; !exists {
+		return nil, errors.New("document not found")
+	}
+	review, exists := r.reviews[documentID]
+	if !exists {
+		return &domain.DocumentReview{DocumentID: documentID, Status: "draft"}, nil
+	}
+	copy := *review
+	return &copy, nil
+}
+
+func (r *InMemoryDocumentRepository) SaveReview(ctx context.Context, review *domain.DocumentReview) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.documents[review.DocumentID]; !exists {
+		return errors.New("document not found")
+	}
+	copy := *review
+	r.reviews[review.DocumentID] = &copy
+	return nil
 }
 
 func (r *InMemoryDocumentRepository) GetFavorites(ctx context.Context, userID string) ([]*domain.Favorite, error) {

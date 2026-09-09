@@ -177,6 +177,7 @@ import {
   Superscript as SuperscriptIcon,
   Quote,
   Copy,
+  FileCheck2,
 } from "lucide-react";
 import { MovePageDialog } from "./Sidebar";
 import type { DocumentItem } from "./Sidebar";
@@ -1390,6 +1391,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "List indexed page properties in this space",
       icon: <List size={16} style={{ color: "var(--accent-color)" }} />,
       action: (ed) => ed.chain().focus().insertContent({ type: "macroBlock", attrs: { type: "page-properties-report", config: { key: "" } } }).run(),
+      category: "layout",
+    },
+    {
+      id: "content-review",
+      label: "Content Review",
+      description: "Set the page review state and next review date",
+      icon: <FileCheck2 size={16} style={{ color: "var(--accent-color)" }} />,
+      action: (ed) => ed.chain().focus().insertContent({ type: "macroBlock", attrs: { type: "content-review", config: {} } }).run(),
       category: "layout",
     },
     {

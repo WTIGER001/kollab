@@ -742,6 +742,38 @@ func (s *DocumentService) IsWatching(ctx context.Context, userID string, documen
 	return s.repo.IsWatching(ctx, userID, documentID)
 }
 
+var validReviewStatuses = map[string]bool{
+	"draft": true, "in_review": true, "approved": true, "stale": true,
+}
+
+func (s *DocumentService) GetDocumentReview(ctx context.Context, documentID string) (*domain.DocumentReview, error) {
+	if documentID == "" {
+		return nil, errors.New("documentID is required")
+	}
+	review, err := s.repo.GetReview(ctx, documentID)
+	if err != nil {
+		return nil, err
+	}
+	if review.NextReviewAt != nil && review.NextReviewAt.Before(time.Now()) && review.Status == "approved" {
+		review.Status = "stale"
+	}
+	return review, nil
+}
+
+func (s *DocumentService) UpdateDocumentReview(ctx context.Context, documentID string, status string, nextReviewAt *time.Time, userID string) (*domain.DocumentReview, error) {
+	if documentID == "" || userID == "" {
+		return nil, errors.New("documentID and userID are required")
+	}
+	if !validReviewStatuses[status] {
+		return nil, errors.New("invalid review status")
+	}
+	review := &domain.DocumentReview{DocumentID: documentID, Status: status, NextReviewAt: nextReviewAt, UpdatedByID: userID, UpdatedAt: time.Now()}
+	if err := s.repo.SaveReview(ctx, review); err != nil {
+		return nil, err
+	}
+	return s.GetDocumentReview(ctx, documentID)
+}
+
 func (s *DocumentService) ListRecentDocuments(ctx context.Context, userID string, filterType string) ([]*domain.Document, error) {
 	if userID == "" {
 		return nil, errors.New("userID is required")

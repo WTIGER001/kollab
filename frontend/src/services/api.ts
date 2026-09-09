@@ -538,6 +538,27 @@ export const isWatching = (documentId: string): Promise<boolean> => {
     .then(res => !!res.isWatching);
 };
 
+export interface DocumentReview {
+  documentId: string;
+  status: "draft" | "in_review" | "approved" | "stale";
+  nextReviewAt?: string | null;
+  updatedById?: string;
+  updatedAt?: string;
+}
+
+export const fetchDocumentReview = (documentId: string): Promise<DocumentReview> =>
+  request(`/api/documents/${encodeURIComponent(documentId)}/review`);
+
+export const updateDocumentReview = (
+  documentId: string,
+  status: DocumentReview["status"],
+  nextReviewAt?: string | null,
+): Promise<DocumentReview> =>
+  request(`/api/documents/${encodeURIComponent(documentId)}/review`, {
+    method: "PUT",
+    body: JSON.stringify({ status, nextReviewAt: nextReviewAt || null }),
+  });
+
 export const fetchRecentDocuments = (type: "views" | "edits" | "both" = "both"): Promise<Document[]> => {
   return request(`/api/documents/recent?type=${encodeURIComponent(type)}`);
 };

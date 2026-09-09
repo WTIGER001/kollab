@@ -66,6 +66,16 @@ type DocumentWatch struct {
 	CreatedAt  time.Time `json:"createdAt"`
 }
 
+// DocumentReview is independent from document JSON so review state can be
+// queried and made stale without rewriting collaborative content.
+type DocumentReview struct {
+	DocumentID   string     `json:"documentId"`
+	Status       string     `json:"status"`
+	NextReviewAt *time.Time `json:"nextReviewAt,omitempty"`
+	UpdatedByID  string     `json:"updatedById,omitempty"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+}
+
 type DocumentRepository interface {
 	GetByID(ctx context.Context, id string) (*Document, error)
 	GetByIDOrSlug(ctx context.Context, idOrSlug string) (*Document, string, error) // Returns doc, requested_slug (if alias), err
@@ -108,6 +118,10 @@ type DocumentRepository interface {
 	AddWatch(ctx context.Context, userID string, documentID string) error
 	RemoveWatch(ctx context.Context, userID string, documentID string) error
 	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+
+	// Content lifecycle
+	GetReview(ctx context.Context, documentID string) (*DocumentReview, error)
+	SaveReview(ctx context.Context, review *DocumentReview) error
 
 	// Structured knowledge projection
 	ReplaceProperties(ctx context.Context, documentID string, properties []DocumentProperty) error
@@ -154,6 +168,8 @@ type DocumentService interface {
 	AddWatch(ctx context.Context, userID string, documentID string) error
 	RemoveWatch(ctx context.Context, userID string, documentID string) error
 	IsWatching(ctx context.Context, userID string, documentID string) (bool, error)
+	GetDocumentReview(ctx context.Context, documentID string) (*DocumentReview, error)
+	UpdateDocumentReview(ctx context.Context, documentID string, status string, nextReviewAt *time.Time, userID string) (*DocumentReview, error)
 	ListDocumentProperties(ctx context.Context, projectID string, teamID string, key string) ([]DocumentProperty, error)
 }
 

@@ -56,8 +56,8 @@ import {
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocumentProperties } from "../services/api";
-import type { Attachment, Tag as TagType, DocumentProperty } from "../services/api";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
+import type { Attachment, Tag as TagType, DocumentProperty, DocumentReview } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
 import { Excalidraw, exportToSvg } from "@excalidraw/excalidraw";
@@ -212,6 +212,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [uniqueId] = useState(() => `macro-uniq-${Math.random().toString(36).substring(2, 9)}`);
   const [propertyReport, setPropertyReport] = useState<DocumentProperty[]>([]);
   const [propertyReportError, setPropertyReportError] = useState<string | null>(null);
+  const [documentReview, setDocumentReview] = useState<DocumentReview | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (type !== "page-properties-report" || (!context?.selectedProjectId && !context?.selectedTeamId)) return;
@@ -221,6 +223,26 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       .catch(() => { if (!cancelled) setPropertyReportError("Properties could not be loaded."); });
     return () => { cancelled = true; };
   }, [type, config.key, context?.selectedProjectId, context?.selectedTeamId]);
+
+  useEffect(() => {
+    if (type !== "content-review" || !context?.activeDocId) return;
+    let cancelled = false;
+    fetchDocumentReview(context.activeDocId)
+      .then((review) => { if (!cancelled) { setDocumentReview(review); setReviewError(null); } })
+      .catch(() => { if (!cancelled) setReviewError("Review details could not be loaded."); });
+    return () => { cancelled = true; };
+  }, [type, context?.activeDocId]);
+
+  const saveDocumentReview = async (status: DocumentReview["status"], nextReviewAt?: string | null) => {
+    if (!context?.activeDocId) return;
+    try {
+      const review = await updateDocumentReview(context.activeDocId, status, nextReviewAt);
+      setDocumentReview(review);
+      setReviewError(null);
+    } catch {
+      setReviewError("Review details could not be saved.");
+    }
+  };
 
   // Draw.io States & Effects
   const [isDrawioEditing, setIsDrawioEditing] = useState(false);
@@ -793,6 +815,19 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
               <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)" }}><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Properties report{config.key ? `: ${config.key}` : ""}</Typography></Box>
               {propertyReportError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{propertyReportError}</Typography> : propertyReport.length === 0 ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No matching page properties yet.</Typography> : <Table size="small" aria-label="Page properties report"><TableHead><TableRow><TableCell>Page</TableCell><TableCell>Property</TableCell><TableCell>Value</TableCell></TableRow></TableHead><TableBody>{propertyReport.map((property) => <TableRow key={`${property.documentId}-${property.key}`}><TableCell><Button variant="text" onClick={() => context?.onSelectDoc(property.documentId)} sx={{ textTransform: "none", color: "var(--primary-color)" }}>{property.title}</Button></TableCell><TableCell>{property.key}</TableCell><TableCell>{property.value || "—"}</TableCell></TableRow>)}</TableBody></Table>}
+            </Paper>
+          )}
+
+          {type === "content-review" && (
+            <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
+              <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Box><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Content review</Typography><Typography sx={{ color: "var(--text-secondary)", fontSize: "12px" }}>Track approval and the next required review.</Typography></Box>
+                <Chip label={(documentReview?.status || "draft").replace("_", " ")} size="small" sx={{ textTransform: "capitalize", color: "var(--primary-color)", backgroundColor: "var(--glass-bg)", border: "1px solid var(--border-color)" }} />
+              </Box>
+              {reviewError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{reviewError}</Typography> : !documentReview ? <Box sx={{ p: 2 }}><CircularProgress size={18} /></Box> : <Box sx={{ p: 2, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+                {isEditable ? <FormControl size="small" sx={{ minWidth: 150 }}><Select value={documentReview.status} onChange={(event) => saveDocumentReview(event.target.value as DocumentReview["status"], documentReview.nextReviewAt)} aria-label="Review status"><MenuItem value="draft">Draft</MenuItem><MenuItem value="in_review">In review</MenuItem><MenuItem value="approved">Approved</MenuItem><MenuItem value="stale">Stale</MenuItem></Select></FormControl> : <Typography sx={{ color: "var(--text-primary)", fontSize: "13px", textTransform: "capitalize" }}>{documentReview.status.replace("_", " ")}</Typography>}
+                {isEditable ? <TextField label="Next review" type="date" size="small" value={documentReview.nextReviewAt ? documentReview.nextReviewAt.slice(0, 10) : ""} onChange={(event) => saveDocumentReview(documentReview.status, event.target.value ? new Date(`${event.target.value}T00:00:00Z`).toISOString() : null)} InputLabelProps={{ shrink: true }} /> : <Typography sx={{ color: "var(--text-secondary)", fontSize: "13px" }}>{documentReview.nextReviewAt ? `Next review: ${new Date(documentReview.nextReviewAt).toLocaleDateString()}` : "No review date set"}</Typography>}
+              </Box>}
             </Paper>
           )}
 

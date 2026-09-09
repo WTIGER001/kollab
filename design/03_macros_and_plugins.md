@@ -101,9 +101,11 @@ Allows authors to attach rich, hoverable tooltips to any inline text.
 - **Attributes**: `content`, `position`
 
 ### 2.4 Content Lifecycle Manager (Governance Workflows)
-Tracks page freshness and automates review cycles.
-- **Database**: `freshness_policy_days` and `review_status` on `documents`.
-- **Workflow**: Go cron job marks pages as `stale` and notifies owners.
+Tracks page freshness and review cycles without mutating collaborative document JSON.
+- **Macro**: `content-review` shows the current lifecycle status and next review date in a page.
+- **Database**: Migration `0006_document_reviews.sql` creates `document_reviews` with one row per document, `review_status`, optional `next_review_at`, and the user/time of the latest review change.
+- **API**: `GET /api/documents/{id}/review` requires document read permission. `PUT /api/documents/{id}/review` requires write permission and accepts `draft`, `in_review`, `approved`, or `stale`.
+- **Freshness rule**: a page stored as `approved` becomes `stale` when read if its next review date is in the past. This is a deterministic derived state; scheduled reminders and notification delivery remain future work.
 
 ### 2.5 Data Tables, Chart Editor & CSV Tools
 Transforms standard HTML tables within the document into interactive data-grid applications.
