@@ -127,3 +127,33 @@ func TestPreflightDerivesHTMLDirectoryHierarchy(t *testing.T) {
 		t.Fatalf("unexpected derived hierarchy: %#v", parents)
 	}
 }
+
+func TestPreflightUsesEntitiesXMLToRecoverHierarchy(t *testing.T) {
+	importer := NewConfluenceImporter()
+	buffer := new(bytes.Buffer)
+	writer := zip.NewWriter(buffer)
+	for _, entry := range []struct{ name, content string }{
+		{"root.xhtml", "<title>Handbook</title>"},
+		{"unrelated/setup.xhtml", "<title>Setup</title>"},
+		{"entities.xml", `<hibernate-generic><object class="Page"><id name="id">1</id><property name="title">Handbook</property></object><object class="Page"><id name="id">2</id><property name="title">Setup</property><property name="parent"><id name="id">1</id></property></object></hibernate-generic>`},
+	} {
+		file, err := writer.Create(entry.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = file.Write([]byte(entry.content))
+	}
+	_ = writer.Close()
+
+	report, err := importer.Preflight(context.Background(), buffer.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentByTitle := make(map[string]string)
+	for _, page := range report.Pages {
+		parentByTitle[page.Title] = page.ParentSourcePath
+	}
+	if parentByTitle["Setup"] != "root.xhtml" {
+		t.Fatalf("entities.xml parent was not recovered: %#v", parentByTitle)
+	}
+}

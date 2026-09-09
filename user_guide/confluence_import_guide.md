@@ -22,6 +22,8 @@ This guide walks administrators and space owners through exporting spaces from C
 5. Click **🚀 Start Confluence Migration**.
 6. **Step 4: Summary Report**: Compare **Pages Created** with the number found during preflight and review every warning before considering the move complete. Files referenced from a page through Confluence attachment markup are uploaded to that page automatically.
 
+Kollab uses both exported folder/index pages and, where available, Confluence `entities.xml` data to recover page nesting. If a title is ambiguous, the page is imported safely and the summary tells you to review its placement.
+
 If you retry the exact same archive in the same team or project, Kollab skips pages it already created and identifies them as skipped in the summary. A changed archive is treated as a new import and should be reviewed through preflight first.
 
 ## 3. What to check after the import

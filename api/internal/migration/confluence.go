@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"path"
@@ -83,6 +84,26 @@ type MigrationSummary struct {
 
 type ConfluenceImporter struct{}
 
+type confluenceEntities struct {
+	Objects []confluenceEntityObject `xml:"object"`
+}
+
+type confluenceEntityObject struct {
+	Class      string                     `xml:"class,attr"`
+	ID         confluenceEntityID         `xml:"id"`
+	Properties []confluenceEntityProperty `xml:"property"`
+}
+
+type confluenceEntityID struct {
+	Value string `xml:",chardata"`
+}
+
+type confluenceEntityProperty struct {
+	Name string             `xml:"name,attr"`
+	Text string             `xml:",chardata"`
+	ID   confluenceEntityID `xml:"id"`
+}
+
 func NewConfluenceImporter() *ConfluenceImporter { return &ConfluenceImporter{} }
 
 var (
@@ -132,6 +153,46 @@ func titleForEntry(name string, content []byte) string {
 		}
 	}
 	return strings.TrimSuffix(path.Base(name), path.Ext(name))
+}
+
+// entitiesPageParents recovers title-based parent relationships from the
+// entities.xml shape emitted by Confluence Server/Data Center exports. XHTML
+// files remain the content source; entity data only improves hierarchy.
+func entitiesPageParents(content []byte) (map[string]string, error) {
+	var entities confluenceEntities
+	if err := xml.Unmarshal(content, &entities); err != nil {
+		return nil, err
+	}
+	titlesByID := make(map[string]string)
+	parentIDs := make(map[string]string)
+	for _, object := range entities.Objects {
+		if !strings.EqualFold(object.Class, "Page") {
+			continue
+		}
+		id := strings.TrimSpace(object.ID.Value)
+		if id == "" {
+			continue
+		}
+		for _, property := range object.Properties {
+			switch strings.ToLower(strings.TrimSpace(property.Name)) {
+			case "title":
+				titlesByID[id] = strings.TrimSpace(property.Text)
+			case "parent":
+				if parentID := strings.TrimSpace(property.ID.Value); parentID != "" {
+					parentIDs[id] = parentID
+				}
+			}
+		}
+	}
+	parents := make(map[string]string)
+	for childID, parentID := range parentIDs {
+		childTitle := titlesByID[childID]
+		parentTitle := titlesByID[parentID]
+		if childTitle != "" && parentTitle != "" {
+			parents[childTitle] = parentTitle
+		}
+	}
+	return parents, nil
 }
 
 func parentSourcePath(sourcePath string, pageNames map[string]struct{}) string {
@@ -187,6 +248,7 @@ func (c *ConfluenceImporter) Preflight(ctx context.Context, zipBytes []byte) (*P
 	pageNames := make(map[string]struct{})
 	macroCounts := make(map[string]int)
 	pageContents := make(map[string][]byte)
+	var entitiesData []byte
 	for _, file := range zr.File {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -203,7 +265,12 @@ func (c *ConfluenceImporter) Preflight(ctx context.Context, zipBytes []byte) (*P
 		}
 		if !isPageEntry(file.Name) {
 			if strings.EqualFold(path.Base(file.Name), "entities.xml") {
-				report.Issues = append(report.Issues, MigrationIssue{Level: "warning", Code: "entities-xml-not-parsed", Entry: file.Name, Message: "entities.xml was found, but this archive must also contain XHTML page files for import."})
+				data, readErr := archiveEntryBytes(file)
+				if readErr != nil {
+					report.Issues = append(report.Issues, MigrationIssue{Level: "warning", Code: "entities-xml-read-failed", Entry: file.Name, Message: fmt.Sprintf("Could not read entities.xml: %v", readErr)})
+				} else {
+					entitiesData = data
+				}
 			}
 			continue
 		}
@@ -250,6 +317,28 @@ func (c *ConfluenceImporter) Preflight(ctx context.Context, zipBytes []byte) (*P
 		}
 		for _, match := range contentTitle.FindAllStringSubmatch(content, -1) {
 			report.Issues = append(report.Issues, MigrationIssue{Level: "warning", Code: "unresolved-confluence-page-link", Entry: page.SourcePath, Message: fmt.Sprintf("%s references Confluence page %q, which needs link repair after import.", page.SourcePath, match[1])})
+		}
+	}
+
+	if len(entitiesData) > 0 {
+		parents, parseErr := entitiesPageParents(entitiesData)
+		if parseErr != nil {
+			report.Issues = append(report.Issues, MigrationIssue{Level: "warning", Code: "entities-xml-parse-failed", Entry: "entities.xml", Message: fmt.Sprintf("Could not parse entities.xml hierarchy: %v", parseErr)})
+		} else {
+			pagesByTitle := make(map[string][]int)
+			for index := range report.Pages {
+				key := strings.ToLower(strings.TrimSpace(report.Pages[index].Title))
+				pagesByTitle[key] = append(pagesByTitle[key], index)
+			}
+			for childTitle, parentTitle := range parents {
+				children := pagesByTitle[strings.ToLower(strings.TrimSpace(childTitle))]
+				parents := pagesByTitle[strings.ToLower(strings.TrimSpace(parentTitle))]
+				if len(children) != 1 || len(parents) != 1 {
+					report.Issues = append(report.Issues, MigrationIssue{Level: "warning", Code: "ambiguous-entities-hierarchy", Entry: "entities.xml", Message: fmt.Sprintf("Could not map entities.xml parent %q for page %q to unique XHTML pages.", parentTitle, childTitle)})
+					continue
+				}
+				report.Pages[children[0]].ParentSourcePath = report.Pages[parents[0]].SourcePath
+			}
 		}
 	}
 

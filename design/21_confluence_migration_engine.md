@@ -7,7 +7,7 @@ This document details the technical design, XML parsing algorithms, XHTML storag
 ## 1. Architecture Overview
 
 > [!NOTE]
-> **Status:** 🟡 Page migration, archive preflight, HTML directory-index hierarchy recovery, archive-scoped idempotency, and referenced attachment transfer are implemented. `entities.xml` hierarchy parsing remains planned work.
+> **Status:** 🟡 Page migration, archive preflight, HTML directory-index and `entities.xml` hierarchy recovery, archive-scoped idempotency, and referenced attachment transfer are implemented.
 
 The Confluence Migration Engine (`api/internal/migration/confluence.go`) enables automated migration from **Confluence Cloud** and **Confluence Data Center / Server** into Kollab.
 
@@ -60,7 +60,9 @@ For each page, preflight retains unique `<ri:attachment ri:filename="…">` refe
 
 For HTML exports, `directory/index.html`, `directory/index.htm`, or `directory/index.xhtml` is treated as the parent of pages in the same directory and of nested directory index pages. Parent documents are created first and their Kollab IDs are passed to child creation. The importer emits no fabricated hierarchy when an archive lacks those index pages.
 
-Attachment files are deliberately reported but not copied. Returning their real count allows the UI and operator to see the remaining work without a misleading “imported” claim.
+When an archive includes `entities.xml`, the importer reads Confluence `Page` object IDs, titles, and parent IDs. A relationship overrides the HTML-directory fallback only where both page titles map to exactly one XHTML page; ambiguous mappings become a visible warning rather than a guessed hierarchy.
+
+Referenced attachment files are copied through the normal attachment service and verified by byte comparison on retries. Returning the archive count and per-page warnings lets the operator reconcile any unreferenced, missing, duplicate-name, or unreadable files.
 
 Upon completion, the engine returns a detailed `MigrationSummary` JSON response:
 ```json
