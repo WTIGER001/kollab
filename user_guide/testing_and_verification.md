@@ -11,6 +11,7 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 | **OIDC API access** | Browser sign-in | Bearer access token | `api/internal/http/middleware/auth_test.go` |
 | **Page access** | Page access settings | Protected document endpoints | `frontend/src/components/PageRestrictionsDialog.test.tsx` |
 | **Classification banner** | Server Settings | `GET` / `PUT /api/system/settings` | `frontend/src/components/ClassificationBanner.test.tsx` |
+| **Image handling** | Image Library | Image upload and rendition retrieval | `api/internal/image/service_test.go` |
 
 ---
 
