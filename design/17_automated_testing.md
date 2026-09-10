@@ -24,6 +24,10 @@ Persistence interfaces are exercised with both in-memory repositories and Postgr
 
 Handler tests use in-memory repositories and signed local test tokens to exercise HTTP request validation and response contracts without a running server. `api/internal/http/handler/template_test.go` covers authenticated personal-template ownership, contextual listing filters, update/delete persistence, and not-found handling.
 
+### External AI clients
+
+AI client tests route OpenAI- and Ollama-shaped requests to local HTTP test servers. They validate generated text and embedding response decoding, request settings such as OpenAI embedding dimensions and non-streaming Ollama requests, and failure propagation for non-success provider responses. The test suite never requires configured provider credentials or a running Ollama instance.
+
 Run the backend suite and required coverage check from `api/`:
 
 ```bash
