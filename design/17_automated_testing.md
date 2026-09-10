@@ -18,7 +18,7 @@ Persistence interfaces are exercised with both in-memory repositories and Postgr
 
 `api/internal/image/service_test.go` verifies image dimensions and rendition generation for decodable uploads, safe persistence failure handling, fallback from a missing rendition to the original image, and deletion of all generated rendition keys.
 
-`api/internal/attachment/attachment_test.go` verifies PDF preview initialization, metadata rollback after a failed attachment save, completed/failed/in-progress preview states, preview asset MIME resolution, and safe office-preview retry queueing.
+`api/internal/attachment/attachment_test.go` verifies PDF preview initialization, metadata rollback after a failed attachment save, completed/failed/in-progress preview states, preview asset MIME resolution, and safe office-preview retry queueing. `api/internal/attachment/office_converter_test.go` uses a local HTTP server to verify converter request payloads, configuration exchange, and non-success response handling.
 
 Run the backend suite and required coverage check from `api/`:
 
