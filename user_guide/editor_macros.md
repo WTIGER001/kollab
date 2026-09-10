@@ -2,6 +2,10 @@
 
 Kollab includes powerful widgets to structure, format, and annotate your documentation content. This guide covers how to insert and configure all active macro blocks and inline elements.
 
+The editor and its macro controls are also available in the app's offline/mock workspace, so you can preview a document without a backend connection.
+
+When a page is in read-only mode, select **Analytics** in its header to open its Page Analytics panel. This is a view-only action; choose **Edit** when you want to change page content or macros.
+
 ---
 
 ## ➕ Inserting Macros & Managing Favorites (The Plus Dialog)
@@ -13,15 +17,20 @@ To keep the editing toolbar clean and focused, Kollab groups all document macros
 2. Click the plus button to open the **Insert Macro or Block** dialog.
 
 ### Browsing Categories
-The Insert Dialog is divided into 5 vertical tabs on the left:
-1.  **Text & Lists**: Basic formatting blocks, lists, code panels, lorem ipsum debugging generator, and special symbol insertions.
-2.  **Layout & Media**: Equal-width columns (2 or 3 columns), asymmetric grid layouts (70/30 or 30/70), image uploads, and data tables.
-3.  **Callouts & Details**: Beautiful colored information, tip, warning, note, error, or checkmark panels, and collapsible boxes.
-4.  **Task & Status**: Actionable checklist lists, inline status indicators, and date deadline pills.
-5.  **Advanced Macros**: Table of Contents, children listings, alphabetical directories, page attachments, and page excerpt widgets.
+The Insert Dialog is divided into focused vertical tabs on the left:
+1. **Text & Lists**: Basic formatting blocks, lists, code panels, lorem ipsum, and symbols.
+2. **Layout & Structure**: Columns, cards, tabs, page metadata, banners, and tables.
+3. **Media & Attachments**: Images, file previews, and attachment lists.
+4. **Callouts & Panels**: Information, tip, warning, note, error, check, and expandable panels.
+5. **Task & Status**: Checklists, status indicators, and date pills.
+6. **Diagrams & Charts**: Draw.io, Excalidraw, Mermaid, charts, calendars, and roadmaps.
+7. **AI & Automation**: AI prompt and generated-content blocks.
+8. **Integrations & Dev**: Imports, excerpts, issue embeds, page indexes, and other connected content.
+9. **Advanced** and **Templates**: Table of Contents and saved block templates.
 ### Searching Macros
 - **Search Bar**: A search input is located at the top of the dialog. Type any term (e.g., `table` or `color`) to find matching macros immediately by name or description.
 - **Global Search Layout**: When you type a search query, the vertical tabs sidebar temporarily collapses to present a full-width grid of search results matching globally. Clearing the search query instantly restores the category vertical tabs.
+- **Keyboard use**: The search field receives focus when the dialog opens. Press `Tab` to move through category tabs and macro cards, then press `Enter` or `Space` to insert the focused macro. Press `Esc` to close the dialog.
 
 ### Pinning Favorites to the Toolbar
 - **Pin a Macro**: Open the Insert Dialog, find the macro card you want to keep handy, and click the **Star icon** on the right side of the card. The macro icon will instantly appear in your editor toolbar.
@@ -36,7 +45,7 @@ The Insert Dialog is divided into 5 vertical tabs on the left:
 Callout panels are beautifully colored message boxes featuring a distinct editable **Title** header and a rich-text **Message** area. They help highlight key takeaways, rules, warnings, errors, or success checkpoints.
 
 ### How to Insert a Callout Panel
-1.  On an empty line, type **`/`** to open the command menu.
+1.  At the beginning of a block, or immediately after a space, type **`/`** to open the command menu. This prevents normal URLs and text containing slashes from opening it accidentally.
 2.  Type the type of panel you want:
     *   `/info` (Blue Information box, Info icon)
     *   `/tip` (Green/Teal Tip box, Lightbulb icon)
@@ -49,6 +58,7 @@ Callout panels are beautifully colored message boxes featuring a distinct editab
 
 ### How to Use and Customize
 *   **Title Header**: Click on the `Title...` placeholder area to type a bold title. In Read-Only mode, this title renders as a static heading (and is hidden completely if left blank).
+*   **Move to the body**: While editing the title, press **`Enter`** to place the cursor in the message body.
 *   **Message Body**: Click in the message area below the title to type freely. You can write paragraphs, lists, bold text, or other blocks *inside* the panel body.
 *   **Change Panel Type**: Hover your mouse over the callout panel in Edit Mode. A small floating toolbar will appear in the top-right corner. Click on any style icon (Info, Warning, Error, Check, Note, Tip) to instantly transition the panel theme.
 *   **Delete Panel**: Hover over the panel and click the **Trash icon** in the floating toolbar.
@@ -70,6 +80,7 @@ Status badges are colored pills that sit inline with your text. They are commonl
 3.  **Change color**: Click on any of the colored circle dots (Blue, Yellow, Green, Red, Gray) to change the badge theme.
 4.  **Delete badge**: Click the **Trash icon** in the settings popover.
 5.  **Collaborative updates**: When you modify a status badge, the name and color update instantly on all other active users' screens.
+6.  **Keyboard editing**: Use the arrow keys to select a pill in the editor and press **`Enter`** to open its settings. In the label field, press **`Enter`** to finish or **`Esc`** to return to the editor.
 
 ---
 
@@ -119,6 +130,7 @@ Date pills are compact inline elements that help you select, display, and coordi
 1. **Instant Calendar Popup**: When you type **`//`** or insert a date pill, the browser's native calendar selector automatically pops up, allowing you to select a date immediately without additional clicks.
 2. **Click the date badge**: If you need to change the date later, click the date badge. A calendar popover will open and trigger the picker.
 3. **Delete Pill**: Click the **Trash icon** inside the calendar popover to remove the date.
+4. **Keyboard editing**: Select the date pill with the arrow keys and press **`Enter`** to open the date picker.
 
 ---
 

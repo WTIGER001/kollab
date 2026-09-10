@@ -1,5 +1,6 @@
 import { Node, mergeAttributes, nodeInputRule } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import { InlineDateView } from "../../components/InlineDateView";
 
 export const InlineDate = Node.create({
@@ -59,5 +60,17 @@ export const InlineDate = Node.create({
   addNodeView() {
     return ReactNodeViewRenderer(InlineDateView);
   },
-});
 
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        const { selection } = this.editor.state;
+        if (!(selection instanceof NodeSelection) || selection.node.type !== this.type) {
+          return false;
+        }
+        window.dispatchEvent(new CustomEvent("open-inline-date", { detail: { pos: selection.from } }));
+        return true;
+      },
+    };
+  },
+});

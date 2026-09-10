@@ -7,7 +7,7 @@ test.describe('Phase 1 Editor Macros', () => {
     await setupMockAPI(page);
     
     // Navigate to page
-    await page.goto('/teams/team-1/proj-1/doc-1');
+    await page.goto('/teams/team-1/p/proj-1/docs/doc-1');
     
     // Pipe browser console logs
     page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
@@ -52,7 +52,7 @@ test.describe('Phase 1 Editor Macros', () => {
     });
     
     // Click toolbar button to insert status
-    await page.locator('button[aria-label="Insert Status Badge"]').click();
+    await page.getByRole('button', { name: 'Status Badge' }).click();
     
     // Check if Status chip is inserted
     const statusChip = editor.locator('.MuiChip-root:has-text("TODO")');
@@ -84,7 +84,7 @@ test.describe('Phase 1 Editor Macros', () => {
     });
     
     // Click toolbar button for date
-    await page.locator('button[aria-label="Insert Date Pill"]').click();
+    await page.getByRole('button', { name: 'Date Pill' }).click();
     
     // Check if Date chip is inserted
     const dateChip = editor.locator('.MuiChip-root:has-text("Select Date")').or(editor.locator('.MuiChip-root:has-text("2026")'));
@@ -116,7 +116,7 @@ test.describe('Phase 1 Editor Macros', () => {
     });
     
     // Click toolbar button for details
-    await page.locator('button[aria-label="Insert Expandable Box"]').click();
+    await page.getByRole('button', { name: 'Expandable Box' }).click();
     
     // Verify details block is inserted
     const detailsNode = editor.locator('details.details-macro');
@@ -155,7 +155,7 @@ test.describe('Phase 1 Editor Macros', () => {
     });
     
     // Click toolbar button for task list
-    await page.locator('button[aria-label="Insert Task List"]').click();
+    await page.getByRole('button', { name: 'Task List' }).click();
     await editor.focus();
     await page.keyboard.type('Test checklist item');
     
@@ -183,8 +183,9 @@ test.describe('Phase 1 Editor Macros', () => {
       (window as any).editor.commands.setContent('');
     });
     
-    // Click toolbar button for no format panel
-    await page.locator('button[aria-label="Insert No Format Panel"]').click();
+    // Insert from the macro picker because it is not pinned to the toolbar by default.
+    await page.getByRole('button', { name: 'Add macro or block...' }).click();
+    await page.getByRole('button', { name: 'Insert No Format Panel' }).click();
     
     // Verify pre block created
     const noFormatPanel = editor.locator('pre[data-type="no-format"]');

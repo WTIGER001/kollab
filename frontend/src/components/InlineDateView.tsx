@@ -5,11 +5,22 @@ import { useIsEditable } from "../hooks/useIsEditable";
 import { Chip, Popover, IconButton, Tooltip } from "@mui/material";
 import { Calendar, Trash2 } from "lucide-react";
 
-export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
+export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor, getPos }) => {
   const { date } = node.attrs;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const chipRef = React.useRef<HTMLDivElement | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  React.useEffect(() => {
+    const openFromKeyboard = (event: Event) => {
+      const pos = (event as CustomEvent<{ pos: number }>).detail?.pos;
+      if (typeof getPos === "function" && pos === getPos() && chipRef.current) {
+        setAnchorEl(chipRef.current);
+      }
+    };
+    window.addEventListener("open-inline-date", openFromKeyboard);
+    return () => window.removeEventListener("open-inline-date", openFromKeyboard);
+  }, [getPos]);
 
   React.useEffect(() => {
     if (node.attrs.autoOpen) {
@@ -77,6 +88,7 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>
       <Chip
         ref={chipRef as any}
+        aria-label={`Date ${getFriendlyDate()}. Press Enter when selected to edit.`}
         icon={<Calendar size={12} style={{ color: "var(--primary-color)" }} />}
         label={getFriendlyDate()}
         onClick={handleClick}
@@ -146,7 +158,7 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             padding: "4px 8px",
             borderRadius: "4px",
             outline: "none",
-            colorScheme: "dark", // ensures native calendar dropdown respects dark themes
+            colorScheme: "light dark",
           }}
         />
 

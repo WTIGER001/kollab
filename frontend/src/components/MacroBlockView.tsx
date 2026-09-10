@@ -3283,13 +3283,14 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             {type !== "ai-content" && (
               <IconButton 
                 size="small" 
+                aria-label={`Configure ${type.replace("-", " ")} macro`}
                 onClick={handleSettingsClick}
                 sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "text.primary" } }}
               >
                 <Settings size={13} />
               </IconButton>
             )}
-            <IconButton size="small" onClick={deleteNode} sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}>
+            <IconButton size="small" aria-label={`Delete ${type.replace("-", " ")} macro`} onClick={deleteNode} sx={{ p: 0.5, color: "text.disabled", "&:hover": { color: "error.main" } }}>
               <Trash2 size={13} />
             </IconButton>
           </Box>

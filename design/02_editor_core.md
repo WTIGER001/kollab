@@ -255,6 +255,8 @@ To lock down views:
 
 ## 8. Page Analytics Algorithm
 
+The read-only `EditorHeader` receives the canvas analytics state setter through the `setAnalyticsDialogOpen` prop. Selecting **Analytics** sets `analyticsOpen`, mounts `EditorAnalyticsDialog`, and fetches live document analytics for the active document. Keeping this prop name aligned with `EditorHeaderProps` is required: a mismatched prop leaves the header control without a callable state transition.
+
 > [!NOTE]
 > **Status:** 🟢 Completed
 

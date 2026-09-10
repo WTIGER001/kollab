@@ -28,6 +28,49 @@ export async function setupMockAPI(page: Page) {
     });
   });
 
+  // Mock settings fetched by the application shell before document routes mount.
+  await page.route('**/api/system/settings', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        auditRetentionPolicy: '30days',
+        auditRetentionCustomDays: 30,
+        auditLogDestination: 'database',
+        trashRetentionPolicy: 'forever',
+        trashRetentionCustomDays: 30,
+        welcomeTitle: 'Welcome',
+        welcomeText: 'Welcome text',
+        authLogoUrl: '',
+        authLogoSize: 'Medium',
+        authLegalDisclaimer: '',
+        authLoginButtonText: 'Login',
+        aiRateLimit: 10,
+        asposeEnabled: false,
+        asposeLicense: '',
+        classificationBannerEnabled: false,
+      }),
+    });
+  });
+
+  // The document shell fetches these editor-adjacent collections on mount.
+  // Returning empty collections keeps macro tests focused on editor behavior.
+  await page.route('**/api/templates*', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/tags', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/teams/*/users', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/watches/*/status', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ isWatching: false }) });
+  });
+  await page.route('**/api/favorites/*/status', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ isFavorite: false }) });
+  });
+
   // Mock teams
   await page.route('**/api/teams', async (route) => {
     await route.fulfill({
@@ -53,6 +96,10 @@ export async function setupMockAPI(page: Page) {
   // Mock documents
   await page.route(/\/api\/documents/, async (route) => {
     const url = route.request().url();
+    if (url.endsWith('/comments') || url.endsWith('/tags') || url.endsWith('/attachments')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+      return;
+    }
     if (url.includes('/analytics')) {
       await route.fulfill({
         status: 200,

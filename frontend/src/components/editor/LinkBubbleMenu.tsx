@@ -40,8 +40,8 @@ export const LinkBubbleMenu: React.FC<LinkBubbleMenuProps> = ({ editor, onEditLi
           const left = rect.left + rect.width / 2 - 125;
 
           setPosition({
-            top: Math.max(10, top + window.scrollY),
-            left: Math.max(10, left + window.scrollX),
+            top: Math.max(10, top),
+            left: Math.max(10, left),
           });
         } else {
           setPosition(null);
@@ -70,7 +70,7 @@ export const LinkBubbleMenu: React.FC<LinkBubbleMenuProps> = ({ editor, onEditLi
     <Paper
       elevation={3}
       sx={{
-        position: "absolute",
+        position: "fixed",
         top: position.top,
         left: position.left,
         zIndex: 1300,

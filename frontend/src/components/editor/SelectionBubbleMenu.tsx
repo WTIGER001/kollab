@@ -38,8 +38,8 @@ export const SelectionBubbleMenu: React.FC<SelectionBubbleMenuProps> = ({ editor
         const left = Math.max((start.left + end.left) / 2 - 25, 10);
 
         setPosition({
-          top: Math.max(10, top + window.scrollY),
-          left: Math.max(10, left + window.scrollX),
+          top: Math.max(10, top),
+          left: Math.max(10, left),
         });
       } catch (e) {
         setPosition(null);
@@ -73,7 +73,7 @@ export const SelectionBubbleMenu: React.FC<SelectionBubbleMenuProps> = ({ editor
     <Paper
       elevation={3}
       sx={{
-        position: "absolute",
+        position: "fixed",
         top: position.top,
         left: position.left,
         zIndex: 1300,

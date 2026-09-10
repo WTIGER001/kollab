@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useIsEditable } from "../hooks/useIsEditable";
 import { Box, Chip, Popover, TextField, IconButton, Tooltip } from "@mui/material";
 import { Trash2 } from "lucide-react";
 
-export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
+export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor, getPos }) => {
   const { text = "TODO", color = "blue" } = node.attrs;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [inputText, setInputText] = useState(text);
+  const chipRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const openFromKeyboard = (event: Event) => {
+      const pos = (event as CustomEvent<{ pos: number }>).detail?.pos;
+      if (typeof getPos === "function" && pos === getPos() && chipRef.current) {
+        setAnchorEl(chipRef.current);
+        setInputText(text);
+      }
+    };
+    window.addEventListener("open-inline-status", openFromKeyboard);
+    return () => window.removeEventListener("open-inline-status", openFromKeyboard);
+  }, [getPos, text]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!editor?.isEditable) return;
@@ -53,6 +66,8 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
   return (
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>
       <Chip
+        ref={chipRef as any}
+        aria-label={`Status ${text}. Press Enter when selected to edit.`}
         label={text.toUpperCase()}
         onClick={handleClick}
         sx={{
@@ -113,6 +128,13 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
             setInputText(val);
             updateAttributes({ text: val });
           }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === "Escape") {
+              event.preventDefault();
+              handleClose();
+              editor?.commands.focus();
+            }
+          }}
           autoFocus
           sx={{
             "& .MuiOutlinedInput-root": {
@@ -132,8 +154,10 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box sx={{ display: "flex", gap: 0.75 }}>
             {colorOptions.map((opt) => (
-              <Box
+              <IconButton
                 key={opt.name}
+                aria-label={`Set status color to ${opt.name}`}
+                size="small"
                 onClick={() => updateAttributes({ color: opt.name })}
                 sx={{
                   width: 14,
@@ -141,6 +165,7 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
                   borderRadius: "50%",
                   backgroundColor: opt.hex,
                   cursor: "pointer",
+                  p: 0,
                   border: color === opt.name ? "2px solid #ffffff" : "2px solid transparent",
                   boxShadow: color === opt.name ? "0 0 0 1.5px var(--primary-color)" : "none",
                   transition: "all 0.15s ease",

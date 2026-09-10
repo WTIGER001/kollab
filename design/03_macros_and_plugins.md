@@ -2,6 +2,10 @@
 
 This document specifies the architecture, schemas, and rendering behaviors for Kollab's native rich content extensions, advanced macro plugins, and third-party integrations (like GitLab).
 
+## Browser boot compatibility
+
+The document route loads the application-wide route tree before mounting the editor. Components in that tree must import API interfaces with TypeScript's `import type` form, rather than as runtime named exports. Vite removes type-only exports from browser modules; a value import of one rejects module evaluation and prevents the editor canvas from mounting. The mock-backed browser macro suite covers this boot path.
+
 For a living, prioritised catalog of future formatting, engineering, typed-data, and enterprise-integration candidates, see [Macro Roadmap](26_macro_roadmap.md). This document remains the implementation-level source of truth for macros that are accepted into delivery.
 
 ---
@@ -52,6 +56,14 @@ Dynamically render lists of document structures within the active workspace/spac
 
 ### 1.9 Macro Organizer Dialog
 A dynamic, user-configurable macros dialog that allows users to pin and unpin formatting elements into a local-storage synchronized favorites toolbar.
+
+#### Interaction and command-discovery contract
+- `EditorCanvas` owns one caret-positioned command surface for both `/` commands and `@` mentions. It is anchored with `EditorView.coordsAtPos`, uses an explicit `{ from, to }` trigger range for replacement, and dismisses a trigger after `Escape` until that trigger is removed.
+- A trigger is recognized only at the start of a text block or after whitespace. This avoids activating command UI for URL paths and similar prose.
+- The command registry is shared by slash search and `EditorMacroDialog`. Dialog categories include every registry category, including `advanced` and `Snippets`, so insertion paths do not hide commands.
+- Macro cards use button semantics and support `Tab`, `Enter`, and `Space`; suggestion rows expose `listbox`/`option` semantics while the editor retains Arrow/Enter keyboard control.
+- `inlineStatus` and `inlineDate` remain atom nodes. When a node selection is on either pill, `Enter` dispatches a local node-view event that opens its settings popover. Status label `Enter`/`Escape` closes the popover and returns focus to the editor.
+- Callout title editing remains an attribute editor; pressing `Enter` moves focus into the NodeViewContent body. Action controls are revealed for pointer hover and keyboard `:focus-within`.
 
 ### 1.10 Image Gallery & Shared Media Library
 A dedicated macro and storage mechanism for managing visual assets across the platform.

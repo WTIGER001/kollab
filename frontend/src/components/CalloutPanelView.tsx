@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { NodeViewWrapper, NodeViewContent } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useIsEditable } from "../hooks/useIsEditable";
@@ -7,6 +7,7 @@ import { Info, AlertCircle, Lightbulb, AlertTriangle, Trash2, Check, FileText } 
 
 export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, updateAttributes, editor }) => {
   const { type = "info" } = node.attrs;
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   const getTheme = () => {
     switch (type) {
@@ -60,7 +61,7 @@ export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, up
   const isEditable = useIsEditable(editor);
 
   return (
-    <NodeViewWrapper className="callout-panel-node">
+    <NodeViewWrapper ref={wrapperRef} className="callout-panel-node">
       <Paper
         elevation={0}
         sx={{
@@ -85,6 +86,11 @@ export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, up
             transform: "translateY(0)",
             pointerEvents: "auto",
           },
+          "&:focus-within .callout-actions": {
+            opacity: 1,
+            transform: "translateY(0)",
+            pointerEvents: "auto",
+          },
         }}
       >
         {/* Left Side Icon */}
@@ -100,6 +106,13 @@ export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, up
               placeholder="Title..."
               value={node.attrs.title || ""}
               onChange={(e) => updateAttributes({ title: e.target.value })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  const content = wrapperRef.current?.querySelector("[data-node-view-content]") as HTMLElement | null;
+                  content?.focus();
+                }
+              }}
               fullWidth
               sx={{
                 fontWeight: 700,

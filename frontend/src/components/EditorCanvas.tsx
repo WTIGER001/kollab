@@ -646,6 +646,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   });
 
   const [ydoc] = useState(() => new Y.Doc());
+  const activeTriggerRangeRef = React.useRef<{ from: number; to: number } | null>(null);
+  const dismissedTriggerRef = React.useRef<number | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -761,6 +763,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
         if (event.key === "Escape") {
           event.preventDefault();
+          dismissedTriggerRef.current = activeTriggerRangeRef.current?.from ?? null;
           setMenuOpen(false);
           return true;
         }
@@ -2121,6 +2124,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
     const { selection } = editorInstance.state;
     const { $from } = selection;
+    if (!selection.empty || !$from?.parent?.isTextblock) {
+      activeTriggerRangeRef.current = null;
+      setMenuOpen(false);
+      return;
+    }
 
     // Extract text in current paragraph block before the cursor
     const textBeforeCursor = $from.parent.textBetween(
@@ -2132,104 +2140,77 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const lastSlashIndex = textBeforeCursor.lastIndexOf("/");
     const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+    const isTriggerBoundary = (index: number) =>
+      index === 0 || /\s/.test(textBeforeCursor.charAt(index - 1));
+    const openMenuAtCaret = (
+      query: string,
+      mode: "slash" | "mention",
+      itemsLength: number,
+    ) => {
+      const from = $from.pos - query.length - 1;
+      if (dismissedTriggerRef.current === from) {
+        setMenuOpen(false);
+        return;
+      }
+
+      const rect = editorInstance.view.coordsAtPos($from.pos);
+      const estimatedMenuHeight = Math.min(280, 20 + itemsLength * 36.5 + 8);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const top =
+        spaceBelow < estimatedMenuHeight + 16 && rect.top > estimatedMenuHeight + 16
+          ? rect.top - estimatedMenuHeight - 8
+          : rect.bottom + 8;
+
+      activeTriggerRangeRef.current = { from, to: $from.pos };
+      dismissedTriggerRef.current = null;
+      setMenuPosition({ top, left: Math.min(rect.left, window.innerWidth - 276) });
+      setSearchQuery(query);
+      setMenuMode(mode);
+      setMenuOpen(true);
+      setSelectedIndex(0);
+    };
 
     if (
       lastAtIndex !== -1 &&
+      isTriggerBoundary(lastAtIndex) &&
       (lastSlashIndex === -1 || lastAtIndex > lastSlashIndex)
     ) {
       const query = textBeforeCursor.substring(lastAtIndex + 1);
 
       // Ensure there are no spaces after the @
       if (!query.includes(" ")) {
-        const range = window.getSelection()?.getRangeAt(0);
-        if (range) {
-          const rect = range.getBoundingClientRect();
-          const matchingUsers = teamUsers.filter((u) =>
-            u.username.toLowerCase().includes(query.toLowerCase()),
-          );
-
-          if (matchingUsers.length > 0) {
-            const viewportHeight = window.innerHeight;
-            const itemCount = matchingUsers.length;
-            const estimatedMenuHeight = Math.min(
-              280,
-              20 + itemCount * 36.5 + 8,
-            );
-            const spaceBelow = viewportHeight - rect.bottom;
-
-            let top = rect.bottom + 8;
-            if (
-              spaceBelow < estimatedMenuHeight + 16 &&
-              rect.top > estimatedMenuHeight + 16
-            ) {
-              top = rect.top - estimatedMenuHeight - 8;
-            }
-
-            setMenuPosition({
-              top: top,
-              left: rect.left,
-            });
-            setSearchQuery(query);
-            setMenuMode("mention");
-            setMenuOpen(true);
-            setSelectedIndex((prev) =>
-              prev >= matchingUsers.length ? 0 : prev,
-            );
-          } else {
-            setMenuOpen(false);
-          }
+        const matchingUsers = teamUsers.filter((u) =>
+          u.username.toLowerCase().includes(query.toLowerCase()),
+        );
+        if (matchingUsers.length > 0) {
+          openMenuAtCaret(query, "mention", matchingUsers.length);
+        } else {
+          setMenuOpen(false);
         }
       } else {
         setMenuOpen(false);
       }
-    } else if (lastSlashIndex !== -1) {
+    } else if (lastSlashIndex !== -1 && isTriggerBoundary(lastSlashIndex)) {
       const query = textBeforeCursor.substring(lastSlashIndex + 1);
 
       // Ensure there are no spaces after the slash (trigger remains active for search term)
       if (!query.includes(" ")) {
-        const range = window.getSelection()?.getRangeAt(0);
-        if (range) {
-          const rect = range.getBoundingClientRect();
-
-          const matching = commands.filter(
-            (c) =>
-              c.label.toLowerCase().includes(query.toLowerCase()) ||
-              c.description.toLowerCase().includes(query.toLowerCase()),
-          );
-
-          if (matching.length > 0) {
-            const viewportHeight = window.innerHeight;
-            const itemCount = matching.length;
-            const estimatedMenuHeight = Math.min(
-              280,
-              20 + itemCount * 36.5 + 8,
-            );
-            const spaceBelow = viewportHeight - rect.bottom;
-
-            let top = rect.bottom + 8;
-            if (
-              spaceBelow < estimatedMenuHeight + 16 &&
-              rect.top > estimatedMenuHeight + 16
-            ) {
-              top = rect.top - estimatedMenuHeight - 8;
-            }
-
-            setMenuPosition({
-              top: top,
-              left: rect.left,
-            });
-            setSearchQuery(query);
-            setMenuMode("slash");
-            setMenuOpen(true);
-            setSelectedIndex((prev) => (prev >= matching.length ? 0 : prev));
-          } else {
-            setMenuOpen(false);
-          }
+        const matching = allCommands.filter(
+          (c) =>
+            c.label.toLowerCase().includes(query.toLowerCase()) ||
+            c.description.toLowerCase().includes(query.toLowerCase()),
+        );
+        if (matching.length > 0) {
+          openMenuAtCaret(query, "slash", matching.length);
+        } else {
+          setMenuOpen(false);
         }
       } else {
         setMenuOpen(false);
       }
     } else {
+      activeTriggerRangeRef.current = null;
+      dismissedTriggerRef.current = null;
       setMenuOpen(false);
     }
   };
@@ -2237,37 +2218,35 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const executeCommand = (cmd: SlashCommandItem) => {
     if (!editor) return;
 
-    const { selection } = editor.state;
-    const { $from } = selection;
-
-    const queryLength = searchQuery.length;
+    const range = activeTriggerRangeRef.current;
+    if (!range) return;
     editor
       .chain()
       .focus()
-      .deleteRange({ from: $from.pos - 1 - queryLength, to: $from.pos })
+      .deleteRange(range)
       .run();
 
     cmd.action(editor);
+    activeTriggerRangeRef.current = null;
     setMenuOpen(false);
   };
 
   const executeUserSelect = (user: { id: string; username: string }) => {
     if (!editor) return;
 
-    const { selection } = editor.state;
-    const { $from } = selection;
-
-    const queryLength = searchQuery.length;
+    const range = activeTriggerRangeRef.current;
+    if (!range) return;
     editor
       .chain()
       .focus()
-      .deleteRange({ from: $from.pos - 1 - queryLength, to: $from.pos })
+      .deleteRange(range)
       .insertContent({
         type: "mention",
         attrs: { id: user.id, username: user.username },
       })
       .insertContent(" ")
       .run();
+    activeTriggerRangeRef.current = null;
     setMenuOpen(false);
   };
 
@@ -2578,7 +2557,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           handleCloseMoreMenu={handleCloseMoreMenu}
           handleTriggerMove={handleTriggerMove}
           handleTriggerDelete={handleTriggerDelete}
-          setAnalyticsOpen={setAnalyticsOpen}
+          setAnalyticsDialogOpen={setAnalyticsOpen}
           setCommitDescription={setCommitDescription}
           setCommitModalOpen={setCommitModalOpen}
           setExportDialogOpen={setExportDialogOpen}
@@ -3207,7 +3186,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               }}
             >
               {favorites.map((favId) => {
-                const cmd = commands.find((c) => c.id === favId);
+                const cmd = allCommands.find((c) => c.id === favId);
                 if (!cmd) return null;
 
                 const isActive = () => {
@@ -3549,6 +3528,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           <ClickAwayListener onClickAway={() => setMenuOpen(false)}>
             <Paper
               id="slash-menu-container"
+              role="listbox"
+              aria-label={menuMode === "slash" ? "Insert block or macro" : "Mention a team member"}
               sx={{
                 position: "fixed",
                 top: menuPosition.top,
@@ -3588,7 +3569,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <Box
                       key={cmd.id}
                       id={`slash-menu-item-${idx}`}
+                      role="option"
+                      aria-selected={idx === selectedIndex}
                       onClick={() => executeCommand(cmd)}
+                      onMouseDown={(event) => event.preventDefault()}
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -3679,7 +3663,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     <Box
                       key={user.id}
                       id={`slash-menu-item-${idx}`}
+                      role="option"
+                      aria-selected={idx === selectedIndex}
                       onClick={() => executeUserSelect(user)}
+                      onMouseDown={(event) => event.preventDefault()}
                       sx={{
                         display: "flex",
                         alignItems: "center",
@@ -3748,12 +3735,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         insertTable={handleInsertTable}
         aiPromptOpen={aiPromptOpen}
         setAiPromptOpen={setAiPromptOpen}
-        menuOpen={menuOpen}
-        menuAnchorEl={menuPosition}
-        setMenuOpen={setMenuOpen}
-        menuStateRef={menuStateRef}
-        handleUserMentionSelect={executeUserSelect}
-        handleCommandSelect={executeCommand}
         onEditLink={() => {
           if (editor) {
             const attrs = editor.getAttributes("link");
@@ -3777,7 +3758,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         setMacroSearchQuery={setMacroSearchQuery}
         activeCategoryTab={activeCategoryTab}
         setActiveCategoryTab={setActiveCategoryTab}
-        commands={commands}
+        commands={allCommands}
         editor={editor}
         toggleFavorite={toggleFavorite}
         favorites={favorites}

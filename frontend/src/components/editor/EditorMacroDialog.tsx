@@ -112,6 +112,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
       >
         <Search size={16} style={{ color: "var(--primary-color)" }} />
         <InputBase
+          autoFocus
           value={macroSearchQuery}
           onChange={(e) => setMacroSearchQuery(e.target.value)}
           placeholder="Search macros by name or description..."
@@ -185,6 +186,8 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
             <Tab label="Diagrams & Charts" value="diagrams" icon={<Network size={16} />} iconPosition="start" />
             <Tab label="AI & Automation" value="ai" icon={<Sparkles size={16} />} iconPosition="start" />
             <Tab label="Integrations & Dev" value="integrations" icon={<Link2 size={16} />} iconPosition="start" />
+            <Tab label="Advanced" value="advanced" icon={<Layers size={16} />} iconPosition="start" />
+            <Tab label="Templates" value="Snippets" icon={<Layers size={16} />} iconPosition="start" />
           </Tabs>
         )}
 
@@ -222,9 +225,20 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
               return (
                 <Box
                   key={cmd.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Insert ${cmd.label}`}
                   onClick={() => {
                     cmd.action(editor);
                     setMacroSelectorOpen(false);
+                  }}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      cmd.action(editor);
+                      setMacroSelectorOpen(false);
+                    }
                   }}
                   sx={{
                     display: "flex",

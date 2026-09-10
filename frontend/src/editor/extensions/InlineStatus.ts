@@ -1,5 +1,6 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
+import { NodeSelection } from "@tiptap/pm/state";
 import { InlineStatusView } from "../../components/InlineStatusView";
 
 export const InlineStatus = Node.create({
@@ -44,5 +45,18 @@ export const InlineStatus = Node.create({
 
   addNodeView() {
     return ReactNodeViewRenderer(InlineStatusView);
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        const { selection } = this.editor.state;
+        if (!(selection instanceof NodeSelection) || selection.node.type !== this.type) {
+          return false;
+        }
+        window.dispatchEvent(new CustomEvent("open-inline-status", { detail: { pos: selection.from } }));
+        return true;
+      },
+    };
   },
 });

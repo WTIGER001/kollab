@@ -4,7 +4,7 @@ import { setupMockAPI } from './helpers';
 test.describe('Editor Canvas Modes & Page Analytics', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPI(page);
-    await page.goto('/teams/team-1/proj-1/doc-1');
+    await page.goto('/teams/team-1/p/proj-1/docs/doc-1');
     await page.waitForSelector('.ProseMirror');
     await expect(page.locator('.ProseMirror')).toContainText('Welcome to the mock editor canvas');
   });
@@ -49,7 +49,7 @@ test.describe('Editor Canvas Modes & Page Analytics', () => {
     await expect(sparklineSvg).toBeVisible();
 
     // Close Dialog
-    await page.locator('button:has(svg.lucide-x)').click();
+    await page.getByRole('dialog').locator('button:has(svg.lucide-x)').click();
     await expect(page.locator('h6:has-text("Page Analytics")')).not.toBeVisible();
   });
 

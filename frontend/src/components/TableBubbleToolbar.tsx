@@ -55,8 +55,8 @@ export const TableBubbleToolbar: React.FC<TableBubbleToolbarProps> = ({ editor }
         const left = rect.left + rect.width / 2 - 180; // half of toolbar width
 
         setPosition({
-          top: Math.max(10, top + window.scrollY),
-          left: Math.max(10, left + window.scrollX),
+          top: Math.max(10, top),
+          left: Math.max(10, left),
         });
       } else {
         setPosition(null);
@@ -157,7 +157,7 @@ export const TableBubbleToolbar: React.FC<TableBubbleToolbarProps> = ({ editor }
     <Paper
       elevation={6}
       sx={{
-        position: "absolute",
+        position: "fixed",
         top: position.top,
         left: position.left,
         zIndex: 1000,

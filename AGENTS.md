@@ -68,10 +68,14 @@ To ensure a seamless user experience across the dynamic Theme Engine and Light/D
 
 ---
 
-## 🚫 Server Execution Policy
+## 🔇 Server Execution & Verification Policy
 
-- **Do NOT start or run the servers**: The AI agent must not run the Go backend server (`go run cmd/server/main.go`, `./server`) or the React frontend development server (`npm run dev`, `vite`). The user will manage and run the servers themselves.
-- **Verification only**: The AI agent should limit execution commands to compilation, type checking, and automated tests (e.g., `go test`, `npx tsc --noEmit`) to verify the correctness of the code.
+- **Default to non-server verification**: Prefer compilation, type checking, unit tests, and other non-server checks (for example, `go test` and `npx tsc --noEmit`).
+- **Quiet verification servers are allowed when they materially validate a change**: An AI agent may start the Go backend or React/Vite frontend only to run a bounded browser, integration, or end-to-end verification. This is not authorization for normal interactive development, long-running monitoring, or deployment.
+- **Keep server output out of the model context**: Launch the process in the background, redirect both stdout and stderr to an explicit file under `/private/tmp`, and use the framework's quiet/error-only log mode where available. Do not tail or poll the log while tests are passing. Never leave the server attached to the command session: stopping that session can replay a large buffered log into the model context.
+- **Use an observable completion condition**: Wait through a narrowly scoped health check or test runner, not by reading live server output. On a failure, inspect only the smallest useful log excerpt (normally the last 100 lines).
+- **Clean up after verification**: Record the launched process ID and stop only that process when the verification is complete or fails. Do not terminate user-owned servers or broad process groups. If a compatible user-owned server is already running, reuse it instead of starting another.
+- **Recommended Vite pattern**: `npm run dev -- --host 127.0.0.1 --logLevel error >/private/tmp/kollab-vite.log 2>&1 &`. Use a task-specific log filename and PID in real commands so concurrent agent work cannot collide.
 
 ---
 

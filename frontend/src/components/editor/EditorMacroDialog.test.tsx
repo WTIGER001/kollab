@@ -109,6 +109,29 @@ describe('EditorMacroDialog', () => {
     expect(mockSetMacroSelectorOpen).toHaveBeenCalledWith(false);
   });
 
+  it('inserts a focused macro card with Enter', () => {
+    render(<EditorMacroDialog {...defaultProps} />);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Insert Heading 1' }), { key: 'Enter' });
+
+    expect(commands[0].action).toHaveBeenCalledWith(mockEditor);
+    expect(mockSetMacroSelectorOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('includes template commands in the Templates category', () => {
+    const template = {
+      id: 'template-1',
+      label: 'Weekly update',
+      description: 'Reusable update',
+      category: 'Snippets',
+      icon: <span>Template</span>,
+      action: vi.fn(),
+    };
+    render(<EditorMacroDialog {...defaultProps} commands={[...commands, template]} activeCategoryTab="Snippets" />);
+
+    expect(screen.getByText('Weekly update')).toBeInTheDocument();
+  });
+
   it('toggles favorite status when star icon is clicked', () => {
     render(<EditorMacroDialog {...defaultProps} />);
     
