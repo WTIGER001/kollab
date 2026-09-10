@@ -32,6 +32,10 @@ AI client tests route OpenAI- and Ollama-shaped requests to local HTTP test serv
 
 `api/internal/user/*_test.go` verifies password requirements, initial-admin single-use setup, local-account creation and normalization, password replacement, activation state enforcement, duplicate account protection, and safe in-memory repository copies.
 
+### Shared-page authorization
+
+`api/internal/permissions/share_link_test.go` creates an isolated PostgreSQL `sharing_links` table to verify that a link is bound to its document, expires correctly, requires authentication for organization scope, enforces password challenges, and cannot grant more than its assigned role permits.
+
 Run the backend suite and required coverage check from `api/`:
 
 ```bash

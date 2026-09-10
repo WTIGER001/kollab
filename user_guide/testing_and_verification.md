@@ -16,6 +16,7 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 | **Templates** | Template Gallery | Template create, filters, edits, and deletion | `api/internal/http/handler/template_test.go` |
 | **AI providers** | AI-assisted editor actions | Provider request and error handling | `api/internal/ai/*_test.go` |
 | **Local accounts** | Server Settings → Local Users | Account setup, password, and active-state rules | `api/internal/user/*_test.go` |
+| **Shared pages** | Page access settings | Link token, password, expiry, and role checks | `api/internal/permissions/share_link_test.go` |
 
 ---
 
