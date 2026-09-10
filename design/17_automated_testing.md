@@ -20,6 +20,10 @@ Persistence interfaces are exercised with both in-memory repositories and Postgr
 
 `api/internal/attachment/attachment_test.go` verifies PDF preview initialization, metadata rollback after a failed attachment save, completed/failed/in-progress preview states, preview asset MIME resolution, and safe office-preview retry queueing. `api/internal/attachment/office_converter_test.go` uses a local HTTP server to verify converter request payloads, configuration exchange, and non-success response handling.
 
+### Handler contracts
+
+Handler tests use in-memory repositories and signed local test tokens to exercise HTTP request validation and response contracts without a running server. `api/internal/http/handler/template_test.go` covers authenticated personal-template ownership, contextual listing filters, update/delete persistence, and not-found handling.
+
 Run the backend suite and required coverage check from `api/`:
 
 ```bash

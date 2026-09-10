@@ -13,6 +13,7 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 | **Classification banner** | Server Settings | `GET` / `PUT /api/system/settings` | `frontend/src/components/ClassificationBanner.test.tsx` |
 | **Image handling** | Image Library | Image upload and rendition retrieval | `api/internal/image/service_test.go` |
 | **Attachment previews** | Attachment viewer | Preview status and converted preview assets | `api/internal/attachment/attachment_test.go` |
+| **Templates** | Template Gallery | Template create, filters, edits, and deletion | `api/internal/http/handler/template_test.go` |
 
 ---
 
