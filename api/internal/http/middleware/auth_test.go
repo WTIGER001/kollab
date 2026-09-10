@@ -2,8 +2,12 @@ package middleware
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -14,6 +18,71 @@ import (
 
 	"kollab/api/internal/domain"
 )
+
+func TestJWKSCacheFetchesAndCachesSupportedKeys(t *testing.T) {
+	curve := elliptic.P256()
+	requests := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if r.URL.Path != "/keys" {
+			http.NotFound(w, r)
+			return
+		}
+		fmt.Fprintf(w, `{"keys":[
+			{"kty":"RSA","kid":"rsa-1","n":"%s","e":"AQAB"},
+			{"kty":"EC","kid":"ec-1","crv":"P-256","x":"%s","y":"%s"},
+			{"kty":"EC","kid":"unsupported","crv":"P-999","x":"AQ","y":"AQ"}
+		]}`,
+			base64.RawURLEncoding.EncodeToString([]byte{1, 0, 1}),
+			base64.RawURLEncoding.EncodeToString(curve.Params().Gx.Bytes()),
+			base64.RawURLEncoding.EncodeToString(curve.Params().Gy.Bytes()),
+		)
+	}))
+	defer server.Close()
+
+	cache := NewJWKSCache(server.URL + "/keys")
+	rsaKey, err := cache.GetKey(context.Background(), "rsa-1")
+	if err != nil {
+		t.Fatalf("fetch RSA key: %v", err)
+	}
+	if _, ok := rsaKey.(*rsa.PublicKey); !ok {
+		t.Fatalf("expected RSA public key, got %T", rsaKey)
+	}
+
+	ecKey, err := cache.GetKey(context.Background(), "ec-1")
+	if err != nil {
+		t.Fatalf("fetch cached EC key: %v", err)
+	}
+	if _, ok := ecKey.(*ecdsa.PublicKey); !ok {
+		t.Fatalf("expected ECDSA public key, got %T", ecKey)
+	}
+	if requests != 1 {
+		t.Fatalf("expected one JWKS request, got %d", requests)
+	}
+
+	if _, err := cache.GetKey(context.Background(), "unknown"); err == nil {
+		t.Fatal("expected an error for an unknown key ID")
+	}
+	if requests != 2 {
+		t.Fatalf("expected cache refresh for unknown key, got %d requests", requests)
+	}
+}
+
+func TestNewOIDCJWKSCacheRejectsIncompleteOrInsecureConfiguration(t *testing.T) {
+	for _, test := range []struct {
+		name, issuer, audience, scope string
+	}{
+		{"missing audience", "https://identity.example.test", "", "kollab.access"},
+		{"non-HTTPS issuer", "http://identity.example.test", "api://kollab", "kollab.access"},
+		{"relative issuer", "/issuer", "api://kollab", "kollab.access"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := NewOIDCJWKSCache(context.Background(), test.issuer, test.audience, test.scope); err == nil {
+				t.Fatal("expected invalid OIDC configuration to be rejected")
+			}
+		})
+	}
+}
 
 func TestValidateTokenEnforcesOIDCBinding(t *testing.T) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)

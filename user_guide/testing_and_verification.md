@@ -18,7 +18,7 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 
 1. Sign in through the configured OIDC provider.
 2. Confirm that the browser receives a delegated access token for `OIDC_API_SCOPE`.
-3. Call a protected Kollab endpoint with that bearer token. It must succeed only when its issuer, API audience, expiry, signature, and API scope match the deployment configuration.
+3. Call a protected Kollab endpoint with that bearer token. It must succeed only when its issuer, API audience, expiry, signature, and API scope match the deployment configuration. Automated tests also validate JWKS key retrieval and key caching without contacting a real identity provider.
 4. Repeat with an ID token, an access token for another API, and an access token lacking the API scope. Each request must return `401`.
 
 ---

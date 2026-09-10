@@ -12,7 +12,7 @@ Persistence interfaces are exercised with both in-memory repositories and Postgr
 
 ### OIDC API access-token validation
 
-`api/internal/http/middleware/auth_test.go` verifies that OIDC API requests require a valid signature, issuer, dedicated API audience, expiry, and delegated API scope. It also verifies that HMAC tokens are rejected in OIDC mode.
+`api/internal/http/middleware/auth_test.go` verifies that OIDC API requests require a valid signature, issuer, dedicated API audience, expiry, and delegated API scope. It also verifies that HMAC tokens are rejected in OIDC mode, and uses a local HTTP test server to exercise RSA/EC JWKS retrieval, cache reuse, unknown-key refresh, and invalid OIDC configuration rejection.
 
 Run the backend suite and required coverage check from `api/`:
 
