@@ -28,6 +28,10 @@ Handler tests use in-memory repositories and signed local test tokens to exercis
 
 AI client tests route OpenAI- and Ollama-shaped requests to local HTTP test servers. They validate generated text and embedding response decoding, request settings such as OpenAI embedding dimensions and non-streaming Ollama requests, and failure propagation for non-success provider responses. The test suite never requires configured provider credentials or a running Ollama instance.
 
+### Local identity lifecycle
+
+`api/internal/user/*_test.go` verifies password requirements, initial-admin single-use setup, local-account creation and normalization, password replacement, activation state enforcement, duplicate account protection, and safe in-memory repository copies.
+
 Run the backend suite and required coverage check from `api/`:
 
 ```bash

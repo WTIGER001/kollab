@@ -15,6 +15,7 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 | **Attachment previews** | Attachment viewer | Preview status and converted preview assets | `api/internal/attachment/attachment_test.go` |
 | **Templates** | Template Gallery | Template create, filters, edits, and deletion | `api/internal/http/handler/template_test.go` |
 | **AI providers** | AI-assisted editor actions | Provider request and error handling | `api/internal/ai/*_test.go` |
+| **Local accounts** | Server Settings → Local Users | Account setup, password, and active-state rules | `api/internal/user/*_test.go` |
 
 ---
 
