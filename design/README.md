@@ -79,3 +79,6 @@ This directory contains the hierarchical technical specifications of Project Kol
 - [Multiple API instances and bidirectional synchronization](multi_instance_sync.md)
 
 - [Maintained Kollab handbook archive](kollab_handbook.md)
+
+- [Portable team and project transfers](scoped_transfers.md): additive cross-server import into new spaces, identity mapping, archive validation, and transactional persistence.
+- [Development startup and migration recovery](startup_recovery.md): known `0015` forward repair, startup readiness, and themed connection failures.

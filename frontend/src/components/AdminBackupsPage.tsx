@@ -24,7 +24,7 @@ export const AdminBackupsPage: React.FC = () => {
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatusMessage('Azure Blob Storage and Azure Backup Vault configuration saved successfully.');
+    setStatusMessage('Preview only: these settings are not saved to a server.');
     setTimeout(() => setStatusMessage(null), 4000);
   };
 
@@ -32,7 +32,7 @@ export const AdminBackupsPage: React.FC = () => {
     setIsExporting(true);
     setTimeout(() => {
       setIsExporting(false);
-      setStatusMessage('Immediate backup triggered: uploaded archive to Azure Blob Container and created snapshot in Azure Backup Vault.');
+      setStatusMessage('Preview only: no backup was created or uploaded.');
       setTimeout(() => setStatusMessage(null), 4000);
     }, 1500);
   };
@@ -42,7 +42,7 @@ export const AdminBackupsPage: React.FC = () => {
       setIsRestoring(true);
       setTimeout(() => {
         setIsRestoring(false);
-        setStatusMessage('Backup archive restored successfully into Kollab.');
+        setStatusMessage('Preview only: no data was restored. Use Backup & sync for full-server restore or Team & project transfer for a new space.');
         setTimeout(() => setStatusMessage(null), 4000);
       }, 2000);
     }
@@ -65,7 +65,7 @@ export const AdminBackupsPage: React.FC = () => {
         <div>
           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>System & Azure Backup Management</h1>
           <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
-            Manage automated cloud backups, configure Azure Blob Storage, and restore system snapshots.
+            Prototype only. Cloud backup controls below do not save settings, create backups, or restore data.
           </p>
         </div>
         <button
@@ -99,6 +99,7 @@ export const AdminBackupsPage: React.FC = () => {
         </div>
       )}
 
+      <p><a href="/_admin/settings/backups" style={{ color: "var(--primary-color)" }}>Full-server backup & restore</a> · <a href="/_admin/transfers" style={{ color: "var(--primary-color)" }}>Team & project transfer</a></p>
       {/* Azure Blob Storage Configuration Section */}
       <div style={{
         backgroundColor: 'var(--panel-color)',

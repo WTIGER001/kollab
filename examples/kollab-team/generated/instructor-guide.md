@@ -84,17 +84,17 @@ Open the access guide. Explain that navigation visibility is not the security bo
 
 Sources: `user_guide/page_access.md`, `design/26_confluence_style_permissions.md`
 
-## 15. Three different recovery operations
+## 15. Choose the right recovery operation
 
-This is a critical distinction for administrators. The delivered demonstration archive uses the full-server restore path and must go into a fresh or intentionally disposable target. It does not merge a team into an existing workspace. Explain that full sync preserves unrelated destination data while full restore replaces it.
+Use kollab-handbook-team.zip on Team & project transfer to create a new team while preserving existing spaces and accounts. Select a local owner and review access. Reimport creates a new copy, not an update to the earlier team. The separate kollab-handbook.zip is a full-server recovery artifact for a fresh or intentionally disposable target. Air-gap sync merges tracked changes and requires conflict review.
 
 Sources: `user_guide/backups_and_restores.md`, `user_guide/synchronization.md`
 
-## 16. The backup package
+## 16. The team transfer package
 
-Explain that the archive contains PostgreSQL rows serialized into JSON, not SQLite and not a SQL dump. The export excludes installation-specific coordination state. The ZIP includes a generated demo administrator account; its password is supplied privately beside the artifact. Restore invalidates editor state.
+This ZIP is for Team & project transfer. It includes the complete handbook and presentation but excludes account credentials, source permission grants, and installation settings. It creates a new team and rewrites included links. Continue using your existing account. The separate full-server kollab-handbook.zip contains database_seed.json and uploads; it belongs on the full-server restore screen and replaces destination data. ZIP extensions alone do not identify compatibility.
 
-Sources: `api/internal/http/handler/archive.go`, `api/internal/postgres/archive.go`
+Sources: `api/internal/transfer/archive.go`, `api/internal/http/handler/transfer.go`, `design/scoped_transfers.md`
 
 ## 17. Application architecture
 
@@ -122,12 +122,12 @@ Sources: `examples/kollab-team/pages/workshop-authoring.md`, `examples/kollab-te
 
 ## 21. Maintaining the handbook
 
-Explain the one-way publication workflow. Editing a restored page does not update Git automatically. Copy intentional changes back to the appropriate source. Stable source keys preserve page IDs. Rebuild after schema changes; never change the migration ledger to force an incompatible restore. Generated passwords and archive ZIPs stay out of Git.
+Explain the one-way publication workflow. Editing an imported page does not update Git automatically. Copy intentional changes back to source. Source keys remain stable; each team import assigns new destination IDs and preserves existing spaces. Rebuild the deck and content, then run the real-database test to produce both ZIP formats. Generated archives and full-server credentials stay outside Git.
 
 Sources: `examples/kollab-team/pages/maintenance.md`
 
 ## 22. Ready to use Kollab
 
-Ask each participant to demonstrate one workflow from the readiness checklist. Suggested questions: Does a status badge approve a page? Does restoring this archive merge a team? What service is required for Office previews? End by pointing to the maintained Features and Technical Implementation projects for continued learning.
+Ask each participant to demonstrate one workflow from the readiness checklist. Suggested questions: Does a status badge approve a page? Does importing the team update an earlier copy? Which ZIP replaces server data? What service is required for Office previews? End by pointing to Features and Technical Implementation for continued learning.
 
 Sources: `examples/kollab-team/pages/assessment.md`

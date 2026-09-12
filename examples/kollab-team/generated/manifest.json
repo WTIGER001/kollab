@@ -224,7 +224,7 @@
     },
     {
       "type": "heading",
-      "count": 422,
+      "count": 424,
       "pages": [
         "architecture",
         "assessment",
@@ -345,7 +345,7 @@
     },
     {
       "type": "listItem",
-      "count": 783,
+      "count": 788,
       "pages": [
         "features-home",
         "maintenance",
@@ -645,7 +645,7 @@
     },
     {
       "type": "orderedList",
-      "count": 98,
+      "count": 99,
       "pages": [
         "features-home",
         "maintenance",
@@ -688,7 +688,7 @@
     },
     {
       "type": "paragraph",
-      "count": 1700,
+      "count": 1718,
       "pages": [
         "architecture",
         "assessment",
@@ -790,7 +790,7 @@
     },
     {
       "type": "tableCell",
-      "count": 225,
+      "count": 228,
       "pages": [
         "architecture",
         "authoring-demo",
@@ -833,7 +833,7 @@
     },
     {
       "type": "tableRow",
-      "count": 93,
+      "count": 94,
       "pages": [
         "architecture",
         "authoring-demo",
@@ -880,7 +880,7 @@
     },
     {
       "type": "text",
-      "count": 4802,
+      "count": 4869,
       "pages": [
         "architecture",
         "assessment",
@@ -958,7 +958,7 @@
   ],
   "sourceHashes": {
     "examples/kollab-team/pages/welcome.md": "cbb4d42d8970536e69b88c4cbcf53c0e9d80c889d979c865795e194a9ab46044",
-    "examples/kollab-team/pages/maintenance.md": "911b61b4e9572d82d0a3617b4d2f1ff49806c6dba2a8b0540a4449d359c1d27d",
+    "examples/kollab-team/pages/maintenance.md": "11d8c86a2d47e7f02fd36d73abd6f0d3381f87c0216b12fb2ebc92f8bdc987ef",
     "examples/kollab-team/pages/features-home.md": "d7ef4a313501a4473ff440e43c2d5eb38b771083cd23ec71fd0a3876167f778e",
     "examples/kollab-team/pages/technical-home.md": "9c66769635aa453a7cc700ce27ac7a4d9a20cb12ee6a2c94c8287cf1fae3f6a3",
     "examples/kollab-team/pages/training-home.md": "711723de8d13b962e217e051a1b23b67290b35c6be6bfbf7930a46632730fdc5",
@@ -970,12 +970,12 @@
     "examples/kollab-team/pages/integrations-demo.md": "0d1315208de356890e0efca6690355fab26ec252d0cd6ac5a9b5adf77bb4129a",
     "examples/kollab-team/pages/architecture.md": "2a4a72c3a04069f5c75f1686cd23469eaaad7b8acf9bbf00fb28ee60c466aa87",
     "examples/kollab-team/pages/document-model.md": "5dd34ec38b2c6a678bddbafd5e644127e6243a5370ba6a01823cc858df996959",
-    "examples/kollab-team/pages/consistency.md": "e3af8328ced4565a9ddbb539ab41f876fa1d3845d27cabf7c87ba46a7f9c510a",
-    "examples/kollab-team/pages/training-materials.md": "341c67ecb94f7a7787c679ccf10d66d37b5409d6c70de7727950d0b1ee9d2d02",
+    "examples/kollab-team/pages/consistency.md": "0b3da8ac64bb058a98906005789c192844389a1519fae8326d403b228b8bba45",
+    "examples/kollab-team/pages/training-materials.md": "0c098adcd59f52ea39efbdb7b55db7e229a613daa02571b7eaa65f4a5184394e",
     "examples/kollab-team/pages/workshop-authoring.md": "418626d4cf150e446c43f3e6a1de61467ef64d19fe36791e790eb7d18716511b",
     "examples/kollab-team/pages/workshop-recovery.md": "7d7a61f9fa5698a6c999da5656c3903eb27f5c4a05e78cea2aa19b72a5dbe3bc",
     "examples/kollab-team/pages/workshop-technical.md": "da2efac75529646bf9defa7e8f17d6a8efd61c491ee2df9dfff9bcb3ecf2571d",
-    "examples/kollab-team/pages/assessment.md": "db4c9fa25b40910c8567f8a43cbcb0a68eca25f481d507ec8bdebbff35a633a9",
+    "examples/kollab-team/pages/assessment.md": "e51d499300b37262b613c9ffcac058c5fa5cae65d8dca63cd44fc2e34405d0e9",
     "user_guide/first_start.md": "0bcd5702db0983d4e6a57c9839aae638e311490c0d9420620ce7dd81a85328bf",
     "user_guide/teams_directory.md": "1b7189ed6700afa31d245f4e5443b9153149ae5c3939dc67e21c4391b83a08fd",
     "user_guide/project_portal.md": "d6d2a9b03a038d1f16b29e8e230eac5dca1a0481fe4300e1dd02ca0781efc659",
@@ -1000,7 +1000,7 @@
     "user_guide/server_settings.md": "baec03708179272e07b7ac760569268747673dd32b3e612776ef68eb53489278",
     "user_guide/local_user_management.md": "bb431ccd22f95db37e7b82f20b700e5bb8b81bfcf8300d846de714a979ad974e",
     "user_guide/oidc_sso.md": "5015577cf678b7fb35da5f5517edb5523354e2a899cee13437f9d05633c8922a",
-    "user_guide/backups_and_restores.md": "14461c6593f3ccb640f2d0b46c926d3662551db7263b50b4bcf13e628cd9a248",
+    "user_guide/backups_and_restores.md": "c0bbe8a0174402b3b2c2c571723cd7b3c29a71afb2a0427df9c4a1868daacd50",
     "user_guide/synchronization.md": "bd90b171200a92ffd46a0c76cf6f001a0eb0e49f08149938a8a9d4f89b18bd07",
     "user_guide/jira_confluence_integrations.md": "f399da4b6cf899aa11d1274cced2c710af97ac52ce3b24836e7b8a5ed30119ae",
     "user_guide/confluence_import_guide.md": "06ce5a27971019f5ea5ecc6e85f5c859cbeaf75f1038e1ce9afb42bef030b427",
@@ -1023,26 +1023,26 @@
     "design/production_readiness.md": "aa45e6bde44f493e5c6234d88f09dee223701942cce1f175bb50e564feb1864a",
     "examples/kollab-team/catalog.json": "abd39f0b42af90ac443d7ad37aafdf2bc0285f93c34330502b0173a9b9057a57",
     "examples/kollab-team/build.mjs": "7719b94dc6487f574d9da52c37187cce3aa0ce63c84c9ba34fc80961b273efee",
-    "examples/kollab-team/slides.json": "a049b2fb9a39271eefa928d04d19c37d11e167c86a75ff067a0ad0daae057d15"
+    "examples/kollab-team/slides.json": "d139e9651b6673e704a8c9182308a82a986fa704ec9f785b93471e3deb58bc56"
   },
   "assets": [
     {
       "source": "assets/course-cover.png",
       "storageKey": "attachments/27214d7d-7166-5d25-8936-a869a3897069_Course cover.png",
-      "sha256": "cbdf5e4d9610276d5386c3fe61ac615fcc72c9ea76aceb5d09ab9245d93d5093",
-      "size": 44528
+      "sha256": "8f43dc6d4dcb749fe73ff8337321e8ef9b20e79096c92bc91284a0971689ad05",
+      "size": 43728
     },
     {
       "source": "assets/Kollab Capabilities.pptx",
       "storageKey": "attachments/379a10d7-08da-5dc8-b079-e90d79b22e58_Kollab Capabilities.pptx",
-      "sha256": "494e9981d766a155241766a09e5f4ec0ef443e63c0e23cbcf0e620b35c08c779",
-      "size": 74971
+      "sha256": "ffb73f90e2d4349d9844bd3f14328c8974fadc514a401552002e6fcfa60f3022",
+      "size": 75256
     },
     {
       "source": "generated/instructor-guide.md",
       "storageKey": "attachments/e49fbb27-403b-583d-99b9-6468f46de6ef_Instructor guide.md",
-      "sha256": "99f71658acabb4bdf1d8f56d29663f64c235dd65d80ecb051e61d65b33cea1dc",
-      "size": 9310
+      "sha256": "5e8c4efac591294a2608ade377311015e03d6dc8bda52dbe1f26ceaf08aefe40",
+      "size": 9669
     },
     {
       "source": "catalog.json",
@@ -1053,9 +1053,9 @@
     {
       "source": "assets/course-cover.png",
       "storageKey": "fb7d672e-0dd6-599b-be40-726def1d2ed3_original.png",
-      "sha256": "cbdf5e4d9610276d5386c3fe61ac615fcc72c9ea76aceb5d09ab9245d93d5093",
-      "size": 44528
+      "sha256": "8f43dc6d4dcb749fe73ff8337321e8ef9b20e79096c92bc91284a0971689ad05",
+      "size": 43728
     }
   ],
-  "contentSha256": "48471685a6e25da6c92e9a41b2fe21450444af329118ac727c2866eee333b86c"
+  "contentSha256": "37c2ccd6673c31b1f24f8d874fcb24cf95f7db94786e77b5592cea38be0df45b"
 }

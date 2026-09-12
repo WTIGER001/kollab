@@ -28,16 +28,16 @@ The source repository is the maintained edition of this handbook. The restored t
 3. Update the slide content and notes when the teaching sequence needs the same correction.
 4. Run the build and validation commands in the repository README for this package.
 5. Review generated content and macro coverage in Git.
-6. Run the real-database restore test and retain the new ZIP with its private credentials.
-7. Restore to a fresh rehearsal instance and inspect the affected pages before teaching.
+6. Run the real-database verification to produce the team transfer ZIP and the separate full-server backup.
+7. Import `kollab-handbook-team.zip` as a new rehearsal team and inspect the affected pages before teaching. Existing teams remain intact.
 
 ## Identity and compatibility
 
-Keep stable source keys when renaming titles. The builder derives UUIDs from those keys, resolves page links, and records hashes of the source inputs. Migration checksums come from the actual application schema during archive construction. Rebuild after schema changes rather than editing the archive's migration ledger to bypass compatibility checks.
+Keep stable source keys when renaming titles. The builder derives UUIDs from those keys, resolves page links, and records hashes of the source inputs. Team import generates new destination IDs and rewrites included links each time; it does not update an earlier copy. The team ZIP uses `kollab.scope.v1`. The separate full-server backup includes the actual migration ledger and requires schema compatibility. Rebuild after schema changes rather than bypassing compatibility checks.
 
 ## What Git retains
 
-Git retains editable source pages, the catalog, slide source, the finished PowerPoint, generated content, and a source manifest. It excludes private build directories, generated passwords, and full backup ZIPs. A backup includes an administrator password hash and should be handled as private recovery material.
+Git retains editable source pages, the catalog, slide source, the finished PowerPoint, generated content, and a source manifest. It excludes private build directories, generated passwords, and both generated ZIPs. The team ZIP excludes credentials. The full-server ZIP includes an administrator password hash and should be handled as private recovery material.
 
 ## Capturing changes from a workshop
 

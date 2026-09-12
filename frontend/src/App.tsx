@@ -16,6 +16,7 @@ import { UserMentionsView } from "./components/UserMentionsView";
 import { NotificationsView } from "./components/NotificationsView";
 import { ServerSettingsPage } from "./components/ServerSettingsPage";
 import { AdminHelpPage } from "./components/AdminHelpPage";
+import { ScopeTransferPage } from "./components/ScopeTransferPage";
 import { AdminBackupsPage } from "./components/AdminBackupsPage";
 import { AdminLocalUsersPage } from "./components/AdminLocalUsersPage";
 import { ConfluenceImportPage } from "./components/import/ConfluenceImportPage";
@@ -226,6 +227,7 @@ export default function App({ isMockMode = false, welcomeTitle, welcomeText, aut
             <Route path="_admin/settings/backups" element={<ServerSettingsPage section="backups" currentTheme={workspaceConfig?.theme || null} onSave={async (name, logoUrl, lightMode, darkMode) => { await updateWorkspaceTheme(name, logoUrl, lightMode, darkMode); queryClient.invalidateQueries({ queryKey: ["oidcConfig"] }); }} systemSettings={systemSettings!} onSaveSettings={async (settings) => { await updateSystemSettings(settings); queryClient.invalidateQueries({ queryKey: ['systemSettings'] }); }} onBack={() => navigate('/my/recents')} showToast={showToast} />} />
             <Route path="_admin/settings/integrations" element={<ServerSettingsPage section="integrations" currentTheme={workspaceConfig?.theme || null} onSave={async (name, logoUrl, lightMode, darkMode) => { await updateWorkspaceTheme(name, logoUrl, lightMode, darkMode); queryClient.invalidateQueries({ queryKey: ["oidcConfig"] }); }} systemSettings={systemSettings!} onSaveSettings={async (settings) => { await updateSystemSettings(settings); queryClient.invalidateQueries({ queryKey: ['systemSettings'] }); }} onBack={() => navigate('/my/recents')} showToast={showToast} />} />
             <Route path="_admin/help" element={<AdminHelpPage onBack={() => navigate("/_admin/settings")} />} />
+            <Route path="_admin/transfers" element={<ScopeTransferPage />} />
             <Route path="_admin/backups" element={<AdminBackupsPage />} />
             <Route path="_admin/users" element={authMode === "local" ? <AdminLocalUsersPage /> : <Navigate to="/_admin/settings" replace />} />
             <Route path="import/confluence" element={<ConfluenceImportPage />} />

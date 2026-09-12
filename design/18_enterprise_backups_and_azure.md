@@ -55,3 +55,7 @@ The `AzureBackupVaultClient` driver (`api/internal/storage/azure_backup_vault.go
 
 - **Daily Retention**: Retains snapshots taken in the last 30 days.
 - **Monthly Retention**: Snapshots taken on the 1st of each month are retained as Long-Term Retention (LTR) milestones for up to 12 months (365 days).
+
+## Implemented local transfers
+
+Portable local team/project export and import are implemented separately from this Azure prototype. See [Portable team and project transfers](scoped_transfers.md). The admin cloud preview explicitly reports that its controls do not create backups or restore data.

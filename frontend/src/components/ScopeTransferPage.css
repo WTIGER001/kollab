@@ -1,0 +1,20 @@
+.scope-transfer { width: 100%; max-width: 1100px; padding: clamp(16px, 3vw, 40px); margin: 0 auto; color: var(--text-primary); background: var(--bg-color); overflow-wrap: anywhere; }
+.scope-transfer h1 { font-size: clamp(24px, 3vw, 34px); margin: 0 0 12px; }
+.scope-transfer h2 { font-size: 21px; margin: 0 0 12px; }
+.scope-transfer h3 { font-size: 17px; margin: 0; }
+.scope-transfer p { line-height: 1.6; color: var(--text-secondary); }
+.scope-transfer a { color: var(--primary-color); }
+.scope-eyebrow { font-size: 13px; }
+.scope-transfer section { margin-top: 24px; padding: clamp(16px, 2vw, 28px); background: var(--panel-color); border: var(--border-width) var(--border-style) var(--border-color); border-radius: var(--border-radius-card); box-shadow: var(--shadow-elevation); }
+.scope-transfer label { display: flex; flex-direction: column; gap: 8px; font-size: 14px; margin: 12px 0; min-width: 0; }
+.scope-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 0 20px; }
+.scope-transfer input, .scope-transfer select { box-sizing: border-box; max-width: 100%; min-height: 44px; padding: 10px 12px; font: inherit; background: var(--bg-color); color: var(--text-primary); border: var(--border-width) var(--border-style) var(--border-color); border-radius: var(--border-radius-button); }
+.scope-transfer input::placeholder { color: var(--text-secondary); }
+.scope-transfer button { margin: 16px 12px 0 0; padding: 12px 20px; min-height: 44px; font: inherit; font-weight: 600; background: var(--primary-color); color: var(--primary-contrast); border: var(--border-width) var(--border-style) var(--border-color); border-radius: var(--border-radius-button); box-shadow: var(--shadow-button); cursor: pointer; }
+.scope-transfer button:disabled { background: var(--panel-color); color: var(--text-secondary); box-shadow: none; cursor: not-allowed; }
+.scope-transfer :focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+.scope-transfer fieldset { margin: 24px 0; padding: 16px; min-width: 0; border: var(--border-width) var(--border-style) var(--border-color); border-radius: var(--border-radius-card); }
+.scope-transfer legend { padding: 0 8px; font-weight: 600; }
+.scope-transfer .scope-notice { padding: 16px; margin: 20px 0; background: var(--glass-bg); border: var(--border-width) var(--border-style) var(--border-color); border-radius: var(--border-radius-card); }
+.scope-transfer .scope-confirm { flex-direction: row; align-items: center; }
+.scope-confirm input { accent-color: var(--primary-color); width: 20px; flex-shrink: 0; }

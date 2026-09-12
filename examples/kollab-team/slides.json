@@ -6,7 +6,7 @@
     "body": [
       "A working handbook for authors, reviewers, and administrators"
     ],
-    "notes": "Introduce the course as a guided exploration of the restored Kollab team. The team includes Features, Technical Implementation, and Training & Workshops. This is sample documentation, not production data. Suggested duration: 60\u201375 minutes. Open the team handbook before starting.",
+    "notes": "Introduce the course as a guided exploration of the restored Kollab team. The team includes Features, Technical Implementation, and Training & Workshops. This is sample documentation, not production data. Suggested duration: 60–75 minutes. Open the team handbook before starting.",
     "sources": [
       "examples/kollab-team/pages/welcome.md"
     ]
@@ -53,7 +53,7 @@
       "Browse a page index when you know the title.",
       "Use tags and properties to find related pages."
     ],
-    "demo": "Features \u00b7 Knowledge directory",
+    "demo": "Features · Knowledge directory",
     "notes": "Open Knowledge directory and compare the page index with the Area properties report. The report has real indexed rows in the archive. Semantic search needs a compatible configured embedding provider; do not imply that search enrichment is always available. Have a participant find the recovery instructions.",
     "sources": [
       "user_guide/search.md",
@@ -123,7 +123,7 @@
       "Details hide optional explanation until needed.",
       "Tabs separate perspectives; columns compare related ideas."
     ],
-    "demo": "Features \u00b7 Rich authoring demonstration",
+    "demo": "Features · Rich authoring demonstration",
     "notes": "Expand the milestone explanation. Switch Author, Reviewer, and Operator tabs. Scroll to the two-column comparison. Ask whether each layout makes the page easier to use. Emphasize that plain prose remains appropriate for most explanations. Check narrow-screen readability if presenting mobile use.",
     "sources": [
       "examples/kollab-team/pages/authoring-demo.md",
@@ -173,7 +173,7 @@
       "The save path maintains a queryable index.",
       "A properties report groups accessible pages by that metadata."
     ],
-    "demo": "Features \u00b7 Knowledge directory \u00b7 Area report",
+    "demo": "Features · Knowledge directory · Area report",
     "notes": "Inspect the Area, Audience, and Availability properties on a feature page. Return to the report. The source document is authoritative; the normalized index makes cross-page queries practical. Ask participants to name a useful property for their own workspace.",
     "sources": [
       "design/03_macros_and_plugins.md",
@@ -187,7 +187,7 @@
       "Use an attachment list or a single-file block.",
       "Download the original; preview it when the service supports it."
     ],
-    "demo": "Training & Workshops \u00b7 Capabilities PowerPoint",
+    "demo": "Training & Workshops · Capabilities PowerPoint",
     "notes": "Open the training materials page and download this PowerPoint. Show the Markdown instructor guide beside it. Office previews require the media-preview service; downloading does not depend on successful preview generation. Image libraries provide a separate workflow for reusable images.",
     "sources": [
       "user_guide/attachments_and_previews.md",
@@ -201,7 +201,7 @@
       "Comments preserve discussion beside the content.",
       "Assigned tasks make follow-up work visible."
     ],
-    "demo": "Features \u00b7 Collaboration laboratory",
+    "demo": "Features · Collaboration laboratory",
     "notes": "Use separate workshop accounts for a two-person demonstration. Open the sample comment thread and identify it as illustrative. Show the task assigned to the demo administrator. Task extraction currently recognizes textual @username content; the sample includes that explicit assignee alongside a user mention. Avoid implying that one shared account demonstrates distinct user presence.",
     "sources": [
       "examples/kollab-team/pages/collaboration-demo.md",
@@ -254,7 +254,7 @@
     ]
   },
   {
-    "title": "Three different recovery operations",
+    "title": "Choose the right recovery operation",
     "kind": "table",
     "headers": [
       "Operation",
@@ -268,6 +268,11 @@
         "Replace current page content"
       ],
       [
+        "Team/project import",
+        "New team or project",
+        "Keep existing spaces"
+      ],
+      [
         "Full backup restore",
         "Whole installation",
         "Replace data and uploads"
@@ -278,25 +283,26 @@
         "Merge; review conflicts"
       ]
     ],
-    "notes": "This is a critical distinction for administrators. The delivered demonstration archive uses the full-server restore path and must go into a fresh or intentionally disposable target. It does not merge a team into an existing workspace. Explain that full sync preserves unrelated destination data while full restore replaces it.",
+    "notes": "Use kollab-handbook-team.zip on Team & project transfer to create a new team while preserving existing spaces and accounts. Select a local owner and review access. Reimport creates a new copy, not an update to the earlier team. The separate kollab-handbook.zip is a full-server recovery artifact for a fresh or intentionally disposable target. Air-gap sync merges tracked changes and requires conflict review.",
     "sources": [
       "user_guide/backups_and_restores.md",
       "user_guide/synchronization.md"
     ]
   },
   {
-    "title": "The backup package",
+    "title": "The team transfer package",
     "kind": "code",
-    "code": "kollab-handbook.zip\n  database_seed.json\n  uploads/\n    attachments/",
+    "code": "kollab-handbook-team.zip\n  scope.json\n  files/\n    attachments/",
     "body": [
-      "Database rows use kollab.database.v2.",
-      "Uploaded bytes travel with their metadata.",
-      "Restore checks the schema and migration ledger."
+      "Portable data uses kollab.scope.v1.",
+      "Pages and uploaded files travel together.",
+      "Choose a local owner before importing."
     ],
-    "notes": "Explain that the archive contains PostgreSQL rows serialized into JSON, not SQLite and not a SQL dump. The export excludes installation-specific coordination state. The ZIP includes a generated demo administrator account; its password is supplied privately beside the artifact. Restore invalidates editor state.",
+    "notes": "This ZIP is for Team & project transfer. It includes the complete handbook and presentation but excludes account credentials, source permission grants, and installation settings. It creates a new team and rewrites included links. Continue using your existing account. The separate full-server kollab-handbook.zip contains database_seed.json and uploads; it belongs on the full-server restore screen and replaces destination data. ZIP extensions alone do not identify compatibility.",
     "sources": [
-      "api/internal/http/handler/archive.go",
-      "api/internal/postgres/archive.go"
+      "api/internal/transfer/archive.go",
+      "api/internal/http/handler/transfer.go",
+      "design/scoped_transfers.md"
     ]
   },
   {
@@ -391,10 +397,10 @@
     "body": [
       "Edit guides, design references, and curated source pages in Git.",
       "Regenerate the pages and training deck.",
-      "Verify the archive, then rehearse in a fresh instance."
+      "Verify the ZIP, then import a new rehearsal team."
     ],
-    "demo": "Kollab team \u00b7 Maintaining this team",
-    "notes": "Explain the one-way publication workflow. Editing a restored page does not update Git automatically. Copy intentional changes back to the appropriate source. Stable source keys preserve page IDs. Rebuild after schema changes; never change the migration ledger to force an incompatible restore. Generated passwords and archive ZIPs stay out of Git.",
+    "demo": "Kollab team · Maintaining this team",
+    "notes": "Explain the one-way publication workflow. Editing an imported page does not update Git automatically. Copy intentional changes back to source. Source keys remain stable; each team import assigns new destination IDs and preserves existing spaces. Rebuild the deck and content, then run the real-database test to produce both ZIP formats. Generated archives and full-server credentials stay outside Git.",
     "sources": [
       "examples/kollab-team/pages/maintenance.md"
     ]
@@ -407,7 +413,7 @@
       "Choose a macro because it helps the reader.",
       "Know the scope before changing access or restoring data."
     ],
-    "notes": "Ask each participant to demonstrate one workflow from the readiness checklist. Suggested questions: Does a status badge approve a page? Does restoring this archive merge a team? What service is required for Office previews? End by pointing to the maintained Features and Technical Implementation projects for continued learning.",
+    "notes": "Ask each participant to demonstrate one workflow from the readiness checklist. Suggested questions: Does a status badge approve a page? Does importing the team update an earlier copy? Which ZIP replaces server data? What service is required for Office previews? End by pointing to Features and Technical Implementation for continued learning.",
     "sources": [
       "examples/kollab-team/pages/assessment.md"
     ]

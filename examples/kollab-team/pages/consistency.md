@@ -29,8 +29,13 @@ Browsers communicate through API replicas. Accepted collaborative state and the 
 | --- | --- | --- |
 | Page version restore | One page | Replaces that page's authoritative content |
 | Trash restore | Deleted content in its scope | Recovers soft-deleted content through its supported route |
+| Team/project transfer | One team with its projects, or one project | Creates a new destination space; existing data remains |
 | Full-server backup restore | Whole installation | Replaces application tables and uploaded files |
 | Air-gap sync import | Tracked records and files | Merges changes and requires conflict review when needed |
+
+## Team transfer boundary
+
+`kollab-handbook-team.zip` contains `scope.json` with `format: kollab.scope.v1` and `files/<storage-key>`. The transfer importer validates dependencies, creates new IDs, remaps included page/media links, and inserts a new team and its projects. Select an existing local owner; source credentials and access grants are excluded. Imported pages inherit destination access. Reimporting creates another copy rather than synchronizing changes into an earlier import. Task assignee text and references outside the archive remain source text and may need adjustment.
 
 ## Full archive transaction boundary
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	goperm "github.com/wtiger001/go-permissions"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,7 +44,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			limit := int64(64 << 20)
-			if r.URL.Path == "/api/system/restore" || r.URL.Path == "/api/system/sync/import" {
+			if strings.HasPrefix(r.URL.Path, "/api/system/transfer/") || r.URL.Path == "/api/system/restore" || r.URL.Path == "/api/system/sync/import" {
 				limit = 1 << 30
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, limit)
@@ -185,6 +186,9 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Put("/templates/{id}", templateH.UpdateTemplate)
 		r.Delete("/templates/{id}", templateH.DeleteTemplate)
 		r.With(mid.RequirePermission("system", "", "write")).Get("/system/backup", systemH.Backup)
+		r.With(mid.RequirePermission("system", "", "write")).Get("/system/transfer/export", systemH.ExportScope)
+		r.With(mid.RequirePermission("system", "", "write")).Post("/system/transfer/preview", systemH.PreviewScope)
+		r.With(mid.RequirePermission("system", "", "write")).Post("/system/transfer/import", systemH.ImportScope)
 		r.With(mid.RequirePermission("system", "", "write")).Post("/system/restore", systemH.Restore)
 		r.With(mid.RequirePermission("system", "", "write")).Get("/system/sync/export", systemH.ExportSync)
 		r.With(mid.RequirePermission("system", "", "write")).Post("/system/sync/import", systemH.ImportSync)

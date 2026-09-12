@@ -28,6 +28,7 @@ import (
 	"kollab/api/internal/permissions"
 	pg "kollab/api/internal/postgres"
 	"kollab/api/internal/system"
+	"kollab/api/internal/transfer"
 )
 
 // TestKollabShowcaseArchive builds the maintained example using the real schema,
@@ -269,6 +270,7 @@ func TestKollabShowcaseArchive(t *testing.T) {
 	if err != nil || !allowed {
 		t.Fatal("restored administrator role missing", err)
 	}
+	teamArchive := verifyShowcaseTeamTransfer(t, ctx, db, handler, input.Tables["teams"][0]["id"].(string), input.Admin.ID)
 	if t.Failed() {
 		return
 	}
@@ -278,6 +280,9 @@ func TestKollabShowcaseArchive(t *testing.T) {
 		}
 		sum := sha256.Sum256(archive)
 		files := map[string][]byte{"kollab-handbook.zip": archive, "credentials.txt": []byte(fmt.Sprintf("Disposable Kollab handbook instance\nUsername: %s\nPassword: %s\n\nFull-server restore replaces destination data and accounts.\nUse local authentication mode. Keep this file private and outside Git.\n", input.Admin.Username, password)), "SHA256SUMS": []byte(fmt.Sprintf("%x  kollab-handbook.zip\n", sum))}
+		files["kollab-handbook-team.zip"] = teamArchive
+		teamSum := sha256.Sum256(teamArchive)
+		files["SHA256SUMS"] = append(files["SHA256SUMS"], []byte(fmt.Sprintf("%x  kollab-handbook-team.zip\n", teamSum))...)
 		for name, data := range files {
 			dest := filepath.Join(output, name)
 			if err = os.WriteFile(dest, data, 0600); err != nil {
@@ -289,4 +294,99 @@ func TestKollabShowcaseArchive(t *testing.T) {
 		}
 		t.Logf("Verified archive: %s (%d pages, %d projects, %d uploaded files)", filepath.Join(output, "kollab-handbook.zip"), len(input.Tables["documents"]), len(input.Tables["projects"]), len(input.Assets))
 	}
+}
+
+// Verify the complete handbook through the additive transfer handlers as well.
+// Keeping the original team in place proves this operation is an import, not a
+// full-server restore. Handler authorization is covered by runScopeTransferEndpoints.
+func verifyShowcaseTeamTransfer(t *testing.T, ctx context.Context, db *pgxpool.Pool, handler *SystemHandler, teamID, ownerID string) []byte {
+	t.Helper()
+	export := func(id string) ([]byte, *transfer.Archive) {
+		t.Helper()
+		response := httptest.NewRecorder()
+		handler.ExportScope(response, httptest.NewRequest("GET", "/api/system/transfer/export?kind=team&id="+id, nil).WithContext(ctx))
+		if response.Code != 200 {
+			t.Fatalf("handbook team export: %d %s", response.Code, response.Body)
+		}
+		data := append([]byte(nil), response.Body.Bytes()...)
+		archive, err := transfer.Decode(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return data, archive
+	}
+	data, source := export(teamID)
+	request := func(endpoint string) *httptest.ResponseRecorder {
+		t.Helper()
+		var body bytes.Buffer
+		form := multipart.NewWriter(&body)
+		file, err := form.CreateFormFile("archive", "kollab-handbook-team.zip")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = file.Write(data); err != nil {
+			t.Fatal(err)
+		}
+		options, err := json.Marshal(transfer.Options{Name: "Imported Kollab handbook", Abbreviation: "imported-handbook", OwnerID: ownerID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = form.WriteField("options", string(options)); err != nil {
+			t.Fatal(err)
+		}
+		if err = form.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest("POST", "/api/system/transfer/"+endpoint, &body).WithContext(ctx)
+		req.Header.Set("Content-Type", form.FormDataContentType())
+		response := httptest.NewRecorder()
+		if endpoint == "preview" {
+			handler.PreviewScope(response, req)
+		} else {
+			handler.ImportScope(response, req)
+		}
+		return response
+	}
+	preview := request("preview")
+	if preview.Code != 200 {
+		t.Fatalf("handbook preview: %d %s", preview.Code, preview.Body)
+	}
+	imported := request("import")
+	if imported.Code != 201 {
+		t.Fatalf("handbook team import: %d %s", imported.Code, imported.Body)
+	}
+	var result transfer.Result
+	if err := json.Unmarshal(imported.Body.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.TeamID == teamID || result.Pages != len(source.Tables["documents"]) {
+		t.Fatal("handbook did not import as a new complete team")
+	}
+	_, destination := export(result.TeamID)
+	for table, rows := range source.Tables {
+		if len(destination.Tables[table]) != len(rows) {
+			t.Errorf("team transfer changed %s count: %d -> %d", table, len(rows), len(destination.Tables[table]))
+		}
+	}
+	fileHashes := func(a *transfer.Archive) []string {
+		values := []string{}
+		for _, data := range a.Files {
+			sum := sha256.Sum256(data)
+			values = append(values, hex.EncodeToString(sum[:]))
+		}
+		sort.Strings(values)
+		return values
+	}
+	if !reflect.DeepEqual(fileHashes(source), fileHashes(destination)) {
+		t.Fatal("team transfer changed uploaded files")
+	}
+	_, original := export(teamID)
+	if !reflect.DeepEqual(source.Tables, original.Tables) || !reflect.DeepEqual(source.Files, original.Files) {
+		t.Fatal("team transfer modified the source team")
+	}
+	var userCount int
+	if err := db.QueryRow(ctx, "SELECT count(*) FROM users").Scan(&userCount); err != nil || userCount != 1 {
+		t.Fatal("team transfer changed local accounts", err)
+	}
+	return data
 }

@@ -306,6 +306,9 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	_ = permissions.ProjectPermissions.GrantRole(context.Background(), "builtin.wiki.project.editor", goperm.PrincipalGroup, "team_mkt", "proj_campaign")
 
 	// Services
+	if db == nil {
+		systemRepo = &scopeMockRepository{SystemRepository: systemRepo}
+	}
 	authService := inmemuser.NewAuthService(userRepo, jwtSecret)
 	teamService := inmemteam.NewTeamService(teamRepo)
 	systemService := inmemsystem.NewSystemService(systemRepo)
@@ -1937,6 +1940,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	// Add Favorite
 	_, _ = sendReq("POST", "/api/documents/"+testDoc.ID+"/favorite", nil, token)
+	runScopeTransferEndpoints(t, router, token, regRes.ID)
 }
 
 func (m *mockSystemRepo) RestoreBackup(ctx context.Context, data map[string]interface{}) error {

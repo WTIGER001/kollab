@@ -22,8 +22,8 @@ This image is the rendered title slide of the attached presentation. Select it i
 
 ## Instructor preparation
 
-1. Restore the archive into a disposable installation running a compatible schema.
-2. Sign in with the generated demo administrator credentials supplied alongside the archive.
+1. Import `kollab-handbook-team.zip` through Team & project transfer as a new rehearsal team.
+2. Select an existing local owner and review the imported team access settings. Continue using your existing account.
 3. Open the handbook and confirm the three project trees are visible.
 4. Download and open the PowerPoint before the session.
 5. Visit the authoring, directory, collaboration, and architecture demonstration pages.
@@ -38,4 +38,4 @@ Office preview is optional for the course. The attachment download works indepen
 
 ## Teaching safely
 
-The generated password is private to this build and does not appear in the source repository or slide deck. This archive replaces server data; do not restore it over an active workspace just to teach a feature. Use a fresh instance or preserve and verify a current backup before an intentional replacement.
+Use the team transfer ZIP for this course. It creates a new team without replacing existing spaces or accounts, and it needs no generated demo password. The separately supplied `kollab-handbook.zip` is a full-server backup for disposable recovery rehearsals only. Its restore replaces server data and accounts. Reimporting the team creates another copy; keep workshop edits in the team participants used.

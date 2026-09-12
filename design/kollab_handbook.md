@@ -1,6 +1,6 @@
 # Maintained Kollab handbook archive
 
-The [showcase source directory](../examples/kollab-team/README.md) produces a restorable full-server `kollab.database.v2` ZIP containing a Kollab team and three projects. It exercises existing APIs, editor schemas, and restore semantics without adding an alternative import format or changing production endpoints.
+The [showcase source directory](../examples/kollab-team/README.md) produces an additive `kollab.scope.v1` team transfer ZIP and a separate full-server `kollab.database.v2` backup, each containing a Kollab team and three projects. It exercises existing APIs, editor schemas, and restore semantics using the existing production export, preview, import, and restore endpoints.
 
 ## Build pipeline
 
@@ -16,7 +16,10 @@ flowchart LR
   PG --> Export[Production ZIP export handler]
   Export --> Restore[Production restore handler]
   Restore --> Check[Compare tables and uploaded bytes]
-  Check --> Artifact[Private ZIP and credentials]
+  Check --> TeamExport[Production team export]
+  TeamExport --> TeamImport[Preview and additive team import]
+  TeamImport --> TeamCheck[Re-export and compare content and files]
+  TeamCheck --> Artifact[Team ZIP and separate full-server recovery files]
 ```
 
 ## Source model and identity
@@ -41,9 +44,15 @@ Attachments use ordinary `attachments/<id>_<filename>` storage keys. The course-
 
 The test creates one local demo administrator with a cryptographically random password and a bcrypt hash. It assigns the standard administrator and scoped ownership roles through the permission service. No fixed demo password is committed. Private outputs use mode 0600 and an ignored `dist/` directory.
 
-The production `SystemHandler.Backup` creates the archive. Verification changes document titles and inserts an unrelated upload, then invokes `SystemHandler.Restore` through a multipart request. It compares every exported table as canonical unordered row sets, verifies upload hashes and removal of the unrelated file, and checks the restored password and administrator role. Only a passing run writes the final ZIP, credentials, and SHA-256 checksum.
+The production `SystemHandler.Backup` creates the archive. Verification changes document titles and inserts an unrelated upload, then invokes `SystemHandler.Restore` through a multipart request. It compares every exported table as canonical unordered row sets, verifies upload hashes and removal of the unrelated file, and checks the restored password and administrator role. The same test then calls `ExportScope` for the complete source team, decodes the resulting `kollab.scope.v1` ZIP, and sends multipart requests through `PreviewScope` and `ImportScope` with an existing local owner. It re-exports the new team, compares every portable table count and the multiset of uploaded-file hashes, and verifies that the source team and accounts remain intact. Only a passing run writes both ZIPs, full-server credentials, and SHA-256 checksums.
 
 These handler calls exercise serialization and restore directly; they do not replace the separate router authorization tests or a browser integration test. No Go server needs to run for this archive verification.
+
+## Archive selection
+
+`dist/kollab-handbook-team.zip` contains `scope.json` and `files/`, and is the default demonstration installation path through Team & project transfer. It excludes credentials, source ACLs, and installation configuration. Each import creates new identities and rewrites included resource links; it does not update a previous import.
+
+`dist/kollab-handbook.zip` retains `database_seed.json` and `uploads/` for full-server recovery tests. Passing it to the scope decoder produces `unexpected ZIP entry`. Keeping distinct filenames prevents a ZIP extension from implying that these contracts are interchangeable.
 
 ## Compatibility and update policy
 
@@ -51,6 +60,6 @@ The archive contains the actual schema migration ledger and permission tables fr
 
 Source hashes detect stale reference pages, curated pages, catalog, converter, and slide source. Asset hashes detect a regenerated deck or image that needs content regeneration. The frontend test loads every generated document and template through the registered editor schema, checks text preservation, internal URLs, excerpt targets, attachment ownership, macro renderer availability, project names, and populated properties.
 
-The publication workflow is one-way: Git sources generate a demonstration snapshot. A restored workspace can be edited, but it does not automatically synchronize those edits back to the repository. Scoped merge/update support is outside this package's contract.
+The publication workflow is one-way: Git sources generate a demonstration snapshot. A restored workspace can be edited, but it does not automatically synchronize those edits back to the repository. Additive team import is supported; updating or merging into an earlier imported team remains outside this package's contract.
 
 See the [user guide](../user_guide/kollab_handbook.md) for restore and teaching instructions.

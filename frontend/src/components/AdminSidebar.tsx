@@ -22,6 +22,7 @@ const settingsItems: AdminNavItem[] = [
   { label: "Integrations", description: "Connected services", href: "/_admin/settings/integrations", icon: Plug },
 ];
 const resourceItems: AdminNavItem[] = [
+  { label: "Team & project transfer", description: "Import into a new space", href: "/_admin/transfers", icon: ArchiveRestore },
   { label: "System images", description: "Shared image library", href: "/_admin/_images", icon: Image },
   { label: "System templates", description: "Reusable pages and blocks", href: "/_admin/_templates", icon: FileText },
   { label: "Cloud backups (preview)", description: "Azure prototype", href: "/_admin/backups", icon: BadgeCheck },

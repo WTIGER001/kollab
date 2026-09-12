@@ -686,7 +686,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
-                On-Demand Database & File Backups
+                Full-server backup & restore
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
                 Export the entire Kollab server state (including database seed JSON and all uploaded attachment media) as a single portable ZIP archive, or restore a previously saved backup file.
@@ -746,6 +746,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
 
             <Divider sx={{ borderColor: "var(--border-color)", borderStyle: "dashed" }} />
 
+            <Box sx={{ color: "var(--text-primary)" }}><Typography variant="h6">Restore a team or project from another server</Typography><Typography sx={{ color: "var(--text-secondary)", my: 1 }}>Create a new destination and import a portable team or project archive while preserving existing spaces.</Typography><Button component="a" href="/_admin/transfers" sx={{ color: "var(--primary-color)" }}>Open team & project transfer</Button></Box>
             <SyncTransferPanel />
           </Box>
         )}

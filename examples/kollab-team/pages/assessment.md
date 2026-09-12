@@ -33,5 +33,5 @@ Use these questions at the end of the course. Participants should demonstrate th
 ```
 
 ```kollab
-{"type":"details","attrs":{"open":false},"content":[{"type":"detailsSummary","content":[{"type":"text","text":"Answer: Will restoring this team merge it into my current server?"}]},{"type":"detailsContent","content":[{"type":"paragraph","content":[{"type":"text","text":"No. This deliverable uses the implemented full-server restore contract. It is intended for a fresh demonstration instance and replaces the destination's application data. A scoped merge importer is a separate feature."}]}]}]}
+{"type":"details","attrs":{"open":false},"content":[{"type":"detailsSummary","content":[{"type":"text","text":"Answer: Will restoring this team merge it into my current server?"}]},{"type":"detailsContent","content":[{"type":"paragraph","content":[{"type":"text","text":"Import kollab-handbook-team.zip through Team & project transfer to create a new team while retaining existing spaces and accounts. This does not update or merge an earlier copy of the team. The separate kollab-handbook.zip uses full-server restore and replaces destination data and accounts."}]}]}]}
 ```

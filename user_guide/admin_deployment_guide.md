@@ -57,3 +57,11 @@ Open **Server Settings** from the account menu. Each section has its own page; u
 Imports and restores coordinate all API replicas. An interrupted archive operation can leave a recovery directory and temporarily block workspace operations. Have the operator reconcile the preserved files and database result before resuming; details are in [the technical recovery design](../design/multi_instance_sync.md).
 
 GitHub builds images on separate runners and caches build layers. Local builds run one service at a time. Frontend compilation has a 2 GiB Node heap limit, and Go compilation limits parallelism. Docker build contexts exclude local environments, uploaded data, generated reports, and installed dependencies. Compilation resources are needed on the build machine, not on the droplet.
+
+## Development startup and connection errors
+
+Run `./dev.sh` to start the development containers and frontend. The launcher now waits for the API's startup configuration before starting Vite. If the API fails to start, the terminal reports that Vite was not started and gives the command for inspecting the backend error.
+
+If the browser cannot reach the API, it shows a themed **Unable to connect to Kollab** message and **Try again** button. Wait for startup to finish, then retry. This screen remains readable before sign-in and server configuration are available.
+
+An early development version of synchronization migration `0015` was changed after some databases had already applied it. The upgrade now recognizes that exact original version and applies migration `0016` to update its functions without resetting teams, pages, or files. Other unexpected migration checksum mismatches still stop startup; do not delete your database or manually change migration checksums to bypass them.

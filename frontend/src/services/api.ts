@@ -1241,3 +1241,29 @@ export const deleteTemplate = async (id: string): Promise<void> => {
 };
 
 export const fetchDocumentCapabilities = (id: string): Promise<Record<"write" | "comment" | "delete" | "grant", boolean>> => request(`/api/documents/${encodeURIComponent(id)}/capabilities`);
+
+export interface ScopePreview {
+  kind: 'team' | 'project'; name: string; abbreviation: string; teamName: string; teamAbbreviation: string;
+  createdAt: string; counts: Record<string, number>; files: number;
+  users: { id: string; username: string; name: string; member: boolean }[];
+}
+export interface ScopeImportOptions {
+  name: string; abbreviation: string; teamId: string; teamName: string; teamAbbreviation: string;
+  ownerId: string; userMap: Record<string, string>;
+}
+export interface ScopeImportResult { teamId: string; projectId?: string; pages: number }
+export const previewScopeArchive = (file: File): Promise<ScopePreview> => {
+  const form = new FormData(); form.append('archive', file);
+  return request('/api/system/transfer/preview', { method: 'POST', body: form });
+};
+export const importScopeArchive = (file: File, options: ScopeImportOptions): Promise<ScopeImportResult> => {
+  const form = new FormData(); form.append('archive', file); form.append('options', JSON.stringify(options));
+  return request('/api/system/transfer/import', { method: 'POST', body: form });
+};
+export const exportScopeArchive = async (kind: 'team' | 'project', id: string): Promise<Blob> => {
+  const res = await fetch(`${BASE_URL}/api/system/transfer/export?${new URLSearchParams({kind, id})}`, {
+    headers: apiToken ? { Authorization: `Bearer ${apiToken}` } : {},
+  });
+  if (!res.ok) { if (res.status === 401) onUnauthorizedCallback?.(); throw new Error(await res.text()); }
+  return res.blob();
+};

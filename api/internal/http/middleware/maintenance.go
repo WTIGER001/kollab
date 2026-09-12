@@ -16,7 +16,7 @@ func Maintenance() func(http.Handler) http.Handler {
 				return
 			}
 			versionRestore := r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/api/documents/") && strings.Contains(r.URL.Path, "/versions/") && strings.HasSuffix(r.URL.Path, "/restore")
-			exclusive := versionRestore || r.URL.Path == "/api/system/restore" || r.URL.Path == "/api/system/sync/import" || r.URL.Path == "/api/system/backup" || r.URL.Path == "/api/system/sync/export"
+			exclusive := r.URL.Path == "/api/system/transfer/export" || r.URL.Path == "/api/system/transfer/import" || versionRestore || r.URL.Path == "/api/system/restore" || r.URL.Path == "/api/system/sync/import" || r.URL.Path == "/api/system/backup" || r.URL.Path == "/api/system/sync/export"
 			release, err := lifecycle.Enter(r.Context(), exclusive)
 			if err != nil {
 				if errors.Is(err, lifecycle.ErrRecoveryRequired) {

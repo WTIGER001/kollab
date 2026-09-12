@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from 'react-oidc-context';
 import './index.css'
 import App from './App.tsx'
+import { StartupScreen } from './components/StartupScreen'
 import { fetchOIDCConfig } from './services/api.ts'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -69,15 +70,8 @@ function Root() {
       });
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--primary-color)', fontFamily: 'var(--font-sans, sans-serif)' }}>
-        Loading configuration...
-      </div>
-    );
-  }
-
-  if (configError || !config) return <main style={{ padding: "2rem", background: "var(--bg-color)", color: "var(--text-primary)" }}><h1>Unable to connect to Kollab</h1><p>The server configuration could not be loaded.</p><button onClick={() => window.location.reload()}>Try again</button></main>;
+  if (loading) return <StartupScreen />;
+  if (configError || !config) return <StartupScreen failed onRetry={() => window.location.reload()} />;
 
   const authMode = config?.authMode || "local";
   const isMock = authMode !== "local" && (config?.clientId === "mock-client-id" || config?.authority.includes("mock"));
@@ -96,9 +90,6 @@ function Root() {
 
   return (
     <AuthProvider {...oidcConfig}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeEngine>
-          <CssBaseline />
           <BrowserRouter>
             <App
               isMockMode={isMock}
@@ -114,8 +105,6 @@ function Root() {
               authLoginButtonText={config!.authLoginButtonText}
             />
           </BrowserRouter>
-        </ThemeEngine>
-      </QueryClientProvider>
     </AuthProvider>
   );
 }
@@ -123,7 +112,12 @@ function Root() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <Root />
+      <QueryClientProvider client={queryClient}>
+        <ThemeEngine>
+          <CssBaseline />
+          <Root />
+        </ThemeEngine>
+      </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
