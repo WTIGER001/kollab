@@ -6,7 +6,7 @@ Kollab supports multiple visual aesthetics to fit your personal or team's workfl
 
 Currently, Kollab provides four distinct built-in aesthetic themes:
 
-1. **Default (Glassmorphism)**: The standard Kollab look. Dark backgrounds with purple/blue accents, translucent glass panels, and smooth rounded corners.
+1. **Default (Glassmorphism)**: The standard Kollab look. Theme-aware backgrounds with purple/blue accents, translucent glass panels, and smooth rounded corners.
 2. **Workbench (Technical)**: A functional, high-contrast theme built for dense information. Features monospace typography (JetBrains Mono), perfectly sharp corners, and neon accents (emerald/sky blue) against a deep black background. 
 3. **Editorial (Refined)**: An elegant, document-focused layout. Uses a serif typeface (Playfair Display) for headings, soft drop shadows, and warm minimalist styling.
 4. **Neobrutalism (Bold)**: A high-impact, unpolished look featuring thick black borders, hard offset drop shadows, and highly saturated colors (hot pinks and vibrant yellows).
@@ -23,5 +23,4 @@ To switch your theme:
 4. Click on a card to instantly apply the aesthetic to your workspace.
 5. All themes fully support both **Light** and **Dark** modes. You can toggle your preferred mode from the Top Navigation bar, and the Theme Engine will automatically adjust the colors to match the aesthetic.
 
-> [!TIP]
-> In the future, Workspace Admins will be able to lock a specific theme for their team, or create entirely custom themes using their own brand colors and fonts.
+Your preset choice persists in this browser. Administrators can configure workspace colors under **Server Settings → Appearance**; these apply to the Default preset. Team-wide theme locking is not provided by this release.

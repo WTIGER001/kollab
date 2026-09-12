@@ -1,6 +1,6 @@
 # User Guide: Attachments & Media Previews
 
-Kollab supports uploading files and attachments directly into your documents. For supported formats like Office documents (Word, Excel, PowerPoint), CAD drawings, and PDFs, Kollab will automatically generate a high-fidelity inline preview.
+Kollab supports uploading files and attachments directly into your documents. For supported formats like Office documents (Word, Excel, PowerPoint), CAD drawings, and PDFs, Kollab requests a preview from the configured conversion service. Format support and licensing depend on that service.
 
 ---
 
@@ -34,6 +34,8 @@ When you upload an office document (like a `.docx` or `.pptx`), Kollab sends the
 
 If you are a Workspace Administrator, you can configure the Media Preview Engine via the **Server Settings** page:
 1. Click your profile icon and open **Server Settings**.
-2. Navigate to the **Integrations** tab.
+2. Select **Document previews** in the administration sidebar.
 3. Under the **Aspose Media Engine** section, you can toggle the preview engine on or off.
 4. If you have a commercial Aspose license XML file, you can upload it here to remove any trial watermarks from generated previews.
+
+Attachments in private pages require access to the page. If conversion fails or the service is unavailable, the attachment remains available for authorized download; check the displayed error and ask an administrator to verify the converter.

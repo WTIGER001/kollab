@@ -1,0 +1,7 @@
+.git
+.env*
+uploads
+server
+tmp
+coverage*
+*.log

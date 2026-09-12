@@ -9,7 +9,7 @@ RUN npm ci
 
 # Copy frontend source code and compile production assets
 COPY frontend/ ./
-RUN npm run build
+RUN NODE_OPTIONS=--max-old-space-size=2048 npm run build
 
 # Stage 2: Final image serving files via Caddy
 FROM caddy:latest

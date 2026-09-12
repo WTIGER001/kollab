@@ -6,7 +6,7 @@ This guide describes how to use and manage tags (labels) in Project Kollab to ca
 
 ## 🏷️ 1. Adding and Removing Tags on a Page
 
-Tags can be attached to any page from the page footer, right above the comments section. This action is available in **both Read and Edit modes**.
+Tags can be attached to any page from the page footer, right above the comments section. Controls may appear in both Read and Edit modes, but changing page tags requires write access. Global tag management requires the corresponding administrative permission.
 
 ### Adding a Tag:
 1. Scroll to the bottom of the page. Under the **Page Tags** header, you will see existing tag chips and a small `+` (Add Tag) icon button.

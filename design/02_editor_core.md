@@ -135,7 +135,7 @@ WebSockets handle Yjs syncing and presence messages. The Go backend router accep
 > [!NOTE]
 > **Status:** 🟢 Completed
 
-To track cursor positions and selections in real-time, Kollab implements a custom ProseMirror plugin: [PresenceCursors](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/editor/extensions/PresenceCursors.ts).
+To track cursor positions and selections in real-time, Kollab implements a custom ProseMirror plugin: [PresenceCursors](../frontend/src/editor/extensions/PresenceCursors.ts).
 
 ### 3.1 Cursors Coordination Flow
 1. **Local Selection Listener**: The client tracks cursor changes via `onSelectionUpdate` or keyboard/pointer interactions.
@@ -200,7 +200,7 @@ flowchart TD
 > [!NOTE]
 > **Status:** 🟢 Completed
 
-The editing state is managed by the React host state `isEditing: boolean` inside [EditorCanvas.tsx](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/components/EditorCanvas.tsx).
+The editing state is managed by the React host state `isEditing: boolean` inside [EditorCanvas.tsx](../frontend/src/components/EditorCanvas.tsx).
 
 When `isEditing` changes, it is synchronized with the ProseMirror/Tiptap instance via `editor.setEditable(isEditing)` within a React `useEffect`:
 
@@ -225,7 +225,7 @@ The Editor is housed in the `EditorCanvas` component, which manages a highly opt
 > [!NOTE]
 > **Status:** 🟢 Completed
 
-In order to avoid messy class additions, we leverage ProseMirror's native state indicator attribute (`contenteditable`) in our stylesheet [index.css](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/index.css):
+In order to avoid messy class additions, we leverage ProseMirror's native state indicator attribute (`contenteditable`) in our stylesheet [index.css](../frontend/src/index.css):
 
 * **Editing Layout Guides**:
   ```css
@@ -250,7 +250,7 @@ In order to avoid messy class additions, we leverage ProseMirror's native state 
 > [!NOTE]
 > **Status:** 🟢 Completed
 
-Custom React Node Views (such as [CalloutPanelView.tsx](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/components/CalloutPanelView.tsx) or [ImageComponent.tsx](file:///Users/johnbauer/Dev/Personal/arkm/frontend/src/components/ImageComponent.tsx)) receive the parent `editor` as a prop in `NodeViewProps`.
+Custom React Node Views (such as [CalloutPanelView.tsx](../frontend/src/components/CalloutPanelView.tsx) or [ImageComponent.tsx](../frontend/src/components/ImageComponent.tsx)) receive the parent `editor` as a prop in `NodeViewProps`.
 
 To lock down views:
 1. **Action Bars**: Action headers, floating grids, or delete buttons are wrapped in `{editor?.isEditable && ( ... )}` to prevent them from mounting at all.

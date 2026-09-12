@@ -14,29 +14,29 @@ export const AdminHelpPage: React.FC<AdminHelpPageProps> = ({ onBack }) => {
       flexDirection: "column",
       height: "100%",
       width: "100%",
-      bgcolor: "background.default",
+      bgcolor: "var(--bg-color)",
       overflow: "hidden"
     }}>
       {/* Header Toolbar */}
       <AppBar position="static" sx={{ bgcolor: "var(--panel-color)", borderBottom: "1px solid var(--border-color)", boxShadow: "none" }}>
         <Toolbar sx={{ minHeight: 48, px: 2, display: "flex", alignItems: "center" }}>
-          <IconButton size="small" onClick={onBack} sx={{ mr: 2, color: "text.primary", "&:hover": { bgcolor: "action.hover" } }}>
+          <IconButton size="small" onClick={onBack} sx={{ mr: 2, color: "var(--text-primary)", "&:hover": { bgcolor: "var(--glass-bg)" } }}>
             <ArrowLeft size={18} />
           </IconButton>
           
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
             <Box sx={{
-              backgroundColor: "rgba(139, 92, 246, 0.1)",
-              border: "1px solid rgba(139, 92, 246, 0.2)",
+              backgroundColor: "var(--glass-bg)",
+              border: "var(--border-width) solid var(--glass-border)",
               p: 0.75,
-              borderRadius: "8px",
+              borderRadius: "var(--border-radius-card)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}>
               <BookOpen size={16} style={{ color: "var(--primary-color)" }} />
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "var(--text-primary)" }}>
               Server Admin Guide
             </Typography>
           </Box>

@@ -55,6 +55,6 @@ To inspect what a page looked like in the past without modifying your active dra
 
 If you need to discard recent changes and roll back to a previous state:
 1.  While previewing the historical version (or directly from the version card in the timeline), click the **Restore** button.
-2.  The editor will immediately revert to the selected version's content.
-3.  This restoration is **collaborative**: because it runs through our sync pipeline, all other team members viewing the document will see the page update instantly on their screens.
+2.  The selected content is restored, and open editors reload to use it. Save any current work before restoring.
+3.  The restore coordinates all API replicas. Their connected editors reload so earlier unsent collaborative state cannot overwrite the restored version.
 4.  A new automatic version snapshot is captured just *before* the restore is executed (labeled `"Snapshot before restore"`), ensuring you can undo the rollback later if needed.

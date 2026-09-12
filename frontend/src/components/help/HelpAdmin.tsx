@@ -1,74 +1,24 @@
-import React from "react";
 import { Box, Typography } from "@mui/material";
-import { Settings, Shield, HardDrive, RefreshCw } from "lucide-react";
 
-export const HelpAdmin: React.FC = () => {
-  return (
-    <Box>
-      <Typography variant="h5" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 700, mb: 1.5 }}>
-        Server Administration & Air-Gap Sync
-      </Typography>
-      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 3 }}>
-        Server Settings can be managed by system administrators. Navigate to the dedicated settings page at <code>/_admin/settings</code> (or from the profile menu top-right corner) to access global configuration, branding, backups, and air-gap synchronization tools.
-      </Typography>
+const topics = [
+  { title: "Settings and local accounts", text: "Open Server Settings from your account menu. Each section has its own page; use Save Changes before leaving it. In local-account deployments, Users lets administrators create accounts, update profiles, reset passwords, and disable or remove accounts. Password changes and disabling an account invalidate existing sessions." },
+  { title: "Branding, retention, and previews", text: "Appearance controls workspace branding and Default-preset colors. Authentication controls the sign-in screen's presentation. Audit & retention controls retained history and trash. Document previews configures the conversion service; supported formats and licensing depend on that service." },
+  { title: "Complete backups and restore", text: "Under Backup & sync, Export Full Server Backup ZIP includes accounts, permissions, pages, history, settings, and uploaded files. Upload & Restore Backup ZIP replaces the target workspace and requires a matching application schema. Have editors save first: open pages reload after restore. Failed validation leaves existing data unchanged; interrupted file recovery may require operator intervention before the workspace can resume." },
+  { title: "Bidirectional Air-Gap Sync", text: "Configure the same private SYNC_SIGNING_KEY on trusted peer installations. Export Sync ZIP with Since Operation ID set to 0 for a complete state exchange, then import it on the other installation. Concurrent changes stop the whole import for review: keep this installation's version, use the incoming version, or cancel. Both database versions and losing file bytes are retained for recovery. Export in the reverse direction to return changes and resolutions. Duplicate or older records are ignored; old package formats are unsupported. Incremental cursors belong to a specific source and destination, and should advance only after a successful import." },
+  { title: "Multiple API replicas", text: "The supplied Compose deployment defaults to two API processes sharing PostgreSQL, sign-in configuration, and the same uploads directory. Edits, presence, and cursors cross replicas. The verified target is 2–5 concurrent editors. Imports and restores coordinate all replicas; a disconnected editor reloads after an authoritative restore." },
+  { title: "Integrations and prototypes", text: "GitLab issue cards and lists use configured connections. The Confluence migration wizard imports exported archives; a live Confluence page-embed setup is not exposed in the workspace UI. Azure backup and Jira remain prototypes. A configured provider entry alone does not guarantee a corresponding live macro workflow." },
+  { title: "Deploying a release", text: "The deployment workflow verifies the code, checks out the exact release commit, builds images, replaces containers, and checks every API replica. It preserves data volumes and does not change package versions on the server. Small servers need enough memory, swap, and disk to compile the images. Confirm the public /api/health endpoint and sign-in after deployment, then verify external services separately." },
+];
 
-      <Typography variant="subtitle2" sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, mb: 1.5 }}>
-        Administration Controls & Features
-      </Typography>
-
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
-        {/* Branding & Policies */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>
-            <Settings size={18} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Custom Branding & AI Controls</Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5, lineHeight: 1.4 }}>
-              Change the global workspace name, logo image URL, and define welcome texts rendered on the landing screen. Configure system-wide AI rate limits to manage usage and specify LibreOffice/Aspose configurations for document preview engines.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Audit & Retention */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10b981" }}>
-            <Shield size={18} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Audit Logs & Trash Retention</Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5, lineHeight: 1.4 }}>
-              Kollab tracks all document modifications, view events, and permission grants. Configure automated database retention policies (e.g. 30 days, 90 days, 1 year, or forever) for system audit trails and trash folders.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Database Backups */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)" }}>
-            <HardDrive size={18} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Database Backups & Restore</Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5, lineHeight: 1.4 }}>
-              Export the entire Kollab server state—including database tables, settings, user preferences, and uploaded files/previews—as a single portable ZIP archive. Restoring a backup completely updates the target server state.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Air-Gap Sync */}
-        <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(245, 158, 11, 0.1)", color: "#f59e0b" }}>
-            <RefreshCw size={18} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Diff-Based Sync (Air-Gapped Sync)</Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5, lineHeight: 1.4 }}>
-              Synchronize an off-grid or air-gapped Kollab deployment. Generate an incremental update package containing only database rows and uploads modified since a specific operation ID. Import the package on the air-gapped server to apply all updates.
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
+export function HelpAdmin() {
+  return <Box sx={{ color: "var(--text-primary)" }}>
+    <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>Server Administration</Typography>
+    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>Use Server Settings to manage the workspace. These operations require server administration access.</Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {topics.map(topic => <Box key={topic.title} sx={{ p: 2, bgcolor: "var(--panel-color)", border: "var(--border-width) solid var(--border-color)", borderRadius: "var(--border-radius-card)" }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{topic.title}</Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-secondary)", lineHeight: 1.6 }}>{topic.text}</Typography>
+      </Box>)}
     </Box>
-  );
-};
+  </Box>;
+}

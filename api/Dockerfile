@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go server binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server/main.go
+RUN --mount=type=cache,target=/root/.cache/go-build GOMEMLIMIT=512MiB CGO_ENABLED=0 GOOS=linux go build -p 1 -ldflags="-w -s" -o server ./cmd/server/main.go
 
 # Stage 2: Final lightweight image
 FROM alpine:latest

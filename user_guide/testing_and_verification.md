@@ -31,16 +31,19 @@ This manual provides step-by-step instructions for administrators, QA engineers,
 
 ## 3. Prototype Features
 
-Azure backup/vault and Jira/Confluence live integration work is not ready for operator testing or production use. Do not rely on their current pages, example output, or placeholder endpoints.
+Azure backup/vault and Jira remain prototypes. GitLab issue workflows and Confluence archive import are implemented; a live Confluence page-embed workflow is not exposed in the UI. See [Integrations](jira_confluence_integrations.md).
 
 ## 4. Running Automated Terminal Tests
 
-```bash
-# Run backend Go unit tests
-cd api
-go test ./...
+Run these from the repository root:
 
-# Run frontend React component tests
-cd frontend
-npm test
+```bash
+(cd api && go test -coverpkg=./... -coverprofile=coverage.out ./... && go tool cover -func=coverage.out)
+(cd frontend && npm test -- --run && npm run lint && npm run build)
 ```
+
+Backend integration tests use disposable PostgreSQL containers and require Docker. The release gate requires more than 60% backend statement coverage. Frontend tests use Vitest and React Testing Library; `npm run build` includes the real TypeScript project check.
+
+The latest local verification passed 113 frontend tests and the full backend suite at 63.9% coverage. Cross-replica tests cover five editors, shared presence/cursors, reconnects, and maintenance. Browser checks covered two actual API processes, editing in both directions, and light/dark themes. Existing lint warnings and large editor bundles are recorded in the [readiness report](../design/production_readiness.md).
+
+Use [the synchronization guide](synchronization.md) to verify signed package exchange, conflict cancellation, explicit choices, and reverse propagation. Verify external providers with the services and credentials intended for the deployment.

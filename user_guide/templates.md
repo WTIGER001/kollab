@@ -7,10 +7,10 @@ Templates allow you to create standardized documents and reusable block snippets
 Page Templates provide a complete starting point for a new document. When you create a new document using a Page Template, the document is prepopulated with structure, boilerplate text, and placeholders.
 
 **How to Use Page Templates:**
-1. Click the **+ New Document** button in the sidebar.
-2. A **Template Gallery** modal will appear.
+1. Click **Create page** in the sidebar.
+2. The create-page wizard opens.
 3. Browse the available "Page Templates".
-4. Click on a template card to create a new document using that template. If you prefer to start from scratch, click the **Blank Document** button.
+4. Choose a template card or **Blank Page**, continue to the page details, enter the title and destination, and create the page.
 
 ## Block Snippets
 

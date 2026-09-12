@@ -26,7 +26,7 @@ To begin making changes to the document, click the **Edit** button in the top-ri
   * **Date Pills**: Clicking date pills opens the popup calendar date-selector.
   * **Images**: Hovering or selecting images triggers alignment and sizing toolbars.
   * **Layouts**: Section borders appear with layout controls (2-Column, Asymmetric, delete section).
-* **Handover & Handback**: Once you are finished, click the emerald **Done** button in the top-right toolbar. The editor locks and automatically saves a synchronization version block.
+* **Handover & Handback**: Once you are finished, click the **Done** button in the top-right toolbar. You can provide a checkpoint description or skip the named checkpoint; background saving continues. See [Version history](version_history.md).
 
 ---
 
@@ -37,3 +37,5 @@ In **Read-Only Mode**, click the **Analytics** button in the top-right toolbar t
 * **Basic Statistics**: Real-time count of total words, characters, active collaborators, and estimated reading time.
 * **Content Composition Chart**: A horizontal bar chart detailing the structure of blocks inside the document (Paragraphs, Headings, Tables, Tasks, Callouts, Media, Chips).
 * **Page Traffic (Last 7 Days)**: An interactive line graph charting views and unique visitors over the last week.
+
+Editing requires page write access and waits for initial collaboration synchronization. Keep the page open if synchronization or saving fails. Ordinary reconnects merge local changes; a restore or administrative import reloads the page to use its authoritative state. Multiple API replicas support the same workflow.

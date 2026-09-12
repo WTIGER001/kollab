@@ -88,3 +88,5 @@ The final full backend run passed at **63.9% statement coverage**. All **113 fro
 Deployment uses the exact verified Git revision without changing package versions on the server. The deployment checks every API replica before reporting success. Generated browser test output is excluded from source control.
 
 The edge proxy defaults to host ports 80 and 443; `HTTP_PORT` and `HTTPS_PORT` can override them. Existing additional proxy sites are preserved. Deployment initializes a missing sync signing key privately in the server environment file. Use the same key on trusted peer installations before exchanging sync packages.
+
+Builds run one service at a time. Frontend compilation has an explicit 2 GiB Node heap limit; Go compilation limits parallelism and reuses its build cache. Docker build contexts exclude local environments, uploaded data, generated reports, and installed dependencies. These limits reduce competing memory use but do not replace adequate host memory/swap and disk.

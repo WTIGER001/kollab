@@ -45,3 +45,5 @@ Administrators can enable a thin, high-visibility security banner across the top
 7. Click **Save Changes**. The banner will instantly display across the top of all user sessions.
 
 For bidirectional package exchange and conflict review, see [Synchronization](synchronization.md).
+
+The in-app **Server Admin Guide** describes accounts, backups, conflict review, replicas, and deployment. Its back arrow returns to Server Settings. For the complete operating procedure, see [Administration and deployment](admin_deployment_guide.md).

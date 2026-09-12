@@ -64,7 +64,9 @@ fi
 
 # 4. Build images first (old site stays online during build)
 echo "🐳 Building new Docker images before replacing running containers..."
-$DOCKER_CMD build
+$DOCKER_CMD build go-backend
+$DOCKER_CMD build media-preview
+$DOCKER_CMD build caddy
 
 # 5. Recreate containers after a successful build
 echo "🔄 Swapping running containers to new versions..."

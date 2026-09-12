@@ -84,7 +84,7 @@ Administrators can define a `ThemeConfig` payload that controls:
 - Typography styles for headings, body, and monospace code.
 - Shape variables (e.g., border radii for rounded vs square corners).
 
-For detailed specifications on how CSS variables are injected and inherited by isolated Shadow DOM plugins, please refer to **[13_theming_and_design_system.md](file:///Users/johnbauer/Dev/Personal/kollab/design/13_theming_and_design_system.md)**.
+For detailed specifications on how CSS variables are injected and inherited by isolated Shadow DOM plugins, please refer to **[13_theming_and_design_system.md](13_theming_and_design_system.md)**.
 
 ---
 

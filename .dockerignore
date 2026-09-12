@@ -1,0 +1,13 @@
+.git
+**/node_modules
+**/dist
+**/test-results
+**/playwright-report
+**/coverage*
+**/*.log
+.env*
+**/.env*
+uploads
+api/uploads
+api/server
+api/tmp
