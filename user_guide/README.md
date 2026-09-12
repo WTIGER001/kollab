@@ -44,3 +44,5 @@ Use these guides for the current application. Azure backup and Jira remain proto
 - [Reliability updates](production_readiness.md)
 
 Technical implementation details are in the [design documentation](../design/README.md).
+
+- [Kollab handbook and training demonstration](kollab_handbook.md)

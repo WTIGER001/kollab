@@ -268,3 +268,7 @@ The following is a formalized index of the remaining "long tail" macros designed
 *   **Draw.io Diagram**: Inserts an offline Draw.io vector drawing canvas for complex architecture diagrams. 🟢 **(Completed)**
 *   **Excalidraw Diagram**: Inserts an offline Excalidraw sketching canvas for hand-drawn style whiteboarding.
 *   **Mermaid Diagram**: Renders flowchart, sequence, and Gantt diagrams automatically from text definitions.
+
+### No-format theme contract
+
+`pre.no-format-panel` uses a mix of `--panel-color` and `--bg-color`, with `--text-secondary` on its leading border and `--text-primary` for literal text. This replaces a fixed dark overlay that reduced contrast in light presets. The persisted `noFormatPanel` schema is unchanged.

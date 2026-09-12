@@ -1,0 +1,1061 @@
+{
+  "format": "kollab.showcase.content.v1",
+  "timestamp": "2026-09-12T12:00:00Z",
+  "pageCount": 71,
+  "projects": [
+    "Features",
+    "Technical Implementation",
+    "Training & Workshops"
+  ],
+  "nodeInventory": [
+    {
+      "type": "bulletList",
+      "count": 137,
+      "pages": [
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-production_readiness",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-image_library",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "training-home",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "calloutPanel",
+      "count": 63,
+      "pages": [
+        "authoring-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-theming",
+        "ref-user_guide-version_history",
+        "technical-home"
+      ]
+    },
+    {
+      "type": "cardItem",
+      "count": 3,
+      "pages": [
+        "welcome"
+      ]
+    },
+    {
+      "type": "cardsGrid",
+      "count": 1,
+      "pages": [
+        "welcome"
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "count": 34,
+      "pages": [
+        "authoring-demo",
+        "document-model",
+        "ref-design-02_editor_core",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-multi_instance_sync"
+      ]
+    },
+    {
+      "type": "customImage",
+      "count": 1,
+      "pages": [
+        "training-materials"
+      ]
+    },
+    {
+      "type": "details",
+      "count": 5,
+      "pages": [
+        "assessment",
+        "authoring-demo",
+        "workshop-recovery"
+      ]
+    },
+    {
+      "type": "detailsContent",
+      "count": 5,
+      "pages": [
+        "assessment",
+        "authoring-demo",
+        "workshop-recovery"
+      ]
+    },
+    {
+      "type": "detailsSummary",
+      "count": 5,
+      "pages": [
+        "assessment",
+        "authoring-demo",
+        "workshop-recovery"
+      ]
+    },
+    {
+      "type": "doc",
+      "count": 71,
+      "pages": [
+        "architecture",
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "consistency",
+        "design-core",
+        "design-governance",
+        "design-operations",
+        "document-model",
+        "features-home",
+        "guides-administration",
+        "guides-authoring",
+        "guides-collaboration",
+        "guides-workspace",
+        "integrations-demo",
+        "knowledge-directory",
+        "maintenance",
+        "planning-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-local_user_management",
+        "ref-user_guide-mobile",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-page_access",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "reuse-demo",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "welcome",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "excerpt",
+      "count": 2,
+      "pages": [
+        "reuse-demo",
+        "welcome"
+      ]
+    },
+    {
+      "type": "heading",
+      "count": 422,
+      "pages": [
+        "architecture",
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "consistency",
+        "document-model",
+        "features-home",
+        "integrations-demo",
+        "knowledge-directory",
+        "maintenance",
+        "planning-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-mobile",
+        "ref-user_guide-page_access",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "reuse-demo",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "welcome",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "horizontalRule",
+      "count": 91,
+      "pages": [
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history"
+      ]
+    },
+    {
+      "type": "inlineDate",
+      "count": 2,
+      "pages": [
+        "authoring-demo",
+        "collaboration-demo"
+      ]
+    },
+    {
+      "type": "inlineStatus",
+      "count": 1,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "layoutColumn",
+      "count": 2,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "layoutSection",
+      "count": 1,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "listItem",
+      "count": 783,
+      "pages": [
+        "features-home",
+        "maintenance",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-production_readiness",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "macro:ai-content",
+      "count": 1,
+      "pages": [
+        "integrations-demo"
+      ]
+    },
+    {
+      "type": "macro:attachments-list",
+      "count": 1,
+      "pages": [
+        "training-materials"
+      ]
+    },
+    {
+      "type": "macro:chart-analytics",
+      "count": 1,
+      "pages": [
+        "planning-demo"
+      ]
+    },
+    {
+      "type": "macro:children-display",
+      "count": 10,
+      "pages": [
+        "design-core",
+        "design-governance",
+        "design-operations",
+        "features-home",
+        "guides-administration",
+        "guides-authoring",
+        "guides-collaboration",
+        "guides-workspace",
+        "technical-home",
+        "training-home"
+      ]
+    },
+    {
+      "type": "macro:content-review",
+      "count": 1,
+      "pages": [
+        "collaboration-demo"
+      ]
+    },
+    {
+      "type": "macro:drawio",
+      "count": 1,
+      "pages": [
+        "integrations-demo"
+      ]
+    },
+    {
+      "type": "macro:excalidraw",
+      "count": 1,
+      "pages": [
+        "integrations-demo"
+      ]
+    },
+    {
+      "type": "macro:excerpt-include",
+      "count": 2,
+      "pages": [
+        "maintenance",
+        "reuse-demo"
+      ]
+    },
+    {
+      "type": "macro:gitlab-issue-list",
+      "count": 1,
+      "pages": [
+        "integrations-demo"
+      ]
+    },
+    {
+      "type": "macro:hero",
+      "count": 1,
+      "pages": [
+        "welcome"
+      ]
+    },
+    {
+      "type": "macro:markdown-paste",
+      "count": 1,
+      "pages": [
+        "reuse-demo"
+      ]
+    },
+    {
+      "type": "macro:mentions-list",
+      "count": 1,
+      "pages": [
+        "collaboration-demo"
+      ]
+    },
+    {
+      "type": "macro:mermaid",
+      "count": 21,
+      "pages": [
+        "architecture",
+        "consistency",
+        "document-model",
+        "ref-design-02_editor_core",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "workshop-authoring",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "macro:page-index",
+      "count": 1,
+      "pages": [
+        "knowledge-directory"
+      ]
+    },
+    {
+      "type": "macro:page-properties",
+      "count": 71,
+      "pages": [
+        "architecture",
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "consistency",
+        "design-core",
+        "design-governance",
+        "design-operations",
+        "document-model",
+        "features-home",
+        "guides-administration",
+        "guides-authoring",
+        "guides-collaboration",
+        "guides-workspace",
+        "integrations-demo",
+        "knowledge-directory",
+        "maintenance",
+        "planning-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-local_user_management",
+        "ref-user_guide-mobile",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-page_access",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "reuse-demo",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "welcome",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "macro:page-properties-report",
+      "count": 1,
+      "pages": [
+        "knowledge-directory"
+      ]
+    },
+    {
+      "type": "macro:popular-labels",
+      "count": 1,
+      "pages": [
+        "knowledge-directory"
+      ]
+    },
+    {
+      "type": "macro:roadmap-planner",
+      "count": 1,
+      "pages": [
+        "planning-demo"
+      ]
+    },
+    {
+      "type": "macro:single-attachment",
+      "count": 1,
+      "pages": [
+        "training-materials"
+      ]
+    },
+    {
+      "type": "macro:team-calendars",
+      "count": 1,
+      "pages": [
+        "planning-demo"
+      ]
+    },
+    {
+      "type": "mention",
+      "count": 1,
+      "pages": [
+        "collaboration-demo"
+      ]
+    },
+    {
+      "type": "noFormatPanel",
+      "count": 1,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "orderedList",
+      "count": 98,
+      "pages": [
+        "features-home",
+        "maintenance",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "technical-home",
+        "training-materials",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "count": 1700,
+      "pages": [
+        "architecture",
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "consistency",
+        "design-core",
+        "design-governance",
+        "design-operations",
+        "document-model",
+        "features-home",
+        "guides-administration",
+        "guides-authoring",
+        "guides-collaboration",
+        "guides-workspace",
+        "integrations-demo",
+        "knowledge-directory",
+        "maintenance",
+        "planning-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-local_user_management",
+        "ref-user_guide-mobile",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-page_access",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "reuse-demo",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "welcome",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    },
+    {
+      "type": "tabItem",
+      "count": 3,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "table",
+      "count": 13,
+      "pages": [
+        "architecture",
+        "authoring-demo",
+        "consistency",
+        "document-model",
+        "features-home",
+        "maintenance",
+        "ref-design-07_import_export_media",
+        "ref-design-25_local_identity",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "training-home"
+      ]
+    },
+    {
+      "type": "tableCell",
+      "count": 225,
+      "pages": [
+        "architecture",
+        "authoring-demo",
+        "consistency",
+        "document-model",
+        "features-home",
+        "maintenance",
+        "ref-design-07_import_export_media",
+        "ref-design-25_local_identity",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "training-home"
+      ]
+    },
+    {
+      "type": "tableHeader",
+      "count": 36,
+      "pages": [
+        "architecture",
+        "authoring-demo",
+        "consistency",
+        "document-model",
+        "features-home",
+        "maintenance",
+        "ref-design-07_import_export_media",
+        "ref-design-25_local_identity",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "training-home"
+      ]
+    },
+    {
+      "type": "tableOfContents",
+      "count": 1,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "tableRow",
+      "count": 93,
+      "pages": [
+        "architecture",
+        "authoring-demo",
+        "consistency",
+        "document-model",
+        "features-home",
+        "maintenance",
+        "ref-design-07_import_export_media",
+        "ref-design-25_local_identity",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "training-home"
+      ]
+    },
+    {
+      "type": "tabsContainer",
+      "count": 1,
+      "pages": [
+        "authoring-demo"
+      ]
+    },
+    {
+      "type": "taskItem",
+      "count": 29,
+      "pages": [
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "workshop-authoring",
+        "workshop-recovery"
+      ]
+    },
+    {
+      "type": "taskList",
+      "count": 7,
+      "pages": [
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "workshop-authoring",
+        "workshop-recovery"
+      ]
+    },
+    {
+      "type": "text",
+      "count": 4802,
+      "pages": [
+        "architecture",
+        "assessment",
+        "authoring-demo",
+        "collaboration-demo",
+        "consistency",
+        "design-core",
+        "design-governance",
+        "design-operations",
+        "document-model",
+        "features-home",
+        "guides-administration",
+        "guides-authoring",
+        "guides-collaboration",
+        "guides-workspace",
+        "integrations-demo",
+        "knowledge-directory",
+        "maintenance",
+        "planning-demo",
+        "ref-design-02_editor_core",
+        "ref-design-03_macros_and_plugins",
+        "ref-design-04_search_and_ai",
+        "ref-design-05_data_lifecycle",
+        "ref-design-07_import_export_media",
+        "ref-design-08_metadata_and_social",
+        "ref-design-11_enterprise_publishing_and_templates",
+        "ref-design-12_page_routing_and_slugs",
+        "ref-design-23_database_migrations",
+        "ref-design-24_oidc_authentication",
+        "ref-design-25_local_identity",
+        "ref-design-26_confluence_style_permissions",
+        "ref-design-28_admin_settings_navigation",
+        "ref-design-container_releases",
+        "ref-design-multi_instance_sync",
+        "ref-design-production_readiness",
+        "ref-design-responsive_authoring",
+        "ref-user_guide-attachments_and_previews",
+        "ref-user_guide-backups_and_restores",
+        "ref-user_guide-basic_formatting",
+        "ref-user_guide-comments",
+        "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
+        "ref-user_guide-editor_macros",
+        "ref-user_guide-first_start",
+        "ref-user_guide-image_library",
+        "ref-user_guide-jira_confluence_integrations",
+        "ref-user_guide-local_user_management",
+        "ref-user_guide-mobile",
+        "ref-user_guide-oidc_sso",
+        "ref-user_guide-page_access",
+        "ref-user_guide-page_settings",
+        "ref-user_guide-project_portal",
+        "ref-user_guide-readonly_edit_modes",
+        "ref-user_guide-search",
+        "ref-user_guide-server_settings",
+        "ref-user_guide-synchronization",
+        "ref-user_guide-tags",
+        "ref-user_guide-tasks",
+        "ref-user_guide-teams_directory",
+        "ref-user_guide-templates",
+        "ref-user_guide-theming",
+        "ref-user_guide-trash_and_indexing",
+        "ref-user_guide-version_history",
+        "ref-user_guide-watching_pages",
+        "reuse-demo",
+        "technical-home",
+        "training-home",
+        "training-materials",
+        "welcome",
+        "workshop-authoring",
+        "workshop-recovery",
+        "workshop-technical"
+      ]
+    }
+  ],
+  "sourceHashes": {
+    "examples/kollab-team/pages/welcome.md": "cbb4d42d8970536e69b88c4cbcf53c0e9d80c889d979c865795e194a9ab46044",
+    "examples/kollab-team/pages/maintenance.md": "911b61b4e9572d82d0a3617b4d2f1ff49806c6dba2a8b0540a4449d359c1d27d",
+    "examples/kollab-team/pages/features-home.md": "d7ef4a313501a4473ff440e43c2d5eb38b771083cd23ec71fd0a3876167f778e",
+    "examples/kollab-team/pages/technical-home.md": "9c66769635aa453a7cc700ce27ac7a4d9a20cb12ee6a2c94c8287cf1fae3f6a3",
+    "examples/kollab-team/pages/training-home.md": "711723de8d13b962e217e051a1b23b67290b35c6be6bfbf7930a46632730fdc5",
+    "examples/kollab-team/pages/authoring-demo.md": "a61687ba439a016c95fb2f7d69e5a42e5e111542d8dee541022b1690ceb0d3d1",
+    "examples/kollab-team/pages/knowledge-directory.md": "c4d0db152ab17617c4d2e4f611b9bff6da34b51210c2bbab5208e04a8c5e1652",
+    "examples/kollab-team/pages/reuse-demo.md": "30d64e8f4d4b767b95e856263d0615f4b46c0220f17db92331c54ea98918f960",
+    "examples/kollab-team/pages/collaboration-demo.md": "168bd4626cfb14bae437a4708b01c01b9442d2c311b25fdc9dbacf3450e03392",
+    "examples/kollab-team/pages/planning-demo.md": "14f3bcaaffe0b651112a6058d98db98b3518c5e22aa76150dc82847a54ff9c9c",
+    "examples/kollab-team/pages/integrations-demo.md": "0d1315208de356890e0efca6690355fab26ec252d0cd6ac5a9b5adf77bb4129a",
+    "examples/kollab-team/pages/architecture.md": "2a4a72c3a04069f5c75f1686cd23469eaaad7b8acf9bbf00fb28ee60c466aa87",
+    "examples/kollab-team/pages/document-model.md": "5dd34ec38b2c6a678bddbafd5e644127e6243a5370ba6a01823cc858df996959",
+    "examples/kollab-team/pages/consistency.md": "e3af8328ced4565a9ddbb539ab41f876fa1d3845d27cabf7c87ba46a7f9c510a",
+    "examples/kollab-team/pages/training-materials.md": "341c67ecb94f7a7787c679ccf10d66d37b5409d6c70de7727950d0b1ee9d2d02",
+    "examples/kollab-team/pages/workshop-authoring.md": "418626d4cf150e446c43f3e6a1de61467ef64d19fe36791e790eb7d18716511b",
+    "examples/kollab-team/pages/workshop-recovery.md": "7d7a61f9fa5698a6c999da5656c3903eb27f5c4a05e78cea2aa19b72a5dbe3bc",
+    "examples/kollab-team/pages/workshop-technical.md": "da2efac75529646bf9defa7e8f17d6a8efd61c491ee2df9dfff9bcb3ecf2571d",
+    "examples/kollab-team/pages/assessment.md": "db4c9fa25b40910c8567f8a43cbcb0a68eca25f481d507ec8bdebbff35a633a9",
+    "user_guide/first_start.md": "0bcd5702db0983d4e6a57c9839aae638e311490c0d9420620ce7dd81a85328bf",
+    "user_guide/teams_directory.md": "1b7189ed6700afa31d245f4e5443b9153149ae5c3939dc67e21c4391b83a08fd",
+    "user_guide/project_portal.md": "d6d2a9b03a038d1f16b29e8e230eac5dca1a0481fe4300e1dd02ca0781efc659",
+    "user_guide/search.md": "7586af36b72e902826fd1d74f58d5e86ebf06c4235af5ba5989cc6edd54197ff",
+    "user_guide/mobile.md": "554bd1b66f7431aa6dd5219fc813f7fc4ee26e8c46f46b13ac4706ebaf20b8a5",
+    "user_guide/theming.md": "c26e733f6dc4cbf7cfffc5fbc75eb0dca4cc2778ea9aaeeee2a4d5c5a4e55230",
+    "user_guide/page_settings.md": "381db476f089edbd382523cae529b5830a9a242b90ad52dd8152ea0efac7cf71",
+    "user_guide/trash_and_indexing.md": "caa919892660c170655f407575610a2ec0056ad74167ad47c78e5113835ac61a",
+    "user_guide/basic_formatting.md": "a441901060d1fa451b0bae4d7d54bb8985b29125cc49070ae76886eb8fd793a0",
+    "user_guide/editor_macros.md": "c1c017e86292c69d50b6d8c563b7fc0ab585ed75ae5c9332c480f681cd5e5bd1",
+    "user_guide/templates.md": "bf9789cb1aa3b19931b9531166664c03b64ec64833784599145132ad972b81f1",
+    "user_guide/attachments_and_previews.md": "78f8c61f2c538b35ed4bc8b083410d821b4df856eac0799f8a4369275e467f88",
+    "user_guide/image_library.md": "729c15d346a3c81ec5b73d3c8640d9ba0ddc057d138333a16c3a4e09174dcae9",
+    "user_guide/tags.md": "5d5d9fa2aece2d9974026b70dbe064095c0f55ae15e956e386fe5f97e06104e2",
+    "user_guide/readonly_edit_modes.md": "8e36b6614b18929af4134c072881053c515152ca868a481a11a4c6d167c68993",
+    "user_guide/comments.md": "195a261b276118763a26771a8e4dce182e562d589308e7f251b5f3bafc370e61",
+    "user_guide/tasks.md": "f37654cdb8415131d265af1d6584d6b2abae746646d1c88148d08b66fe2ca67d",
+    "user_guide/content_reviews.md": "74946b60725d981d3647f49b452e5e0f0bc42999f6704446143d5bfb4caad4c9",
+    "user_guide/version_history.md": "c72b70998b9f489d7df64d41ee594108b50b402720ab4e437cd699719fe9d5c5",
+    "user_guide/page_access.md": "393f43c688327184503546a482a4b7e85a4b3b55c0775587e4b56e6a772c9c5c",
+    "user_guide/watching_pages.md": "d7b51d2e5840dd22a7fe702e6e2585e60f14471f91aca7a7ccf859df08500060",
+    "user_guide/server_settings.md": "baec03708179272e07b7ac760569268747673dd32b3e612776ef68eb53489278",
+    "user_guide/local_user_management.md": "bb431ccd22f95db37e7b82f20b700e5bb8b81bfcf8300d846de714a979ad974e",
+    "user_guide/oidc_sso.md": "5015577cf678b7fb35da5f5517edb5523354e2a899cee13437f9d05633c8922a",
+    "user_guide/backups_and_restores.md": "14461c6593f3ccb640f2d0b46c926d3662551db7263b50b4bcf13e628cd9a248",
+    "user_guide/synchronization.md": "bd90b171200a92ffd46a0c76cf6f001a0eb0e49f08149938a8a9d4f89b18bd07",
+    "user_guide/jira_confluence_integrations.md": "f399da4b6cf899aa11d1274cced2c710af97ac52ce3b24836e7b8a5ed30119ae",
+    "user_guide/confluence_import_guide.md": "06ce5a27971019f5ea5ecc6e85f5c859cbeaf75f1038e1ce9afb42bef030b427",
+    "design/02_editor_core.md": "96a7c957472556bd158df083d81eb79256049f1495c472568adbcf10dd184721",
+    "design/03_macros_and_plugins.md": "ca16b866921e857d543f2844ebf3b3a5f71f18e12cd0205eaf348af3b8840c10",
+    "design/04_search_and_ai.md": "977d77423d017d5c96ab7c9caab70f2e165c7b5ea72124a1fe5c5d0f76b00fc5",
+    "design/07_import_export_media.md": "e7691b8175d4c3580525b228a0d806afd92591f0db82eafb5c52ae7b94e677e7",
+    "design/08_metadata_and_social.md": "92cb5c10022d9a91de130fe8904c4a94c218b1fd7b5d4db55861d943539a39ab",
+    "design/12_page_routing_and_slugs.md": "c3b37319fa7b401fc758c009ef31704ac01bb133413cd9d258500e263e80852f",
+    "design/24_oidc_authentication.md": "391f9699d346b1d9f0baf4f1a889d003f78d34eb8fdb3716b49d166aed6fdb8a",
+    "design/25_local_identity.md": "28b41fc441bb70a8a259e3d742e40fae0c321d4095e57c2723a41b4babf068ad",
+    "design/26_confluence_style_permissions.md": "16e95f1b669a7f976bc8d0b6afc0a16a9a08c13d6b09dd2314f527dfdafaefda",
+    "design/05_data_lifecycle.md": "a1f23b6d45b01492dc8e3769c2cfe8999d998fbbad50de40f8760ea0462d8714",
+    "design/11_enterprise_publishing_and_templates.md": "42ade8bc2233e8004b48982840b7af8cadfe7b2cb644e13f9a62407b99b3d053",
+    "design/multi_instance_sync.md": "645370f84a1207bf821ac6b97988d8534f3047046d14dc6ff56c4e1fde408da0",
+    "design/23_database_migrations.md": "6f4cddcca3cebad3bc2a312b9b1ab2615f9282dda121000f0bdf9ed2d76d9bb9",
+    "design/container_releases.md": "915238b9eea3eb7758c78d9c8c7870f6e932d6fbbd7895aa49bfe14644e20aaf",
+    "design/responsive_authoring.md": "07701ce6568f41591e42c070c7c3471eb066d956c9725deab93a9dfb1fcaea51",
+    "design/28_admin_settings_navigation.md": "f27b4c2695b246e512a3d3c40339508f54303e6fe58eb479da0063574e2938c9",
+    "design/production_readiness.md": "aa45e6bde44f493e5c6234d88f09dee223701942cce1f175bb50e564feb1864a",
+    "examples/kollab-team/catalog.json": "abd39f0b42af90ac443d7ad37aafdf2bc0285f93c34330502b0173a9b9057a57",
+    "examples/kollab-team/build.mjs": "7719b94dc6487f574d9da52c37187cce3aa0ce63c84c9ba34fc80961b273efee",
+    "examples/kollab-team/slides.json": "a049b2fb9a39271eefa928d04d19c37d11e167c86a75ff067a0ad0daae057d15"
+  },
+  "assets": [
+    {
+      "source": "assets/course-cover.png",
+      "storageKey": "attachments/27214d7d-7166-5d25-8936-a869a3897069_Course cover.png",
+      "sha256": "cbdf5e4d9610276d5386c3fe61ac615fcc72c9ea76aceb5d09ab9245d93d5093",
+      "size": 44528
+    },
+    {
+      "source": "assets/Kollab Capabilities.pptx",
+      "storageKey": "attachments/379a10d7-08da-5dc8-b079-e90d79b22e58_Kollab Capabilities.pptx",
+      "sha256": "494e9981d766a155241766a09e5f4ec0ef443e63c0e23cbcf0e620b35c08c779",
+      "size": 74971
+    },
+    {
+      "source": "generated/instructor-guide.md",
+      "storageKey": "attachments/e49fbb27-403b-583d-99b9-6468f46de6ef_Instructor guide.md",
+      "sha256": "99f71658acabb4bdf1d8f56d29663f64c235dd65d80ecb051e61d65b33cea1dc",
+      "size": 9310
+    },
+    {
+      "source": "catalog.json",
+      "storageKey": "attachments/8d0fd6f1-06e0-5f6e-bbc7-2dcc2772d071_Handbook catalog.json",
+      "sha256": "abd39f0b42af90ac443d7ad37aafdf2bc0285f93c34330502b0173a9b9057a57",
+      "size": 3009
+    },
+    {
+      "source": "assets/course-cover.png",
+      "storageKey": "fb7d672e-0dd6-599b-be40-726def1d2ed3_original.png",
+      "sha256": "cbdf5e4d9610276d5386c3fe61ac615fcc72c9ea76aceb5d09ab9245d93d5093",
+      "size": 44528
+    }
+  ],
+  "contentSha256": "48471685a6e25da6c92e9a41b2fe21450444af329118ac727c2866eee333b86c"
+}

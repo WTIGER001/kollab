@@ -944,9 +944,9 @@ h7, h8 {
    No Format Panels (Preformatted plain Monospace Blocks)
    ========================================================================== */
 .ProseMirror pre.no-format-panel {
-  background: rgba(15, 17, 26, 0.6);
+  background: color-mix(in srgb, var(--panel-color) 40%, var(--bg-color));
   border: 1px solid var(--border-color);
-  border-left: 3px solid var(--text-muted);
+  border-left: 3px solid var(--text-secondary);
   padding: 8px 12px;
   border-radius: 6px;
   font-family: var(--font-mono);
@@ -959,7 +959,7 @@ h7, h8 {
   background: transparent;
   border: none;
   padding: 0;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 13.5px;
   border-radius: 0;
 }

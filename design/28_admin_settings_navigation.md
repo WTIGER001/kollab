@@ -27,8 +27,8 @@ Implemented. Server administration uses route-backed navigation instead of horiz
 flowchart LR
   Layout[MainLayout] -->|/_admin/*| AdminNav[AdminSidebar]
   Layout -->|workspace routes| WorkspaceNav[Document Sidebar]
-  AdminNav --> General[/_admin/settings]
-  AdminNav --> Users[/_admin/users]
+  AdminNav --> General["/_admin/settings"]
+  AdminNav --> Users["/_admin/users"]
   General --> Settings[ServerSettingsPage section]
   Users --> LocalUsers[AdminLocalUsersPage]
 ```

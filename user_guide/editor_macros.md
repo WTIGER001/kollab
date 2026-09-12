@@ -392,3 +392,7 @@ The GitLab Issue List macro embeds a dynamic table or list of issues (and work i
 ### Features
 - **Automatic Resolution**: You don't need to specify whether the ID belongs to a Project or a Group. The system intelligently detects it.
 - **Clickable Links**: Issue numbers in the data table are clickable links that will open the exact issue in GitLab directly.
+
+### No-format block readability
+
+Use a No Format panel when text must remain literal, such as an API request. Its background and text follow the selected light/dark theme and preset, so switching appearance keeps the exact text readable.

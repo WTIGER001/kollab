@@ -1,0 +1,18 @@
+{
+  "format": "kollab.showcase.source.v1",
+  "team": {"key":"kollab", "name":"Kollab", "abbreviation":"kollab", "description":"The working handbook for Kollab: capabilities, engineering design, and guided training."},
+  "projects": [
+    {"key":"features", "name":"Features", "abbreviation":"features", "description":"Practical guides and working examples for authors, reviewers, and administrators."},
+    {"key":"technical", "name":"Technical Implementation", "abbreviation":"technical", "description":"Architecture, editor schemas, API contracts, persistence, security boundaries, and operations."},
+    {"key":"training", "name":"Training & Workshops", "abbreviation":"training", "description":"An instructor-led capabilities course, downloadable PowerPoint, and hands-on exercises."}
+  ],
+  "referenceGroups": [
+    {"key":"guides-workspace", "project":"features", "title":"Workspace and navigation", "files":["user_guide/first_start.md","user_guide/teams_directory.md","user_guide/project_portal.md","user_guide/search.md","user_guide/mobile.md","user_guide/theming.md","user_guide/page_settings.md","user_guide/trash_and_indexing.md"]},
+    {"key":"guides-authoring", "project":"features", "title":"Writing and rich content", "files":["user_guide/basic_formatting.md","user_guide/editor_macros.md","user_guide/templates.md","user_guide/attachments_and_previews.md","user_guide/image_library.md","user_guide/tags.md"]},
+    {"key":"guides-collaboration", "project":"features", "title":"Collaboration and governance", "files":["user_guide/readonly_edit_modes.md","user_guide/comments.md","user_guide/tasks.md","user_guide/content_reviews.md","user_guide/version_history.md","user_guide/page_access.md","user_guide/watching_pages.md"]},
+    {"key":"guides-administration", "project":"features", "title":"Administration and recovery", "files":["user_guide/server_settings.md","user_guide/local_user_management.md","user_guide/oidc_sso.md","user_guide/backups_and_restores.md","user_guide/synchronization.md","user_guide/jira_confluence_integrations.md","user_guide/confluence_import_guide.md"]},
+    {"key":"design-core", "project":"technical", "title":"Application architecture", "files":["design/02_editor_core.md","design/03_macros_and_plugins.md","design/04_search_and_ai.md","design/07_import_export_media.md","design/08_metadata_and_social.md","design/12_page_routing_and_slugs.md"]},
+    {"key":"design-governance", "project":"technical", "title":"Identity and content governance", "files":["design/24_oidc_authentication.md","design/25_local_identity.md","design/26_confluence_style_permissions.md","design/05_data_lifecycle.md","design/11_enterprise_publishing_and_templates.md"]},
+    {"key":"design-operations", "project":"technical", "title":"Persistence and operations", "files":["design/multi_instance_sync.md","design/23_database_migrations.md","design/container_releases.md","design/responsive_authoring.md","design/28_admin_settings_navigation.md","design/production_readiness.md"]}
+  ]
+}

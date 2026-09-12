@@ -77,3 +77,5 @@ This directory contains the hierarchical technical specifications of Project Kol
 - [Production readiness updates](production_readiness.md)
 
 - [Multiple API instances and bidirectional synchronization](multi_instance_sync.md)
+
+- [Maintained Kollab handbook archive](kollab_handbook.md)

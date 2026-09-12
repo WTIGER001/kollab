@@ -15,7 +15,7 @@ sequenceDiagram
   loop each migration
     Server->>DB: Read version and SHA-256 checksum
     alt unapplied
-      Server->>DB: BEGIN; execute SQL; record version/checksum; COMMIT
+      Server->>DB: BEGIN, execute SQL, record version/checksum, COMMIT
     else applied with matching checksum
       Server->>Server: Skip
     else checksum differs

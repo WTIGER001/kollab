@@ -22,7 +22,7 @@ sequenceDiagram
   B->>DB: Poll current snapshot and presence
   DB-->>B: Snapshot N+1 and active connections
   B->>DB: Save stale snapshot at N
-  DB-->>B: Reject; return N+1
+  DB-->>B: Reject, return N+1
   B->>B: Merge Yjs state
   B->>DB: Save merged snapshot at N+1
   DB-->>B: Accepted N+2
