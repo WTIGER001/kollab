@@ -13,6 +13,7 @@ import {
   Select,
   MenuItem,
   Table,
+  TableContainer,
   TableBody,
   TableCell,
   TableHead,
@@ -135,7 +136,7 @@ export const IntegrationsManager: React.FC<IntegrationsManagerProps> = ({ scope,
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
           Connections
         </Typography>
@@ -143,7 +144,7 @@ export const IntegrationsManager: React.FC<IntegrationsManagerProps> = ({ scope,
           variant="contained" 
           startIcon={<Plus size={16} />} 
           onClick={() => setIsAddDialogOpen(true)}
-          sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+          sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "var(--primary-contrast)", "&:hover": { bgcolor: "var(--secondary-color)" } }}
         >
           Add Connection
         </Button>
@@ -160,6 +161,7 @@ export const IntegrationsManager: React.FC<IntegrationsManagerProps> = ({ scope,
           </Typography>
         </Box>
       ) : (
+        <TableContainer role="region" aria-label="Integration connections" tabIndex={0} sx={{ maxWidth: "100%", overflowX: "auto" }}>
         <Table sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
           <TableHead sx={{ bgcolor: "var(--panel-color)" }}>
             <TableRow>
@@ -186,6 +188,7 @@ export const IntegrationsManager: React.FC<IntegrationsManagerProps> = ({ scope,
             ))}
           </TableBody>
         </Table>
+        </TableContainer>
       )}
 
       {/* Add Dialog */}
@@ -260,7 +263,7 @@ export const IntegrationsManager: React.FC<IntegrationsManagerProps> = ({ scope,
             onClick={handleAdd} 
             variant="contained" 
             disabled={!name}
-            sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
+            sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "var(--primary-contrast)", "&:hover": { bgcolor: "var(--secondary-color)" } }}
           >
             Save Connection
           </Button>

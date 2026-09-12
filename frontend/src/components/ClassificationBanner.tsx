@@ -25,6 +25,9 @@ export const ClassificationBanner: React.FC<ClassificationBannerProps> = ({ syst
       style={{
         width: "100%",
         height: "26px",
+        flexShrink: 0,
+        overflow: "hidden",
+        whiteSpace: "nowrap",
         backgroundColor: `var(--classification-banner-bg, ${bgColor})`,
         color: `var(--classification-banner-text, ${textColor})`,
         display: "flex",

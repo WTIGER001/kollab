@@ -33,13 +33,15 @@ Administrators can enable a thin, high-visibility security banner across the top
 
 ### How to Configure:
 1. Navigate to **System Administration** > **Server Settings** (`/_admin/settings`).
-2. Locate the **Security Classification Banner** card under the General / Branding tab.
+2. Locate the **Security Classification Banner** card on the **General** page.
 3. Toggle the **Enable Security Classification Banner** switch to **ON**.
 4. Choose a quick preset or customize the settings:
-   - 🟢 **UNCLASSIFIED** (Green background)
-   - 🟡 **PROPRIETARY** (Yellow/Gold background)
-   - 🟠 **CONFIDENTIAL** (Orange background)
-   - 🔴 **RESTRICTED** (Red background)
+   - **UNCLASSIFIED**
+   - **PROPRIETARY**
+   - **CONFIDENTIAL**
+   - **RESTRICTED**
+
+   Presets use theme colors so they remain readable in light and dark mode.
 5. Optionally edit the **Classification Text**, **Background theme variable**, and **Text theme variable**. Use the provided `var(--...)` values so the banner adapts to your selected light/dark theme.
 6. View the **Live Preview** box to verify contrast and readability.
 7. Click **Save Changes**. The banner will instantly display across the top of all user sessions.
@@ -47,3 +49,13 @@ Administrators can enable a thin, high-visibility security banner across the top
 For bidirectional package exchange and conflict review, see [Synchronization](synchronization.md).
 
 The in-app **Server Admin Guide** describes accounts, backups, conflict review, replicas, and deployment. Its back arrow returns to Server Settings. For the complete operating procedure, see [Administration and deployment](admin_deployment_guide.md).
+
+## Settings on a phone or tablet
+
+Tap **Open admin navigation** in the top bar to choose a settings page. The drawer replaces the workspace page tree; there are no settings tabs. Tap a section to open it and close the drawer, tap **Close admin navigation**, or tap outside the drawer. On a keyboard, **Escape** closes it too.
+
+The admin sidebar also includes **System images**, **System templates**, **Cloud backups (preview)**, and **Admin guide**. **Back to workspace** returns to your recent pages and restores workspace navigation.
+
+Each settings page shows its name and **Save Changes** above the scrolling form. On narrow screens, long forms use one column and the save button remains easy to reach. While a save is running, the button reads **Saving…** and prevents duplicate submissions. Theme choices use compact preview cards; custom light and dark palette controls stack vertically on phones.
+
+See [Using Kollab on a phone](mobile.md) for navigation, search, and editing controls.

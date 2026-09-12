@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TopNavbar } from './TopNavbar';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+const CurrentRoute = () => { const location = useLocation(); return <output data-testid="current-route">{location.pathname}{location.search}</output>; };
 import type { Team } from '../services/api';
 
 describe('TopNavbar', () => {
@@ -42,12 +44,14 @@ describe('TopNavbar', () => {
     onToggleSidebar: mockOnToggleSidebar
   };
 
+  const renderNavbar = () => render(<MemoryRouter><TopNavbar {...defaultProps} /><CurrentRoute /></MemoryRouter>);
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders brand logo and user avatar correctly', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     expect(screen.getByText('Kollab')).toBeInTheDocument();
     
     // Multiple elements might have the display name text depending on avatar
@@ -59,16 +63,14 @@ describe('TopNavbar', () => {
   });
 
   it('toggles sidebar on menu button click', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     // The first button in the toolbar is the sidebar toggle
-    const toggleButtons = screen.getAllByRole('button');
-    // First button is sidebar toggle, wait, let's find it by role and no specific label
-    fireEvent.click(toggleButtons[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Close workspace navigation' }));
     expect(mockOnToggleSidebar).toHaveBeenCalled();
   });
 
   it('toggles theme on button click', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     
     // It's the button with the tooltip "Switch to Dark Mode"
     const themeBtn = screen.getByLabelText('Switch to Dark Mode');
@@ -77,33 +79,24 @@ describe('TopNavbar', () => {
   });
 
   it('opens help on button click', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     const helpBtn = screen.getByLabelText('Help & User Guide');
     fireEvent.click(helpBtn);
     expect(mockOnOpenHelp).toHaveBeenCalled();
   });
 
   it('handles search input and Enter key', () => {
-    // Mock window.location.href
-    const originalLocation = window.location;
-    // @ts-ignore
-    delete window.location;
-    vi.stubGlobal('location', { ...originalLocation, href: '' });
-
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     const searchInput = screen.getByLabelText('global search');
     
     fireEvent.change(searchInput, { target: { value: 'test query' } });
     fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
     
-    expect(window.location.href).toBe('/search?q=test%20query');
-
-    // Restore window.location
-    vi.stubGlobal('location', originalLocation);
+    expect(screen.getByTestId('current-route')).toHaveTextContent('/search?q=test%20query');
   });
 
   it('opens profile menu and triggers actions', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     
     // Find the profile container by looking for the display name text node
     const profileContainers = screen.getAllByText('John Doe');
@@ -118,7 +111,7 @@ describe('TopNavbar', () => {
   });
 
   it('triggers logout from profile menu', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     
     fireEvent.click(screen.getAllByText('John Doe')[0]);
     
@@ -127,7 +120,7 @@ describe('TopNavbar', () => {
   });
 
   it('toggles developer mode from profile menu', () => {
-    render(<TopNavbar {...defaultProps} />);
+    renderNavbar();
     
     fireEvent.click(screen.getAllByText('John Doe')[0]);
     

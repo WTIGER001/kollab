@@ -131,11 +131,11 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   }
 
   return (
-    <Box sx={{ display: "flex", width: "100%", height: "100%" }}>
+    <Box sx={{ display: "flex", width: "100%", height: "100%", minWidth: 0, minHeight: 0 }}>
       <EditorCanvas
         key={activeDoc.id} // Remount editor on switching documents
         activeDocId={activeDoc.id}
-        authToken={userToken}
+        authToken={isMockMode ? null : userToken}
         initialTitle={activeDoc.title}
         initialContent={activeDoc.content || ""}
         initialEditMode={false}

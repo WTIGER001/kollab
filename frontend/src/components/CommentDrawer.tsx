@@ -1,6 +1,7 @@
 import { API_BASE_URL, getSharedHeaders } from "../services/api";
 import React, { useEffect, useState } from "react";
-import { Drawer, Box, Typography, IconButton, TextField, Button, CircularProgress } from "@mui/material";
+import { Drawer, Box, Typography, IconButton, TextField, Button, CircularProgress, useMediaQuery } from "@mui/material";
+import { useSystemSettings } from "../hooks/queries";
 import { X, MessageSquare, Send, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserAvatar } from "./UserAvatar";
@@ -54,6 +55,8 @@ const deleteComment = async ({ commentId, token }: { commentId: string, token: s
 };
 
 export const CommentDrawer: React.FC<CommentDrawerProps> = ({ documentId, authToken, currentUserId, currentUserDisplayName }) => {
+  const isMobile = useMediaQuery("(max-width:899.95px)");
+  const { data: systemSettings } = useSystemSettings({ enabled: false });
   const [open, setOpen] = useState(false);
   const [activeAnchorId, setActiveAnchorId] = useState<string | null>(null);
   const [newCommentText, setNewCommentText] = useState("");
@@ -139,17 +142,22 @@ export const CommentDrawer: React.FC<CommentDrawerProps> = ({ documentId, authTo
       anchor="right"
       open={open}
       onClose={() => setOpen(false)}
-      variant="persistent"
+      variant={isMobile ? "temporary" : "persistent"}
       sx={{
-        width: open ? 320 : 0,
+        width: isMobile ? 0 : open ? 320 : 0,
         flexShrink: 0,
         "& .MuiDrawer-paper": {
-          width: 320,
+          width: isMobile ? "min(360px, 100vw)" : 320,
           boxSizing: "border-box",
           bgcolor: "var(--bg-color)",
           borderLeft: "1px solid var(--border-color)",
-          top: 64, // below navbar
-          height: "calc(100% - 64px)"
+          position: isMobile ? "fixed" : "relative",
+          top: 0,
+          height: "100%",
+          pt: isMobile ? `calc(env(safe-area-inset-top) + ${systemSettings?.classificationBannerEnabled ? 26 : 0}px)` : 0,
+          pb: isMobile ? "env(safe-area-inset-bottom)" : 0,
+          color: "var(--text-primary)",
+          "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 },
         }
       }}
     >
@@ -158,7 +166,7 @@ export const CommentDrawer: React.FC<CommentDrawerProps> = ({ documentId, authTo
           <MessageSquare size={18} />
           <Typography variant="h6" sx={{ fontSize: "1rem", fontWeight: 600 }}>Comments</Typography>
         </Box>
-        <IconButton size="small" onClick={() => { setOpen(false); setActiveAnchorId(null); }}>
+        <IconButton aria-label="Close comments" size="small" onClick={() => { setOpen(false); setActiveAnchorId(null); }}>
           <X size={18} />
         </IconButton>
       </Box>

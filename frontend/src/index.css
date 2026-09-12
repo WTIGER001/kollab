@@ -1014,3 +1014,16 @@ h7, h8 {
 .cards-grid-container.size-lg [data-node-view-content-react] > * {
   min-height: 300px !important;
 }
+
+/* Keep form entry readable and avoid automatic input zoom on phones. */
+@media (max-width: 899.95px) {
+  .MuiInputBase-input:not(.page-title-input),
+  input:not(.page-title-input):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  textarea:not(.page-title-input),
+  select {
+    font-size: 16px !important;
+  }
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}

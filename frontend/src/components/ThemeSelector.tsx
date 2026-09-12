@@ -17,17 +17,18 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
 }) => {
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' }, gap: 2, mt: 1 }}>
           {presets.map((preset) => {
             const colors = preset.colors[themeMode];
             const isActive = activeThemeId === preset.id;
             
             return (
-              <Box key={preset.id} sx={{ width: '100%', maxWidth: 200 }}>
-                <Card 
+              <Box key={preset.id} sx={{ width: '100%', minWidth: 0 }}>
+                <Card
                   onClick={() => onSelectTheme(preset.id)}
                   sx={{ 
                     cursor: 'pointer',
+                    width: '100%', textAlign: 'left', p: 0, height: '100%',
                     bgcolor: colors.background,
                     border: `2px solid ${isActive ? colors.primary : colors.border}`,
                     borderRadius: preset.cssVariables['--border-radius-card'],
@@ -55,6 +56,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                           color: colors.textPrimary,
                           fontFamily: preset.cssVariables['--font-headings'] || 'inherit',
                           fontWeight: 700,
+                          fontSize: { xs: '16px', md: '20px' }, overflowWrap: 'anywhere',
                           mb: 0.5
                         }}
                       >
@@ -88,7 +90,8 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                         variant="contained"
                         aria-label={`Select ${preset.name}`}
                         aria-pressed={isActive}
-                        sx={{ 
+                        sx={{
+                          minHeight: 44, minWidth: 0, width: "100%", fontSize: { xs: "12px", md: "14px" },
                           bgcolor: colors.primary, 
                           color: getContrastRatio(colors.primary, '#fff') >= 4.5 ? '#fff' : '#111',
                           borderRadius: preset.cssVariables['--border-radius-button'],

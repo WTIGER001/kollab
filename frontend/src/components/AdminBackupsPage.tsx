@@ -55,9 +55,13 @@ export const AdminBackupsPage: React.FC = () => {
       margin: '0 auto',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-primary)',
-      minHeight: '100vh',
+      minHeight: '100%',
+      width: '100%',
+      minWidth: 0,
+      flexShrink: 0,
+      overflowWrap: 'anywhere',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700 }}>System & Azure Backup Management</h1>
           <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
@@ -69,7 +73,7 @@ export const AdminBackupsPage: React.FC = () => {
           disabled={isExporting}
           style={{
             backgroundColor: 'var(--primary-color)',
-            color: '#ffffff',
+            color: 'var(--primary-contrast)',
             border: 'none',
             borderRadius: 'var(--border-radius-button, 6px)',
             padding: '10px 20px',
@@ -122,7 +126,7 @@ export const AdminBackupsPage: React.FC = () => {
             </label>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 Azure Storage Account Name
@@ -161,7 +165,7 @@ export const AdminBackupsPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px', marginBottom: '24px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                 Backup Schedule Cron (UTC)
@@ -216,7 +220,7 @@ export const AdminBackupsPage: React.FC = () => {
               </label>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                   Azure Subscription ID
@@ -255,7 +259,7 @@ export const AdminBackupsPage: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', marginBottom: '6px', color: 'var(--text-secondary)' }}>
                   Azure Backup Vault Name
@@ -299,7 +303,7 @@ export const AdminBackupsPage: React.FC = () => {
             type="submit"
             style={{
               backgroundColor: 'var(--secondary-color, #1976d2)',
-              color: '#ffffff',
+              color: 'var(--primary-contrast)',
               border: 'none',
               borderRadius: 'var(--border-radius-button, 6px)',
               padding: '10px 18px',
@@ -320,7 +324,7 @@ export const AdminBackupsPage: React.FC = () => {
         padding: '24px',
         boxShadow: 'var(--shadow-elevation, 0 4px 12px rgba(0,0,0,0.05))',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '20px', margin: 0 }}>📜 Backup Archive History & Restore</h2>
           <label style={{
             backgroundColor: 'var(--bg-color)',
@@ -336,6 +340,7 @@ export const AdminBackupsPage: React.FC = () => {
           </label>
         </div>
 
+        <div role="region" aria-label="Example cloud backup history" tabIndex={0} style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '14px' }}>
@@ -371,6 +376,7 @@ export const AdminBackupsPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

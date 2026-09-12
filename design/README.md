@@ -31,6 +31,7 @@ This directory contains the hierarchical technical specifications of Project Kol
 *Tiptap headless editor integration, Yjs syncing updates, WebSocket relays, presence cursors, shadow DOM plugin architecture, and read-only states.*
 
 ### ⚙️ Systems & Administration
+- [Responsive authoring](responsive_authoring.md) - Mobile navigation, editor controls, comments, and form layouts.
 - [Container releases](container_releases.md) - GitHub/GHCR builds, image-only deployment, and the local build script.
 - [15. Server Settings & Branding](15_server_settings_and_branding.md) - Site title, welcome messages, auth background imagery.
 - [16. URL Slugs & Aliases](16_url_slugs.md) - Dynamic slug auto-generation, uniqueness constraints, and old-alias redirection routing.

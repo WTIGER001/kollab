@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   Typography,
-  IconButton,
   Select,
   MenuItem,
   FormControl,
@@ -12,7 +11,6 @@ import {
   Switch,
   Divider
 } from "@mui/material";
-import { Sparkles, ArrowLeft } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
 import { downloadBackup, restoreBackup } from "../services/api";
 import { IntegrationsManager } from "./IntegrationsManager";
@@ -24,7 +22,7 @@ import { LogoSelector } from "./LogoSelector";
 
 interface ServerSettingsPageProps {
   currentTheme: WorkspaceTheme | null;
-  onSave: (name: string, logoUrl: string, lightMode: ColorScheme, darkMode: ColorScheme) => void;
+  onSave: (name: string, logoUrl: string, lightMode: ColorScheme, darkMode: ColorScheme) => void | Promise<void>;
   systemSettings: SystemSettings | null;
   onSaveSettings: (settings: SystemSettings) => Promise<void>;
   onBack: () => void;
@@ -55,6 +53,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   section = "general",
 }) => {
   const [name, setName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   
   const { activeThemeId, setActiveThemeId, themeMode } = useAppStore();
@@ -137,6 +136,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   }, [currentTheme, systemSettings]);
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       await onSave(name, logoUrl, lightColors, darkColors);
       await onSaveSettings({
@@ -163,6 +164,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
     } catch (err: any) {
       console.error(err);
       showToast(err.message || "Failed to save server settings", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -221,25 +224,18 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   };
 
   return (
-    <Box sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", bgcolor: "var(--bg-color)", color: "var(--text-primary)" }}>
-      {/* Header Panel */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 4, py: 3, borderBottom: "1px solid var(--border-color)" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={onBack} sx={{ color: "var(--text-secondary)", "&:hover": { color: "var(--text-primary)" } }}>
-            <ArrowLeft size={20} />
-          </IconButton>
-          <Box sx={{ p: 0.75, borderRadius: 1.5, backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)", display: "flex" }}>
-            <Sparkles size={16} style={{ color: "var(--primary-color)" }} />
-          </Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.02em" }}>
-            Server Settings
-          </Typography>
-          <Typography sx={{ color: "var(--text-secondary)", fontSize: "14px" }}>/ {sectionTitles[section]}</Typography>
+    <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, height: "100%", display: "flex", flexDirection: "column", bgcolor: "var(--bg-color)", color: "var(--text-primary)" }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between", gap: 2, px: { xs: 2, md: 4 }, py: 2, flexShrink: 0, borderBottom: "1px solid var(--border-color)" }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ color: "var(--text-secondary)", fontSize: "12px", mb: 0.25 }}>Server Settings</Typography>
+          <Typography component="h1" variant="h5" sx={{ fontSize: { xs: "22px", md: "26px" }, fontWeight: 800, overflowWrap: "anywhere" }}>{sectionTitles[section]}</Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
+        <Box sx={{ display: "flex", gap: 1.5, flexShrink: 0 }}>
           <Button
             onClick={onBack}
+            disabled={isSaving}
             sx={{
+              minHeight: 44,
               color: "var(--text-secondary)",
               fontSize: "13px",
               fontWeight: 600,
@@ -252,7 +248,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           <Button
             variant="contained"
             onClick={handleSave}
+            disabled={isSaving}
             sx={{
+              minHeight: 44, flex: { xs: 1, sm: "none" }, whiteSpace: "nowrap", color: "var(--primary-contrast)",
               py: 1,
               px: 3,
               fontSize: "13px",
@@ -264,12 +262,12 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               "&:hover": { bgcolor: "var(--secondary-color)" }
             }}
           >
-            Save Changes
+            {isSaving ? "Saving…" : "Save Changes"}
           </Button>
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 5 }, maxWidth: "1000px", width: "100%" }}>
+      <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflowY: "auto", overscrollBehavior: "contain", pb: "max(24px, env(safe-area-inset-bottom))", p: { xs: 2, md: 5 }, maxWidth: "1000px", width: "100%" }}>
         {section === "general" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <TextField
@@ -330,6 +328,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                   </Typography>
                 </Box>
                 <Switch
+                  slotProps={{ input: { "aria-label": "Enable Security Classification Banner" } }}
                   checked={classificationBannerEnabled}
                   onChange={(e) => setClassificationBannerEnabled(e.target.checked)}
                   color="primary"
@@ -396,7 +395,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                   </Box>
 
                   {/* Banner Text & Theme Tokens */}
-                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 2 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "2fr 1fr 1fr" }, gap: 2 }}>
                     <TextField
                       label="Classification Text"
                       value={classificationBannerText}
@@ -479,7 +478,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Save workspace colors for Light and Dark modes. These colors apply when the Default preset is selected.
               </Typography>
               
-              <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" }, gap: 4 }}>
                 {/* Light Palette */}
                 <Box sx={{ p: 3, border: "1px solid var(--border-color)", borderRadius: 2, bgcolor: "var(--glass-bg)" }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 3, color: "text.primary" }}>
@@ -529,8 +528,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Configure how long page viewing and modification history is archived. High-security compliance environments should use the "forever" setting.
               </Typography>
 
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                <FormControl size="small" sx={{ minWidth: 0, width: { xs: "100%", sm: 240 } }}>
                   <InputLabel id="audit-policy-label">Retention Policy</InputLabel>
                   <Select
                     labelId="audit-policy-label"
@@ -567,8 +566,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Configure how long deleted pages remain in the Trash Bin before they are permanently purged from the server database.
               </Typography>
 
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                <FormControl size="small" sx={{ minWidth: 0, width: { xs: "100%", sm: 240 } }}>
                   <InputLabel id="trash-policy-label">Pruning Policy</InputLabel>
                   <Select
                     labelId="trash-policy-label"
@@ -644,6 +643,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                   </Typography>
                 </Box>
                 <Switch
+                  slotProps={{ input: { "aria-label": "Enable document previews" } }}
                   checked={asposeEnabled}
                   onChange={(e) => setAsposeEnabled(e.target.checked)}
                   color="primary"
@@ -692,7 +692,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Export the entire Kollab server state (including database seed JSON and all uploaded attachment media) as a single portable ZIP archive, or restore a previously saved backup file.
               </Typography>
 
-              <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mb: 3 }}>
                 <Button
                   variant="contained"
                   onClick={async () => {
@@ -769,13 +769,13 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
                 Logo Height
               </Typography>
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
                 <Select
                   value={["Small", "Medium", "Large"].includes(authLogoSize) ? authLogoSize : "Custom"}
                   onChange={(e) => setAuthLogoSize(e.target.value === "Custom" ? "150" : e.target.value)}
                   size="small"
                   sx={{
-                    width: 200,
+                    width: { xs: "100%", sm: 200 },
                     backgroundColor: "var(--bg-color)",
                     "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" },
                   }}
@@ -882,12 +882,12 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         )}
 
         {section === "integrations" && (
-          <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
+          <Box sx={{ p: { xs: 0, md: 4 }, animation: "fadeIn 0.3s ease" }}>
             <IntegrationsManager scope="system" entityId="" />
           </Box>
         )}
       </Box>
-      <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid var(--border-color)", opacity: 0.6, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+      <Box sx={{ mt: 4, pt: 3, borderTop: "1px solid var(--border-color)", opacity: 0.6, display: { xs: "none", md: "flex" }, flexDirection: "column", alignItems: "center", gap: 0.5 }}>
         <Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
           Kollab v{import.meta.env.VITE_APP_VERSION || "0.0.0"}
         </Typography>

@@ -118,12 +118,22 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   addWatch,
   removeWatch,
 }) => {
+  const toggleWatch = async () => {
+    if (!activeDocId) return;
+    try {
+      if (isWatching) await removeWatch(activeDocId);
+      else await addWatch(activeDocId);
+      setIsWatching(!isWatching);
+    } catch (err) { console.error("Failed to toggle page watch:", err); }
+  };
   return (
     <>
       {editor && !previewVersion && (
         <Box
           sx={{
             display: "flex",
+            minWidth: 0,
+            "@media (max-width:899.95px)": { "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 }, "& .MuiButton-root": { minHeight: 44, minWidth: 44 }, "& [data-mobile-secondary]": { display: "none" } },
             flexDirection: { xs: "column", sm: "row" },
             alignItems: { xs: "stretch", sm: "center" },
             justifyContent: "space-between",
@@ -144,11 +154,12 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 alignItems: "center",
                 gap: 0.75,
                 flexWrap: "wrap",
+                minWidth: 0, overflowWrap: "anywhere",
                 color: "text.secondary",
                 userSelect: "none",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minWidth: 0, flexWrap: "wrap" }}>
                 {selectedTeamName && (
                   <>
                     <Typography
@@ -235,7 +246,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         borderRadius: "4px",
                         border: "1px solid rgba(139, 92, 246, 0.15)",
                         "&:hover": {
-                          backgroundColor: "rgba(139, 92, 246, 0.12)",
+                          backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                         },
                       }}
                     >
@@ -256,10 +267,10 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   fontWeight: 700,
                   fontFamily: '"Outfit", sans-serif',
                   letterSpacing: "0.05em",
-                  backgroundColor: "rgba(139, 92, 246, 0.12)",
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                   color: "var(--primary-color)",
                   border: "1px solid rgba(139, 92, 246, 0.25)",
-                  borderColor: "rgba(139, 92, 246, 0.25)",
+                  borderColor: "color-mix(in srgb, var(--primary-color) 25%, transparent)",
                   borderRadius: "4px",
                 }}
               />
@@ -286,7 +297,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       borderRadius: "4px",
                       border: "1px solid rgba(139, 92, 246, 0.15)",
                       "&:hover": {
-                        backgroundColor: "rgba(139, 92, 246, 0.12)",
+                        backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                       },
                     }}
                   >
@@ -349,10 +360,11 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
           )}
 
           {/* Right: Actions Toolbar */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap", minWidth: 0 }}>
             {/* Active Users */}
             {uniqueActiveUsers.length > 0 && (
               <Box
+                data-mobile-secondary
                 sx={{ display: "flex", alignItems: "center", gap: 0.5, mr: 1 }}
               >
                 {uniqueActiveUsers.map((user) => {
@@ -417,14 +429,14 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   }
                 }}
                 sx={{
-                  color: isFavorite ? "#fbbf24" : "text.secondary",
+                  color: isFavorite ? "var(--accent-color)" : "text.secondary",
                   "&:hover": {
-                    color: "#fbbf24",
+                    color: "var(--accent-color)",
                     backgroundColor: "action.hover",
                   },
                 }}
               >
-                <Star size={14} fill={isFavorite ? "#fbbf24" : "none"} />
+                <Star size={14} fill={isFavorite ? "var(--accent-color)" : "none"} />
               </IconButton>
             </Tooltip>
 
@@ -433,20 +445,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
               <IconButton
                 size="small"
                 aria-label={isWatching ? "Stop watching this page" : "Watch this page"}
-                onClick={async () => {
-                  if (!activeDocId) return;
-                  try {
-                    if (isWatching) {
-                      await removeWatch(activeDocId);
-                      setIsWatching(false);
-                    } else {
-                      await addWatch(activeDocId);
-                      setIsWatching(true);
-                    }
-                  } catch (err) {
-                    console.error("Failed to toggle page watch:", err);
-                  }
-                }}
+                data-mobile-secondary
+                onClick={toggleWatch}
                 sx={{
                   color: isWatching ? "var(--primary-color)" : "var(--text-secondary)",
                   "&:hover": {
@@ -501,6 +501,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
+                    data-mobile-secondary
                     onClick={() => setAnalyticsDialogOpen(true)}
                     sx={{
                       fontSize: "11px",
@@ -534,6 +535,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
+                    data-mobile-secondary
                     onClick={handleToggleHistory}
                     sx={{
                       fontSize: "11px",
@@ -656,7 +658,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     boxShadow: "none",
                     textTransform: "none",
                     "&:hover": {
-                      backgroundColor: "var(--primary-dark)",
+                      backgroundColor: "var(--secondary-color)",
                       boxShadow: "none",
                     },
                   }}
@@ -664,7 +666,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Edit size={12} />
                   <Box
                     component="span"
-                    sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                    sx={{ display: "inline", ml: 0.75 }}
                   >
                     Edit
                   </Box>
@@ -676,6 +678,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 <Tooltip title="Version History" arrow>
                   <IconButton
                     size="small"
+                    data-mobile-secondary
                     onClick={handleToggleHistory}
                     sx={{
                       color: historyOpen ? "primary.light" : "text.secondary",
@@ -716,14 +719,14 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     px: { xs: 1, sm: 1.5 },
                     minWidth: { xs: 26, sm: "auto" },
                     borderRadius: "5px",
-                    backgroundColor: "rgba(16, 185, 129, 0.12)",
-                    color: "#10b981",
-                    border: "1px solid rgba(16, 185, 129, 0.25)",
-                    borderColor: "rgba(16, 185, 129, 0.25)",
+                    backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
+                    color: "var(--primary-color)",
+                    border: "1px solid var(--border-color)",
+                    borderColor: "var(--border-color)",
                     boxShadow: "none",
                     textTransform: "none",
                     "&:hover": {
-                      backgroundColor: "rgba(16, 185, 129, 0.2)",
+                      backgroundColor: "var(--glass-bg)",
                       boxShadow: "none",
                     },
                   }}
@@ -731,7 +734,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Check size={12} />
                   <Box
                     component="span"
-                    sx={{ display: { xs: "none", sm: "inline" }, ml: 0.75 }}
+                    sx={{ display: "inline", ml: 0.75 }}
                   >
                     Done
                   </Box>
@@ -752,7 +755,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 >
                   <IconButton
                     size="small"
-                    disabled={!!deletedAt || !canEdit}
+                    disabled={!!deletedAt}
+                    aria-label="Page actions"
                     onClick={handleOpenMoreMenu}
                     sx={{
                       color: "text.secondary",
@@ -777,7 +781,11 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     },
                   }}
                 >
+                  <MenuItem onClick={() => { handleCloseMoreMenu(); handleToggleHistory(); }} sx={{ display: { xs: "flex", md: "none" }, minHeight: 44 }}><ListItemIcon><History size={18} /></ListItemIcon>Version history</MenuItem>
+                  <MenuItem onClick={() => { handleCloseMoreMenu(); setAnalyticsDialogOpen(true); }} sx={{ display: { xs: "flex", md: "none" }, minHeight: 44 }}><ListItemIcon><BarChart2 size={18} /></ListItemIcon>Page analytics</MenuItem>
+                  <MenuItem onClick={() => { handleCloseMoreMenu(); void toggleWatch(); }} sx={{ display: { xs: "flex", md: "none" }, minHeight: 44 }}><ListItemIcon><Bell size={18} /></ListItemIcon>{isWatching ? "Stop watching this page" : "Watch this page"}</MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={() => {
                       handleCloseMoreMenu();
                       setRestrictionsDialogOpen(true);
@@ -804,6 +812,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     />
                   </MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={() => {
                       handleCloseMoreMenu();
                       setSharingLinksDialogOpen(true);
@@ -830,6 +839,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     />
                   </MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={() => {
                       handleCloseMoreMenu();
                       setPageSettingsDialogOpen(true);
@@ -856,6 +866,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     />
                   </MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={handleTriggerMove}
                     sx={{
                       fontSize: "12px",
@@ -879,6 +890,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     />
                   </MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={() => {
                       handleCloseMoreMenu();
                       setExportDialogOpen(true);
@@ -905,6 +917,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     />
                   </MenuItem>
                   <MenuItem
+                    disabled={!canEdit}
                     onClick={handleTriggerDelete}
                     sx={{
                       fontSize: "12px",

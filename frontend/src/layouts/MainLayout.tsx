@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Box, useMediaQuery } from '@mui/material';
+import { Box, Drawer, useMediaQuery } from '@mui/material';
 import { GripVertical, ChevronsLeftRight } from 'lucide-react';
 import { TopNavbar } from '../components/TopNavbar';
 import { Sidebar } from '../components/Sidebar';
@@ -78,14 +78,18 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
     developerMode,
     toggleDeveloperMode,
     toggleSidebar,
-    setSidebarOpen,
     sidebarWidth,
     setSidebarWidth,
     openCreateSpace,
     createPageOpen,
     setCreatePageOpen  } = useAppStore();
 
-  const isMobile = useMediaQuery("(max-width:768px)");
+  const isMobile = useMediaQuery("(max-width:899.95px)");
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
+  const [adminNavigationOpen, setAdminNavigationOpen] = useState(true);
+  const desktopNavigationOpen = isAdminRoute ? adminNavigationOpen : sidebarOpen;
+  const navigationOpen = isMobile ? mobileNavigationOpen : desktopNavigationOpen;
+  const closeMobileNavigation = () => setMobileNavigationOpen(false);
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   
@@ -99,8 +103,8 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
   }, [teams, allProjects, syncSpaces]);
 
   useEffect(() => {
-    setSidebarOpen(!isMobile);
-  }, [isMobile, setSidebarOpen]);
+    setMobileNavigationOpen(false);
+  }, [location.key, isMobile]);
 
   const startResizing = () => setIsResizing(true);
   const stopResizing = () => setIsResizing(false);
@@ -224,7 +228,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
   if (isAdminRoute && !isMockMode && !user?.isAdmin) return <Box sx={{ p: 3 }}>Administrator access is required for this page.</Box>;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden", bgcolor: "background.default", fontFamily: "var(--font-sans)" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100dvh", width: "100%", overflow: "hidden", bgcolor: "var(--bg-color)", fontFamily: "var(--font-sans)" }}>
       {/* Classification Security Banner */}
       <ClassificationBanner systemSettings={systemSettings} />
 
@@ -247,21 +251,37 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
         onOpenNotifications={() => navigate("/my/notifications")}
         developerMode={developerMode}
         onToggleDeveloperMode={toggleDeveloperMode}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={toggleSidebar}
+        sidebarOpen={navigationOpen}
+        onToggleSidebar={() => isMobile ? setMobileNavigationOpen(!mobileNavigationOpen) : isAdminRoute ? setAdminNavigationOpen(!adminNavigationOpen) : toggleSidebar()}
         isMobile={isMobile}
+        isAdminRoute={isAdminRoute}
       />
 
       {/* Bottom Area: Sidebar + Content */}
-      <Box sx={{ display: "flex", flex: 1, height: "calc(100vh - 48px)", overflow: "hidden", position: "relative" }}>
+      <Box sx={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0, overflow: "hidden", position: "relative" }}>
         {/* Sidebar Navigation */}
+        <Drawer
+          variant={isMobile ? "temporary" : "persistent"}
+          open={navigationOpen}
+          onClose={closeMobileNavigation}
+          slotProps={{ paper: { id: "workspace-navigation", sx: {
+            position: isMobile ? "fixed" : "relative",
+            width: isMobile ? "min(320px, calc(100vw - 32px))" : isAdminRoute ? 264 : sidebarWidth,
+            maxWidth: "100%", height: "100%", overflow: "hidden",
+            bgcolor: "var(--panel-color)", color: "var(--text-primary)",
+            border: 0, boxShadow: isMobile ? "var(--shadow-elevation)" : "none",
+            pt: isMobile ? `calc(env(safe-area-inset-top) + ${systemSettings?.classificationBannerEnabled ? 26 : 0}px)` : 0,
+            pb: isMobile ? "env(safe-area-inset-bottom)" : 0,
+          } }, backdrop: { sx: { bgcolor: "color-mix(in srgb, var(--text-primary) 35%, transparent)" } } }}
+          sx={{ flexShrink: 0, display: !isMobile && !navigationOpen ? "none" : undefined }}
+        >
         {isAdminRoute ? (
-          (!isMobile || sidebarOpen) && <AdminSidebar authMode={authMode} onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
-        ) : sidebarOpen && (
+          <AdminSidebar authMode={authMode} onClose={isMobile ? closeMobileNavigation : undefined} />
+        ) : (
           <Sidebar
             documents={documentsTree}
             activeDocId={docId || null}
-            onSelectDoc={(id) => legacyNavigate(actualTeamId, actualProjectId, id)}
+            onSelectDoc={(id) => { closeMobileNavigation(); legacyNavigate(actualTeamId, actualProjectId, id); }}
             onAddDoc={handleAddDoc}
             onImportMarkdown={handleImportMarkdown}
             onDeleteDoc={handleDeleteDoc}
@@ -270,16 +290,17 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
             projects={allProjects}
             selectedTeamId={actualTeamId}
             selectedProjectId={actualProjectId}
-            navigateTo={legacyNavigate}
+            navigateTo={(...args) => { closeMobileNavigation(); legacyNavigate(...args); }}
             width={sidebarWidth}
             recentSpaces={recentSpaces}
             onOpenCreateSpace={() => openCreateSpace()}
             onRestoreDoc={handleRestoreDoc}
             onDeleteDocPermanently={handleDeleteDocPermanently}
             isMobile={isMobile}
-            onCloseSidebar={() => setSidebarOpen(false)}
+            onCloseSidebar={closeMobileNavigation}
           />
         )}
+        </Drawer>
 
         {/* Resizable Drag Handle */}
         {!isAdminRoute && !isMobile && sidebarOpen && (
@@ -316,7 +337,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "l
         )}
 
         {/* Main Canvas Workspace */}
-        <Box component="main" sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+        <Box component="main" sx={{ flex: 1, minWidth: 0, minHeight: 0, height: "100%", display: "flex", flexDirection: "column", overflow: "auto", position: "relative", overscrollBehavior: "contain" }}>
           <Outlet />
         </Box>
       </Box>

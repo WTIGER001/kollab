@@ -2304,7 +2304,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
 
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const nextTitle = e.target.value;
     setTitle(nextTitle);
     if (nextTitle.trim() !== "") {
@@ -2313,7 +2313,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     saveDocument(nextTitle);
   };
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       if (editor) {
@@ -2380,6 +2380,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        minWidth: 0, minHeight: 0,
         overflowY: "auto",
         position: "relative",
         px: 0,
@@ -2390,13 +2391,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       className="scrollbar-thin"
     >
       {/* Decorative Blur Backgrounds */}
-      <div
+      <Box
         className="accent-glow-purple"
-        style={{ position: "absolute", right: "40px", top: "40px" }}
+        sx={{ display: { xs: "none", md: "block" }, position: "absolute", right: "40px", top: "40px" }}
       />
-      <div
+      <Box
         className="accent-glow-blue"
-        style={{ position: "absolute", left: "80px", bottom: "40px" }}
+        sx={{ display: { xs: "none", md: "block" }, position: "absolute", left: "80px", bottom: "40px" }}
       />
 
       {/* Editor Container Paper */}
@@ -2545,10 +2546,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         {/* Formatting Quick Toolbar */}
         {editor && isEditing && !previewVersion && (
           <Box
+            role="toolbar"
+            aria-label="Page formatting — swipe for more tools"
+            tabIndex={0}
             sx={{
               display: "flex",
               alignItems: "center",
-              flexWrap: "wrap",
+              flexWrap: { xs: "nowrap", md: "wrap" },
+              overflowX: "auto",
+              minWidth: 0, maxWidth: "100%",
+              overscrollBehaviorX: "contain",
+              "@media (max-width:899.95px)": { "& > *": { flexShrink: 0 }, "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 }, "& .MuiInputBase-root": { minHeight: 44 } },
               gap: 0.75,
               color: "text.secondary",
               px: { xs: 2, sm: 3, md: 4 },
@@ -3337,13 +3345,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               onFocus={() => setIsTitleFocused(true)}
               onBlur={() => setIsTitleFocused(false)}
               placeholder="Untitled Document"
+              multiline
+              inputProps={{ "aria-label": "Page title", className: "page-title-input" }}
               fullWidth
               sx={{
                 color: "text.primary",
                 fontSize: { xs: "28px", md: "36px" },
                 fontWeight: 800,
                 mb: 0,
-                "& input": { p: 0 },
+                "& input, & textarea": { p: 0 },
                 "& input::placeholder": {
                   color: "text.disabled",
                   opacity: 0.5,

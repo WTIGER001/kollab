@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type { Team } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
+import { useNavigate } from "react-router-dom";
 
 interface TopNavbarProps {
   teams: Team[];
@@ -53,6 +54,7 @@ interface TopNavbarProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   isMobile?: boolean;
+  isAdminRoute?: boolean;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -74,27 +76,29 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   activeUsers = [],
   developerMode = false,
   onToggleDeveloperMode,
-  onToggleSidebar
+  onToggleSidebar,
+  sidebarOpen,
+  isMobile = false,
+  isAdminRoute = false,
 }) => {
+  const navigate = useNavigate();
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
         e.preventDefault();
-        const input = document.getElementById('global-search-input');
-        if (input) {
-          input.focus();
-        }
+        if (isMobile) navigate('/search');
+        else document.getElementById('global-search-input')?.focus();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isMobile, navigate]);
 
   const activeTeam = teams.find(t => t.id === selectedTeamId);
 
-  const handleOpenProfileMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleOpenProfileMenu = (e: React.MouseEvent<HTMLElement>) => {
     setProfileMenuAnchor(e.currentTarget);
   };
 
@@ -104,26 +108,31 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
   return (
     <Box sx={{
-      height: 48,
+      minHeight: isMobile ? 56 : 48,
+      flexShrink: 0,
       width: "100%",
       borderBottom: "1px solid var(--border-color)",
       backgroundColor: "var(--panel-color)",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      px: 2,
+      px: { xs: 1, sm: 2 },
       zIndex: 100,
       backdropFilter: "blur(20px)",
+      "& .MuiIconButton-root": { minWidth: isMobile ? 44 : 32, minHeight: isMobile ? 44 : 32 },
     }}>
       {/* Left section: Logo & Navigation */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
         {/* Toggle Sidebar Button */}
         <IconButton 
           onClick={onToggleSidebar}
+          aria-label={`${sidebarOpen ? "Close" : "Open"} ${isAdminRoute ? "admin" : "workspace"} navigation`}
+          aria-expanded={sidebarOpen}
+          aria-controls="workspace-navigation"
           size="small"
           sx={{ 
-            color: "text.secondary", 
-            "&:hover": { color: "text.primary" },
+            color: "var(--text-secondary)",
+            "&:hover": { color: "var(--text-primary)" },
             p: 0.5,
             borderRadius: "6px"
           }}
@@ -133,18 +142,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Brand Logo */}
         <Box 
+          component="button"
+          type="button"
+          aria-label={isAdminRoute ? "Server settings" : "Workspace home"}
           onClick={() => {
-            if (activeTeam) {
-              const url = `/teams/${activeTeam.abbreviation || activeTeam.id}`;
-              window.history.pushState({}, "", url);
-              window.dispatchEvent(new PopStateEvent("popstate"));
-            }
+            navigate(isAdminRoute ? '/_admin/settings' : activeTeam ? `/teams/${activeTeam.abbreviation || activeTeam.id}` : '/my/recents');
           }}
           sx={{ 
             display: "flex", 
             alignItems: "center", 
             gap: 1, 
             cursor: "pointer",
+            border: 0, background: "transparent", p: 0, minHeight: 44,
             "&:hover": { opacity: 0.95 }
           }}
         >
@@ -161,17 +170,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               fontWeight: 800, 
               fontFamily: '"Outfit", sans-serif', 
               letterSpacing: "-0.02em", 
-              color: "text.primary",
-              display: { xs: "none", sm: "block" }
+              color: "var(--text-primary)",
+              display: { xs: isAdminRoute ? "block" : "none", sm: "block" }
             }}
           >
-            Kollab
+            {isAdminRoute ? "Admin" : "Kollab"}
           </Typography>
         </Box>
       </Box>
 
       {/* Middle section: Global Search Box */}
-      <Box sx={{ flex: 1, maxWidth: 320, mx: { xs: 1, sm: 4 }, display: { xs: "none", sm: "block" } }}>
+      <Box sx={{ flex: 1, minWidth: 0, maxWidth: 320, mx: 4, display: isMobile ? "none" : "block" }}>
         <Box 
           sx={{ 
             display: "flex", 
@@ -184,15 +193,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             border: "1px solid var(--border-color)",
             color: "text.secondary",
             "&:focus-within": {
-              borderColor: "primary.main",
-              boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)",
+              borderColor: "var(--primary-color)",
+              boxShadow: "0 0 0 2px color-mix(in srgb, var(--primary-color) 15%, transparent)",
             },
             transition: "all 0.15s ease",
           }}
         >
           <Search size={13} style={{ color: "var(--text-muted)" }} />
           <InputBase
-            placeholder="Search document spec..."
+            placeholder="Search pages…"
             inputProps={{
               id: "global-search-input",
               "aria-label": "global search",
@@ -201,7 +210,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                   const query = (e.target as HTMLInputElement).value;
                   if (query.trim()) {
                     // Navigate directly instead of firing onOpenSearch
-                    window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+                    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
                   }
                 }
               }
@@ -263,14 +272,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         {/* Search Icon Button - Visible only on mobile */}
         <IconButton 
           size="small" 
-          onClick={() => {
-            const input = document.getElementById('global-search-input');
-            if (input) input.focus();
-          }} 
+          onClick={() => navigate('/search')}
+          aria-label="Search pages"
           sx={{ 
             color: "text.secondary", 
             "&:hover": { color: "text.primary" },
-            display: { xs: "inline-flex", sm: "none" } 
+            display: isMobile ? "inline-flex" : "none"
           }}
         >
           <Search size={16} />
@@ -308,9 +315,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* User Profile Dropdown Menu */}
         <Box 
+          component="button"
+          type="button"
+          aria-label="Account menu"
+          aria-haspopup="menu"
+          aria-expanded={Boolean(profileMenuAnchor)}
           onClick={handleOpenProfileMenu}
           sx={{ 
             display: "flex", 
+            border: 0, background: "transparent", minHeight: 44,
             alignItems: "center", 
             gap: 1, 
             cursor: "pointer",
@@ -325,7 +338,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             displayName={displayName}
             sx={{ width: 24, height: 24, fontSize: "10px", fontWeight: 700, bgcolor: "primary.main" }}
           />
-          <Typography sx={{ fontSize: "11.5px", fontWeight: 600, color: "text.primary", fontFamily: '"Outfit", sans-serif', maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <Typography sx={{ display: { xs: "none", sm: "block" }, fontSize: "11.5px", fontWeight: 600, color: "var(--text-primary)", fontFamily: '"Outfit", sans-serif', maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {displayName}
           </Typography>
           <ChevronDown size={11} style={{ color: "var(--text-secondary)" }} />
@@ -337,9 +350,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           slotProps={{
             paper: {
               sx: {
-                width: 180,
+                width: 240,
+                maxWidth: "calc(100vw - 24px)",
                 mt: 0.5,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                boxShadow: "var(--shadow-elevation)",
+                "& .MuiMenuItem-root": { minHeight: 44 },
                 border: "1px solid var(--border-color)",
                 bgcolor: "var(--panel-color)",
               }

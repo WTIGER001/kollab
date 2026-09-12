@@ -94,6 +94,20 @@ describe('EditorHeader', () => {
     expect(screen.getByText('Done')).toBeInTheDocument();
   });
 
+  it('keeps history available to readers while disabling mutation menu entries', () => {
+    const anchor = document.createElement('button');
+    document.body.append(anchor);
+    try {
+      render(<EditorHeader {...defaultProps} canEdit={false} moreMenuAnchor={anchor} />);
+      expect(screen.getByRole('menuitem', { name: 'Viewers & Editors' })).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('menuitem', { name: 'Share Link' })).toHaveAttribute('aria-disabled', 'true');
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Version history' }));
+      expect(mockHandleToggleHistory).toHaveBeenCalledOnce();
+    } finally {
+      anchor.remove();
+    }
+  });
+
   it('calls setIsEditing when Edit button is clicked', () => {
     render(<EditorHeader {...defaultProps} />);
     

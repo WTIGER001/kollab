@@ -5,6 +5,7 @@ Use these guides for the current application. Azure backup and Jira remain proto
 ## Start and organize your workspace
 
 - [First steps](first_start.md)
+- [Using Kollab on a phone](mobile.md)
 - [Teams directory](teams_directory.md)
 - [Project portals](project_portal.md)
 - [Search](search.md)

@@ -506,6 +506,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <Box 
       component="aside"
+      aria-label="Workspace navigation"
       className="glass-sidebar"
       sx={{
         width: isMobile ? "100%" : width,
@@ -514,13 +515,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         flexDirection: "column",
         flexShrink: 0,
         zIndex: isMobile ? 1200 : 10,
-        position: isMobile ? "absolute" : "relative",
+        position: "relative",
         left: 0,
         top: 0,
         borderRight: isMobile ? "none" : "1px solid var(--border-color)",
         backgroundColor: "var(--panel-color)",
         backdropFilter: isMobile ? "blur(20px)" : "none",
-        boxShadow: isMobile ? "0 8px 32px rgba(0, 0, 0, 0.4)" : "none",
+        boxShadow: "none",
+        "@media (max-width:899.95px)": { "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 }, "& .MuiListItemButton-root": { minHeight: 44 } },
       }}
     >
       {/* Active Project Switcher Header */}
@@ -599,6 +601,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <IconButton 
                 size="small" 
                 onClick={onCloseSidebar}
+                aria-label="Close workspace navigation"
                 sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
               >
                 <X size={16} />
@@ -681,6 +684,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <IconButton 
                 size="small" 
                 onClick={onCloseSidebar}
+                aria-label="Close workspace navigation"
                 sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
               >
                 <X size={16} />
@@ -763,6 +767,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <IconButton 
                 size="small" 
                 onClick={onCloseSidebar}
+                aria-label="Close workspace navigation"
                 sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}
               >
                 <X size={16} />
@@ -780,7 +785,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <MoreHorizontal size={14} />
             </IconButton>
             {isMobile && onCloseSidebar && (
-              <IconButton size="small" onClick={onCloseSidebar} sx={{ color: "text.secondary" }}>
+              <IconButton size="small" onClick={onCloseSidebar}
+                aria-label="Close workspace navigation" sx={{ color: "text.secondary" }}>
                 <X size={16} />
               </IconButton>
             )}

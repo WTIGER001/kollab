@@ -90,8 +90,9 @@ describe('ServerSettingsPage', () => {
     render(<ServerSettingsPage {...defaultProps} />);
     
     expect(screen.getByText('Server Settings')).toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     
-    // Check General tab values
+    // Check General section values
     expect(screen.getByDisplayValue('Default Theme')).toBeInTheDocument(); // Name is populated from currentTheme.name
     expect(screen.getByDisplayValue('20')).toBeInTheDocument(); // AI Rate Limit
   });
@@ -140,5 +141,17 @@ describe('ServerSettingsPage', () => {
     });
     
     expect(api.downloadBackup).toHaveBeenCalled();
+  });
+
+  it('prevents duplicate saves while the current save is pending', async () => {
+    let finishSave!: () => void;
+    mockOnSave.mockReturnValueOnce(new Promise<void>((resolve) => { finishSave = resolve; }));
+    render(<ServerSettingsPage {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Saving…' }));
+    expect(mockOnSave).toHaveBeenCalledTimes(1);
+    await act(async () => finishSave());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save Changes' })).toBeEnabled());
   });
 });
