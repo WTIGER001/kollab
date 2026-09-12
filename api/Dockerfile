@@ -19,7 +19,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server/ma
 # Stage 2: Final lightweight image
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata chromium font-noto
+ENV CHROME_BIN=/usr/bin/chromium-browser
 
 WORKDIR /app
 

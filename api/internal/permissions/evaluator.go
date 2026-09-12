@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -17,12 +18,13 @@ import (
 
 // AccessEvaluator implements the composite authorization rules for Kollab.
 type AccessEvaluator struct {
-	db *pgxpool.Pool
+	db       *pgxpool.Pool
+	mediaKey []byte
 }
 
 // NewAccessEvaluator creates a new AccessEvaluator.
 func NewAccessEvaluator(db *pgxpool.Pool) *AccessEvaluator {
-	return &AccessEvaluator{db: db}
+	return &AccessEvaluator{db: db, mediaKey: []byte(rand.Text() + rand.Text())}
 }
 
 // AncestryNode represents a document in the hierarchy
@@ -58,6 +60,15 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		return true, "In-memory test bypass allowed", nil
 	}
 
+	// Resolve route slugs and aliases before checking page ancestry.
+	var canonicalID string
+	err := e.db.QueryRow(ctx, `SELECT id FROM documents WHERE id=$1 OR slug=$1
+ UNION ALL SELECT document_id FROM document_slug_aliases WHERE old_slug=$1 LIMIT 1`, docID).Scan(&canonicalID)
+	if err == nil {
+		docID = canonicalID
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return false, "Unable to resolve document", err
+	}
 	// 1. SuperAdmin / Global Admin Override Check
 	if userID != "" {
 		isAdmin, err := Service.HasPermission(ctx, goperm.Request{UserID: userID, Perm: "system.admin"})
@@ -168,6 +179,14 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 		}
 	}
 
+	// Existing owners retain their explicit rights, but cannot bypass a restricted ancestor.
+	if targetNode.TeamID == "personal_"+userID {
+		return true, "Personal owner allowed", nil
+	}
+	explicit, explicitErr := Service.HasPermission(ctx, goperm.Request{UserID: userID, Object: targetNode.ID, Perm: docPerm})
+	if explicitErr == nil && explicit {
+		return true, "Explicit page grant allowed", nil
+	}
 	// 6. Target Page Restriction Check
 	restricted, err := e.isObjectRestricted(ctx, targetNode.ID)
 	if err != nil {
@@ -191,10 +210,14 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 	if targetNode.ProjectID != "" {
 		var projectPerm string
 		switch action {
-		case "read", "comment":
+		case "read":
 			projectPerm = ProjectPermissions.Read.ID()
-		case "write", "delete", "grant":
+		case "comment", "write":
 			projectPerm = ProjectPermissions.Write.ID()
+		case "delete":
+			projectPerm = ProjectPermissions.Delete.ID()
+		case "grant":
+			projectPerm = ProjectPermissions.Grant.ID()
 		}
 
 		hasProjectAccess, err := Service.HasPermission(ctx, goperm.Request{
@@ -213,10 +236,14 @@ func (e *AccessEvaluator) EvaluateDocumentAccess(ctx context.Context, userID str
 	if targetNode.TeamID != "" {
 		var teamPerm string
 		switch action {
-		case "read", "comment":
+		case "read":
 			teamPerm = TeamPermissions.Read.ID()
-		case "write", "delete", "grant":
+		case "comment", "write":
 			teamPerm = TeamPermissions.Write.ID()
+		case "delete":
+			teamPerm = TeamPermissions.Delete.ID()
+		case "grant":
+			teamPerm = TeamPermissions.Grant.ID()
 		}
 
 		hasTeamAccess, err := Service.HasPermission(ctx, goperm.Request{
@@ -279,7 +306,7 @@ func (e *AccessEvaluator) isObjectRestricted(ctx context.Context, objectID strin
 		SELECT EXISTS (
 			SELECT 1 FROM principal_roles 
 			WHERE binding_values->>'id' = $1 
-			  AND role_id LIKE 'builtin.wiki.document.%'
+			  AND role_id LIKE 'builtin.wiki.document.%' AND role_id <> 'builtin.wiki.document.owner'
 		)
 	`
 	var exists bool
@@ -390,3 +417,5 @@ func (e *AccessEvaluator) evaluateShareLink(ctx context.Context, userID string, 
 
 	return true, "Sharing link authorization allowed", nil
 }
+
+func (e *AccessEvaluator) SetMediaKey(key []byte) { e.mediaKey = append([]byte(nil), key...) }

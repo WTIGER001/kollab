@@ -57,3 +57,18 @@ func TestLocalStorage(t *testing.T) {
 		t.Fatalf("expected no err on delete folder, got %v", err)
 	}
 }
+
+func TestLocalStorageRejectsTraversal(t *testing.T) {
+	s, err := NewLocalStorage(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"../outside", "/tmp/outside", "", "."} {
+		if err := s.Save(context.Background(), key, []byte("bad")); err == nil {
+			t.Fatalf("accepted unsafe key %q", key)
+		}
+		if err := s.DeleteFolder(context.Background(), key); err == nil {
+			t.Fatalf("accepted unsafe deletion %q", key)
+		}
+	}
+}

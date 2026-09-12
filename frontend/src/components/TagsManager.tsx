@@ -230,7 +230,7 @@ export const TagsManager: React.FC = () => {
       ) : (
         <Grid container spacing={2}>
           {tags.map((tag) => (
-            <Grid item xs={12} sm={6} md={4} key={tag.id}>
+            <Grid key={tag.id} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card 
                 sx={{ 
                   height: "100%", 
@@ -340,8 +340,7 @@ export const TagsManager: React.FC = () => {
       {/* Create / Edit Dialog */}
       <Dialog 
         open={dialogOpen} 
-        onClose={() => setDialogOpen(false)}
-        PaperProps={{
+        onClose={() => setDialogOpen(false)} slotProps={{ paper: {
           sx: {
             backgroundColor: "var(--panel-color)",
             border: "1px solid var(--border-color)",
@@ -350,7 +349,7 @@ export const TagsManager: React.FC = () => {
             maxWidth: "400px",
             width: "100%"
           }
-        }}
+        } }}
       >
         <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 800, color: "var(--text-primary)", fontSize: "16px", pb: 1 }}>
           {dialogMode === "create" ? "Add Tag" : "Edit Tag"}
@@ -363,9 +362,7 @@ export const TagsManager: React.FC = () => {
               onChange={(e) => setTagName(e.target.value)}
               placeholder="e.g. engineering"
               size="small"
-              fullWidth
-              InputLabelProps={{ style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }}
-              inputProps={{ style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }}
+              fullWidth slotProps={{ inputLabel: { style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }, htmlInput: { style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } } }}
             />
             <TextField
               label="Description / Definition"
@@ -375,9 +372,7 @@ export const TagsManager: React.FC = () => {
               size="small"
               multiline
               rows={2}
-              fullWidth
-              InputLabelProps={{ style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }}
-              inputProps={{ style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }}
+              fullWidth slotProps={{ inputLabel: { style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } }, htmlInput: { style: { fontFamily: '"Outfit", sans-serif', fontSize: "13px" } } }}
             />
 
             {/* Colors picker */}
@@ -460,8 +455,7 @@ export const TagsManager: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <Dialog 
         open={deleteConfirmOpen} 
-        onClose={() => setDeleteConfirmOpen(false)}
-        PaperProps={{
+        onClose={() => setDeleteConfirmOpen(false)} slotProps={{ paper: {
           sx: {
             backgroundColor: "var(--panel-color)",
             border: "1px solid var(--border-color)",
@@ -470,7 +464,7 @@ export const TagsManager: React.FC = () => {
             maxWidth: "350px",
             width: "100%"
           }
-        }}
+        } }}
       >
         <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 800, color: "var(--text-primary)", fontSize: "16px", pb: 1 }}>
           Delete Tag?

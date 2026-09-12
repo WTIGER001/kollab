@@ -57,7 +57,7 @@ func (r *PostgresTaskRepository) GetTasksByAssignee(ctx context.Context, usernam
 	}
 	defer rows.Close()
 
-	var list []*domain.Task
+	list := make([]*domain.Task, 0)
 	for rows.Next() {
 		var task domain.Task
 		var dueTime *time.Time

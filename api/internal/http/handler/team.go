@@ -50,7 +50,14 @@ func (h *TeamHandler) ListProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(projects)
+	userID, _ := middleware.GetUserID(r.Context())
+	visible := make([]*domain.Project, 0, len(projects))
+	for _, p := range projects {
+		if permissions.CanAccessScope(r.Context(), userID, "project", p.ID, "read") || permissions.CanAccessScope(r.Context(), userID, "team", p.TeamID, "read") {
+			visible = append(visible, p)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *TeamHandler) ListTeamUsers(w http.ResponseWriter, r *http.Request) {
@@ -203,6 +210,10 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := permissions.TeamPermissions.GrantRole(r.Context(), permissions.TeamPermissions.EditorRole.ID, goperm.PrincipalGroup, team.ID, team.ID); err != nil {
+		http.Error(w, "Failed to assign member role", 500)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(team)
@@ -227,6 +238,10 @@ func (h *TeamHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !permissions.CanAccessScope(r.Context(), userID, "team", req.TeamID, "write") {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 	project, err := h.teamService.CreateProject(r.Context(), userID, req.TeamID, req.Name, req.LogoURL, req.Abbreviation, req.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

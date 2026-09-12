@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"kollab/api/internal/domain"
@@ -23,7 +24,7 @@ func NewInMemorySystemRepository() *InMemorySystemRepository {
 			TrashRetentionCustomDays: 30,
 			AIRateLimit:              10,
 			WelcomeTitle:             "Welcome to Kollab",
-			WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
+			WelcomeText:              "Your workspace for shared notes, plans, and knowledge.",
 			AsposeEnabled:            true,
 		},
 		auditLogs: make([]*domain.AuditLog, 0),
@@ -94,4 +95,11 @@ func (r *InMemorySystemRepository) ExportBackup(ctx context.Context) (map[string
 
 func (r *InMemorySystemRepository) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
 	return []map[string]interface{}{}, nil
+}
+
+func (r *InMemorySystemRepository) RestoreBackup(ctx context.Context, data map[string]interface{}) error {
+	return fmt.Errorf("database restore requires PostgreSQL")
+}
+func (r *InMemorySystemRepository) ApplySyncOperations(ctx context.Context, ops []map[string]interface{}) error {
+	return fmt.Errorf("database sync requires PostgreSQL")
 }

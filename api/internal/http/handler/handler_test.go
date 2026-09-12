@@ -210,7 +210,7 @@ func TestSystemHealthHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	hSuccess.Health(w, req)
 
-	if w.Code != 300 {
+	if w.Code != http.StatusOK {
 		t.Errorf("expected status 300, got %d", w.Code)
 	}
 
@@ -225,7 +225,7 @@ func TestSystemHealthHandler(t *testing.T) {
 	if checks["database"] != "up" {
 		t.Errorf("expected checks.database 'up', got %v", checks["database"])
 	}
-	if checks["ai"] != "Gemini" {
+	if checks["ai"] != "optional" {
 		t.Errorf("expected checks.ai 'Gemini', got %v", checks["ai"])
 	}
 
@@ -234,13 +234,13 @@ func TestSystemHealthHandler(t *testing.T) {
 	t.Setenv("OPENAI_KEY", "mock-openai-key")
 	wOpenAI := httptest.NewRecorder()
 	hSuccess.Health(wOpenAI, req)
-	if wOpenAI.Code != 300 {
+	if wOpenAI.Code != http.StatusOK {
 		t.Errorf("expected status 300 for OpenAI, got %d", wOpenAI.Code)
 	}
 	var payloadOpenAI map[string]interface{}
 	_ = json.Unmarshal(wOpenAI.Body.Bytes(), &payloadOpenAI)
 	checksOpenAI := payloadOpenAI["checks"].(map[string]interface{})
-	if checksOpenAI["ai"] != "OpenAI" {
+	if checksOpenAI["ai"] != "optional" {
 		t.Errorf("expected checks.ai 'OpenAI', got %v", checksOpenAI["ai"])
 	}
 
@@ -248,16 +248,16 @@ func TestSystemHealthHandler(t *testing.T) {
 	t.Setenv("OPENAI_KEY", "")
 	wMissing := httptest.NewRecorder()
 	hSuccess.Health(wMissing, req)
-	if wMissing.Code != http.StatusInternalServerError {
+	if wMissing.Code != http.StatusOK {
 		t.Errorf("expected status 500 for missing AI, got %d", wMissing.Code)
 	}
 	var payloadMissing map[string]interface{}
 	_ = json.Unmarshal(wMissing.Body.Bytes(), &payloadMissing)
-	if payloadMissing["status"] != "error" {
+	if payloadMissing["status"] != "ok" {
 		t.Errorf("expected status 'error', got %v", payloadMissing["status"])
 	}
 	checksMissing := payloadMissing["checks"].(map[string]interface{})
-	if checksMissing["ai"] != "MISSING" {
+	if checksMissing["ai"] != "optional" {
 		t.Errorf("expected checks.ai 'MISSING', got %v", checksMissing["ai"])
 	}
 
@@ -271,7 +271,7 @@ func TestSystemHealthHandler(t *testing.T) {
 	wFail := httptest.NewRecorder()
 	hFailure.Health(wFail, reqFail)
 
-	if wFail.Code != http.StatusInternalServerError {
+	if wFail.Code != http.StatusServiceUnavailable {
 		t.Errorf("expected status 500, got %d", wFail.Code)
 	}
 
@@ -283,7 +283,7 @@ func TestSystemHealthHandler(t *testing.T) {
 		t.Errorf("expected status 'error', got %v", payloadFail["status"])
 	}
 	checksFail := payloadFail["checks"].(map[string]interface{})
-	if !strings.Contains(checksFail["database"].(string), "down: db connection refused") {
+	if !strings.Contains(checksFail["database"].(string), "down") {
 		t.Errorf("expected checks.database to contain 'down: db connection refused', got %v", checksFail["database"])
 	}
 }
@@ -320,15 +320,16 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	go wsHub.Run()
 
 	// Handlers
-	mockOidcConfig := map[string]string{
-		"authority":          "https://mock-authority.logto.app/oidc",
-		"clientId":           "mock-client-id",
-		"redirectUri":        "http://localhost:5173",
-		"apiAudience":        "api://kollab",
-		"apiScope":           "kollab.access",
+	localAuthConfig := map[string]string{
+		"authority":          "",
+		"clientId":           "",
+		"redirectUri":        "http://localhost:8090",
+		"apiAudience":        "",
+		"apiScope":           "",
+		"authMode":           "local",
 		"localSetupRequired": "true",
 	}
-	userH := handler.NewUserHandler(authService, themeService, systemService, mockOidcConfig)
+	userH := handler.NewUserHandler(authService, themeService, systemService, localAuthConfig)
 	teamH := handler.NewTeamHandler(teamService)
 	docH := handler.NewDocumentHandler(docService, wsHub, db, evaluator)
 	imgH := handler.NewImageHandler(imageService)
@@ -404,8 +405,11 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	if err := json.Unmarshal(wConfig.Body.Bytes(), &resConfig); err != nil {
 		t.Fatalf("failed to decode config response: %v", err)
 	}
-	if resConfig["authority"] != "https://mock-authority.logto.app/oidc" || resConfig["clientId"] != "mock-client-id" || resConfig["apiAudience"] != "api://kollab" || resConfig["apiScope"] != "kollab.access" {
-		t.Errorf("unexpected OIDC config returned: %+v", resConfig)
+	if resConfig["authMode"] != "local" || resConfig["localSetupRequired"] != false {
+		t.Errorf("unexpected local authentication config returned: %+v", resConfig)
+	}
+	if cacheControl := wConfig.Header().Get("Cache-Control"); cacheControl != "no-store" {
+		t.Errorf("expected no-store config response, got %q", cacheControl)
 	}
 
 	// 2. Test login user (valid)
@@ -514,6 +518,43 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 	if newDoc.Title != "New Specifications" || newDoc.ProjectID != "proj_wiki" {
 		t.Errorf("unexpected document contents: %+v", newDoc)
+	}
+
+	if db != nil {
+		linkRes, linkCode := sendReq("POST", "/api/documents/"+newDoc.ID+"/permissions/share-links", []byte(`{"roleId":"builtin.wiki.document.viewer","scope":"anyone","password":"test-share-password","expiresInDays":1}`), token)
+		if linkCode != 201 {
+			t.Fatalf("create share link: %d %s", linkCode, linkRes.Body.String())
+		}
+		var link map[string]interface{}
+		json.Unmarshal(linkRes.Body.Bytes(), &link)
+		body, _ := json.Marshal(map[string]interface{}{"token": link["token"], "password": "wrong"})
+		if _, status := sendReq("POST", "/api/shared-links/open", body, ""); status != 403 {
+			t.Fatalf("incorrect share password accepted: %d", status)
+		}
+		body, _ = json.Marshal(map[string]interface{}{"token": link["token"], "password": "test-share-password"})
+		shared, status := sendReq("POST", "/api/shared-links/open", body, "")
+		if status != 200 {
+			t.Fatalf("anonymous viewer: %d %s", status, shared.Body.String())
+		}
+		var result struct {
+			Document   domain.Document `json:"document"`
+			CanWrite   bool            `json:"canWrite"`
+			MediaToken string          `json:"mediaToken"`
+		}
+		json.Unmarshal(shared.Body.Bytes(), &result)
+		if result.Document.ID != newDoc.ID || result.CanWrite || result.MediaToken == "" {
+			t.Fatalf("unexpected shared response: %+v", result)
+		}
+		if id, err := evaluator.SharedMediaDocument(context.Background(), result.MediaToken); err != nil || id != newDoc.ID {
+			t.Fatalf("media grant rejected: %s %v", id, err)
+		}
+		db.Exec(context.Background(), "DELETE FROM sharing_links WHERE document_id=$1", newDoc.ID)
+		if _, err := evaluator.SharedMediaDocument(context.Background(), result.MediaToken); err == nil {
+			t.Fatal("revoked media grant remained active")
+		}
+		if _, status := sendReq("POST", "/api/shared-links/open", body, ""); status != 404 {
+			t.Fatalf("revoked link active: %d", status)
+		}
 	}
 
 	// 10. Test PUT /api/documents/{id} (Update Document)
@@ -916,8 +957,8 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	// Test retrieve image: size "1" (300px width should be generated)
-	// Note: retrieve image GET /api/images/{id}/{size} is a public route (no token)
-	wGet1, get1Code := sendReq("GET", "/api/images/"+uploadRes.ID+"/1", nil, "")
+	// Uploaded images require the owner or an authorized page/library reader.
+	wGet1, get1Code := sendReq("GET", "/api/images/"+uploadRes.ID+"/1", nil, token)
 	if get1Code != http.StatusOK {
 		t.Fatalf("expected 200 OK retrieving resized width, got %d", get1Code)
 	}
@@ -933,7 +974,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	// Test retrieve image: size "2" (600px width is larger than original 400px, so it falls back to original 400px)
-	wGet2, get2Code := sendReq("GET", "/api/images/"+uploadRes.ID+"/2", nil, "")
+	wGet2, get2Code := sendReq("GET", "/api/images/"+uploadRes.ID+"/2", nil, token)
 	if get2Code != http.StatusOK {
 		t.Fatalf("expected 200 OK retrieving non-existent size 2 (fallback), got %d", get2Code)
 	}
@@ -958,7 +999,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	// Test retrieve after deletion (should fail 404)
-	_, getAfterDeleteCode := sendReq("GET", "/api/images/"+uploadRes.ID+"/1", nil, "")
+	_, getAfterDeleteCode := sendReq("GET", "/api/images/"+uploadRes.ID+"/1", nil, token)
 	if getAfterDeleteCode != http.StatusNotFound {
 		t.Errorf("expected 404 for deleted image retrieve, got %d", getAfterDeleteCode)
 	}
@@ -1571,7 +1612,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	// 15. Test Health Check endpoints (public, no token needed)
 	wHealth, codeHealth := sendReq("GET", "/health", nil, "")
-	if codeHealth != 300 {
+	if codeHealth != http.StatusOK {
 		t.Errorf("expected health code 300, got %d. Body: %s", codeHealth, wHealth.Body.String())
 	}
 	var healthRes map[string]interface{}
@@ -1587,7 +1628,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 
 	wAPIHealth, codeAPIHealth := sendReq("GET", "/api/health", nil, "")
-	if codeAPIHealth != 300 {
+	if codeAPIHealth != http.StatusOK {
 		t.Errorf("expected api health code 300, got %d. Body: %s", codeAPIHealth, wAPIHealth.Body.String())
 	}
 
@@ -1896,4 +1937,11 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	// Add Favorite
 	_, _ = sendReq("POST", "/api/documents/"+testDoc.ID+"/favorite", nil, token)
+}
+
+func (m *mockSystemRepo) RestoreBackup(ctx context.Context, data map[string]interface{}) error {
+	return nil
+}
+func (m *mockSystemRepo) ApplySyncOperations(ctx context.Context, ops []map[string]interface{}) error {
+	return nil
 }

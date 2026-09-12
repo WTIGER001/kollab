@@ -1,16 +1,10 @@
 package handler
 
 import (
-	"archive/zip"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	goperm "github.com/wtiger001/go-permissions"
@@ -18,9 +12,11 @@ import (
 	"kollab/api/internal/domain"
 	"kollab/api/internal/http/middleware"
 	"kollab/api/internal/permissions"
+	"kollab/api/internal/ws"
 )
 
 type SystemHandler struct {
+	hub               *ws.Hub
 	systemService     domain.SystemService
 	attachmentService domain.AttachmentService
 }
@@ -156,26 +152,15 @@ func (h *SystemHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {
 func (h *SystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 	dbErr := h.systemService.Ping(r.Context())
 
-	statusCode := 300 // Respond with 300 as explicitly requested
+	statusCode := http.StatusOK
 	status := "ok"
-
 	dbStatus := "up"
 	if dbErr != nil {
-		statusCode = http.StatusInternalServerError
+		statusCode = http.StatusServiceUnavailable
 		status = "error"
-		dbStatus = "down: " + dbErr.Error()
+		dbStatus = "down"
 	}
-
-	aiProvider := "Gemini"
-	if os.Getenv("GEMINI_API_KEY") == "" && os.Getenv("GEMINI_KEY") == "" {
-		if os.Getenv("OPENAI_API_KEY") != "" || os.Getenv("OPENAI_KEY") != "" {
-			aiProvider = "OpenAI"
-		} else {
-			aiProvider = "MISSING"
-			statusCode = http.StatusInternalServerError
-			status = "error"
-		}
-	}
+	aiProvider := "optional"
 
 	payload := map[string]interface{}{
 		"status": status,
@@ -190,6 +175,10 @@ func (h *SystemHandler) Health(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(payload)
 }
 func (h *SystemHandler) GetIntegrationIssue(w http.ResponseWriter, r *http.Request) {
+	if !strings.Contains(strings.ToLower(r.URL.Query().Get("url")), "jira") {
+		http.Error(w, "Select a GitLab connection in the issue card to load real issue details", 400)
+		return
+	}
 	issueURL := r.URL.Query().Get("url")
 	if issueURL == "" {
 		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
@@ -255,331 +244,21 @@ func (h *SystemHandler) GetIntegrationIssue(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *SystemHandler) GetIntegrationIssueList(w http.ResponseWriter, r *http.Request) {
-	issueURL := r.URL.Query().Get("url")
-	if issueURL == "" {
-		http.Error(w, "Query parameter 'url' is required", http.StatusBadRequest)
-		return
-	}
-
-	source := "gitlab"
-	if strings.Contains(strings.ToLower(issueURL), "jira") {
-		source = "jira"
-	}
-
-	payload := map[string]interface{}{
-		"source": source,
-		"issues": []map[string]interface{}{
-			{
-				"key":      "GL-492",
-				"title":    "Setup automated backup exports cron job",
-				"status":   "Open",
-				"assignee": "Kyle Reese",
-				"priority": "Medium",
-			},
-			{
-				"key":      "GL-495",
-				"title":    "Update frontend dependencies to latest React",
-				"status":   "In Progress",
-				"assignee": "Sarah Connor",
-				"priority": "High",
-			},
-			{
-				"key":      "GL-498",
-				"title":    "Fix CORS preflight options issue on /api/upload",
-				"status":   "Under Review",
-				"assignee": "Miles Dyson",
-				"priority": "Critical",
-			},
-			{
-				"key":      "GL-501",
-				"title":    "Implement GitLab Issue List macro in Tiptap",
-				"status":   "Done",
-				"assignee": "T-800",
-				"priority": "Low",
-			},
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(payload)
+	http.Error(w, "Select a configured integration connection to retrieve issues", 400)
 }
 
-
-func (h *SystemHandler) Backup(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	// 1. Export DB seed data
-	dbData, err := h.systemService.ExportBackup(ctx)
-	if err != nil {
-		http.Error(w, "Failed to export database: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	dbJSON, err := json.MarshalIndent(dbData, "", "  ")
-	if err != nil {
-		http.Error(w, "Failed to marshal database JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", "attachment; filename=kollab_backup_"+time.Now().Format("20060102_150405")+".zip")
-
-	zipWriter := zip.NewWriter(w)
-	defer zipWriter.Close()
-
-	// 2. Add database_seed.json to ZIP
-	jsonFile, err := zipWriter.Create("database_seed.json")
-	if err != nil {
-		log.Printf("Failed to create ZIP entry database_seed.json: %v", err)
-		return
-	}
-	_, _ = jsonFile.Write(dbJSON)
-
-	// 3. Add uploads/ files to ZIP
-	uploadsDir := "./uploads"
-	_ = filepath.Walk(uploadsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if info.IsDir() {
-			return nil
-		}
-
-		relPath, err := filepath.Rel(uploadsDir, path)
-		if err != nil {
-			return nil
-		}
-
-		fileEntry, err := zipWriter.Create("uploads/" + relPath)
-		if err != nil {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return nil
-		}
-		defer f.Close()
-
-		_, _ = io.Copy(fileEntry, f)
-		return nil
-	})
-}
+func (h *SystemHandler) Backup(w http.ResponseWriter, r *http.Request) { h.exportArchive(w, r, false) }
 
 func (h *SystemHandler) Restore(w http.ResponseWriter, r *http.Request) {
-	file, _, err := r.FormFile("backup")
-	if err != nil {
-		http.Error(w, "Failed to get backup file from request: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-
-	tempFile, err := os.CreateTemp("", "kollab-backup-*.zip")
-	if err != nil {
-		http.Error(w, "Failed to create temp file: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	_, err = io.Copy(tempFile, file)
-	if err != nil {
-		http.Error(w, "Failed to copy backup file: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	zipReader, err := zip.OpenReader(tempFile.Name())
-	if err != nil {
-		http.Error(w, "Failed to read zip archive: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer zipReader.Close()
-
-	for _, zipFile := range zipReader.File {
-		if zipFile.FileInfo().IsDir() {
-			continue
-		}
-
-		if zipFile.Name == "database_seed.json" {
-			// Stub restoring database rows
-			log.Printf("[INFO] Restoring database seed from backup ZIP")
-		} else if strings.HasPrefix(zipFile.Name, "uploads/") {
-			relPath := strings.TrimPrefix(zipFile.Name, "uploads/")
-			outPath := filepath.Join("./uploads", relPath)
-
-			_ = os.MkdirAll(filepath.Dir(outPath), 0755)
-			outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, zipFile.Mode())
-			if err != nil {
-				continue
-			}
-
-			rc, err := zipFile.Open()
-			if err == nil {
-				_, _ = io.Copy(outFile, rc)
-				rc.Close()
-			}
-			outFile.Close()
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"success","message":"Backup restored successfully"}`))
+	h.restoreArchive(w, r, false)
 }
 
 func (h *SystemHandler) ExportSync(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	sinceIDStr := r.URL.Query().Get("since_id")
-	sinceID := 0
-	if sinceIDStr != "" {
-		sinceID, _ = strconv.Atoi(sinceIDStr)
-	}
-
-	sinceTime := time.Time{}
-	sinceTimeStr := r.URL.Query().Get("since_time")
-	if sinceTimeStr != "" {
-		if t, err := time.Parse(time.RFC3339, sinceTimeStr); err == nil {
-			sinceTime = t
-		}
-	}
-
-	ops, err := h.systemService.GetSyncOperations(ctx, sinceID)
-	if err != nil {
-		http.Error(w, "Failed to get operations: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if sinceTime.IsZero() && len(ops) > 0 {
-		if t, ok := ops[0]["created_at"].(time.Time); ok {
-			sinceTime = t
-		}
-	}
-
-	opsJSON, err := json.MarshalIndent(ops, "", "  ")
-	if err != nil {
-		http.Error(w, "Failed to marshal JSON: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", "attachment; filename=kollab_sync_"+time.Now().Format("20060102_150405")+".zip")
-
-	zipWriter := zip.NewWriter(w)
-	defer zipWriter.Close()
-
-	// 1. Add sync_operations.json to ZIP
-	jsonFile, err := zipWriter.Create("sync_operations.json")
-	if err != nil {
-		log.Printf("Failed to create ZIP entry sync_operations.json: %v", err)
-		return
-	}
-	_, _ = jsonFile.Write(opsJSON)
-
-	// 2. Add uploads/ files modified since sinceTime to ZIP
-	uploadsDir := "./uploads"
-	_ = filepath.Walk(uploadsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if info.IsDir() {
-			return nil
-		}
-		if !sinceTime.IsZero() && info.ModTime().Before(sinceTime) {
-			return nil
-		}
-
-		relPath, err := filepath.Rel(uploadsDir, path)
-		if err != nil {
-			return nil
-		}
-
-		fileEntry, err := zipWriter.Create("uploads/" + relPath)
-		if err != nil {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return nil
-		}
-		defer f.Close()
-
-		_, _ = io.Copy(fileEntry, f)
-		return nil
-	})
+	h.exportArchive(w, r, true)
 }
 
 func (h *SystemHandler) ImportSync(w http.ResponseWriter, r *http.Request) {
-	file, _, err := r.FormFile("sync")
-	if err != nil {
-		http.Error(w, "Failed to get sync file: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-
-	tempFile, err := os.CreateTemp("", "kollab-sync-*.zip")
-	if err != nil {
-		http.Error(w, "Failed to create temp file: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	_, err = io.Copy(tempFile, file)
-	if err != nil {
-		http.Error(w, "Failed to copy sync file: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	zipReader, err := zip.OpenReader(tempFile.Name())
-	if err != nil {
-		http.Error(w, "Failed to read zip archive: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer zipReader.Close()
-
-	for _, zipFile := range zipReader.File {
-		if zipFile.FileInfo().IsDir() {
-			continue
-		}
-
-		if zipFile.Name == "sync_operations.json" {
-			rc, err := zipFile.Open()
-			if err != nil {
-				http.Error(w, "Failed to open sync operations: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			var ops []map[string]interface{}
-			err = json.NewDecoder(rc).Decode(&ops)
-			rc.Close()
-			if err != nil {
-				http.Error(w, "Failed to parse sync JSON: "+err.Error(), http.StatusBadRequest)
-				return
-			}
-
-			// Apply diff operations to destination database
-			log.Printf("[INFO] Applying %d sync operations to database", len(ops))
-		} else if strings.HasPrefix(zipFile.Name, "uploads/") {
-			relPath := strings.TrimPrefix(zipFile.Name, "uploads/")
-			outPath := filepath.Join("./uploads", relPath)
-
-			_ = os.MkdirAll(filepath.Dir(outPath), 0755)
-			outFile, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, zipFile.Mode())
-			if err != nil {
-				continue
-			}
-
-			rc, err := zipFile.Open()
-			if err == nil {
-				_, _ = io.Copy(outFile, rc)
-				rc.Close()
-			}
-			outFile.Close()
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"success","message":"Sync ZIP imported successfully"}`))
+	h.restoreArchive(w, r, true)
 }
+
+func (h *SystemHandler) SetHub(hub *ws.Hub) { h.hub = hub }

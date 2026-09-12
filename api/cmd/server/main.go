@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -26,6 +27,7 @@ import (
 	"kollab/api/internal/http/middleware"
 	imgrepo "kollab/api/internal/image"
 	integrationrepo "kollab/api/internal/integration"
+	"kollab/api/internal/lifecycle"
 	"kollab/api/internal/permissions"
 	pgrepo "kollab/api/internal/postgres"
 	"kollab/api/internal/storage"
@@ -98,6 +100,9 @@ func main() {
 	var err error
 
 	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" && os.Getenv("DEV_DATABASE") != "true" {
+		log.Fatal("DATABASE_URL is required; set DEV_DATABASE=true only for a disposable development database")
+	}
 	ctx := context.Background()
 
 	if dbURL != "" {
@@ -139,6 +144,17 @@ func main() {
 	}
 	log.Println("PostgreSQL connection established successfully.")
 
+	if err := lifecycle.CheckRecovery(); err != nil {
+		log.Fatal(err)
+	}
+	// Serialize schema, permission setup and optional seeds across replicas.
+	startupConn, err := pgx.ConnectConfig(ctx, db.Config().ConnConfig.Copy())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if _, err = startupConn.Exec(ctx, "SELECT pg_advisory_lock(hashtext('kollab:startup'))"); err != nil {
+		log.Fatal(err)
+	}
 	// Initialize database schema
 	if err := pgrepo.Migrate(ctx, db); err != nil {
 		log.Fatalf("Failed to initialize database schema: %v", err)
@@ -149,6 +165,10 @@ func main() {
 	if err := permissions.InitPermissions(ctx, db); err != nil {
 		log.Fatalf("Failed to initialize permissions system: %v", err)
 	}
+	if err := pgrepo.EnableSyncTracking(ctx, db); err != nil {
+		log.Fatalf("Failed to initialize synchronization tracking: %v", err)
+	}
+
 	if bootstrapAdminID := os.Getenv("BOOTSTRAP_ADMIN_USER_ID"); bootstrapAdminID != "" {
 		if err := permissions.Service.AssignRoleToUser(ctx, bootstrapAdminID, "builtin.admin", nil); err != nil {
 			log.Fatalf("Failed to grant the configured bootstrap administrator: %v", err)
@@ -157,7 +177,18 @@ func main() {
 	}
 	log.Println("Permissions system initialized successfully.")
 
+	coordinator, err := pgrepo.NewClusterCoordinator(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer coordinator.Close()
+	lifecycle.Coordinator = coordinator
 	evaluator := permissions.NewAccessEvaluator(db)
+	mediaKey, err := coordinator.MediaKey(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	evaluator.SetMediaKey(mediaKey)
 
 	// Determine if we should seed mock data
 	shouldSeed := false
@@ -179,6 +210,11 @@ func main() {
 		log.Println("Seeding default permissions assignments...")
 		permissions.SeedDefaultPermissions(ctx)
 	}
+
+	if _, err = startupConn.Exec(ctx, "SELECT pg_advisory_unlock(hashtext('kollab:startup'))"); err != nil {
+		log.Fatal(err)
+	}
+	startupConn.Close(ctx)
 
 	// Instantiate repositories with Postgres backend
 	userRepo := pgrepo.NewPostgresUserRepository(db)
@@ -215,6 +251,7 @@ func main() {
 	teamService := teamrepo.NewTeamService(teamRepo)
 	systemService := systemrepo.NewSystemService(systemRepo)
 	docService := docrepo.NewDocumentService(docRepo, systemService, taskRepo, teamRepo)
+	docService.SetAccessEvaluator(evaluator)
 	imageService := imgrepo.NewImageService(imageRepo, storageProvider)
 	libImageService := imgrepo.NewLibraryImageService(libImageRepo, imageService)
 	themeService := themerepo.NewThemeService(themeRepo)
@@ -247,14 +284,16 @@ func main() {
 	if authMode == "local" {
 		oidcConfig["authority"] = "mock"
 		oidcConfig["clientId"] = "mock-client-id"
-		oidcConfig["redirectUri"] = "http://localhost:5173"
+		oidcConfig["redirectUri"] = "http://localhost:8090"
 		oidcConfig["apiAudience"] = "mock-api"
 		oidcConfig["apiScope"] = "mock-api.read"
 	}
 
 	// Instantiate WebSocket Hub
 	wsHub := ws.NewHub(docService)
-	go wsHub.Run()
+	wsHub.Store = pgrepo.NewCollaborationRepository(db)
+	wsHub.Cluster = coordinator
+	go wsHub.RunContext(ctx)
 
 	// Instantiate handlers
 	userHandler := handler.NewUserHandler(authService, themeService, systemService, oidcConfig)
@@ -264,6 +303,7 @@ func main() {
 	libImageHandler := handler.NewLibraryImageHandler(libImageService)
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService, attachmentService)
+	systemHandler.SetHub(wsHub)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService, evaluator)
 	tagHandler := handler.NewTagHandler(tagService)
@@ -287,6 +327,7 @@ func main() {
 		}
 	}
 	wsHandler := handler.NewWSHandler([]byte(jwtSecret), jwksCache, wsHub, evaluator)
+	wsHandler.SetUserRepository(userRepo)
 	r := apihttp.NewRouter([]byte(jwtSecret), jwksCache, userRepo, userHandler, teamHandler, docHandler, imageHandler, libImageHandler, themeHandler, wsHandler, systemHandler, commentHandler, attachmentHandler, aiHandler, tagHandler, templateHandler, integrationHandler, evaluator)
 
 	port := os.Getenv("PORT")
@@ -299,8 +340,10 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: r,
+		Addr:              ":" + port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	go func() {

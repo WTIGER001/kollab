@@ -1,6 +1,8 @@
+import { useToastStore } from "../store/useToastStore";
 import { useEffect, useState, useRef } from "react";
 import { Editor } from "@tiptap/react";
 import * as Y from "yjs";
+import { yDocToProsemirrorJSON } from "@tiptap/y-tiptap";
 
 export interface UserPresence {
   userId: string;
@@ -28,18 +30,26 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
   return bytes;
 };
 
-import { WS_BASE_URL } from "../services/api";
+import { WS_BASE_URL, getSharedProtocol } from "../services/api";
 
 export const usePresence = (
   activeDocId: string | null,
   authToken: string | null,
   editor: Editor | null,
   ydoc: Y.Doc,
-  onSyncReady: (isFirst: boolean) => void
+  onSyncReady: (isFirst: boolean) => void,
+  canWrite = true,
+  onSynchronized?: (ready: boolean) => void
 ) => {
+  const epochRef = useRef<string | null>(null);
+  const initializingRef = useRef(false);
+  const synchronizedCallback = useRef(onSynchronized);
+  synchronizedCallback.current = onSynchronized;
   const [connected, setConnected] = useState(false);
   const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
+  const snapshotRef = useRef({ enabled: false, version: 0, inFlight: false, pending: false, sent: "", requestId: 0 });
+  const flushSnapshotRef = useRef<() => void>(() => {});
   const reconnectTimeoutRef = useRef<any>(null);
 
   // Keep callback reference updated without triggering connection re-effects
@@ -60,6 +70,7 @@ export const usePresence = (
         wsRef.current.close();
       }
       setActiveUsers([]);
+      synchronizedCallback.current?.(true);
       return;
     }
 
@@ -68,25 +79,37 @@ export const usePresence = (
       setActiveUsers([]);
       // Call onSyncReady immediately to load initialContent
       onSyncReadyRef.current(true);
+      synchronizedCallback.current?.(true);
       return;
     }
 
+    snapshotRef.current = { enabled: false, version: 0, inFlight: false, pending: false, sent: "", requestId: 0 };
+    flushSnapshotRef.current = () => {
+      const state = snapshotRef.current;
+      if (!canWrite || !editor || editor.isDestroyed || !state.enabled || state.inFlight || !state.pending || wsRef.current?.readyState !== WebSocket.OPEN) return;
+      const update = uint8ArrayToBase64(Y.encodeStateAsUpdate(ydoc));
+      state.sent = update; state.inFlight = true; state.pending = false; state.requestId++;
+      wsRef.current.send(JSON.stringify({ type: "sync", docId: activeDocId, update, content: JSON.stringify(yDocToProsemirrorJSON(ydoc, "default")), snapshot: true, version: state.version, requestId: state.requestId }));
+    };
     const connect = () => {
+      synchronizedCallback.current?.(false);
       if (wsRef.current) {
         wsRef.current.onclose = null;
         wsRef.current.close();
       }
 
-      const wsUrl = `${WS_BASE_URL}/api/ws?token=${authToken}&docId=${activeDocId}`;
-      const ws = new WebSocket(wsUrl);
+      const wsUrl = `${WS_BASE_URL}/api/ws?token=${encodeURIComponent(authToken)}&docId=${encodeURIComponent(activeDocId)}`;
+      const ws = new WebSocket(wsUrl, getSharedProtocol(activeDocId));
       wsRef.current = ws;
 
       ws.onopen = () => {
         setConnected(true);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        if (event?.code === 1012) { window.location.reload(); return; }
         setConnected(false);
+        snapshotRef.current.inFlight = false;
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, 3000);
@@ -103,6 +126,10 @@ export const usePresence = (
           if (!trimmed) continue;
           try {
             const msg = JSON.parse(trimmed);
+            if (msg.epoch) {
+              if (epochRef.current && epochRef.current !== msg.epoch) { window.location.reload(); return; }
+              epochRef.current = msg.epoch;
+            }
             if (msg.type === "presence") {
               const users = msg.users || [];
               setActiveUsers(users);
@@ -124,14 +151,42 @@ export const usePresence = (
                   })
                 );
               }
+            } else if (msg.type === "sync-ack") {
+              const state = snapshotRef.current;
+              state.version = Math.max(state.version, msg.version || 0);
+              if (msg.requestId === state.requestId) {
+                state.inFlight = false;
+                initializingRef.current = false;
+                synchronizedCallback.current?.(true);
+                state.pending = state.sent !== uint8ArrayToBase64(Y.encodeStateAsUpdate(ydoc));
+                flushSnapshotRef.current();
+              }
+            } else if (msg.type === "sync-error") {
+              snapshotRef.current.inFlight = false;
+              snapshotRef.current.pending = true;
+              useToastStore.getState().showToast(msg.error || "Synchronization failed. Keep this page open.", "error");
             } else if (msg.type === "sync") {
+              if (initializingRef.current && msg.version > 0) { window.location.reload(); return; }
               // Decode base64 to binary Yjs update blob safely
               const binaryUpdate = base64ToUint8Array(msg.update);
               // Apply it locally, specifying "websocket" origin to prevent infinite loop
               Y.applyUpdate(ydoc, binaryUpdate, "websocket");
+              if (msg.snapshot) {
+                snapshotRef.current.version = Math.max(snapshotRef.current.version, msg.version || 0);
+                flushSnapshotRef.current();
+              }
             } else if (msg.type === "document-tree-updated") {
               window.dispatchEvent(new CustomEvent("document-tree-updated"));
             } else if (msg.type === "sync-history") {
+              // Another replica won first initialization. No editing is enabled
+              // yet, so reload its seed instead of merging duplicate initial text.
+              if (initializingRef.current && msg.version > 0) { window.location.reload(); return; }
+              initializingRef.current = !!msg.snapshot && msg.version === 0 && !!editor;
+              if (msg.snapshot) {
+                snapshotRef.current.enabled = true;
+                snapshotRef.current.version = msg.version || 0;
+                snapshotRef.current.inFlight = true;
+              }
               // Apply all historical updates transactionally
               const hasHistory = msg.updates && msg.updates.length > 0;
               if (hasHistory) {
@@ -144,6 +199,12 @@ export const usePresence = (
                 onSyncReadyRef.current(false);
               } else {
                 onSyncReadyRef.current(true);
+              }
+              if (!msg.snapshot || !initializingRef.current || !canWrite) synchronizedCallback.current?.(true);
+              if (msg.snapshot) {
+                snapshotRef.current.inFlight = false;
+                snapshotRef.current.pending = true;
+                flushSnapshotRef.current();
               }
             }
           } catch (err) {
@@ -164,15 +225,20 @@ export const usePresence = (
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [authToken, activeDocId, editor, ydoc]); // Safely omitted onSyncReady
+  }, [authToken, activeDocId, editor, ydoc, canWrite]); // Safely omitted onSyncReady
 
   // Synchronize local Yjs document changes over the WebSocket channel
   useEffect(() => {
-    if (!ydoc || !activeDocId || !connected) return;
+    if (!canWrite || !ydoc || !activeDocId || !connected) return;
 
     const handleYjsUpdate = (update: Uint8Array, origin: any) => {
       // Avoid infinite feedback loops by checking update origin
       if (origin !== "websocket") {
+        if (snapshotRef.current.enabled) {
+          snapshotRef.current.pending = true;
+          flushSnapshotRef.current();
+          return;
+        }
         const base64Update = uint8ArrayToBase64(update);
         sendMsg({
           type: "sync",
@@ -186,7 +252,7 @@ export const usePresence = (
     return () => {
       ydoc.off("update", handleYjsUpdate);
     };
-  }, [ydoc, activeDocId, connected]);
+  }, [ydoc, activeDocId, connected, canWrite]);
 
   // Broadcast local user's selection updates to room
   useEffect(() => {

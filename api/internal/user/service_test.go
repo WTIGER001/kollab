@@ -89,6 +89,16 @@ func TestAuthServiceLocalUserLifecycle(t *testing.T) {
 	if _, err := service.Login(ctx, user.Username, "ReplacementPassword123"); err == nil {
 		t.Fatal("disabled local user was allowed to sign in")
 	}
+	updated, err := service.UpdateLocalUser(ctx, user.ID, "renamed@example.test", "Renamed User")
+	if err != nil || updated.Email != "renamed@example.test" || updated.DisplayName != "Renamed User" {
+		t.Fatalf("update local user: %#v, %v", updated, err)
+	}
+	if err := service.DeleteLocalUser(ctx, user.ID); err != nil {
+		t.Fatalf("delete local user: %v", err)
+	}
+	if users, err := service.ListLocalUsers(ctx); err != nil || len(users) != 0 {
+		t.Fatalf("expected deleted user to be absent: %#v, %v", users, err)
+	}
 }
 
 func TestAuthServiceCreatesOnlyOneInitialAdmin(t *testing.T) {

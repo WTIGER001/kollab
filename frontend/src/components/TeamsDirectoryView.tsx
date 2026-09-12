@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useMemo } from 'react';
 import { Box, Typography, Avatar, Divider, IconButton, Tooltip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -143,7 +144,7 @@ export const TeamsDirectoryView: React.FC<TeamsDirectoryViewProps> = ({ teams, p
                         }}
                       >
                         <Avatar 
-                          src={proj.logoUrl || undefined}
+                          src={authenticatedMediaUrl(proj.logoUrl || undefined)}
                           sx={{ 
                             bgcolor: 'color-mix(in srgb, var(--text-secondary) 15%, transparent)', 
                             color: 'text.primary',

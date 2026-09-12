@@ -10,7 +10,7 @@ import {
   CircularProgress,
   Alert
 } from "@mui/material";
-import { Upload, FileUp, CheckCircle2, AlertTriangle, ChevronRight } from "lucide-react";
+import { Upload, FileUp, CheckCircle2 } from "lucide-react";
 import { importDocumentHierarchy } from "../services/api";
 
 interface ImportDialogProps {
@@ -152,8 +152,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
       open={open}
       onClose={loading ? undefined : onClose}
       maxWidth="xs"
-      fullWidth
-      PaperProps={{
+      fullWidth slotProps={{ paper: {
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
@@ -162,7 +161,7 @@ export const ImportDialog: React.FC<ImportDialogProps> = ({
           color: "var(--text-color, #1f2937)",
           p: 1
         }
-      }}
+      } }}
     >
       <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, fontSize: "18px", pb: 1 }}>
         Import Page Hierarchy

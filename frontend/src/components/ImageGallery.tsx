@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useState } from "react";
 import {
   Box,
@@ -131,7 +132,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 }}
               >
                 <img
-                  src={url}
+                  src={authenticatedMediaUrl(url)}
                   alt={img.filename}
                   style={{
                     width: "100%",
@@ -236,7 +237,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                 <Tooltip title="Download original file">
                   <IconButton
                     component="a"
-                    href={`${apiBaseUrl}/api/attachments/${images[lightboxIndex].id}`}
+                    href={authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${images[lightboxIndex].id}`)}
                     download
                     sx={{ color: "#fff", bgcolor: "action.hover", "&:hover": { bgcolor: "action.hover" } }}
                   >
@@ -280,7 +281,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               }}
             >
               <img
-                src={`${apiBaseUrl}/api/attachments/${images[lightboxIndex].id}`}
+                src={authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${images[lightboxIndex].id}`)}
                 alt={images[lightboxIndex].filename}
                 style={{
                   maxWidth: "100%",

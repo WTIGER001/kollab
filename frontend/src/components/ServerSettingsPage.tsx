@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Tabs,
-  Tab,
   TextField,
   Button,
   Typography,
@@ -14,13 +12,14 @@ import {
   Switch,
   Divider
 } from "@mui/material";
-import { Sparkles, ArrowLeft, AlertCircle, RefreshCw, Eye, EyeOff, Save, Download, FileUp, Database, Activity, RefreshCcw, LogOut, CheckCircle2 } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
 import type { ColorScheme, WorkspaceTheme, SystemSettings } from "../services/api";
-import { API_BASE_URL, downloadBackup, downloadSyncExport, restoreBackup, importSyncPackage } from "../services/api";
+import { downloadBackup, restoreBackup } from "../services/api";
 import { IntegrationsManager } from "./IntegrationsManager";
 import { useAppStore } from "../store/useAppStore";
 import { presets } from "../theme/presets";
 import { ThemeSelector } from "./ThemeSelector";
+import { SyncTransferPanel } from "./SyncTransferPanel";
 import { LogoSelector } from "./LogoSelector";
 
 interface ServerSettingsPageProps {
@@ -30,10 +29,21 @@ interface ServerSettingsPageProps {
   onSaveSettings: (settings: SystemSettings) => Promise<void>;
   onBack: () => void;
   showToast: (message: string, severity: "success" | "error" | "info" | "warning") => void;
+  section?: "general" | "appearance" | "retention" | "previews" | "backups" | "authentication" | "integrations";
 }
 
 const themeVariableOr = (value: string | undefined, fallback: string) =>
   value?.startsWith("var(--") ? value : fallback;
+
+const sectionTitles = {
+  general: "General",
+  appearance: "Appearance",
+  retention: "Audit & retention",
+  previews: "Document previews",
+  backups: "Backup & sync",
+  authentication: "Authentication",
+  integrations: "Integrations",
+} as const;
 
 export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   currentTheme,
@@ -41,9 +51,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   systemSettings,
   onSaveSettings,
   onBack,
-  showToast
+  showToast,
+  section = "general",
 }) => {
-  const [tabIndex, setTabIndex] = useState(0);
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   
@@ -58,7 +68,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
 
   // New settings states
   const [welcomeTitle, setWelcomeTitle] = useState("Welcome to Kollab");
-  const [welcomeText, setWelcomeText] = useState("A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+  const [welcomeText, setWelcomeText] = useState("Your workspace for shared notes, plans, and knowledge.");
   const [authLogoUrl, setAuthLogoUrl] = useState("");
   const [authLogoSize, setAuthLogoSize] = useState("Medium");
   const [authLegalDisclaimer, setAuthLegalDisclaimer] = useState("");
@@ -111,7 +121,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setTrashPolicy(systemSettings.trashRetentionPolicy || "forever");
       setTrashCustomDays(systemSettings.trashRetentionCustomDays || 30);
       setWelcomeTitle(systemSettings.welcomeTitle || "Welcome to Kollab");
-      setWelcomeText(systemSettings.welcomeText || "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.");
+      setWelcomeText(systemSettings.welcomeText || "Your workspace for shared notes, plans, and knowledge.");
       setAuthLogoUrl(systemSettings.authLogoUrl || "");
       setAuthLogoSize(systemSettings.authLogoSize || "Medium");
       setAuthLegalDisclaimer(systemSettings.authLegalDisclaimer || "");
@@ -126,13 +136,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
     }
   }, [currentTheme, systemSettings]);
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabIndex(newValue);
-  };
-
   const handleSave = async () => {
     try {
-      onSave(name, logoUrl, lightColors, darkColors);
+      await onSave(name, logoUrl, lightColors, darkColors);
       await onSaveSettings({
         auditRetentionPolicy: policy,
         auditRetentionCustomDays: customDays,
@@ -215,29 +221,30 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   };
 
   return (
-    <Box sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "text.primary" }}>
+    <Box sx={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", bgcolor: "var(--bg-color)", color: "var(--text-primary)" }}>
       {/* Header Panel */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 4, py: 3, borderBottom: "1px solid var(--border-color)" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={onBack} sx={{ color: "text.secondary", "&:hover": { color: "text.primary" } }}>
+          <IconButton onClick={onBack} sx={{ color: "var(--text-secondary)", "&:hover": { color: "var(--text-primary)" } }}>
             <ArrowLeft size={20} />
           </IconButton>
           <Box sx={{ p: 0.75, borderRadius: 1.5, backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)", display: "flex" }}>
-            <Sparkles size={16} style={{ color: "var(--accent-purple)" }} />
+            <Sparkles size={16} style={{ color: "var(--primary-color)" }} />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.02em" }}>
             Server Settings
           </Typography>
+          <Typography sx={{ color: "var(--text-secondary)", fontSize: "14px" }}>/ {sectionTitles[section]}</Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Button
             onClick={onBack}
             sx={{
-              color: "text.secondary",
+              color: "var(--text-secondary)",
               fontSize: "13px",
               fontWeight: 600,
               textTransform: "none",
-              "&:hover": { backgroundColor: "action.hover" }
+              "&:hover": { backgroundColor: "var(--glass-bg)" }
             }}
           >
             Cancel
@@ -250,11 +257,11 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
               px: 3,
               fontSize: "13px",
               fontWeight: 700,
-              bgcolor: "primary.main",
+              bgcolor: "var(--primary-color)",
               borderRadius: "6px",
               textTransform: "none",
-              boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
-              "&:hover": { bgcolor: "primary.dark" }
+              boxShadow: "var(--shadow-button)",
+              "&:hover": { bgcolor: "var(--secondary-color)" }
             }}
           >
             Save Changes
@@ -262,37 +269,8 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         </Box>
       </Box>
 
-      {/* Tabs Container */}
-      <Box sx={{ borderBottom: "1px solid var(--border-color)", px: 4, bgcolor: "background.paper" }}>
-        <Tabs
-          value={tabIndex}
-          onChange={handleTabChange}
-          sx={{
-            "& .MuiTab-root": {
-              color: "text.disabled",
-              fontSize: "13.5px",
-              fontWeight: 600,
-              textTransform: "none",
-              py: 2.25,
-              minWidth: 100,
-              "&.Mui-selected": { color: "primary.light" }
-            },
-            "& .MuiTabs-indicator": { backgroundColor: "primary.light" }
-          }}
-        >
-          <Tab label="General Settings" />
-          <Tab label="Theme & Aesthetics" />
-          <Tab label="Audit & Retention" />
-          <Tab label="Aspose & Previews" />
-          <Tab label="Backups & Air-Gap Sync" />
-          <Tab label="Authentication Branding" />
-          <Tab label="Integrations" />
-        </Tabs>
-      </Box>
-
-      {/* Main Tab Content Panel */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: 5, maxWidth: "1000px", width: "100%" }}>
-        {tabIndex === 0 && (
+      <Box sx={{ flex: 1, overflowY: "auto", p: { xs: 2, md: 5 }, maxWidth: "1000px", width: "100%" }}>
+        {section === "general" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <TextField
               label="Workspace Branding Name"
@@ -472,7 +450,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 1 && (
+        {section === "appearance" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {/* Theme Engine Section */}
             <Box>
@@ -480,7 +458,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Dynamic Theme Engine
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-                Select a global aesthetic preset for this workspace. This will override CSS variables across the entire application.
+                Choose an appearance preset for this browser. The selected style applies throughout the application.
               </Typography>
               <ThemeSelector 
                 activeThemeId={activeThemeId}
@@ -498,7 +476,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 Custom Palette Overrides
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-                Fine-tune specific colors for Light and Dark modes. These manual values take precedence over the selected theme engine preset.
+                Save workspace colors for Light and Dark modes. These colors apply when the Default preset is selected.
               </Typography>
               
               <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
@@ -540,7 +518,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 2 && (
+        {section === "retention" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {/* Audit Log Panel */}
             <Box>
@@ -646,7 +624,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 3 && (
+        {section === "previews" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
@@ -704,7 +682,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 4 && (
+        {section === "backups" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
@@ -748,12 +726,13 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                       const file = e.target.files[0];
                       if (!file) return;
                       const formData = new FormData();
+                      if (!window.confirm("Restore this backup? This replaces the installation's current data and uploads. Keep a current backup before continuing.")) return;
                       formData.append("backup", file);
                       try {
                         const data = await restoreBackup(formData);
                         alert(data.message || "Backup restored successfully!");
                       } catch (err) {
-                        alert("Restore failed. Check backup ZIP formatting.");
+                        alert("Restore failed: " + (err instanceof Error ? err.message : String(err)));
                       }
                     };
                     input.click();
@@ -767,76 +746,10 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
 
             <Divider sx={{ borderColor: "var(--border-color)", borderStyle: "dashed" }} />
 
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
-                Diff-Based Air-Gap Sync
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
-                Generate an incremental update package containing only database rows and file uploads modified since a specific operation ID, suitable for transfer to an air-gapped target server.
-              </Typography>
-
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                <TextField
-                  id="sync-since-id"
-                  label="Since Operation ID"
-                  size="small"
-                  defaultValue="0"
-                  type="number"
-                  sx={{ width: 150 }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={async () => {
-                    const idVal = (document.getElementById("sync-since-id") as HTMLInputElement)?.value || "0";
-                    try {
-                      const blob = await downloadSyncExport(idVal);
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `kollab_sync_since_${idVal}_${new Date().toISOString().slice(0, 10)}.zip`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
-                    } catch (err) {
-                      console.error("Sync export failed:", err);
-                      alert("Sync export failed: " + (err instanceof Error ? err.message : String(err)));
-                    }
-                  }}
-                  sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
-                >
-                  Export Sync ZIP
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = ".zip";
-                    input.onchange = async (e: any) => {
-                      const file = e.target.files[0];
-                      if (!file) return;
-                      const formData = new FormData();
-                      formData.append("sync", file);
-                      try {
-                        const data = await importSyncPackage(formData);
-                        alert(data.message || "Sync ZIP imported successfully!");
-                      } catch (err) {
-                        alert("Sync import failed.");
-                      }
-                    };
-                    input.click();
-                  }}
-                  sx={{ textTransform: "none" }}
-                >
-                  Import Sync ZIP
-                </Button>
-              </Box>
-            </Box>
+            <SyncTransferPanel />
           </Box>
         )}
-        {tabIndex === 5 && (
+        {section === "authentication" && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 600 }}>
               Authentication Screen Branding
@@ -968,7 +881,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
           </Box>
         )}
 
-        {tabIndex === 6 && (
+        {section === "integrations" && (
           <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
             <IntegrationsManager scope="system" entityId="" />
           </Box>
@@ -978,7 +891,7 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         <Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
           Kollab v{import.meta.env.VITE_APP_VERSION || "0.0.0"}
         </Typography>
-        <Typography sx={{ fontSize: "11px", fontFamily: '"Outfit", sans-serif', fontFamily: "monospace" }}>
+        <Typography sx={{ fontSize: "11px", fontFamily: "monospace" }}>
           Commit: {import.meta.env.VITE_COMMIT_HASH || "unknown"}
         </Typography>
       </Box>

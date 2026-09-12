@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { ServerSettingsPage } from './ServerSettingsPage';
@@ -38,6 +37,7 @@ describe('ServerSettingsPage', () => {
     currentTheme: {
       id: 'theme_1',
       name: 'Default Theme',
+      isDefault: true,
       logoUrl: 'http://example.com/logo.png',
       lightMode: {
         primary: '#000000',
@@ -96,13 +96,9 @@ describe('ServerSettingsPage', () => {
     expect(screen.getByDisplayValue('20')).toBeInTheDocument(); // AI Rate Limit
   });
 
-  it('switches tabs correctly', () => {
-    render(<ServerSettingsPage {...defaultProps} />);
-    
-    // Switch to Audit & Retention tab
-    fireEvent.click(screen.getByText('Audit & Retention'));
-    
-    // Check for audit specific content
+  it('renders the route-selected retention section', () => {
+    render(<ServerSettingsPage {...defaultProps} section="retention" />);
+
     expect(screen.getByText('Audit Log Retention Policy')).toBeInTheDocument();
     expect(screen.getByText('Trash Bin Pruning Policy')).toBeInTheDocument();
   });
@@ -135,12 +131,8 @@ describe('ServerSettingsPage', () => {
   });
 
   it('calls downloadBackup when Export Full Server Backup ZIP is clicked', async () => {
-    render(<ServerSettingsPage {...defaultProps} />);
-    
-    // Switch to Backups tab
-    fireEvent.click(screen.getByText('Backups & Air-Gap Sync'));
-    
-    // Click export button
+    render(<ServerSettingsPage {...defaultProps} section="backups" />);
+
     const exportBtn = screen.getByText('Export Full Server Backup ZIP');
     
     await act(async () => {

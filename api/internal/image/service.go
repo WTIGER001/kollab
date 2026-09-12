@@ -3,11 +3,15 @@ package image
 import (
 	"bytes"
 	"context"
+	"encoding/xml"
 	"fmt"
+	_ "golang.org/x/image/webp"
 	"image"
 	_ "image/gif" // register GIF decoder
 	"image/jpeg"
 	"image/png"
+	"io"
+	"strings"
 	"time"
 
 	"golang.org/x/image/draw"
@@ -30,18 +34,30 @@ func NewImageService(repo domain.ImageRepository, storage domain.FileStorage) *I
 }
 
 func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeType string, data []byte) (*domain.ImageMetadata, error) {
-	img, format, err := image.Decode(bytes.NewReader(data))
-	
+	if len(data) == 0 || len(data) > 10<<20 {
+		return nil, fmt.Errorf("image must be between 1 byte and 10 MB")
+	}
+	var img image.Image
 	var origWidth, origHeight int
-	if err == nil {
-		bounds := img.Bounds()
-		origWidth = bounds.Dx()
-		origHeight = bounds.Dy()
+	config, format, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		if err := validateSVG(data); err != nil {
+			return nil, fmt.Errorf("upload a valid PNG, JPEG, GIF, WebP, or SVG image: %w", err)
+		}
+		mimeType = "image/svg+xml"
 	} else {
-		// Cannot decode image (e.g. AVIF, SVG, WEBP without decoder registered). 
-		// We gracefully continue, setting dimensions to 0, saving the original, and skipping scaling.
-		origWidth = 0
-		origHeight = 0
+		if config.Width <= 0 || config.Height <= 0 || int64(config.Width)*int64(config.Height) > 40_000_000 {
+			return nil, fmt.Errorf("image exceeds 40 megapixels")
+		}
+		mimeType = map[string]string{"png": "image/png", "jpeg": "image/jpeg", "gif": "image/gif", "webp": "image/webp"}[format]
+		if mimeType == "" {
+			return nil, fmt.Errorf("unsupported image format")
+		}
+		origWidth, origHeight = config.Width, config.Height
+		img, _, err = image.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, fmt.Errorf("corrupt image: %w", err)
+		}
 	}
 
 	id := uuid.New().String()
@@ -56,7 +72,7 @@ func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeTyp
 	// 2. Perform scaling for target widths (300, 600, 900, 1200)
 	targetSizes := []int{300, 600, 900, 1200}
 	for _, targetWidth := range targetSizes {
-		if img == nil || origWidth <= targetWidth {
+		if img == nil || (format != "png" && format != "jpeg") || origWidth <= targetWidth {
 			// Skip scaling if the original image is smaller or if we couldn't decode it
 			continue
 		}
@@ -82,6 +98,9 @@ func (s *ImageService) UploadImage(ctx context.Context, filename string, mimeTyp
 	}
 
 	if err := s.repo.SaveMetadata(ctx, meta); err != nil {
+		for _, size := range []string{"original", "300", "600", "900", "1200"} {
+			_ = s.storage.Delete(ctx, fmt.Sprintf("%s_%s.%s", id, size, ext))
+		}
 		return nil, fmt.Errorf("failed to save image metadata: %w", err)
 	}
 
@@ -181,4 +200,55 @@ func resizeImage(img image.Image, format string, targetWidth int) ([]byte, error
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// SVG is retained only if it contains passive drawing elements and local references.
+func validateSVG(data []byte) error {
+	decoder := xml.NewDecoder(bytes.NewReader(data))
+	allowed := strings.Fields("svg g defs path rect circle ellipse line polyline polygon text tspan title desc linearGradient radialGradient stop clipPath mask pattern use symbol marker")
+	tags := map[string]bool{}
+	for _, tag := range allowed {
+		tags[tag] = true
+	}
+	depth, roots := 0, 0
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		switch t := token.(type) {
+		case xml.StartElement:
+			if !tags[t.Name.Local] {
+				return fmt.Errorf("SVG element %s is not permitted", t.Name.Local)
+			}
+			if depth == 0 {
+				roots++
+				if t.Name.Local != "svg" || roots != 1 {
+					return fmt.Errorf("invalid SVG root")
+				}
+			}
+			depth++
+			for _, a := range t.Attr {
+				n, v := strings.ToLower(a.Name.Local), strings.ToLower(strings.TrimSpace(a.Value))
+				if strings.HasPrefix(n, "on") || n == "style" || (n == "href" && !strings.HasPrefix(v, "#")) || strings.Contains(v, "url(") && !strings.HasPrefix(v, "url(#") {
+					return fmt.Errorf("active or external SVG content is not permitted")
+				}
+			}
+		case xml.EndElement:
+			depth--
+		case xml.Directive:
+			return fmt.Errorf("SVG directives are not permitted")
+		case xml.ProcInst:
+			if t.Target != "xml" {
+				return fmt.Errorf("SVG processing instructions are not permitted")
+			}
+		}
+	}
+	if roots != 1 || depth != 0 {
+		return fmt.Errorf("invalid SVG")
+	}
+	return nil
 }

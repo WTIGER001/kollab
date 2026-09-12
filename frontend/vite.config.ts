@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
@@ -16,20 +16,24 @@ try {
   process.env.VITE_APP_VERSION = '0.0.0';
 }
 
+const backendTarget = process.env.KOLLAB_BACKEND_URL || "http://localhost:8081";
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 8090,
+    strictPort: true,
     watch: {
       usePolling: true,
     },
     proxy: {
       '/api/ws': {
-        target: 'ws://localhost:8080',
+        target: backendTarget.replace(/^http/, "ws"),
         ws: true,
       },
       '/api': {
-        target: 'http://localhost:8080',
+        target: backendTarget,
         changeOrigin: true,
       },
     },

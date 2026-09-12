@@ -1,3 +1,4 @@
+import { API_BASE_URL, getSharedHeaders } from "../services/api";
 import React, { useEffect, useState } from "react";
 import { Drawer, Box, Typography, IconButton, TextField, Button, CircularProgress } from "@mui/material";
 import { X, MessageSquare, Send, Trash2 } from "lucide-react";
@@ -23,17 +24,18 @@ interface CommentDrawerProps {
 }
 
 const fetchComments = async (docId: string, token: string): Promise<Comment[]> => {
-  const res = await fetch(`/api/documents/${docId}/comments`, {
-    headers: { "Authorization": `Bearer ${token}` }
+  const res = await fetch(`${API_BASE_URL}/api/documents/${docId}/comments`, {
+    headers: { "Authorization": `Bearer ${token}`, ...getSharedHeaders(docId) }
   });
   if (!res.ok) throw new Error("Failed to load comments");
   return res.json();
 };
 
 const postComment = async ({ docId, parentId, anchorId, content, token, createdByName }: { docId: string, parentId?: string, anchorId?: string, content: string, token: string, createdByName?: string }) => {
-  const res = await fetch(`/api/documents/${docId}/comments`, {
+  const res = await fetch(`${API_BASE_URL}/api/documents/${docId}/comments`, {
     method: "POST",
     headers: { 
+      ...getSharedHeaders(docId),
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`
     },
@@ -44,7 +46,7 @@ const postComment = async ({ docId, parentId, anchorId, content, token, createdB
 };
 
 const deleteComment = async ({ commentId, token }: { commentId: string, token: string }) => {
-  const res = await fetch(`/api/comments/${commentId}`, {
+  const res = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
     method: "DELETE",
     headers: { "Authorization": `Bearer ${token}` }
   });

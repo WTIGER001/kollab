@@ -9,10 +9,12 @@ import (
 
 	"kollab/api/internal/domain"
 	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type LibraryImageHandler struct {
-	service domain.LibraryImageService
+	service   domain.LibraryImageService
+	evaluator *permissions.AccessEvaluator
 }
 
 func NewLibraryImageHandler(service domain.LibraryImageService) *LibraryImageHandler {
@@ -20,6 +22,8 @@ func NewLibraryImageHandler(service domain.LibraryImageService) *LibraryImageHan
 		service: service,
 	}
 }
+
+func (h *LibraryImageHandler) SetAccessEvaluator(e *permissions.AccessEvaluator) { h.evaluator = e }
 
 func (h *LibraryImageHandler) List(w http.ResponseWriter, r *http.Request) {
 	if h.service == nil {
@@ -54,7 +58,14 @@ func (h *LibraryImageHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(images)
+	userID, _ := middleware.GetUserID(r.Context())
+	visible := make([]*domain.LibraryImage, 0, len(images))
+	for _, img := range images {
+		if h.evaluator != nil && h.evaluator.EvaluateLibraryImageAccess(r.Context(), userID, img.ID, "read") {
+			visible = append(visible, img)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *LibraryImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +73,7 @@ func (h *LibraryImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	// Parse multipart form
 	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max upload size
 		http.Error(w, "Bad Request: failed to parse multipart form", http.StatusBadRequest)
@@ -109,6 +121,17 @@ func (h *LibraryImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	target := userID
+	if scope == "team" {
+		target = teamIDStr
+	}
+	if scope == "project" {
+		target = projectIDStr
+	}
+	if !permissions.CanAccessScope(r.Context(), userID, scope, target, "write") {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
 	img, err := h.service.Upload(r.Context(), data, header.Filename, mimeType, header.Filename, scope, teamID, projectID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -146,6 +169,11 @@ func (h *LibraryImageHandler) UpdateName(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+	if h.evaluator == nil || !h.evaluator.EvaluateLibraryImageAccess(r.Context(), userID, id, "write") {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
 	img, err := h.service.UpdateName(r.Context(), id, req.DisplayName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -167,6 +195,11 @@ func (h *LibraryImageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+	if h.evaluator == nil || !h.evaluator.EvaluateLibraryImageAccess(r.Context(), userID, id, "write") {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
 	err := h.service.Delete(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

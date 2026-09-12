@@ -35,7 +35,7 @@ import { renderAsync } from "docx-preview";
 import { 
   fetchPreviewStatus, 
   retryPreviewGeneration, 
-  getApiToken
+  authenticatedMediaUrl
 } from "../services/api";
 import type { PreviewStatus } from "../services/api";
 import ThreeDViewer from "./ThreeDViewer";
@@ -90,7 +90,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
   const [csvRows, setCsvRows] = useState<string[][]>([]);
 
   const objectUrlsRef = useRef<string[]>([]);
-	const downloadUrl = `${apiBaseUrl}/api/attachments/${attachmentId}?authToken=${encodeURIComponent(getApiToken() || "")}`;
+	const downloadUrl = authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${attachmentId}`)!;
 
   // Map sizing to pixel heights
   const heightMap = {
@@ -196,12 +196,8 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
     if (!isCSV && !isTextCode) return;
 
     setLoading(true);
-    fetch(downloadUrl, {
-      headers: {
-        Authorization: `Bearer ${getApiToken()}`
-      }
-    })
-    .then(r => r.text())
+    fetch(downloadUrl)
+    .then(r => { if (!r.ok) throw new Error("Unable to load attachment"); return r.text(); })
     .then(text => {
       setTextVal(text);
       if (isCSV) {
@@ -677,10 +673,8 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                 <Box sx={{ width: "100%", mt: 1 }}>
                   <Typography variant="body2" align="center" sx={{ color: "#fff", mb: 1, fontFamily: '"Outfit", sans-serif' }}>
                     {previewStatus.status === "pending" && "Queueing preview task..."}
-                    {previewStatus.status === "converting" && "Converting document on server..."}
                     {previewStatus.status === "converting_aspose" && "Converting via Aspose Engine..."}
                     {previewStatus.status === "converting_libreoffice" && "Running LibreOffice Fallback..."}
-                    {previewStatus.status === "completed" && "Loading preview..."}
                     {` (${previewStatus.progress}%)`}
                   </Typography>
                   <LinearProgress 
@@ -710,7 +704,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
             <Alert severity="warning" sx={{ mb: 3, maxWidth: "480px", borderRadius: "8px", bgcolor: "rgba(239, 83, 80, 0.1)", border: "1px solid rgba(239, 83, 80, 0.2)", color: "#fff", "& .MuiAlert-icon": { color: "#ef5350" } }}>
               {error}
             </Alert>
-            <Stack direction="row" spacing={2} justifyContent="center">
+            <Stack direction="row" spacing={2} sx={{ justifyContent: "center" }}>
               {serverPreviewsEnabled === true && (
                 <Button
                   variant="contained"
@@ -773,12 +767,14 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
            (mimeType.includes("word") || filename.endsWith(".docx") || filename.endsWith(".doc") || mimeType.includes("presentation") || filename.endsWith(".pptx") || filename.endsWith(".ppt") || mimeType.includes("sheet") || filename.endsWith(".xlsx") || filename.endsWith(".xls")))
         ) && (
           <iframe
+            sandbox="allow-same-origin allow-downloads"
+            referrerPolicy="no-referrer"
             src={
               (mimeType === "application/pdf" || filename.toLowerCase().endsWith(".pdf"))
                 ? downloadUrl
                 : previewStatus?.format === "html"
-					? `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/index.html?authToken=${encodeURIComponent(getApiToken() || "")}`
-					: `${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/document.pdf?authToken=${encodeURIComponent(getApiToken() || "")}`
+					? authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/index.html`)!
+					: authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/document.pdf`)!
             }
             width="100%"
             height="100%"
@@ -865,7 +861,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
             ) : (
               <Box sx={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <img
-				  src={`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/thumbnail.png?authToken=${encodeURIComponent(getApiToken() || "")}`}
+				  src={authenticatedMediaUrl(`${apiBaseUrl}/api/attachments/${attachmentId}/preview/view/thumbnail.png`)!}
                   alt="3D Model Thumbnail"
                   style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain", borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
                 />

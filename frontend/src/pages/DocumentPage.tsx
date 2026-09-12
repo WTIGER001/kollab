@@ -4,9 +4,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Box, CircularProgress } from '@mui/material';
 import { EditorCanvas } from '../components/EditorCanvas';
 import { CommentDrawer } from '../components/CommentDrawer';
-import { fetchDocument, updateDocument, deleteDocument, moveDocument } from '../services/api';
+import { fetchDocument, fetchDocumentCapabilities, updateDocument, deleteDocument, moveDocument } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
-import { useAuth } from 'react-oidc-context';
+import { useSession } from '../auth/SessionContext';
+import { useToastStore } from '../store/useToastStore';
 import { useTeams, useAllProjects, useDocuments } from '../hooks/queries';
 import { useDocumentTree } from '../hooks/useDocumentTree';
 import { getLegacyNavigateFn } from '../utils/navigation';
@@ -20,14 +21,15 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
 
   const { developerMode } = useAppStore();
   
-	const auth = useAuth();
-  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.access_token || null;
+	const { token, user } = useSession();
+  const { showToast } = useToastStore();
+  const userToken = isMockMode ? "mock-jwt-token" : token;
 
   const { data: teams = [] } = useTeams();
   const { data: allProjects = [] } = useAllProjects();
   
   // Resolve actual team ID
-  let actualTeamId = teamId === 'personal' ? null : teamId;
+  let actualTeamId: string | null = teamId === 'personal' ? null : teamId || null;
   const isPersonalRoute = location.pathname.startsWith('/personal');
   if (isPersonalRoute) {
     const personalTeam = teams.find(t => t.id.startsWith('personal_'));
@@ -35,17 +37,21 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   }
   
   const activeTeam = teams.find(t => t.id === actualTeamId || t.abbreviation === actualTeamId);
-  const activeProject = allProjects.find(p => p.id === projectId || p.abbreviation === projectId);
+  const activeProject = allProjects.find(p => (p.id === projectId || p.abbreviation === projectId) && p.teamId === activeTeam?.id);
+  actualTeamId = activeTeam?.id || actualTeamId;
+  const actualProjectId = activeProject?.id || projectId;
 
-  const { data: flatDocs } = useDocuments(projectId, actualTeamId);
+  const { data: flatDocs } = useDocuments(actualProjectId, actualTeamId);
   const filteredDocs = (flatDocs || []).filter(d => d.id !== actualTeamId && d.id !== projectId);
   const documents = useDocumentTree(filteredDocs);
 
-  const { data: activeDoc, isLoading } = useQuery({
+  const { data: activeDoc, isLoading, error } = useQuery({
     queryKey: ['document', docId],
     queryFn: () => fetchDocument(docId!),
     enabled: !!docId,
   });
+
+  const { data: capabilities } = useQuery({ queryKey: ['documentCapabilities', activeDoc?.id, userToken], queryFn: () => fetchDocumentCapabilities(activeDoc!.id), enabled: !!activeDoc?.id });
 
   // Automatically replace URL address bar if navigating via alias or old ID
   useEffect(() => {
@@ -96,7 +102,8 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['document', id] });
     } catch (err) {
-      console.error(err);
+      showToast("Could not save. Your changes have not been saved.", "error");
+      throw err;
     } finally {
       setIsSaving(false);
     }
@@ -112,6 +119,8 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
     await moveDocument(id, parentId);
     queryClient.invalidateQueries({ queryKey: ['documents'] });
   };
+
+  if (error) return <Box sx={{ p: 3, color: "var(--text-primary)" }}>This page could not be loaded. Check your access and try again.</Box>;
 
   if (isLoading || !activeDoc) {
     return (
@@ -130,30 +139,31 @@ export const DocumentPage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
         initialTitle={activeDoc.title}
         initialContent={activeDoc.content || ""}
         initialEditMode={false}
+        canEdit={isMockMode || !!capabilities?.write}
         developerMode={developerMode}
         onSave={(title, content) => handleSaveDoc(activeDoc.id, title, content)}
         isSaving={isSaving}
         documents={documents}
         selectedTeamName={activeTeam?.name}
         selectedProjectName={activeProject?.name}
-        selectedTeamId={actualTeamId}
-        selectedProjectId={projectId}
+        selectedTeamId={actualTeamId || undefined}
+        selectedProjectId={actualProjectId}
         teams={teams}
         projects={allProjects}
-        onDeleteDoc={handleDeleteDoc}
-        onMoveDoc={handleMoveDoc}
+        onDeleteDoc={capabilities?.delete ? handleDeleteDoc : undefined}
+        onMoveDoc={capabilities?.write ? handleMoveDoc : undefined}
         createdAt={activeDoc.createdAt}
         updatedAt={activeDoc.updatedAt}
         createdBy={activeDoc.createdBy}
         updatedBy={activeDoc.updatedBy}
         deletedAt={activeDoc.deletedAt}
       />
-      <CommentDrawer 
+      {userToken && capabilities?.comment && <CommentDrawer
         documentId={activeDoc.id} 
         authToken={userToken} 
-        currentUserId={auth?.user?.profile.sub}
-        currentUserDisplayName={auth?.user?.profile.name || auth?.user?.profile.preferred_username}
-      />
+        currentUserId={user?.id}
+        currentUserDisplayName={user?.displayName || user?.username}
+      />}
     </Box>
   );
 };

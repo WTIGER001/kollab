@@ -97,6 +97,29 @@ func (r *InMemoryUserRepository) UpdatePassword(ctx context.Context, id, passwor
 	return nil
 }
 
+func (r *InMemoryUserRepository) UpdateProfile(ctx context.Context, id, email, displayName string) (*domain.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	u, ok := r.users[id]
+	if !ok {
+		return nil, errors.New("user not found")
+	}
+	u.Email = email
+	u.DisplayName = displayName
+	copy := *u
+	return &copy, nil
+}
+
+func (r *InMemoryUserRepository) Delete(ctx context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.users[id]; !ok {
+		return errors.New("user not found")
+	}
+	delete(r.users, id)
+	return nil
+}
+
 func (r *InMemoryUserRepository) CreateInitialLocalAdmin(ctx context.Context, user *domain.User) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

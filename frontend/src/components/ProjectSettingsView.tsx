@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useEffect, useState } from "react";
 import { 
   Box, 
@@ -72,7 +73,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
     }
   }, [project]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -259,7 +260,7 @@ export const ProjectSettingsView: React.FC<ProjectSettingsViewProps> = ({
                 Project Logo Preview
               </Typography>
               <Avatar 
-                src={logoUrl || undefined}
+                src={authenticatedMediaUrl(logoUrl || undefined)}
                 sx={{ 
                   width: 100, 
                   height: 100, 

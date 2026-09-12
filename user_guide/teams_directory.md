@@ -14,5 +14,9 @@ Underneath the team description, you'll see a list of **Projects** associated wi
 - **Quick Access**: You can click directly on a project chip (e.g., `Kollab Test`) to bypass the main team portal and jump straight into the project's workspace.
 - **Team Portal**: Clicking anywhere else on the team card (or the "Open Portal" button) will take you to the main Team Portal, where you can view all projects and team members in more detail.
 
+## Creating a Team Page
+
+After opening a team space, use **New Page** in the sidebar. Choose a template or **Blank Page**, give the page a name, and select the team as the destination. Leave **New Parent Page** set to **Top Level (Root)** to add the page directly to the team space, or select an existing page to nest it beneath that page. Kollab confirms when the page is created and opens it automatically.
+
 ## Visual Themes
 The Teams Directory fully supports the dynamic Theme Engine. The cards, background gradients, and hover animations will seamlessly adapt to whichever Theme Preset (e.g., Neobrutal, Editorial, Workbench) and Mode (Light/Dark) you have currently selected.

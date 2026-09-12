@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useState } from "react";
 import PostAdd from "@mui/icons-material/PostAdd";
 import { 
@@ -35,7 +36,6 @@ import {
   Users,
   Check,
   User,
-  FolderInput,
   X,
   AtSign,
   FileUp,
@@ -58,6 +58,8 @@ export interface RecentSpace {
 }
 
 export interface DocumentItem {
+  projectId?: string | null;
+  teamId?: string;
   id: string;
   title: string;
   isFolder?: boolean;
@@ -303,7 +305,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectDoc,
   onAddDoc,
   onImportMarkdown,
-  onDeleteDoc,
   onMoveDoc,
   teams,
   projects,
@@ -313,8 +314,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   width = 240,
   recentSpaces,
   onOpenCreateSpace,
-  onRestoreDoc,
-  onDeleteDocPermanently,
   isMobile = false,
   onCloseSidebar
 }) => {
@@ -355,8 +354,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [moveDialogDocId, setMoveDialogDocId] = useState<string>("");
-  const [moveDialogDocTitle, setMoveDialogDocTitle] = useState<string>("");
+  const [moveDialogDocId] = useState<string>("");
+  const [moveDialogDocTitle] = useState<string>("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -546,7 +545,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <Avatar 
-              src={activeTeam.logoUrl || undefined}
+              src={authenticatedMediaUrl(activeTeam.logoUrl || undefined)}
               variant={activeTeam.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
@@ -628,7 +627,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <Avatar 
-              src={activeProject.logoUrl || undefined}
+              src={authenticatedMediaUrl(activeProject.logoUrl || undefined)}
               variant={activeProject.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
@@ -710,7 +709,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           >
             <Avatar 
-              src={activeTeam.logoUrl || undefined}
+              src={authenticatedMediaUrl(activeTeam.logoUrl || undefined)}
               variant={activeTeam.logoUrl ? "square" : "circular"}
               sx={{ 
                 width: 24, 
@@ -946,7 +945,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Personal
         </Typography>
         {(() => {
-          const personalTeam = teams.find(t => t.id.startsWith("personal_"));
           const isPersonalSelected = selectedTeamId?.startsWith("personal_") && selectedProjectId === null;
           return (
             <MenuItem

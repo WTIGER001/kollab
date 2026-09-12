@@ -6,7 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
+	goperm "github.com/wtiger001/go-permissions"
 	"kollab/api/internal/domain"
+	"kollab/api/internal/permissions"
 )
 
 type TeamService struct {
@@ -43,7 +45,14 @@ func (s *TeamService) ListTeams(ctx context.Context, userID string) ([]*domain.T
 		}
 		err = s.repo.CreateTeam(ctx, personalTeam)
 		if err == nil {
-			_ = s.repo.AddTeamMember(ctx, personalTeamID, userID)
+			if err := s.repo.AddTeamMember(ctx, personalTeamID, userID); err != nil {
+				return nil, err
+			}
+			if permissions.TeamPermissions != nil {
+				if err := permissions.TeamPermissions.GrantRole(ctx, permissions.TeamPermissions.OwnerRole.ID, goperm.PrincipalUser, userID, personalTeamID); err != nil {
+					return nil, err
+				}
+			}
 			teams = append(teams, personalTeam)
 		}
 	}

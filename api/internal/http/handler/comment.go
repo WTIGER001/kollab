@@ -68,9 +68,7 @@ func (h *CommentHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	displayName := username
-	if req.CreatedByName != nil && *req.CreatedByName != "" {
-		displayName = *req.CreatedByName
-	} else if user, err := h.userRepo.GetByUsername(r.Context(), username); err == nil && user.DisplayName != "" {
+	if user, err := h.userRepo.GetByUsername(r.Context(), username); err == nil && user.DisplayName != "" {
 		displayName = user.DisplayName
 	}
 

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Box,
   Select,
@@ -33,9 +32,7 @@ import {
   Highlighter,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
-  Link2,
-  Palette
-} from "lucide-react";
+  Link2} from "lucide-react";
 
 export const EditorToolbar = ({
   editor,
@@ -650,8 +647,8 @@ export const EditorToolbar = ({
               flexShrink: 1,
             }}
           >
-            {favorites.map((favId) => {
-              const cmd = commands.find((c) => c.id === favId);
+            {favorites.map((favId: string) => {
+              const cmd = commands.find((c: { id: string }) => c.id === favId);
               if (!cmd) return null;
 
               const isActive = () => {

@@ -6,11 +6,11 @@ describe('useRecentSpacesStore', () => {
     // Reset store state before each test
     useRecentSpacesStore.setState({
       recentSpaces: [
-        { id: 'team-1', type: 'team' },
-        { id: 'proj-1', type: 'project' },
-        { id: 'deleted-team', type: 'team' },
-        { id: 'deleted-proj', type: 'project' },
-        { id: 'personal-1', type: 'personal' },
+        { id: 'team-1', name: 'team-1', type: 'team' },
+        { id: 'proj-1', name: 'proj-1', type: 'project' },
+        { id: 'deleted-team', name: 'deleted-team', type: 'team' },
+        { id: 'deleted-proj', name: 'deleted-proj', type: 'project' },
+        { id: 'personal-1', name: 'personal-1', type: 'personal' },
       ],
     });
   });
@@ -45,8 +45,8 @@ describe('useRecentSpacesStore', () => {
     // Some older cache entries might have used abbreviation as ID
     useRecentSpacesStore.setState({
       recentSpaces: [
-        { id: 'TEAM', type: 'team' },
-        { id: 'PROJ', type: 'project' },
+        { id: 'TEAM', name: 'TEAM', type: 'team' },
+        { id: 'PROJ', name: 'PROJ', type: 'project' },
       ],
     });
     

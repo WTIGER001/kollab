@@ -35,7 +35,7 @@ func (s *LibraryImageService) Upload(ctx context.Context, fileData []byte, filen
 		ImageID:     imgMeta.ID,
 		Filename:    filename,
 		DisplayName: displayName,
-		MimeType:    mimeType,
+		MimeType:    imgMeta.MimeType,
 		SizeBytes:   int64(len(fileData)),
 		Scope:       scope,
 		TeamID:      teamID,

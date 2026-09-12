@@ -2,13 +2,18 @@ package handler
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 
+	"kollab/api/internal/domain"
 	"kollab/api/internal/http/middleware"
 	"kollab/api/internal/permissions"
 	"kollab/api/internal/ws"
@@ -16,6 +21,7 @@ import (
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
+	Subprotocols:    []string{"kollab"},
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
@@ -29,6 +35,7 @@ var upgrader = websocket.Upgrader{
 
 type WSHandler struct {
 	jwtSecret []byte
+	userRepo  domain.UserRepository
 	jwksCache *middleware.JWKSCache
 	hub       *ws.Hub
 	evaluator *permissions.AccessEvaluator
@@ -43,6 +50,8 @@ func NewWSHandler(jwtSecret []byte, jwksCache *middleware.JWKSCache, hub *ws.Hub
 	}
 }
 
+func (h *WSHandler) SetUserRepository(repo domain.UserRepository) { h.userRepo = repo }
+
 func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	tokenString := r.URL.Query().Get("token")
 	if tokenString == "" {
@@ -56,13 +65,26 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var share struct {
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	for _, protocol := range websocket.Subprotocols(r) {
+		if strings.HasPrefix(protocol, "share.") && len(protocol) < 4096 {
+			data, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(protocol, "share."))
+			if err == nil {
+				_ = json.Unmarshal(data, &share)
+			}
+		}
+	}
+
 	userID, username, err := h.validateToken(r.Context(), tokenString)
 	if err != nil {
 		log.Printf("WebSocket auth validation failed: %v", err)
 		http.Error(w, "Unauthorized: invalid token", http.StatusUnauthorized)
 		return
 	}
-	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, docID, "read", "", "")
+	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, docID, "read", share.Token, share.Password)
 	if err != nil {
 		http.Error(w, "Unable to verify document access", http.StatusInternalServerError)
 		return
@@ -84,8 +106,17 @@ func (h *WSHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		Color:    ws.GetUserColor(userID),
 		DocID:    docID,
 		Conn:     conn,
-		Send:     make(chan []byte, 256),
+		Send:     make(chan []byte, 8),
 		Hub:      h.hub,
+		Authorize: func(action string) bool {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if _, _, err := h.validateToken(ctx, tokenString); err != nil {
+				return false
+			}
+			allowed, _, err := h.evaluator.EvaluateDocumentAccess(ctx, userID, docID, action, share.Token, share.Password)
+			return err == nil && allowed
+		},
 	}
 
 	h.hub.Register <- client
@@ -123,5 +154,13 @@ func (h *WSHandler) validateToken(ctx context.Context, tokenString string) (stri
 		username = userID
 	}
 
+	if h.userRepo != nil {
+		u, err := h.userRepo.GetByID(ctx, userID)
+		version, _ := claims["credential_version"].(string)
+		if err != nil || u == nil || !u.IsActive || (h.jwksCache.AllowsLocalCredentials() && version != domain.CredentialVersion(u.PasswordHash)) {
+			return "", "", fmt.Errorf("session expired")
+		}
+		username = u.Username
+	}
 	return userID, username, nil
 }

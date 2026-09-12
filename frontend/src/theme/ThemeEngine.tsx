@@ -1,5 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { fetchOIDCConfig } from "../services/api";
 import React, { useEffect, useMemo } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, createTheme, getContrastRatio } from '@mui/material/styles';
 import { useAppStore } from '../store/useAppStore';
 import { presets } from './presets';
 import type { ThemePreset } from './types';
@@ -7,9 +9,13 @@ import type { ThemePreset } from './types';
 export const ThemeEngine: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeThemeId, themeMode } = useAppStore();
 
+  const { data: workspaceConfig } = useQuery({ queryKey: ["oidcConfig"], queryFn: fetchOIDCConfig });
   const activePreset: ThemePreset = useMemo(() => {
-    return presets.find(p => p.id === activeThemeId) || presets[0];
-  }, [activeThemeId]);
+    const preset = presets.find(p => p.id === activeThemeId) || presets[0];
+    const saved = workspaceConfig?.theme;
+    if (preset.id !== "default" || !saved) return preset;
+    return { ...preset, colors: { light: { ...preset.colors.light, ...saved.lightMode }, dark: { ...preset.colors.dark, ...saved.darkMode } } };
+  }, [activeThemeId, workspaceConfig?.theme]);
 
   // Apply CSS Variables to the root element
   useEffect(() => {
@@ -18,6 +24,7 @@ export const ThemeEngine: React.FC<{ children: React.ReactNode }> = ({ children 
     
     // Base colors
     root.style.setProperty("--primary-color", activeColors.primary);
+    root.style.setProperty("--primary-contrast", getContrastRatio(activeColors.primary, "#ffffff") >= 4.5 ? "#ffffff" : "#111111");
     root.style.setProperty("--secondary-color", activeColors.secondary);
     root.style.setProperty("--bg-color", activeColors.background);
     root.style.setProperty("--panel-color", activeColors.paper);
@@ -25,6 +32,9 @@ export const ThemeEngine: React.FC<{ children: React.ReactNode }> = ({ children 
     root.style.setProperty("--text-secondary", activeColors.textSecondary);
     root.style.setProperty("--border-color", activeColors.border);
     root.style.setProperty("--accent-color", activeColors.accent);
+    root.style.setProperty("--glass-bg", activeColors.glassBg);
+    root.style.setProperty("--glass-border", activeColors.glassBorder);
+    root.style.colorScheme = themeMode;
 
     // Apply specific CSS variables from preset
     Object.entries(activePreset.cssVariables).forEach(([key, value]) => {
@@ -48,7 +58,7 @@ export const ThemeEngine: React.FC<{ children: React.ReactNode }> = ({ children 
           main: activeColors.primary, 
           light: activeColors.primary, 
           dark: activeColors.primary, 
-          contrastText: resolvedMode === 'light' ? "#ffffff" : "#ffffff"
+          contrastText: getContrastRatio(activeColors.primary, "#ffffff") >= 4.5 ? "#ffffff" : "#111111"
         },
         secondary: { main: activeColors.secondary },
         background: { default: activeColors.background, paper: activeColors.paper },

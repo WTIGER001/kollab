@@ -29,6 +29,7 @@ import {
 import { 
   uploadAttachment, 
   deleteAttachment,
+  authenticatedMediaUrl,
   API_BASE_URL
 } from "../services/api";
 import type { Attachment } from "../services/api";
@@ -50,7 +51,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
   onRefresh,
   loading = false
 }) => {
-	const attachmentUrl = (id: string) => `${API_BASE_URL}/api/attachments/${id}?authToken=${encodeURIComponent(authToken || "")}`;
+	const attachmentUrl = (id: string) => authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${id}`)!;
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
   const [isDragActive, setIsDragActive] = useState<boolean>(false);

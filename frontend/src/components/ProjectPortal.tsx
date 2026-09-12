@@ -1,39 +1,45 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useState, useEffect } from "react";
 import { 
   Box, 
   Typography, 
   Button, 
   Avatar, 
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
-  Chip
-} from "@mui/material";
+  CircularProgress} from "@mui/material";
 import { 
   Settings, 
   Briefcase, 
   FileText,
-  ArrowRight
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  UserPlus,
+  X,
 } from "lucide-react";
 import { fetchDocuments } from "../services/api";
 import type { Team, Project, Document } from "../services/api";
+import { useAppStore } from "../store/useAppStore";
 
 interface ProjectPortalProps {
   team: Team;
   project: Project;
   navigateTo: (team: string | null, project: string | null, page: string | null, isSettings?: boolean, isTeamSettings?: boolean) => void;
+  onManageMembers: () => void;
 }
 
 export const ProjectPortal: React.FC<ProjectPortalProps> = ({
   team,
   project,
-  navigateTo
+  navigateTo,
+  onManageMembers,
 }) => {
+  const setCreatePageOpen = useAppStore((state) => state.setCreatePageOpen);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [setupDismissed, setSetupDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(`kollab:onboarding-dismissed:${project.id}`) === "true";
+  });
 
   useEffect(() => {
     setLoadingDocs(true);
@@ -50,6 +56,11 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
 
   const handleDocumentClick = (doc: Document) => {
     navigateTo(team.abbreviation || team.id, project.abbreviation || project.id, doc.id);
+  };
+
+  const dismissSetup = () => {
+    setSetupDismissed(true);
+    window.localStorage.setItem(`kollab:onboarding-dismissed:${project.id}`, "true");
   };
 
   return (
@@ -76,7 +87,7 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Avatar 
-                src={project.logoUrl || undefined}
+                src={authenticatedMediaUrl(project.logoUrl || undefined)}
                 variant={project.logoUrl ? "square" : "circular"}
                 sx={{ 
                   bgcolor: project.logoUrl ? "transparent" : "primary.main", 
@@ -128,6 +139,40 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
 
       {/* Main Content Area */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+        {!loadingDocs && documents.length > 0 && !setupDismissed && (
+          <Box sx={{ p: { xs: 2.25, sm: 3 }, border: "1px solid color-mix(in srgb, var(--primary-color) 28%, var(--border-color))", borderRadius: "var(--border-radius-card)", backgroundColor: "color-mix(in srgb, var(--primary-color) 6%, var(--glass-bg))" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 2, mb: 2 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ color: "text.primary", fontWeight: 800, fontFamily: '"Outfit", sans-serif', mb: 0.5 }}>
+                  Nice start — your project has its first page
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.55 }}>
+                  Keep the momentum with one more page or bring a teammate into the workspace.
+                </Typography>
+              </Box>
+              <Button aria-label="Dismiss project setup" onClick={dismissSetup} size="small" sx={{ minWidth: 0, p: 0.5, color: "text.secondary", "&:hover": { color: "text.primary", backgroundColor: "color-mix(in srgb, var(--text-primary) 6%, transparent)" } }}><X size={16} /></Button>
+            </Box>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1.25, mb: 2.25 }}>
+              {[
+                { title: "Project created", detail: "Your shared home is ready.", complete: true },
+                { title: "First page written", detail: "Your work now has a starting point.", complete: true },
+                { title: "Invite teammates", detail: "Add people when you are ready.", complete: false },
+              ].map((step) => (
+                <Box key={step.title} sx={{ display: "flex", gap: 1, p: 1.25, borderRadius: "var(--border-radius-card)", backgroundColor: "var(--glass-bg)" }}>
+                  {step.complete ? <CheckCircle2 size={16} style={{ color: "var(--primary-color)", flexShrink: 0, marginTop: 2 }} /> : <Circle size={16} style={{ color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 }} />}
+                  <Box>
+                    <Typography sx={{ color: "text.primary", fontSize: "12.5px", fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>{step.title}</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>{step.detail}</Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+            <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
+              <Button variant="contained" onClick={() => setCreatePageOpen(true)} startIcon={<FileText size={14} />} sx={{ textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, borderRadius: "var(--border-radius-button)", boxShadow: "var(--shadow-button)" }}>Create another page</Button>
+              <Button variant="outlined" onClick={onManageMembers} startIcon={<UserPlus size={14} />} sx={{ color: "text.primary", borderColor: "var(--border-color)", textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, borderRadius: "var(--border-radius-button)", "&:hover": { borderColor: "var(--primary-color)", backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)" } }}>Manage team members</Button>
+            </Box>
+          </Box>
+        )}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>
             Project Pages
@@ -191,13 +236,24 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
             ))}
           </Box>
         ) : (
-          <Box sx={{ p: 4, textAlign: "center", border: "1px dashed var(--border-color)", bgcolor: "transparent", borderRadius: "var(--border-radius-card)" }}>
-            <Typography variant="h6" sx={{ color: "text.secondary", mb: 1, fontFamily: '"Outfit", sans-serif' }}>
-              No Pages Yet
+          <Box sx={{ p: { xs: 3, sm: 5 }, textAlign: "center", border: "1px dashed var(--border-color)", bgcolor: "var(--glass-bg)", borderRadius: "var(--border-radius-card)" }}>
+            <Box sx={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 1.5, borderRadius: "50%", color: "var(--primary-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 12%, transparent)" }}>
+              <FileText size={20} />
+            </Box>
+            <Typography variant="h6" sx={{ color: "text.primary", mb: 1, fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
+              Your project is ready for its first page
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.disabled", mb: 3 }}>
-              This project doesn't have any pages. Use the sidebar to create your first page.
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 2.5, maxWidth: 420, mx: "auto", lineHeight: 1.6 }}>
+              Start from a blank page or choose a template. Your page will appear here and in the sidebar automatically.
             </Typography>
+            <Button
+              variant="contained"
+              startIcon={<FileText size={15} />}
+              onClick={() => setCreatePageOpen(true)}
+              sx={{ textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, borderRadius: "var(--border-radius-button)", boxShadow: "var(--shadow-button)" }}
+            >
+              Create your first page
+            </Button>
           </Box>
         )}
       </Box>

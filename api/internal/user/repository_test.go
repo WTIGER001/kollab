@@ -62,6 +62,9 @@ func TestInMemoryUserRepositoryLifecycleAndCopies(t *testing.T) {
 	if err := repo.UpdatePassword(ctx, "missing", "hash"); err == nil {
 		t.Fatal("expected missing user password error")
 	}
+	if _, err := repo.UpdateProfile(ctx, "missing", "missing@example.test", "Missing"); err == nil {
+		t.Fatal("expected missing user profile update error")
+	}
 	if err := repo.Upsert(ctx, &domain.User{ID: "user-1", Username: "renamed", Email: "new@example.test"}); err != nil {
 		t.Fatalf("upsert existing user: %v", err)
 	}
@@ -75,5 +78,11 @@ func TestInMemoryUserRepositoryLifecycleAndCopies(t *testing.T) {
 	newUser, err := repo.GetByID(ctx, "user-3")
 	if err != nil || !newUser.IsActive {
 		t.Fatalf("new upsert should enable user: %#v, %v", newUser, err)
+	}
+	if err := repo.Delete(ctx, "user-3"); err != nil {
+		t.Fatalf("delete user: %v", err)
+	}
+	if _, err := repo.GetByID(ctx, "user-3"); err == nil {
+		t.Fatal("deleted user was returned")
 	}
 }

@@ -67,7 +67,7 @@ export const CommentMark = Mark.create<CommentOptions>({
           return commands.setMark(this.name, { commentId });
         },
       unsetComment:
-        (commentId: string) =>
+        () =>
         ({ commands }) => {
           // You might need a custom command if you want to unset by ID specifically,
           // but typically unsetMark just removes the mark from the current selection.

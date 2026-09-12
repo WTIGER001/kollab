@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Dialog,
-  DialogContent,
   IconButton,
   CircularProgress,
   Tooltip,
@@ -13,7 +12,6 @@ import {
   Clock,
   Users,
   Type,
-  AlignLeft,
   BarChart2,
   FileText,
 } from "lucide-react";

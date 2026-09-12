@@ -13,26 +13,26 @@ func TestPostgresAttachmentRepository(t *testing.T) {
 
 	docRepo := NewPostgresDocumentRepository(db)
 	doc := &domain.Document{
-		ID: "doc_for_att",
-		Title: "Att Doc",
-		Slug: "att-doc",
-		ProjectID: "proj_wiki",
-		TeamID: "team_eng",
+		ID:          "doc_for_att",
+		Title:       "Att Doc",
+		Slug:        "att-doc",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
 		CreatedByID: "sh4ag0cxowti",
 		UpdatedByID: "sh4ag0cxowti",
-		Content: "{}",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	_ = docRepo.Create(ctx, doc)
 
 	att := &domain.Attachment{
-		ID: "att_1",
+		ID:         "att_1",
 		DocumentID: "doc_for_att",
 		UploadedBy: "sh4ag0cxowti",
-		Filename: "doc.pdf",
-		MimeType: "application/pdf",
-		FileSize: 1024,
+		Filename:   "doc.pdf",
+		MimeType:   "application/pdf",
+		FileSize:   1024,
 		StorageKey: "local/doc.pdf",
 		UploadedAt: time.Now(),
 	}

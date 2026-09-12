@@ -229,7 +229,7 @@ func (r *PostgresTeamRepository) ListAllUsers(ctx context.Context) ([]*domain.Us
 	}
 	defer rows.Close()
 
-	var users []*domain.User
+	users := make([]*domain.User, 0)
 	for rows.Next() {
 		var u domain.User
 		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.DisplayName); err != nil {

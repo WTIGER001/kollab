@@ -225,7 +225,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
               <Box 
                 key={index} 
                 onClick={() => {
-                  setActiveCategory(topic.category);
+                  setActiveCategory(topic.category as HelpCategory);
                   setSearchQuery("");
                 }}
                 sx={{ 
@@ -356,8 +356,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
             fullWidth
             placeholder="Search help topics..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
+            onChange={(e) => setSearchQuery(e.target.value)} slotProps={{ input: {
               startAdornment: (
                 <Search size={14} style={{ marginRight: 6, color: "var(--text-secondary)" }} />
               ),
@@ -368,7 +367,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                 borderRadius: "8px",
                 "& input::placeholder": { fontSize: "12.5px" }
               }
-            }}
+            } }}
           />
         </Box>
 
@@ -454,7 +453,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
             <Typography sx={{ fontSize: "11px", fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}>
               Kollab v{import.meta.env.VITE_APP_VERSION || "0.0.0"}
             </Typography>
-            <Typography sx={{ fontSize: "10px", fontFamily: '"Outfit", sans-serif', fontFamily: "monospace" }}>
+            <Typography sx={{ fontSize: "10px", fontFamily: "monospace" }}>
               {import.meta.env.VITE_COMMIT_HASH || "unknown"}
             </Typography>
           </Box>

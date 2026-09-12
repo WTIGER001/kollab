@@ -1,27 +1,17 @@
 #!/bin/bash
 # Exit immediately if a command exits with a non-zero status
-set -e
+set -euo pipefail
 
 echo "🚀 Starting Kollab deployment..."
 
-# 1. Pull latest code from git (if inside a git repository)
-if [ -d .git ]; then
-  echo "📥 Pulling latest code from Git (kollab)..."
-  # Restore package.json to prevent git pull conflicts from previous version bumps
-  git restore frontend/package.json frontend/package-lock.json 2>/dev/null || true
-  git pull
-  
-  echo "⬆️ Bumping frontend patch version..."
-  # Use an ephemeral node container so the host doesn't need npm installed
-  docker run --rm -v "$(pwd)/frontend:/app" -w /app node:20-alpine npm version patch --no-git-tag-version
-else
-  echo "ℹ️ Skipping Git pull (not a Git repository)..."
-fi
+# The release checkout is prepared by CI before this script runs. Deploy exactly
+# that revision; never rewrite package manifests or pull a moving branch here.
+cd "$(dirname "$0")"
+echo "Deploying revision $(git rev-parse --short HEAD)"
 
 # 1b. Pull or clone media-preview peer repository
 if [ -d "../media-preview" ]; then
-  echo "📥 Pulling latest code for media-preview..."
-  (cd ../media-preview && git pull)
+  echo "Using the existing media-preview checkout."
 else
   echo "📥 Cloning media-preview repository..."
   REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
@@ -45,16 +35,21 @@ if [ ! -f .env ]; then
 # Production Deployment Environment Variables
 DOMAIN=yourdomain.com
 DB_PASSWORD=$(openssl rand -hex 16 2>/dev/null || echo "change_me_to_a_secure_password")
-JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "change_me_to_a_secure_jwt_secret")
+JWT_SECRET=$(openssl rand -hex 32)
+SYNC_SIGNING_KEY=$(openssl rand -hex 32)
 
-# Logto OIDC Auth Settings
-OIDC_AUTHORITY=https://h20g6c.logto.app/oidc
-OIDC_CLIENT_ID=ckjs7u46o27bhrf0jepzg
-OIDC_REDIRECT_URI=https://yourdomain.com
+# Local account authentication
+AUTH_MODE=local
 EOT
   echo "✅ A template .env file has been created."
-  echo "👉 Please edit the .env file with your production details (especially DOMAIN and OIDC_REDIRECT_URI), then run ./deploy.sh again."
+  echo "👉 Please edit the .env file with your production details (especially DOMAIN), then run ./deploy.sh again."
   exit 1
+fi
+
+# Existing installations get a signing identity without exposing it in logs.
+if ! grep -q '^SYNC_SIGNING_KEY=.' .env; then
+  umask 077
+  printf '\nSYNC_SIGNING_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
 fi
 
 # 3b. Determine Docker Compose command
@@ -68,15 +63,31 @@ else
 fi
 
 # 4. Build images first (old site stays online during build)
-echo "🐳 Building new Docker images in the background (zero downtime)..."
+echo "🐳 Building new Docker images before replacing running containers..."
 $DOCKER_CMD build
 
-# 5. Recreate containers instantly (switch takes < 2 seconds)
+# 5. Recreate containers after a successful build
 echo "🔄 Swapping running containers to new versions..."
 $DOCKER_CMD up -d
 
-# 6. Cleanup unused Docker images to save space on small VPS
-echo "🧹 Cleaning up dangling Docker images..."
-docker image prune -f
+# 6. Verify every API replica is healthy before reporting success.
+for api_container in $($DOCKER_CMD ps -q go-backend); do
+  ready=false
+  for attempt in $(seq 1 60); do
+    if docker exec "$api_container" wget -q -O /dev/null http://127.0.0.1:8080/health; then
+      ready=true
+      break
+    fi
+    sleep 2
+  done
+  if [ "$ready" != true ]; then
+    echo "API replica failed its health check: $api_container" >&2
+    exit 1
+  fi
+done
+if [ -z "$($DOCKER_CMD ps -q go-backend)" ]; then
+  echo "No running API replicas were found" >&2
+  exit 1
+fi
 
-echo "✅ Kollab deployment complete! Access your application at: https://$(grep DOMAIN .env | cut -d '=' -f2)"
+echo "Kollab deployment complete at revision $(git rev-parse --short HEAD)"

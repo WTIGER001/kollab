@@ -13,26 +13,26 @@ func TestPostgresCommentRepository(t *testing.T) {
 
 	docRepo := NewPostgresDocumentRepository(db)
 	doc := &domain.Document{
-		ID: "doc_for_cmt",
-		Title: "Cmt Doc",
-		Slug: "cmt-doc",
-		ProjectID: "proj_wiki",
-		TeamID: "team_eng",
+		ID:          "doc_for_cmt",
+		Title:       "Cmt Doc",
+		Slug:        "cmt-doc",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
 		CreatedByID: "sh4ag0cxowti",
 		UpdatedByID: "sh4ag0cxowti",
-		Content: "{}",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	_ = docRepo.Create(ctx, doc)
 
 	comment := &domain.Comment{
-		ID: "cmt_1",
-		DocumentID: "doc_for_cmt",
-		CreatedBy: "sh4ag0cxowti",
+		ID:            "cmt_1",
+		DocumentID:    "doc_for_cmt",
+		CreatedBy:     "sh4ag0cxowti",
 		CreatedByName: "sh4ag0cxowti",
-		Content: "This is a comment",
-		CreatedAt: time.Now(),
+		Content:       "This is a comment",
+		CreatedAt:     time.Now(),
 	}
 
 	if err := repo.Create(ctx, comment); err != nil {

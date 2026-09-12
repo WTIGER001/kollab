@@ -7,12 +7,18 @@ export async function setupMockAPI(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
+        authMode: 'oidc',
         authority: 'https://mock-authority.logto.app/oidc',
         clientId: 'mock-client-id',
-        redirectUri: 'http://localhost:5173',
+        redirectUri: 'http://localhost:8090',
         theme: null,
       }),
     });
+  });
+
+  await page.route('**/api/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'user-1', username: 'test-user', displayName: 'Test User', isAdmin: true, isActive: true }) }));
+  await page.routeWebSocket('**/api/ws*', socket => {
+    socket.send(JSON.stringify({ type: 'sync-history', updates: [] }));
   });
 
   // Mock user preferences
@@ -96,6 +102,7 @@ export async function setupMockAPI(page: Page) {
   // Mock documents
   await page.route(/\/api\/documents/, async (route) => {
     const url = route.request().url();
+    if (url.endsWith('/capabilities')) { await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ write: true, comment: true, delete: true, grant: true }) }); return; }
     if (url.endsWith('/comments') || url.endsWith('/tags') || url.endsWith('/attachments')) {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       return;

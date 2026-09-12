@@ -38,8 +38,9 @@ interface OidcConfig {
 
 function Root() {
   const [config, setConfig] = useState<OidcConfig | null>(null);
+  const [configError, setConfigError] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [localToken, setLocalToken] = useState<string | null>(null);
+  const [localToken, setLocalToken] = useState<string | null>(() => sessionStorage.getItem("kollab.localToken"));
 
   useEffect(() => {
     fetchOIDCConfig()
@@ -62,12 +63,8 @@ function Root() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to load OIDC configuration from backend, falling back to mock mode:", err);
-        setConfig({
-          authority: "https://mock-authority.logto.app/oidc",
-          clientId: "mock-client-id",
-          redirectUri: window.location.origin,
-        });
+        console.error("Failed to load authentication configuration:", err);
+        setConfigError(true);
         setLoading(false);
       });
   }, []);
@@ -80,7 +77,9 @@ function Root() {
     );
   }
 
-  const authMode = config?.authMode || "oidc";
+  if (configError || !config) return <main style={{ padding: "2rem", background: "var(--bg-color)", color: "var(--text-primary)" }}><h1>Unable to connect to Kollab</h1><p>The server configuration could not be loaded.</p><button onClick={() => window.location.reload()}>Try again</button></main>;
+
+  const authMode = config?.authMode || "local";
   const isMock = authMode !== "local" && (config?.clientId === "mock-client-id" || config?.authority.includes("mock"));
 
   const oidcConfig = {
@@ -106,7 +105,7 @@ function Root() {
               authMode={authMode}
               localSetupRequired={config?.localSetupRequired}
               localToken={localToken}
-              onLocalToken={setLocalToken}
+              onLocalToken={(token) => { setLocalToken(token); if (token) sessionStorage.setItem("kollab.localToken", token); else sessionStorage.removeItem("kollab.localToken"); }}
               welcomeTitle={config!.welcomeTitle}
               welcomeText={config!.welcomeText}
               authLogoUrl={config!.authLogoUrl}

@@ -107,6 +107,8 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
     try {
       await deleteShareLink(documentId, tokenHash);
       setSuccess("Sharing link deleted.");
+      setGeneratedLink(null);
+      setCopied(false);
       loadLinks();
     } catch (err: any) {
       setError(err?.message || "Failed to delete link.");
@@ -132,8 +134,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      fullWidth
-      PaperProps={{
+      fullWidth slotProps={{ paper: {
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
@@ -142,7 +143,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
           color: "var(--text-primary)",
           p: 1
         }
-      }}
+      } }}
     >
       <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, fontSize: "18px", pb: 1, display: "flex", alignItems: "center", gap: 1 }}>
         <Link2 size={20} className="primary-icon" style={{ color: "var(--primary-color)" }} />
@@ -187,8 +188,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                   size="small"
                   fullWidth
                   value={generatedLink}
-                  inputProps={{ readOnly: true, style: { fontSize: "12px", fontFamily: 'monospace' } }}
-                  sx={{ bgcolor: "background.paper" }}
+                  sx={{ bgcolor: "background.paper" }} slotProps={{ htmlInput: { readOnly: true, style: { fontSize: "12px", fontFamily: 'monospace' } } }}
                 />
                 <Button 
                   variant="contained" 
@@ -263,8 +263,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                   fullWidth
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  InputProps={{
+                  onChange={(e) => setPassword(e.target.value)} slotProps={{ input: {
                     style: { fontSize: "13px" },
                     endAdornment: (
                       <InputAdornment position="end">
@@ -273,7 +272,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                         </IconButton>
                       </InputAdornment>
                     )
-                  }}
+                  } }}
                 />
               </Box>
 
@@ -309,6 +308,7 @@ export const SharingLinksDialog: React.FC<SharingLinksDialogProps> = ({
                 {links.map((link) => (
                   <ListItem key={link.tokenHash} sx={{ py: 1 }}>
                     <ListItemText
+                      disableTypography
                       primary={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <Typography variant="subtitle2" sx={{ fontSize: "13px", fontWeight: 600 }}>

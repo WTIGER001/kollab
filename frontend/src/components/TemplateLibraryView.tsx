@@ -101,7 +101,7 @@ export const TemplateLibraryView: React.FC<TemplateLibraryViewProps> = ({ scope 
 
   return (
     <Box sx={{ p: 4, height: "100%", overflowY: "auto", bgcolor: "var(--bg-color)" }} className="scrollbar-thin">
-      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} gap={2} mb={4}>
+      <Stack direction={{ xs: "column", sm: "row" }} sx={{ justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, mb: 4 }}>
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4" sx={{ color: "var(--text-primary)", fontWeight: 600, mb: 1, fontFamily: '"Outfit", sans-serif' }}>
             {scope === "system" ? "System" : scope === "team" ? "Team" : "Personal"} Templates
@@ -149,7 +149,7 @@ export const TemplateLibraryView: React.FC<TemplateLibraryViewProps> = ({ scope 
                 border: "1px solid var(--border-color)"
               }}>
                 <CardContent sx={{ flexGrow: 1 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                  <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
                     <Chip 
                       icon={tpl.templateType === "page" ? <FileText size={14} /> : <GridIcon size={14} />} 
                       label={tpl.templateType === "page" ? "Page" : "Block"} 

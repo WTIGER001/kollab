@@ -1,3 +1,8 @@
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import React, { useEffect, useState } from "react";
 import { useToastStore } from "../store/useToastStore";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -21,14 +26,6 @@ import { TableOfContents } from "../editor/extensions/TableOfContents";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
-import { Link } from "@tiptap/extension-link";
-import { Underline } from "@tiptap/extension-underline";
-import { Highlight } from "@tiptap/extension-highlight";
-import { TextStyle } from "@tiptap/extension-text-style";
-import { Color } from "@tiptap/extension-color";
-import { Typography as TypographyExtension } from "@tiptap/extension-typography";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
 import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import {
@@ -40,7 +37,6 @@ import { PresenceCursors } from "../editor/extensions/PresenceCursors";
 import { CommentMark } from "../editor/extensions/CommentMark";
 import { usePresence } from "../hooks/usePresence";
 import {
-  uploadImage,
   fetchVersions,
   restoreVersion,
   createMilestone,
@@ -67,21 +63,16 @@ import type {
 } from "../services/api";
 import { PlaceholderBlock } from "../editor/extensions/PlaceholderBlock";
 import { DocumentTags } from "./DocumentTags";
-import { UserAvatar } from "./UserAvatar";
 
 import { EditorHeader } from "./editor/EditorHeader";
 import { EditorAnalyticsDialog } from "./editor/EditorAnalyticsDialog";
 import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
 import { EditorMacroDialog } from "./editor/EditorMacroDialog";
-import { EditorToolbar } from "./editor/EditorToolbar";
 import { EditorFloatingMenus } from "./editor/EditorFloatingMenus";
 import { InsertLinkDialog } from "./editor/InsertLinkDialog";
 import { ImageSelectionDialog } from "./editor/ImageSelectionDialog";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
-import { TableCreatorDialog } from "./TableCreatorDialog";
-import { TableBubbleToolbar } from "./TableBubbleToolbar";
-import { AIPromptBar } from "./AIPromptBar";
 import {
   Box,
   Paper,
@@ -96,24 +87,17 @@ import {
   ListItemIcon,
   ListItemText,
   CircularProgress,
-  Drawer,
   Button,
-  Popover,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Tabs,
-  Tab,
-  Chip,
   Select,
-  Avatar,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import {
   Plus,
-  Search,
   Heading1,
   Heading2,
   Heading3,
@@ -133,12 +117,9 @@ import {
   Columns3,
   Layout,
   Grid3X3,
-  Star,
   SquareTerminal,
-  Cloud,
   Check,
   Image,
-  History,
   Clock,
   X,
   Smile,
@@ -149,23 +130,16 @@ import {
   ListTodo,
   Calendar,
   ChevronsUpDown,
-  ChevronRight,
-  BarChart2,
-  Edit,
   FileText,
   Type,
   Users,
-  MoreHorizontal,
   FolderInput,
-  Trash2,
-  BookOpen,
   Layers,
   FileUp,
   Paperclip,
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Tag,
   AtSign,
   Link2,
   Palette,
@@ -196,6 +170,7 @@ interface EditorCanvasProps {
   authToken: string | null;
   initialTitle: string;
   initialContent: string;
+  canEdit?: boolean;
   onSave: (title: string, content: string, changeSummary?: string) => void | Promise<void>;
   isSaving: boolean;
   documents?: DocumentItem[];
@@ -304,6 +279,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   authToken,
   initialTitle,
   initialContent,
+  canEdit = true,
   onSave,
   isSaving = false,
   documents = [],
@@ -320,9 +296,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onRestore,
   onDeletePermanently,
   onSelectDoc,
-  isAuditPage = false,
-  onNavigateToAudit,
-  onNavigateToNormal,
   developerMode = false,
   selectedTeamId,
   selectedProjectId,
@@ -337,13 +310,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [tableCreatorOpen, setTableCreatorOpen] = useState(false);
-  const [loremDialogOpen, setLoremDialogOpen] = useState(false);
+  const [, setLoremDialogOpen] = useState(false);
   const [layoutMenuAnchor, setLayoutMenuAnchor] = useState<null | HTMLElement>(
     null,
   );
-  const [symbolMenuAnchorEl, setSymbolMenuAnchorEl] =
+  const [, setSymbolMenuAnchorEl] =
     useState<null | HTMLElement>(null);
-  const [isEditing, setIsEditing] = useState(initialEditMode && !deletedAt);
+  const [editingRequested, setEditingRequested] = useState(initialEditMode && !deletedAt);
+  const [replicaReady, setReplicaReady] = useState(!authToken || !!activeDocId?.startsWith('template_'));
+  const [syncReady, setSyncReady] = useState(!authToken || !!activeDocId?.startsWith('template_'));
+  const isEditing = editingRequested && canEdit && syncReady && replicaReady;
+  const setIsEditing = (value: boolean) => setEditingRequested(value && canEdit && syncReady && replicaReady);
   const [showComments, setShowComments] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [macroSelectorOpen, setMacroSelectorOpen] = useState(false);
@@ -407,10 +384,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   useEffect(() => {
     if (!selectedTeamId) {
-      setTeamUsers([
-        { id: "dev_admin", username: "dev_admin" },
-        { id: "jbauer", username: "jbauer" },
-      ]);
+      setTeamUsers([]);
       return;
     }
     fetchTeamUsers(selectedTeamId)
@@ -418,21 +392,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if (users && users.length > 0) {
           setTeamUsers(users);
         } else {
-          setTeamUsers([
-            { id: "dev_admin", username: "dev_admin" },
-            { id: "jbauer", username: "jbauer" },
-          ]);
+          setTeamUsers([]);
         }
       })
       .catch((err) => {
         console.error("Failed to fetch team users:", err);
-        setTeamUsers([
-          { id: "dev_admin", username: "dev_admin" },
-          { id: "jbauer", username: "jbauer" },
-        ]);
+        setTeamUsers([]);
       });
   }, [selectedTeamId]);
-  const [auditOpen, setAuditOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWatching, setIsWatching] = useState(false);
   const [aiPromptOpen, setAiPromptOpen] = useState(false);
@@ -651,6 +618,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const editor = useEditor({
     extensions: [
+ TextStyle, Color, Highlight.configure({ multicolor: true }), Subscript, Superscript,
       StarterKit.configure({
         // Disable native history since Collaboration takes over undo/redo management
         history: false,
@@ -882,6 +850,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   // Secondary read-only editor for previewing document history securely
   const previewEditor = useEditor({
     extensions: [
+ TextStyle, Color, Highlight.configure({ multicolor: true }), Subscript, Superscript,
       StarterKit.configure({
         history: false,
         undoRedo: false,
@@ -943,28 +912,46 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     }
   }, [editor, isEditing]);
 
-  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-	const [isPublishing, setIsPublishing] = useState(false);
-
-  const saveDocument = (customTitle?: string, customDescription?: string) => {
-    const activeTitle = customTitle !== undefined ? customTitle : title;
-    const titleToSave =
-      activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
-    if (editor && !editor.isDestroyed) {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription);
-      }, 1000);
-    }
+  const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSaveRef = React.useRef<{ title: string; content: string; summary?: string; save: typeof onSave } | null>(null);
+  const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const [isPublishing, setIsPublishing] = useState(false);
+  const flushPendingSave = () => {
+    const pending = pendingSaveRef.current;
+    if (!pending) return saveQueueRef.current;
+    const queued = saveQueueRef.current.catch(() => undefined).then(async () => {
+      await pending.save(pending.title, pending.content, pending.summary);
+      if (pendingSaveRef.current === pending) pendingSaveRef.current = null;
+    });
+    saveQueueRef.current = queued;
+    return queued;
   };
-
-  const saveDocumentNow = async (customTitle?: string, customDescription?: string) => {
-    const activeTitle = customTitle !== undefined ? customTitle : title;
-    const titleToSave = activeTitle.trim() === "" ? lastNonEmptyTitle.current : activeTitle;
+  const queueSave = (customTitle?: string, customDescription?: string) => {
     if (!editor || editor.isDestroyed) return;
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    await Promise.resolve(onSave(titleToSave, JSON.stringify(editor.getJSON()), customDescription));
+    const activeTitle = customTitle ?? title;
+    pendingSaveRef.current = { title: activeTitle.trim() || lastNonEmptyTitle.current, content: JSON.stringify(editor.getJSON()), summary: customDescription, save: onSave };
   };
+  const saveDocument = (customTitle?: string, customDescription?: string) => {
+    queueSave(customTitle, customDescription);
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => { void flushPendingSave().catch(() => undefined); }, 1000);
+  };
+  const saveDocumentNow = async (customTitle?: string, customDescription?: string) => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    queueSave(customTitle, customDescription);
+    await flushPendingSave();
+  };
+  useEffect(() => {
+    const warnUnsaved = (event: BeforeUnloadEvent) => {
+      if (pendingSaveRef.current) { event.preventDefault(); event.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', warnUnsaved);
+    return () => {
+      window.removeEventListener('beforeunload', warnUnsaved);
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      void flushPendingSave().catch(() => undefined);
+    };
+  }, []);
 
   const publishCurrentDraft = async () => {
     if (!activeDocId || !editor || editor.isDestroyed) return;
@@ -1102,10 +1089,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const isInitializedRef = React.useRef(false);
 
-  // Resilient offline fallback: if WebSocket doesn't initialize content in 1.5 seconds, load database content
+  // Initialize standalone/template editors without seeding live CRDT documents.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!isInitializedRef.current && editor && !editor.isDestroyed) {
+      if ((!authToken || activeDocId?.startsWith("template_")) && !isInitializedRef.current && editor && !editor.isDestroyed) {
         isInitializedRef.current = true;
         editor.commands.setContent(
           (() => {
@@ -1119,7 +1106,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       }
     }, 5000);
     return () => clearTimeout(timer);
-  }, [editor, initialContent]);
+  }, [editor, initialContent, authToken, activeDocId]);
 
   const { activeUsers } = usePresence(
     activeDocId,
@@ -1127,8 +1114,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     editor,
     ydoc,
     (isFirst) => {
-      if (isInitializedRef.current) return;
+      if (!editor || editor.isDestroyed || isInitializedRef.current) return;
       isInitializedRef.current = true;
+      setSyncReady(true);
       if (isFirst && editor && !editor.isDestroyed) {
         editor.commands.setContent(
           (() => {
@@ -1141,6 +1129,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         );
       }
     },
+    canEdit,
+    setReplicaReady,
   );
 
   const uniqueActiveUsers = activeUsers.filter(
@@ -2312,22 +2302,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow }).run();
   };
 
-  const LOREM_PARAGRAPHS = [
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin elementum metus a ipsum imperdiet, sit amet convallis ipsum dictum. Ut ac metus id mi sodales consequat a a felis. Praesent sit amet facilisis lectus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Vestibulum sed tristique tellus, vel egestas massa. In cursus nunc vitae scelerisque maximus.",
-    "Nullam cursus lacus quis leo facilisis, a consequat diam cursus. Integer a purus vel ex hendrerit interdum. Phasellus porta leo ut egestas volutpat. Phasellus ut convallis arcu. Duis quis nisl id leo scelerisque bibendum. Praesent eget urna vel elit aliquet congue rhoncus id erat. Quisque porta nunc id tortor tempor convallis.",
-    "Duis elementum accumsan nulla sed tempus. Aliquam nec arcu sodales, pretium ex eget, iaculis erat. Curabitur vel sodales magna, quis tempus elit. Suspendisse non sapien sed urna interdum euismod ac non nibh. Praesent non dictum dolor. Morbi a metus congue, accumsan nunc ut, pretium urna. Pellentesque at sem sem. Cras convallis ipsum vel tellus lacinia dictum.",
-    "Maecenas id ex efficitur, iaculis ante a, euismod dolor. Aliquam pulvinar est vel tristique egestas. Pellentesque sodales volutpat arcu sed feugiat. Ut et felis eget sapien pretium tristique eu nec lectus. Mauris non tincidunt massa. Proin quis sapien varius, accumsan diam a, congue elit. Donec et sem eget lacus tempus varius.",
-    "Sed tristique, leo id rhoncus convallis, lorem felis sodales leo, sed vestibulum nisl erat ut neque. Suspendisse eget elit vitae nisl hendrerit laoreet. Fusce sed finibus mauris. Cras sollicitudin tincidunt turpis vel elementum. Aliquam erat volutpat. Nam nec urna vel tellus dictum ultrices et et lectus. Curabitur a tempor leo. Sed nec ipsum sed justo consequat commodo nec id elit.",
-  ];
 
-  const insertLoremIpsum = (count: number) => {
-    if (!editor) return;
-    const contentToInsert = LOREM_PARAGRAPHS.slice(0, count).map((text) => ({
-      type: "paragraph",
-      content: [{ type: "text", text }],
-    }));
-    editor.chain().focus().insertContent(contentToInsert).run();
-  };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextTitle = e.target.value;
@@ -2371,14 +2346,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const handleRestoreVersion = async (version: DocumentVersion) => {
     if (!activeDocId) return;
     try {
-      const restoredDoc = await restoreVersion(activeDocId, version.id);
-      if (editor && !editor.isDestroyed) {
-        try {
-          editor.commands.setContent(JSON.parse(restoredDoc.content));
-        } catch {
-          editor.commands.setContent(restoredDoc.content);
-        }
-      }
+      await flushPendingSave();
+      await restoreVersion(activeDocId, version.id);
+      window.location.reload();
       setPreviewVersion(null);
       setHistoryOpen(false);
     } catch (err) {
@@ -2544,6 +2514,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           selectedTeamName={selectedTeamName || ""}
           breadcrumbsList={breadcrumbsList}
           isEditing={isEditing}
+          canEdit={canEdit && syncReady && replicaReady}
           setIsEditing={setIsEditing}
           showComments={showComments}
           setShowComments={setShowComments}
@@ -3250,6 +3221,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         )}
         </Box>
 
+        {(!syncReady || !replicaReady) && <Box role="status" sx={{ p: 2, color: "var(--text-secondary)" }}>Connecting to the collaboration service. Editing will be available when synchronization completes.</Box>}
         {/* Editor Main Content */}
         <Box
           sx={{
@@ -3458,8 +3430,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           documents={documents}
           teams={teams}
           projects={projects}
-          currentTeamId={selectedTeamId || undefined}
-          currentProjectId={selectedProjectId || undefined}
+          currentTeamId={selectedTeamId || null}
+          currentProjectId={selectedProjectId || null}
           onConfirm={onMoveDoc}
         />
       )}
@@ -3939,7 +3911,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 			  disabled={isGeneratingSummary || isPublishing}
               sx={{
                 backgroundColor: "var(--primary-color)",
-                color: "white",
+                color: "var(--primary-contrast)",
                 textTransform: "none",
                 fontFamily: '"Outfit", sans-serif',
                 fontWeight: 600,
@@ -3988,7 +3960,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             variant="contained"
             sx={{
               backgroundColor: "var(--primary-color)",
-              color: "white",
+              color: "var(--primary-contrast)",
               textTransform: "none",
               fontFamily: '"Outfit", sans-serif',
               fontWeight: 600,
@@ -4099,7 +4071,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               fontWeight: 600,
               fontFamily: '"Outfit", sans-serif',
               backgroundColor: "var(--primary-color)",
-              color: "#ffffff",
+              color: "var(--primary-contrast)",
               textTransform: "none",
               "&:hover": { backgroundColor: "var(--primary-hover)" },
             }}
@@ -4118,13 +4090,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         onSelect={handleImageSelect}
         activeDocId={activeDocId}
         attachments={attachments}
-        selectedTeamId={selectedTeamId}
+        selectedTeamId={selectedTeamId || null}
       />
 
       <InsertLinkDialog
         open={insertLinkDialogOpen}
         onClose={() => setInsertLinkDialogOpen(false)}
-        projectId={document.projectId || null}
+        projectId={selectedProjectId || null}
         initialUrl={linkInitialUrl}
         initialText={linkInitialText}
         teams={teams}

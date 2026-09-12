@@ -4,7 +4,6 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Avatar, 
   List, 
   ListItem, 
   ListItemAvatar, 
@@ -27,6 +26,7 @@ import {
   addTeamMember, 
   removeTeamMember 
 } from "../services/api";
+import type { Team, UserDirectoryItem } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
 import { TagsManager } from "./TagsManager";
 import { IntegrationsManager } from "./IntegrationsManager";
@@ -37,13 +37,15 @@ interface TeamSettingsViewProps {
   onUpdateTeam: (updatedTeam: Team) => void;
   onBack: () => void;
   showToast: (message: string, severity: "success" | "error" | "info" | "warning") => void;
+  initialTab?: number;
 }
 
 export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
   team,
   onUpdateTeam,
   onBack,
-  showToast
+  showToast,
+  initialTab = 0,
 }) => {
   const [name, setName] = useState(team.name);
   const [abbreviation, setAbbreviation] = useState(team.abbreviation || "");
@@ -52,7 +54,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
   const [members, setMembers] = useState<{ id: string; username: string }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(initialTab);
 
   // User directory states
   const [allUsers, setAllUsers] = useState<UserDirectoryItem[]>([]);
@@ -81,6 +83,10 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
       });
   }, [team]);
 
+  useEffect(() => {
+    setTabValue(initialTab);
+  }, [initialTab]);
+
   const handleAddMember = async () => {
     if (!selectedAddUserId) return;
     try {
@@ -107,7 +113,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -371,7 +377,7 @@ export const TeamSettingsView: React.FC<TeamSettingsViewProps> = ({
                       } 
                       secondary={
                         <Typography sx={{ fontSize: "11px", color: "text.disabled" }}>
-                          {member.id === "sh4ag0cxowti" || member.id === "mock-user-id" ? "Team Admin" : "Member"}
+                          Member
                         </Typography>
                       }
                     />

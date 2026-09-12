@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   fetchTeams,
   fetchProjects,
@@ -22,11 +22,11 @@ export const useTeams = (options?: { enabled?: boolean }) => {
   });
 };
 
-export const useProjects = (teamId?: string) => {
+export const useProjects = (teamId?: string, options?: { enabled?: boolean }) => {
   return useQuery<Project[]>({
     queryKey: ['projects', teamId],
     queryFn: () => fetchProjects(teamId || ''),
-    enabled: !!teamId,
+    enabled: !!teamId && options?.enabled !== false,
   });
 };
 
@@ -40,7 +40,8 @@ export const useAllProjects = () => {
 export const useDocuments = (projectId?: string | null, teamId?: string | null) => {
   return useQuery<Document[]>({
     queryKey: ['documents', projectId, teamId],
-    queryFn: () => fetchDocuments(projectId, teamId),
+    queryFn: async () => (await fetchDocuments(projectId, teamId)) || [],
+    enabled: !!projectId || !!teamId,
   });
 };
 
@@ -55,7 +56,7 @@ export const useSystemSettings = (options?: { enabled?: boolean }) => {
 export const useUserPreferences = (userId?: string) => {
   return useQuery<UserPreference | null>({
     queryKey: ['userPreferences', userId],
-    queryFn: () => (userId ? fetchUserPreferences(userId) : Promise.resolve(null)),
+    queryFn: () => (userId ? fetchUserPreferences() : Promise.resolve(null)),
     enabled: !!userId,
   });
 };

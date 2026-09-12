@@ -1,5 +1,10 @@
-import React, { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from '../auth/SessionContext';
+import { useAppStore } from '../store/useAppStore';
+import { useToastStore } from '../store/useToastStore';
+import { useDocuments } from '../hooks/queries';
+import { useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Typography } from "@mui/material";
 import { TeamPortal } from "../components/TeamPortal";
 import { ProjectPortal } from "../components/ProjectPortal";
@@ -52,6 +57,9 @@ export function TeamPortalWrapper({ teams, projects }: { teams: any[], projects:
 export function TeamSettingsWrapper({ teams }: { teams: any[] }) {
   const { teamId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
   
   const team = teams.find(t => t.id === teamId || t.abbreviation === teamId);
   
@@ -73,9 +81,10 @@ export function TeamSettingsWrapper({ teams }: { teams: any[] }) {
   return (
     <TeamSettingsView
       team={team}
-      onUpdateTeam={() => {}}
+      onUpdateTeam={() => { void queryClient.invalidateQueries({ queryKey: ['teams'] }); }}
       onBack={() => navigate(`/teams/${team.abbreviation || team.id}`)}
-      showToast={() => {}}
+      showToast={showToast}
+      initialTab={new URLSearchParams(location.search).get("tab") === "members" ? 1 : 0}
     />
   );
 }
@@ -132,11 +141,14 @@ export function ProjectPortalWrapper({ teams, projects }: { teams: any[], projec
       team={team} 
       project={project} 
       navigateTo={handleNavigate} 
+      onManageMembers={() => navigate(`/teams/${team.abbreviation || team.id}/_settings?tab=members`)}
     />
   );
 }
 
 export function ProjectSettingsWrapper({ teams, projects }: { teams: any[], projects: any[] }) {
+  const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
   const { teamId, projectId } = useParams();
   const navigate = useNavigate();
   
@@ -174,9 +186,9 @@ export function ProjectSettingsWrapper({ teams, projects }: { teams: any[], proj
     <ProjectSettingsView
       project={project}
       teamAbbreviationOrId={team.abbreviation || team.id}
-      onUpdateProject={() => {}}
+      onUpdateProject={() => { void queryClient.invalidateQueries({ queryKey: ['projects'] }); }}
       onBack={() => navigate(`/teams/${team.abbreviation || team.id}/p/${project.abbreviation || project.id}`)}
-      showToast={() => {}}
+      showToast={showToast}
     />
   );
 }
@@ -187,7 +199,7 @@ export function PersonalPortalWrapper({ teams }: { teams: any[], projects: any[]
   
   if (!personalTeam) return <Typography sx={{ p: 4, color: "text.secondary" }}>Personal space not found.</Typography>;
   
-  const handleNavigate = (t: string | null, p: string | null, page: string | null, isSettings?: boolean, isTeamSettings?: boolean) => {
+  const handleNavigate = (_t: string | null, _p: string | null, page: string | null, isSettings?: boolean, isTeamSettings?: boolean) => {
     if (isTeamSettings || isSettings) navigate(`/personal/_settings`);
     else if (page) navigate(`/personal/docs/${page}`);
     else navigate(`/personal`);
@@ -205,15 +217,17 @@ export function PersonalPortalWrapper({ teams }: { teams: any[], projects: any[]
 
 export function PersonalSettingsWrapper() {
   const navigate = useNavigate();
-  // Using default mocked values as in the original hardcoded route
+  const { user } = useSession();
+  const { themeMode, setThemeMode } = useAppStore();
+  const { data: pages = [] } = useDocuments(null, user ? `personal_${user.id}` : null);
   return (
     <PersonalSettingsView 
-      displayName="User" 
-      username="user" 
-      themeMode="light" 
-      onUpdateThemeMode={() => {}} 
+      displayName={user?.displayName || user?.username || ""}
+      username={user?.username || ""}
+      themeMode={themeMode}
+      onUpdateThemeMode={setThemeMode}
       onBack={() => navigate(`/personal`)} 
-      personalPagesCount={0} 
+      personalPagesCount={pages.length}
     />
   );
 }

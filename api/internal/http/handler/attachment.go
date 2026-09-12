@@ -32,17 +32,24 @@ func NewAttachmentHandler(attachmentService domain.AttachmentService, evaluator 
 func (h *AttachmentHandler) Service() domain.AttachmentService { return h.attachmentService }
 
 func (h *AttachmentHandler) requireAttachmentAccess(w http.ResponseWriter, r *http.Request, action string) (*domain.Attachment, bool) {
-	userID, ok := middleware.GetUserID(r.Context())
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return nil, false
-	}
+	userID, _ := middleware.GetUserID(r.Context())
 	attachment, err := h.attachmentService.GetAttachment(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "Attachment not found", http.StatusNotFound)
 		return nil, false
 	}
-	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, attachment.DocumentID, action, "", "")
+	if action == "read" && h.evaluator != nil && r.URL.Query().Get("mediaToken") != "" {
+		sharedDoc, grantErr := h.evaluator.SharedMediaDocument(r.Context(), r.URL.Query().Get("mediaToken"))
+		if grantErr == nil && sharedDoc == attachment.DocumentID {
+			return attachment, true
+		}
+	}
+	if userID == "" {
+		http.Error(w, "Unauthorized", 401)
+		return nil, false
+	}
+
+	allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, attachment.DocumentID, action, r.Header.Get("X-Share-Token"), r.Header.Get("X-Share-Password"))
 	if err != nil {
 		http.Error(w, "Unable to verify attachment access", http.StatusInternalServerError)
 		return nil, false

@@ -7,6 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"kollab/api/internal/domain"
+	mid "kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type IntegrationHandler struct {
@@ -22,6 +24,7 @@ func (h *IntegrationHandler) Mount(r chi.Router) {
 	r.Post("/", h.CreateIntegration)
 	r.Delete("/{id}", h.DeleteIntegration)
 	r.Get("/{id}/proxy/gitlab/issues", h.ProxyGitLabIssues)
+	r.Get("/{id}/proxy/gitlab/issue", h.ProxyGitLabIssue)
 }
 
 func (h *IntegrationHandler) GetIntegrations(w http.ResponseWriter, r *http.Request) {
@@ -34,9 +37,10 @@ func (h *IntegrationHandler) GetIntegrations(w http.ResponseWriter, r *http.Requ
 	}
 
 	scope := domain.IntegrationScope(scopeStr)
-	
-	// Basic authorization checks would go here based on scope and entityID
-	// e.g. checking if the current user belongs to the team, project, or is the user
+
+	if !integrationAccess(w, r, string(scope), entityID, "read") {
+		return
+	}
 
 	integrations, err := h.service.GetByScope(r.Context(), scope, entityID)
 	if err != nil {
@@ -66,7 +70,9 @@ func (h *IntegrationHandler) CreateIntegration(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Authorization checks would go here...
+	if !integrationAccess(w, r, string(integration.Scope), integration.EntityID, "write") {
+		return
+	}
 
 	if err := h.service.Create(r.Context(), &integration); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -94,7 +100,14 @@ func (h *IntegrationHandler) DeleteIntegration(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Authorization checks would go here...
+	integration, err := h.service.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Integration not found", http.StatusNotFound)
+		return
+	}
+	if !integrationAccess(w, r, string(integration.Scope), integration.EntityID, "write") {
+		return
+	}
 
 	if err := h.service.Delete(r.Context(), id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -102,4 +115,13 @@ func (h *IntegrationHandler) DeleteIntegration(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func integrationAccess(w http.ResponseWriter, r *http.Request, scope, id, action string) bool {
+	userID, _ := mid.GetUserID(r.Context())
+	if !permissions.CanAccessScope(r.Context(), userID, scope, id, action) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return false
+	}
+	return true
 }

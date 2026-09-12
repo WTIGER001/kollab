@@ -37,7 +37,7 @@ func (r *integrationRepository) Create(ctx context.Context, integration *domain.
 		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
 		RETURNING created_at, updated_at
 	`
-	
+
 	var entityID sql.NullString
 	if integration.EntityID != "" {
 		entityID = sql.NullString{String: integration.EntityID, Valid: true}
@@ -68,7 +68,7 @@ func (r *integrationRepository) GetByID(ctx context.Context, id string) (*domain
 		FROM integrations
 		WHERE id = $1
 	`
-	
+
 	var integration domain.Integration
 	var entityID sql.NullString
 	var credsBytes []byte
@@ -112,14 +112,14 @@ func (r *integrationRepository) GetByScope(ctx context.Context, scope domain.Int
 		WHERE scope = $1 AND (entity_id = $2 OR ($2 = '' AND entity_id IS NULL))
 		ORDER BY created_at DESC
 	`
-	
+
 	rows, err := r.db.Query(ctx, query, scope, entityID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query integrations: %w", err)
 	}
 	defer rows.Close()
 
-	var integrations []*domain.Integration
+	integrations := make([]*domain.Integration, 0)
 	for rows.Next() {
 		var integration domain.Integration
 		var eID sql.NullString

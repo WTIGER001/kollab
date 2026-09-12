@@ -64,7 +64,7 @@ func (r *PostgresAttachmentRepository) ListByDocumentID(ctx context.Context, doc
 	}
 	defer rows.Close()
 
-	var list []*domain.Attachment
+	list := make([]*domain.Attachment, 0)
 	for rows.Next() {
 		var att domain.Attachment
 		err := rows.Scan(&att.ID, &att.DocumentID, &att.Filename, &att.MimeType, &att.FileSize, &att.StorageKey, &att.UploadedBy, &att.UploadedAt)

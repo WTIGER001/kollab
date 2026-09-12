@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PageRestrictionsDialog } from './PageRestrictionsDialog';
@@ -60,7 +59,7 @@ describe('PageRestrictionsDialog', () => {
     expect(screen.getByText('Page Access & Restrictions')).toBeInTheDocument();
     
     await waitFor(() => {
-      expect(screen.getByText((content, element) => content.includes('Test Document'))).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes('Test Document'))).toBeInTheDocument();
       expect(api.fetchDocumentPermissions).toHaveBeenCalledWith(mockDocId);
     });
   });

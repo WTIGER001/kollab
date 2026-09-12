@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Sidebar } from './Sidebar';
@@ -74,7 +73,6 @@ describe('Sidebar', () => {
     // but the button doesn't have an aria-label in the code. Let's find all Add sub-page tooltips
     // Actually Tooltip text is not in the DOM until hover. 
     // The button has a plus icon. We can find by container class or we can just grab the button.
-    const buttons = screen.getAllByRole('button');
     // Find the one corresponding to 'Another Root' or 'Root Document'.
     // We can just click the first one that is a descendant of the document item.
     // Let's just find the Plus icon if we can, or fire event on the action-btn

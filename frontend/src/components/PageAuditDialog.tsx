@@ -12,9 +12,7 @@ import {
   Switch,
   CircularProgress,
   List,
-  ListItem,
-  Avatar
-} from "@mui/material";
+  ListItem} from "@mui/material";
 import { X, Users, Eye, Edit3, Calendar } from "lucide-react";
 import { fetchDocumentAuditLogs } from "../services/api";
 import type { AuditLogEntry } from "../services/api";

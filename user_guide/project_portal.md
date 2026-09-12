@@ -15,7 +15,7 @@ The main content area of the Project Portal displays a **grid of all pages** tha
 - Hovering over a page card will elevate it and highlight it in your active theme's primary color.
 - Click "Open Page" or anywhere on a document card to dive straight into the editor for that page.
 
-*If a project doesn't have any pages yet, you'll see a placeholder prompting you to create one using the sidebar.*
+*If a project doesn't have any pages yet, you'll see a guided card. Select **Create your first page** to open the page creator immediately; you can still use the sidebar at any time.*
 
 ## Creating Pages
 

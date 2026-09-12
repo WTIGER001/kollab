@@ -1,8 +1,17 @@
-kollab.bauerstuff.com {
+{$DOMAIN:kollab.bauerstuff.com} {
     # Proxy API and WebSocket connections to the Go backend container
     # (Caddy automatically handles WebSocket connection upgrading out of the box)
     handle /api/* {
-        reverse_proxy go-backend:8080
+        reverse_proxy {
+            dynamic a go-backend 8080 {
+                refresh 5s
+                versions ipv4
+            }
+            lb_policy round_robin
+            lb_try_duration 5s
+            fail_duration 10s
+            max_fails 1
+        }
     }
 
     # Serve the React frontend static build for all other routes
@@ -28,3 +37,12 @@ mystuff.bauerstuff.com {
     reverse_proxy host.docker.internal:8083
 }
 
+# Mythos Studio (Host systemd binary on port 8765)
+myth.bauerstuff.com {
+    reverse_proxy host.docker.internal:8765
+}
+
+# Sarah's ACT Prep (Host systemd binary on port 8088)
+act.bauerstuff.com {
+    reverse_proxy host.docker.internal:8088
+}

@@ -105,3 +105,6 @@ func TestSystemService(t *testing.T) {
 	svc.StartCleanupWorker(ctx, 1*time.Millisecond)
 	time.Sleep(10 * time.Millisecond) // Let worker run once
 }
+
+func(s *mockSystemRepo) RestoreBackup(ctx context.Context,data map[string]interface{}) error {return nil}
+func(s *mockSystemRepo) ApplySyncOperations(ctx context.Context,ops []map[string]interface{}) error {return nil}

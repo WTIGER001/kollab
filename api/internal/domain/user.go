@@ -21,6 +21,8 @@ type UserRepository interface {
 	Upsert(ctx context.Context, user *User) error
 	SetActive(ctx context.Context, id string, active bool) error
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
+	UpdateProfile(ctx context.Context, id, email, displayName string) (*User, error)
+	Delete(ctx context.Context, id string) error
 	CreateInitialLocalAdmin(ctx context.Context, user *User) (bool, error)
 }
 
@@ -31,5 +33,7 @@ type AuthService interface {
 	ListLocalUsers(ctx context.Context) ([]*User, error)
 	SetLocalUserActive(ctx context.Context, id string, active bool) error
 	SetLocalUserPassword(ctx context.Context, id, password string) error
+	UpdateLocalUser(ctx context.Context, id, email, displayName string) (*User, error)
+	DeleteLocalUser(ctx context.Context, id string) error
 	CreateInitialLocalAdmin(ctx context.Context, username, password, email, displayName string) (*User, bool, error)
 }

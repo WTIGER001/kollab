@@ -94,7 +94,7 @@ func (r *PostgresTagRepository) List(ctx context.Context) ([]*domain.Tag, error)
 	}
 	defer rows.Close()
 
-	var result []*domain.Tag
+	result := make([]*domain.Tag, 0)
 	for rows.Next() {
 		var t domain.Tag
 		err := rows.Scan(
@@ -165,7 +165,7 @@ func (r *PostgresTagRepository) GetDocumentTags(ctx context.Context, docID strin
 	}
 	defer rows.Close()
 
-	var result []*domain.Tag
+	result := make([]*domain.Tag, 0)
 	for rows.Next() {
 		var t domain.Tag
 		err := rows.Scan(

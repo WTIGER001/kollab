@@ -8,10 +8,13 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type ImageHandler struct {
 	imageService domain.ImageService
+	evaluator    *permissions.AccessEvaluator
 }
 
 func NewImageHandler(imageService domain.ImageService) *ImageHandler {
@@ -20,7 +23,10 @@ func NewImageHandler(imageService domain.ImageService) *ImageHandler {
 	}
 }
 
+func (h *ImageHandler) SetAccessEvaluator(e *permissions.AccessEvaluator) { h.evaluator = e }
+
 func (h *ImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 	// 10MB max upload size
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Bad Request: failed to parse multipart form", http.StatusBadRequest)
@@ -40,7 +46,7 @@ func (h *ImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mimeType := header.Header.Get("Content-Type")
+	mimeType := http.DetectContentType(data)
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
@@ -51,6 +57,12 @@ func (h *ImageHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+	if h.evaluator == nil || h.evaluator.SetImageOwner(r.Context(), meta.ID, userID) != nil {
+		h.imageService.DeleteImage(r.Context(), meta.ID)
+		http.Error(w, "Unable to record image ownership", 500)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(meta)
@@ -65,6 +77,11 @@ func (h *ImageHandler) GetImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+	if h.evaluator == nil || (!h.evaluator.EvaluateImageAccess(r.Context(), userID, id, "read") && !h.evaluator.CanReadSharedImage(r.Context(), r.URL.Query().Get("mediaToken"), id)) {
+		http.Error(w, "Image not found", 404)
+		return
+	}
 	data, mimeType, err := h.imageService.GetImageFile(r.Context(), id, size)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -72,7 +89,8 @@ func (h *ImageHandler) GetImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", mimeType)
-	w.Header().Set("Cache-Control", "public, max-age=31536000") // Cache for 1 year since files are immutable
+	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+	w.Header().Set("Cache-Control", "private, no-store") // Cache for 1 year since files are immutable
 	_, _ = w.Write(data)
 }
 
@@ -83,6 +101,11 @@ func (h *ImageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, _ := middleware.GetUserID(r.Context())
+	if h.evaluator == nil || !h.evaluator.EvaluateImageAccess(r.Context(), userID, id, "write") {
+		http.Error(w, "Forbidden", 403)
+		return
+	}
 	err := h.imageService.DeleteImage(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

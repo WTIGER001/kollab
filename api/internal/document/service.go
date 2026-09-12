@@ -20,6 +20,7 @@ import (
 
 type DocumentService struct {
 	repo          domain.DocumentRepository
+	evaluator     *permissions.AccessEvaluator
 	systemService domain.SystemService
 	taskRepo      domain.TaskRepository
 	teamRepo      domain.TeamRepository
@@ -35,6 +36,8 @@ func NewDocumentService(repo domain.DocumentRepository, systemService domain.Sys
 		aiClient:      ai.NewLLMClient(),
 	}
 }
+
+func (s *DocumentService) SetAccessEvaluator(e *permissions.AccessEvaluator) { s.evaluator = e }
 
 func (s *DocumentService) GetDocument(ctx context.Context, idOrSlug string) (*domain.Document, string, error) {
 	return s.repo.GetByIDOrSlug(ctx, idOrSlug)
@@ -63,7 +66,13 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug
 	}
 
 	targetTeam := teamId
-	if s.teamRepo != nil && userID != "" {
+	if s.evaluator != nil {
+		var err error
+		targetTeam, projectId, err = s.evaluator.ResolveDestination(ctx, userID, teamId, projectId, parentId)
+		if err != nil {
+			return nil, err
+		}
+	} else if s.teamRepo != nil && userID != "" {
 		teams, err := s.teamRepo.GetTeamsByUserID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check team membership: %w", err)
@@ -94,6 +103,9 @@ func (s *DocumentService) CreateDocument(ctx context.Context, title string, slug
 
 	docContent := `{"type":"doc","content":[{"type":"paragraph"}]}`
 	if content != nil && *content != "" {
+		if !json.Valid([]byte(*content)) {
+			return nil, errors.New("invalid document JSON")
+		}
 		docContent = *content
 	}
 
@@ -426,6 +438,9 @@ func (s *DocumentService) RestoreDocumentVersion(ctx context.Context, docID stri
 	if err != nil {
 		return nil, err
 	}
+	if version.DocumentID != docID {
+		return nil, errors.New("version does not belong to document")
+	}
 
 	doc, err := s.repo.GetByID(ctx, docID)
 	if err != nil {
@@ -457,15 +472,22 @@ func (s *DocumentService) RestoreDocumentVersion(ctx context.Context, docID stri
 		ChangeSummary: &snapshotSummary,
 		CreatedAt:     time.Now(),
 	}
-	if err := s.repo.SaveVersion(ctx, currentSnapshot); err != nil {
-		return nil, err
-	}
-
-	// Restore doc content
 	doc.Content = version.Content
 	doc.UpdatedAt = time.Now()
-	if err := s.repo.Update(ctx, doc); err != nil {
-		return nil, err
+	doc.UpdatedByID = userID
+	if restorer, ok := s.repo.(interface {
+		RestoreSnapshot(context.Context, *domain.Document, *domain.DocumentVersion) error
+	}); ok {
+		if err := restorer.RestoreSnapshot(ctx, doc, currentSnapshot); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := s.repo.SaveVersion(ctx, currentSnapshot); err != nil {
+			return nil, err
+		}
+		if err := s.repo.Update(ctx, doc); err != nil {
+			return nil, err
+		}
 	}
 
 	// Sync tasks
@@ -523,6 +545,15 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 
 	doc.UpdatedAt = time.Now()
 
+	if repository, ok := s.repo.(interface {
+		MoveHierarchy(context.Context, *domain.Document) error
+	}); ok {
+		if err := repository.MoveHierarchy(ctx, doc); err != nil {
+			return nil, err
+		}
+		return doc, nil
+	}
+
 	// 2. Perform document update
 	if err := s.repo.Update(ctx, doc); err != nil {
 		return nil, err
@@ -530,7 +561,7 @@ func (s *DocumentService) MoveDocument(ctx context.Context, id string, parentID 
 
 	// 3. Propagate space changes recursively to all descendants
 	if err := s.propagateSpaceChange(ctx, doc.ID, doc.ProjectID, doc.TeamID); err != nil {
-		log.Printf("Warning: failed to propagate space updates to descendants of %s: %v", doc.ID, err)
+		return nil, fmt.Errorf("failed to move descendants: %w", err)
 	}
 
 	return doc, nil

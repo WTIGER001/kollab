@@ -1,4 +1,3 @@
-import React from 'react';
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react';
 import { Box, IconButton } from '@mui/material';
 import { Trash2 } from 'lucide-react';

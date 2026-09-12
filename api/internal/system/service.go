@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"kollab/api/internal/domain"
+	"kollab/api/internal/lifecycle"
 )
 
 type SystemService struct {
@@ -34,6 +35,11 @@ func (s *SystemService) UpdateSettings(ctx context.Context, settings *domain.Sys
 	go func() {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
+		release, err := lifecycle.Enter(bgCtx, false)
+		if err != nil {
+			return
+		}
+		defer release()
 		if err := s.EnsurePartitions(bgCtx); err != nil {
 			log.Printf("Background EnsurePartitions failed: %v", err)
 		}
@@ -85,8 +91,14 @@ func (s *SystemService) StartCleanupWorker(ctx context.Context, interval time.Du
 				log.Println("Stopping System Cleanup Worker...")
 				return
 			case <-ticker.C:
+
 				log.Println("Running System Settings maintenance worker...")
 				workerCtx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+				release, err := lifecycle.Enter(workerCtx, false)
+				if err != nil {
+					cancel()
+					continue
+				}
 
 				if err := s.repo.EnsurePartitions(workerCtx); err != nil {
 					log.Printf("Worker EnsurePartitions failed: %v", err)
@@ -99,6 +111,7 @@ func (s *SystemService) StartCleanupWorker(ctx context.Context, interval time.Du
 				}
 
 				cancel()
+				release()
 			}
 		}
 	}()
@@ -115,4 +128,11 @@ func (s *SystemService) ExportBackup(ctx context.Context) (map[string]interface{
 
 func (s *SystemService) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
 	return s.repo.GetSyncOperations(ctx, sinceID)
+}
+
+func (s *SystemService) RestoreBackup(ctx context.Context, data map[string]interface{}) error {
+	return s.repo.RestoreBackup(ctx, data)
+}
+func (s *SystemService) ApplySyncOperations(ctx context.Context, ops []map[string]interface{}) error {
+	return s.repo.ApplySyncOperations(ctx, ops)
 }

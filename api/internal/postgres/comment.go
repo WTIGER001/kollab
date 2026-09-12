@@ -33,7 +33,7 @@ func (r *PostgresCommentRepository) GetByDocumentID(ctx context.Context, docID s
 	}
 	defer rows.Close()
 
-	var result []*domain.Comment
+	result := make([]*domain.Comment, 0)
 	for rows.Next() {
 		var c domain.Comment
 		err := rows.Scan(

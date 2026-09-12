@@ -30,7 +30,7 @@ func (r *PostgresTemplateRepository) Create(ctx context.Context, template *domai
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
 		RETURNING created_at
 	`
-	
+
 	err := r.db.QueryRow(ctx, query,
 		template.ID,
 		template.Title,
@@ -112,7 +112,7 @@ func (r *PostgresTemplateRepository) GetByContext(ctx context.Context, scope *do
 	}
 	defer rows.Close()
 
-	var templates []*domain.Template
+	templates := make([]*domain.Template, 0)
 	for rows.Next() {
 		var template domain.Template
 		if err := rows.Scan(
@@ -140,7 +140,7 @@ func (r *PostgresTemplateRepository) Update(ctx context.Context, template *domai
 		SET title = $2, description = $3, content = $4, scope = $5, template_type = $6, team_id = $7, user_id = $8
 		WHERE id = $1
 	`
-	
+
 	cmdTag, err := r.db.Exec(ctx, query,
 		template.ID,
 		template.Title,

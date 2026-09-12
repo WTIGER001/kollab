@@ -9,11 +9,10 @@ import {
   CircularProgress,
   List,
   ListItem,
-  Avatar,
   Divider,
   Tooltip,
 } from "@mui/material";
-import { ArrowLeft, Users, Eye, Edit3, Calendar, Activity, ChevronRight } from "lucide-react";
+import { ArrowLeft, Users, Eye, Edit3, Activity, ChevronRight } from "lucide-react";
 import { fetchDocumentAuditLogs } from "../services/api";
 import type { AuditLogEntry } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
@@ -187,7 +186,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                 <ChevronRight size={11} style={{ opacity: 0.4 }} />
               </>
             )}
-            <Typography variant="body2" sx={{ fontSize: "11px", color: "text.secondary", fontWeight: 500, letterSpacing: "0.03em", noWrap: true }}>
+            <Typography variant="body2" sx={{ fontSize: "11px", color: "text.secondary", fontWeight: 500, letterSpacing: "0.03em" }}>
               {docTitle}
             </Typography>
             <ChevronRight size={11} style={{ opacity: 0.4 }} />

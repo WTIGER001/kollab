@@ -1,6 +1,8 @@
 package http
 
 import (
+	"encoding/json"
+	goperm "github.com/wtiger001/go-permissions"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,19 +20,44 @@ import (
 // and maps public/protected routes using JWT middleware.
 func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserRepository, userH *handler.UserHandler, teamH *handler.TeamHandler, docH *handler.DocumentHandler, imgH *handler.ImageHandler, libImgH *handler.LibraryImageHandler, themeH *handler.ThemeHandler, wsH *handler.WSHandler, systemH *handler.SystemHandler, commentH *handler.CommentHandler, attH *handler.AttachmentHandler, aiH *handler.AIHandler, tagH *handler.TagHandler, templateH *handler.TemplateHandler, integrationH *handler.IntegrationHandler, evaluator *permissions.AccessEvaluator) http.Handler {
 	r := chi.NewRouter()
+	imgH.SetAccessEvaluator(evaluator)
+	libImgH.SetAccessEvaluator(evaluator)
+	tagH.SetAccessEvaluator(evaluator)
+	optionalAuth := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Authorization") != "" || r.URL.Query().Get("authToken") != "" {
+				mid.AuthMiddleware(jwtSecret, jwksCache, userRepo)(next).ServeHTTP(w, r)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
 
 	confluenceImporter := migration.NewConfluenceImporter()
 	migrationH := handler.NewMigrationHandler(confluenceImporter, docH.Service(), attH.Service())
 
 	// Standard middleware
 	r.Use(mid.RequestLogger)
+	r.Use(mid.Maintenance())
 	r.Use(middleware.Recoverer)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			limit := int64(64 << 20)
+			if r.URL.Path == "/api/system/restore" || r.URL.Path == "/api/system/sync/import" {
+				limit = 1 << 30
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("Referrer-Policy", "same-origin")
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// CORS Setup
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"},
+		AllowedOrigins:   []string{"http://localhost:8090", "http://127.0.0.1:8090", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Share-Token", "X-Share-Password"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
@@ -45,13 +72,23 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Get("/config", userH.GetOIDCConfig)
 	})
 
+	r.With(optionalAuth).Post("/api/shared-links/open", docH.OpenSharedDocument)
+
 	// Health check endpoints
 	r.Get("/health", systemH.Health)
 	r.Get("/api/health", systemH.Health)
 
 	// Public image retrieval route (no auth header needed for <img> elements in canvas)
-	r.Get("/api/images/{id}/{size}", imgH.GetImage)
-	r.Get("/api/images/{id}", imgH.GetImage) // Fallback for URLs without size param
+	r.With(optionalAuth).Get("/api/images/{id}/{size}", imgH.GetImage)
+	r.With(optionalAuth).Get("/api/images/{id}", imgH.GetImage) // Fallback for URLs without size param
+
+	r.With(optionalAuth).Get("/api/attachments/{id}", attH.Download)
+
+	r.With(optionalAuth).Get("/api/attachments/{id}/preview", attH.Preview)
+
+	r.With(optionalAuth).Get("/api/attachments/{id}/preview/status", attH.PreviewStatus)
+
+	r.With(optionalAuth).Get("/api/attachments/{id}/preview/view/*", attH.PreviewView)
 
 	// WebSocket presence connection route (handles auth internally via token query param)
 	r.Get("/api/ws", wsH.ServeWS)
@@ -59,6 +96,23 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 	// Protected routes
 	r.Route("/api", func(r chi.Router) {
 		r.Use(mid.AuthMiddleware(jwtSecret, jwksCache, userRepo))
+		r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
+			id, _ := mid.GetUserID(r.Context())
+			u, err := userRepo.GetByID(r.Context(), id)
+			if err != nil {
+				http.Error(w, "User not found", http.StatusNotFound)
+				return
+			}
+			isAdmin := false
+			if permissions.Service != nil {
+				isAdmin, _ = permissions.Service.HasPermission(r.Context(), goperm.Request{UserID: id, Perm: "system.admin"})
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(struct {
+				*domain.User
+				IsAdmin bool `json:"isAdmin"`
+			}{u, isAdmin})
+		})
 
 		readCheck := mid.DocumentAccessMiddleware(evaluator, "read")
 		commentCheck := mid.DocumentAccessMiddleware(evaluator, "comment")
@@ -88,21 +142,23 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 
 		r.Get("/teams", teamH.ListTeams)
 		r.Post("/teams", teamH.CreateTeam)
-		r.Put("/teams/{id}", teamH.UpdateTeam)
+		r.With(mid.RequirePermission("team", "id", "write")).Put("/teams/{id}", teamH.UpdateTeam)
 		r.Get("/teams/by-abbreviation/{abbr}", teamH.GetTeamByAbbreviation)
-		r.Get("/teams/{teamId}/users", teamH.ListTeamUsers)
-		r.Post("/teams/{teamId}/users", teamH.AddTeamMember)
-		r.Delete("/teams/{teamId}/users/{userId}", teamH.RemoveTeamMember)
+		r.With(mid.RequirePermission("team", "teamId", "read")).Get("/teams/{teamId}/users", teamH.ListTeamUsers)
+		r.With(mid.RequirePermission("team", "teamId", "grant")).Post("/teams/{teamId}/users", teamH.AddTeamMember)
+		r.With(mid.RequirePermission("team", "teamId", "grant")).Delete("/teams/{teamId}/users/{userId}", teamH.RemoveTeamMember)
 		r.Get("/users", teamH.ListAllUsers)
 		if jwksCache.AllowsLocalCredentials() {
 			r.Get("/admin/users", userH.ListLocalUsers)
 			r.Post("/admin/users", userH.CreateLocalUser)
 			r.Put("/admin/users/{id}/active", userH.SetLocalUserActive)
 			r.Put("/admin/users/{id}/password", userH.SetLocalUserPassword)
+			r.Put("/admin/users/{id}", userH.UpdateLocalUser)
+			r.Delete("/admin/users/{id}", userH.DeleteLocalUser)
 		}
 		r.Get("/projects", teamH.ListProjects)
 		r.Post("/projects", teamH.CreateProject)
-		r.Put("/projects/{id}", teamH.UpdateProject)
+		r.With(mid.RequirePermission("project", "id", "write")).Put("/projects/{id}", teamH.UpdateProject)
 
 		r.Post("/images", imgH.Upload)
 		r.Delete("/images/{id}", imgH.Delete)
@@ -113,13 +169,10 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Delete("/library/images/{id}", libImgH.Delete)
 
 		r.Delete("/attachments/{id}", attH.Delete)
-		r.Get("/attachments/{id}", attH.Download)
-		r.Get("/attachments/{id}/preview", attH.Preview)
-		r.Get("/attachments/{id}/preview/status", attH.PreviewStatus)
-		r.Post("/attachments/{id}/preview/retry", attH.Retry)
-		r.Get("/attachments/{id}/preview/view/*", attH.PreviewView)
 
-		r.Put("/theme", themeH.UpdateTheme)
+		r.Post("/attachments/{id}/preview/retry", attH.Retry)
+
+		r.With(mid.RequirePermission("system", "", "write")).Put("/theme", themeH.UpdateTheme)
 		r.Get("/users/preferences", themeH.GetUserPreference)
 		r.Put("/users/preferences", themeH.UpdateUserPreference)
 
@@ -131,12 +184,12 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 		r.Get("/templates/{id}", templateH.GetTemplate)
 		r.Put("/templates/{id}", templateH.UpdateTemplate)
 		r.Delete("/templates/{id}", templateH.DeleteTemplate)
-		r.Get("/system/backup", systemH.Backup)
-		r.Post("/system/restore", systemH.Restore)
-		r.Get("/system/sync/export", systemH.ExportSync)
-		r.Post("/system/sync/import", systemH.ImportSync)
-		r.Get("/system/aspose", attH.GetAsposeConfig)
-		r.Put("/system/aspose", attH.UpdateAsposeConfig)
+		r.With(mid.RequirePermission("system", "", "write")).Get("/system/backup", systemH.Backup)
+		r.With(mid.RequirePermission("system", "", "write")).Post("/system/restore", systemH.Restore)
+		r.With(mid.RequirePermission("system", "", "write")).Get("/system/sync/export", systemH.ExportSync)
+		r.With(mid.RequirePermission("system", "", "write")).Post("/system/sync/import", systemH.ImportSync)
+		r.With(mid.RequirePermission("system", "", "write")).Get("/system/aspose", attH.GetAsposeConfig)
+		r.With(mid.RequirePermission("system", "", "write")).Put("/system/aspose", attH.UpdateAsposeConfig)
 
 		r.Post("/ai/generate", aiH.Generate)
 		r.Get("/integrations/issues", systemH.GetIntegrationIssue)
@@ -171,6 +224,7 @@ func NewRouter(jwtSecret []byte, jwksCache *mid.JWKSCache, userRepo domain.UserR
 				r.Group(func(r chi.Router) {
 					r.Use(readCheck)
 					r.Get("/", docH.GetByID)
+					r.Get("/capabilities", docH.Capabilities)
 					r.Get("/export", docH.Export)
 					r.Get("/analytics", docH.GetAnalytics)
 					r.Get("/comments", commentH.List)

@@ -7,9 +7,12 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"kollab/api/internal/domain"
+	"kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type TagHandler struct {
+	evaluator  *permissions.AccessEvaluator
 	tagService domain.TagService
 }
 
@@ -147,6 +150,8 @@ func (h *TagHandler) RemoveTagFromDocument(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *TagHandler) SetAccessEvaluator(e *permissions.AccessEvaluator) { h.evaluator = e }
+
 func (h *TagHandler) ListDocumentAssociations(w http.ResponseWriter, r *http.Request) {
 	associations, err := h.tagService.GetAllDocumentTags(r.Context())
 	if err != nil {
@@ -155,5 +160,16 @@ func (h *TagHandler) ListDocumentAssociations(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	userID, _ := middleware.GetUserID(r.Context())
+	for id := range associations {
+		if h.evaluator == nil {
+			delete(associations, id)
+			continue
+		}
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, id, "read", "", "")
+		if err != nil || !allowed {
+			delete(associations, id)
+		}
+	}
 	_ = json.NewEncoder(w).Encode(associations)
 }

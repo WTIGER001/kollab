@@ -24,8 +24,9 @@ interface CreateSpaceDialogProps {
   onClose: () => void;
   teams: Team[];
   activeTeamId: string | null;
-  onCreateTeam: (name: string, abbreviation: string, description: string) => Promise<void>;
-  onCreateProject: (teamId: string, name: string, abbreviation: string, description: string) => Promise<void>;
+  initialTab?: 0 | 1;
+  onCreateTeam: (name: string, abbreviation: string, description: string) => Promise<unknown>;
+  onCreateProject: (teamId: string, name: string, abbreviation: string, description: string) => Promise<unknown>;
 }
 
 export const CreateSpaceDialog: React.FC<CreateSpaceDialogProps> = ({
@@ -33,6 +34,7 @@ export const CreateSpaceDialog: React.FC<CreateSpaceDialogProps> = ({
   onClose,
   teams,
   activeTeamId,
+  initialTab = 0,
   onCreateTeam,
   onCreateProject
 }) => {
@@ -55,6 +57,7 @@ export const CreateSpaceDialog: React.FC<CreateSpaceDialogProps> = ({
   // Set default team selection for project tab
   useEffect(() => {
     if (open) {
+      setTabIndex(initialTab);
       setError(null);
       setTeamName("");
       setTeamAbbr("");
@@ -74,7 +77,7 @@ export const CreateSpaceDialog: React.FC<CreateSpaceDialogProps> = ({
         setSelectedTeamId("");
       }
     }
-  }, [open, activeTeamId, teams]);
+  }, [open, activeTeamId, teams, initialTab]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabIndex(newValue);

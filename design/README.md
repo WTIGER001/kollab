@@ -9,6 +9,9 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🖥️ [1. System Architecture Overview](file:///Users/johnbauer/Dev/Personal/kollab/design/01_system_overview.md)
 *High-level architecture, technology stack details, database indexing strategy, and Gantt charts.*
 
+### 🧭 [28. Administration Settings Navigation](28_admin_settings_navigation.md)
+*Route-backed server administration, replacement sidebar behavior, and local-user management APIs.*
+
 ### 🗄️ [23. Database Migrations](23_database_migrations.md)
 *Append-only PostgreSQL migration ledger, checksums, and transactional application lifecycle.*
 
@@ -57,6 +60,9 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🏠 [9. Customizable Workspace Homepage](file:///Users/johnbauer/Dev/Personal/kollab/design/09_custom_homepage.md)
 *Dynamic, document-based user dashboard utilizing the Tiptap editor engine and the Workspace Directory Macro.*
 
+### 🚀 [27. First-Start Experience](27_first_start_experience.md)
+*Guided empty-state progression from the default recent-pages route to a team, project, and first document.*
+
 ### 🔔 [10. Watch Capabilities & Notifications](file:///Users/johnbauer/Dev/Personal/kollab/design/10_watch_and_notifications.md)
 *Subscription data models, event routing pipelines, WebSocket real-time pushes, and email digest batching.*
 
@@ -65,3 +71,7 @@ This directory contains the hierarchical technical specifications of Project Kol
 
 ### 🔗 [12. Page Routing and Custom Slugs](file:///Users/johnbauer/Dev/Personal/kollab/design/12_page_routing_and_slugs.md)
 *Dual UUID/Slug URL resolution, title-based auto-generation, global uniqueness constraints, and user-defined nickname overrides.*
+
+- [Production readiness updates](production_readiness.md)
+
+- [Multiple API instances and bidirectional synchronization](multi_instance_sync.md)

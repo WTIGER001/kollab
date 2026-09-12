@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 coverage/
+
+# Generated browser verification output
+test-results/
+playwright-report/

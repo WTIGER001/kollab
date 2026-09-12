@@ -9,8 +9,9 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"log"
+	"net"
 	"net/http"
+	urlpkg "net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,6 +20,8 @@ import (
 
 	"kollab/api/internal/domain"
 
+	"github.com/chromedp/cdproto/emulation"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
@@ -157,6 +160,7 @@ func TiptapToHTML(title string, contentJSON string) (string, error) {
 <html>
 <head>
 	<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 	<title>%s</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
@@ -541,12 +545,25 @@ func nodeToHTML(n TiptapNode) string {
 }
 
 // PrintPDF uses chromedp to render the HTML string to a PDF using headless Chrome.
+var pdfSlots = make(chan struct{}, 2)
+
 func PrintPDF(ctx context.Context, htmlContent string) ([]byte, error) {
+	ctx, timeoutCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer timeoutCancel()
+	select {
+	case pdfSlots <- struct{}{}:
+		defer func() { <-pdfSlots }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 	// Spawns headless chrome
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.NoSandbox,
 		chromedp.DisableGPU,
 	)
+	if executable := os.Getenv("CHROME_BIN"); executable != "" {
+		opts = append(opts, chromedp.ExecPath(executable))
+	}
 	allocCtx, cancel := chromedp.NewExecAllocator(ctx, opts...)
 	defer cancel()
 
@@ -555,6 +572,9 @@ func PrintPDF(ctx context.Context, htmlContent string) ([]byte, error) {
 
 	var pdfBuffer []byte
 	err := chromedp.Run(chromeCtx,
+		emulation.SetScriptExecutionDisabled(true),
+		network.Enable(),
+		network.SetBlockedURLs().WithURLPatterns([]*network.BlockPattern{{URLPattern: "http://*:*/*", Block: true}, {URLPattern: "https://*:*/*", Block: true}, {URLPattern: "file:///*", Block: true}, {URLPattern: "ftp://*:*/*", Block: true}}),
 		chromedp.Navigate("about:blank"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// Injects raw HTML into the blank tab
@@ -588,11 +608,11 @@ func PrintPDF(ctx context.Context, htmlContent string) ([]byte, error) {
 
 // BuildDOCX generates a basic Microsoft Word .docx OpenXML zip archive.
 func BuildDOCX(title string, contentJSON string) ([]byte, error) {
-	log.Printf("[DEBUG BuildDOCX] Starting Word DOCX generation for title: %q. contentJSON length: %d", title, len(contentJSON))
+
 	var root TiptapNode
 	if contentJSON != "" && contentJSON != `""` {
 		if err := json.Unmarshal([]byte(contentJSON), &root); err != nil {
-			log.Printf("[DEBUG BuildDOCX] Failed to unmarshal contentJSON: %v", err)
+
 			_ = json.Unmarshal([]byte(contentJSON), &root)
 		}
 	}
@@ -664,12 +684,6 @@ func BuildDOCX(title string, contentJSON string) ([]byte, error) {
 </w:document>`, html.EscapeString(title), bodyXML)
 
 	// Debug logging
-	log.Printf("[DEBUG BuildDOCX] Title: %s", title)
-	log.Printf("[DEBUG BuildDOCX] Total Relationships: %d", len(ctx.Relationships))
-	for i, rel := range ctx.Relationships {
-		log.Printf("[DEBUG BuildDOCX] Rel %d: ID=%s Type=%s Target=%s TargetMode=%s", i, rel.ID, rel.Type, rel.Target, rel.TargetMode)
-	}
-	log.Printf("[DEBUG BuildDOCX] document.xml size: %d", len(documentXML))
 
 	if err := writeFile("word/document.xml", documentXML); err != nil {
 		return nil, err
@@ -691,9 +705,6 @@ func BuildDOCX(title string, contentJSON string) ([]byte, error) {
 </Relationships>`)
 
 	// Dump debug XML files to local workspace directory
-	_ = os.WriteFile("debug_last_document.xml", []byte(documentXML), 0644)
-	_ = os.WriteFile("debug_last_document.xml.rels", []byte(relsBuilder.String()), 0644)
-	log.Printf("[DEBUG BuildDOCX] Saved debug_last_document.xml and debug_last_document.xml.rels to disk.")
 
 	if err := writeFile("word/_rels/document.xml.rels", relsBuilder.String()); err != nil {
 		return nil, err
@@ -709,7 +720,7 @@ func BuildDOCX(title string, contentJSON string) ([]byte, error) {
 
 // BuildCombinedDOCX generates a Microsoft Word .docx OpenXML zip archive for page hierarchy.
 func BuildCombinedDOCX(doc *domain.Document, allDocs []*domain.Document) ([]byte, error) {
-	log.Printf("[DEBUG BuildCombinedDOCX] Starting Word DOCX hierarchy generation for root document: %q", doc.Title)
+
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
@@ -766,12 +777,6 @@ func BuildCombinedDOCX(doc *domain.Document, allDocs []*domain.Document) ([]byte
 </w:document>`, bodyXML)
 
 	// Debug logging
-	log.Printf("[DEBUG BuildCombinedDOCX] Document: %s", doc.Title)
-	log.Printf("[DEBUG BuildCombinedDOCX] Total Relationships: %d", len(ctx.Relationships))
-	for i, rel := range ctx.Relationships {
-		log.Printf("[DEBUG BuildCombinedDOCX] Rel %d: ID=%s Type=%s Target=%s TargetMode=%s", i, rel.ID, rel.Type, rel.Target, rel.TargetMode)
-	}
-	log.Printf("[DEBUG BuildCombinedDOCX] document.xml size: %d", len(documentXML))
 
 	if err := writeFile("word/document.xml", documentXML); err != nil {
 		return nil, err
@@ -793,9 +798,6 @@ func BuildCombinedDOCX(doc *domain.Document, allDocs []*domain.Document) ([]byte
 </Relationships>`)
 
 	// Dump debug XML files to local workspace directory
-	_ = os.WriteFile("debug_last_document.xml", []byte(documentXML), 0644)
-	_ = os.WriteFile("debug_last_document.xml.rels", []byte(relsBuilder.String()), 0644)
-	log.Printf("[DEBUG BuildCombinedDOCX] Saved debug_last_document.xml and debug_last_document.xml.rels to disk.")
 
 	if err := writeFile("word/_rels/document.xml.rels", relsBuilder.String()); err != nil {
 		return nil, err
@@ -970,7 +972,7 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 		if srcVal, ok := n.Attrs["src"].(string); ok {
 			src = srcVal
 		}
-		log.Printf("[DEBUG DOCX] nodeToOpenXML image entry: src=%q", src)
+
 		if src == "" {
 			break
 		}
@@ -978,16 +980,16 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 		// Download the image bytes and determine extension
 		imageBytes, ext, err := downloadImage(src)
 		if err != nil {
-			log.Printf("[DEBUG DOCX] downloadImage failed for src %s: %v", src, err)
+
 		} else if len(imageBytes) == 0 {
-			log.Printf("[DEBUG DOCX] downloadImage returned 0 bytes for src %s", src)
+
 		} else {
 			// Validate image signature
 			if mime, ok := isValidImage(imageBytes); !ok {
-				log.Printf("[DEBUG DOCX] Downloaded bytes for src %s are not a valid image format. Length: %d. Header: %q", src, len(imageBytes), string(imageBytes[:minVal(len(imageBytes), 50)]))
+
 				imageBytes = nil
 			} else {
-				log.Printf("[DEBUG DOCX] Successfully loaded image bytes for src %s. Mime/Ext: %s, Length: %d", src, mime, len(imageBytes))
+
 				ext = mime
 			}
 		}
@@ -1001,7 +1003,6 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 			// Write the binary data to the ZIP file
 			if f, err := zw.Create(mediaPath); err == nil {
 				_, _ = f.Write(imageBytes)
-				log.Printf("[DEBUG DOCX] Created media asset in ZIP: %s", mediaPath)
 
 				// Register internal relationship
 				ctx.Relationships = append(ctx.Relationships, OpenXMLRelation{
@@ -1045,7 +1046,7 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 				}
 				embedded = true
 			} else {
-				log.Printf("[DEBUG DOCX] Failed to create ZIP entry %s: %v", mediaPath, err)
+
 			}
 		}
 
@@ -1056,7 +1057,7 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 		// Fallback handling
 		isAbsolute := strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://")
 		if isAbsolute {
-			log.Printf("[DEBUG DOCX] Fallback to external relationship for absolute URL: %s", src)
+
 			relID := fmt.Sprintf("rId%d", len(ctx.Relationships)+1)
 			ctx.Relationships = append(ctx.Relationships, OpenXMLRelation{
 				ID:         relID,
@@ -1102,7 +1103,7 @@ func nodeToOpenXML(zw *zip.Writer, n TiptapNode, title string, ctx *OpenXMLConte
 			if altVal, ok := n.Attrs["alt"].(string); ok && altVal != "" {
 				altText = altVal
 			}
-			log.Printf("[DEBUG DOCX] Non-absolute URL %q failed download. Rendering text placeholder instead of external relationship to prevent corruption.", src)
+
 			if ctx.InParagraph {
 				fmt.Fprintf(&sb, "<w:r><w:rPr><w:color w:val=\"888888\"/><w:i/></w:rPr><w:t xml:space=\"preserve\"> [Image: %s (%s)] </w:t></w:r>", html.EscapeString(altText), html.EscapeString(src))
 			} else {
@@ -1245,16 +1246,15 @@ func renderListItem(zw *zip.Writer, n TiptapNode, prefix string, title string, c
 var imageURLRegex = regexp.MustCompile(`/api/images/([^/]+)/([^/]+)`)
 
 func getLocalImageFile(url string) ([]byte, string, error) {
-	log.Printf("[DEBUG DOCX] getLocalImageFile starting for URL: %q", url)
+
 	matches := imageURLRegex.FindStringSubmatch(url)
 	if len(matches) < 3 {
-		log.Printf("[DEBUG DOCX] getLocalImageFile: URL does not match imageURLRegex")
+
 		return nil, "", fmt.Errorf("not a local image URL pattern")
 	}
 
 	id := matches[1]
 	size := matches[2]
-	log.Printf("[DEBUG DOCX] getLocalImageFile extracted ID: %q, Size: %q", id, size)
 
 	// Map sizes 1, 2, 3, 4, O
 	suffix := "original"
@@ -1273,23 +1273,20 @@ func getLocalImageFile(url string) ([]byte, string, error) {
 	dirs := []string{"./uploads", "./api/uploads", "../api/uploads"}
 
 	for _, dir := range dirs {
-		absDir, _ := filepath.Abs(dir)
-		log.Printf("[DEBUG DOCX] getLocalImageFile checking directory: %q (absolute: %q)", dir, absDir)
+
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			log.Printf("[DEBUG DOCX] getLocalImageFile: directory %q does not exist", dir)
+
 			continue
 		}
 
 		files, err := os.ReadDir(dir)
 		if err != nil {
-			log.Printf("[DEBUG DOCX] getLocalImageFile: failed to read directory %q: %v", dir, err)
+
 			continue
 		}
-		log.Printf("[DEBUG DOCX] getLocalImageFile: directory %q contains %d files", dir, len(files))
 
 		prefix := fmt.Sprintf("%s_%s.", id, suffix)
 		originalPrefix := fmt.Sprintf("%s_original.", id)
-		log.Printf("[DEBUG DOCX] getLocalImageFile searching for prefix: %q or fallback: %q", prefix, originalPrefix)
 
 		var foundFile string
 		var foundPath string
@@ -1299,7 +1296,7 @@ func getLocalImageFile(url string) ([]byte, string, error) {
 			if !f.IsDir() && strings.HasPrefix(f.Name(), prefix) {
 				foundFile = f.Name()
 				foundPath = filepath.Join(dir, foundFile)
-				log.Printf("[DEBUG DOCX] getLocalImageFile: matched size prefix file: %q", foundFile)
+
 				break
 			}
 		}
@@ -1310,7 +1307,7 @@ func getLocalImageFile(url string) ([]byte, string, error) {
 				if !f.IsDir() && strings.HasPrefix(f.Name(), originalPrefix) {
 					foundFile = f.Name()
 					foundPath = filepath.Join(dir, foundFile)
-					log.Printf("[DEBUG DOCX] getLocalImageFile: matched fallback original prefix file: %q", foundFile)
+
 					break
 				}
 			}
@@ -1319,7 +1316,7 @@ func getLocalImageFile(url string) ([]byte, string, error) {
 		if foundPath != "" {
 			data, err := os.ReadFile(foundPath)
 			if err != nil {
-				log.Printf("[DEBUG DOCX] getLocalImageFile: failed to read file %q: %v", foundPath, err)
+
 				return nil, "", err
 			}
 
@@ -1330,12 +1327,10 @@ func getLocalImageFile(url string) ([]byte, string, error) {
 				ext = "png"
 			}
 
-			log.Printf("[DEBUG DOCX] getLocalImageFile: successfully read local file %q, size: %d bytes, ext: %q", foundPath, len(data), ext)
 			return data, ext, nil
 		}
 	}
 
-	log.Printf("[DEBUG DOCX] getLocalImageFile: local image file not found for ID %s in any checked directories", id)
 	return nil, "", fmt.Errorf("local image file not found")
 }
 
@@ -1368,46 +1363,65 @@ func embedImagesAsBase64(node *TiptapNode) {
 }
 
 func downloadImage(url string) ([]byte, string, error) {
-	log.Printf("[DEBUG DOCX] downloadImage starting for URL: %q", url)
+
 	// 1. Try local file resolution first
 	if data, ext, err := getLocalImageFile(url); err == nil {
-		log.Printf("[DEBUG DOCX] downloadImage: successfully resolved locally for URL: %q", url)
+
 		return data, ext, nil
 	} else {
-		log.Printf("[DEBUG DOCX] downloadImage: local file resolution failed: %v. Falling back to network download...", err)
+
 	}
 
-	// 2. Fall back to network download
-	fetchURL := url
-	if strings.HasPrefix(url, "/") {
-		port := os.Getenv("PORT")
-		if port == "" {
-			port = "8080"
+	// External image downloads reject local, private, and link-local destinations,
+	// including after DNS resolution and redirects.
+	parsed, err := urlpkg.Parse(url)
+	if err != nil || (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.User != nil {
+		return nil, "", fmt.Errorf("unsupported image URL")
+	}
+	client := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(address)
+			if err != nil {
+				return nil, err
+			}
+			ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+			if err != nil {
+				return nil, err
+			}
+			for _, ip := range ips {
+				if !ip.IP.IsGlobalUnicast() || ip.IP.IsPrivate() || ip.IP.IsLoopback() || ip.IP.IsLinkLocalUnicast() {
+					return nil, fmt.Errorf("private image destination blocked")
+				}
+			}
+			if len(ips) == 0 {
+				return nil, fmt.Errorf("image host not found")
+			}
+			return (&net.Dialer{Timeout: 3 * time.Second}).DialContext(ctx, network, net.JoinHostPort(ips[0].IP.String(), port))
+		},
+	}, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) > 4 || req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+			return fmt.Errorf("image redirect blocked")
 		}
-		fetchURL = fmt.Sprintf("http://127.0.0.1:%s%s", port, url)
-	}
-	log.Printf("[DEBUG DOCX] downloadImage: network GET request to URL: %q", fetchURL)
-
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
-	resp, err := client.Get(fetchURL)
+		return nil
+	}}
+	resp, err := client.Get(parsed.String())
 	if err != nil {
-		log.Printf("[DEBUG DOCX] downloadImage: network GET failed for %q: %v", fetchURL, err)
+
 		return nil, "", err
 	}
 	defer resp.Body.Close()
 
-	log.Printf("[DEBUG DOCX] downloadImage: network GET response status: %s, headers: %+v", resp.Status, resp.Header)
-
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("[DEBUG DOCX] downloadImage: network GET bad status code: %d", resp.StatusCode)
+
 		return nil, "", fmt.Errorf("bad status code: %d", resp.StatusCode)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, (10<<20)+1))
+	if len(data) > 10<<20 {
+		return nil, "", fmt.Errorf("image exceeds 10 MB")
+	}
 	if err != nil {
-		log.Printf("[DEBUG DOCX] downloadImage: network GET body read failed: %v", err)
+
 		return nil, "", err
 	}
 
@@ -1419,7 +1433,6 @@ func downloadImage(url string) ([]byte, string, error) {
 		ext = "gif"
 	}
 
-	log.Printf("[DEBUG DOCX] downloadImage: network GET success. data size: %d bytes, Content-Type: %q -> ext: %q", len(data), contentType, ext)
 	return data, ext, nil
 }
 
@@ -1517,6 +1530,7 @@ func BuildCombinedHTML(rootDoc *domain.Document, allDocs []*domain.Document) (st
 <html>
 <head>
 	<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 	<title>%s Hierarchy</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');

@@ -55,7 +55,7 @@ func (r *PostgresLibraryImageRepository) List(ctx context.Context, scope string,
 	}
 	defer rows.Close()
 
-	var images []*domain.LibraryImage
+	images := make([]*domain.LibraryImage, 0)
 	for rows.Next() {
 		img := &domain.LibraryImage{}
 		err := rows.Scan(

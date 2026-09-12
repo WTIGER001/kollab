@@ -6,7 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import { EditorCanvas } from '../components/EditorCanvas';
 import { getTemplate, updateTemplate } from '../services/api';
 import { useAppStore } from '../store/useAppStore';
-import { useAuth } from 'react-oidc-context';
+import { useSession } from '../auth/SessionContext';
+import { useToastStore } from '../store/useToastStore';
 
 export const TemplatePage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) => {
   const { templateId } = useParams();
@@ -15,10 +16,11 @@ export const TemplatePage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
 
   const { developerMode } = useAppStore();
   
-	const auth = useAuth();
-  const userToken = isMockMode ? "mock-jwt-token" : auth?.user?.access_token || null;
+	const { token } = useSession();
+  const { showToast } = useToastStore();
+  const userToken = isMockMode ? "mock-jwt-token" : token;
 
-  const { data: activeTemplate, isLoading } = useQuery({
+  const { data: activeTemplate, isLoading, error } = useQuery({
     queryKey: ['template', templateId],
     queryFn: () => getTemplate(templateId!),
     enabled: !!templateId,
@@ -38,7 +40,8 @@ export const TemplatePage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
       queryClient.invalidateQueries({ queryKey: ['templates'] });
       queryClient.invalidateQueries({ queryKey: ['template', activeTemplate.id] });
     } catch (err) {
-      console.error(err);
+      showToast("Could not save. Your changes have not been saved.", "error");
+      throw err;
     } finally {
       setIsSaving(false);
     }
@@ -47,6 +50,8 @@ export const TemplatePage: React.FC<{ isMockMode?: boolean }> = ({ isMockMode })
   const handleBack = () => {
     navigate(-1);
   };
+
+  if (error) return <Box sx={{ p: 3, color: "var(--text-primary)" }}>This page could not be loaded. Check your access and try again.</Box>;
 
   if (isLoading || !activeTemplate) {
     return (

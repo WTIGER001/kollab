@@ -1,25 +1,24 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useState, useEffect } from "react";
 import {
+  Alert,
   Box,
   Typography,
   Card,
   CardMedia,
   CardContent,
-  Grid,
   IconButton,
   Button,
   TextField,
   CircularProgress,
   Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Stack,
   Tooltip,
   ToggleButtonGroup,
   ToggleButton
 } from "@mui/material";
 import { Upload, Trash2, Edit2, Check, X, LayoutGrid, Square } from "lucide-react";
+import { useTeams, useAllProjects } from "../hooks/queries";
 import { useParams } from "react-router-dom";
 import { fetchLibraryImages, uploadLibraryImage, updateLibraryImageName, deleteLibraryImage } from "../services/api";
 import type { LibraryImage } from "../services/api";
@@ -29,7 +28,14 @@ interface ImageLibraryViewProps {
 }
 
 export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => {
-  const { teamId, projectId } = useParams();
+  const { teamId: routeTeamId, projectId: routeProjectId } = useParams();
+  const { data: teams = [] } = useTeams();
+  const { data: projects = [] } = useAllProjects();
+  const team = teams.find(t => t.id === routeTeamId || t.abbreviation === routeTeamId);
+  const project = projects.find(p => p.teamId === team?.id && (p.id === routeProjectId || p.abbreviation === routeProjectId));
+  const teamId = team?.id;
+  const projectId = project?.id;
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [images, setImages] = useState<LibraryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,16 +44,19 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
   const [lightboxImage, setLightboxImage] = useState<LibraryImage | null>(null);
 
   useEffect(() => {
+    if ((scope === "team" && !teamId) || (scope === "project" && !projectId)) return;
     loadImages();
   }, [scope, teamId, projectId]);
 
   const loadImages = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await fetchLibraryImages(scope, teamId, projectId);
       setImages(data || []);
     } catch (err) {
       console.error("Failed to load library images", err);
+      setLoadError("Images could not be loaded. Check your access and reload the page.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +66,6 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     try {
-      // NOTE: This will throw until the backend is implemented
       const newImage = await uploadLibraryImage(file, scope, teamId, projectId);
       setImages([newImage, ...images]);
     } catch (err) {
@@ -120,15 +128,16 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
 
   return (
     <Box sx={{ p: 4, width: "100%", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+      {loadError && <Alert severity="error" sx={{ mb: 2 }}>{loadError}</Alert>}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 4, width: "100%" }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ textAlign: "left" }}>
+        <Typography variant="h4" sx={{ ...({ textAlign: "left" }), fontWeight: "bold" }}>
           {getScopeTitle()}
         </Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
           <ToggleButtonGroup
             value={gridSize}
             exclusive
-            onChange={(e, newVal) => {
+            onChange={(_e, newVal) => {
               if (newVal !== null) setGridSize(newVal);
             }}
             size="small"
@@ -159,7 +168,7 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
         </Box>
       ) : images.length === 0 ? (
         <Box sx={{ textAlign: 'center', mt: 8, p: 6, border: '1px dashed #ccc', borderRadius: '12px', bgcolor: 'background.paper' }}>
-          <Typography variant="h6" color="text.secondary" mb={2}>
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
             No images in this library yet.
           </Typography>
           <Typography color="text.secondary">
@@ -182,7 +191,7 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
               <Box sx={{ width: "100%", height: gridSize === "large" ? 300 : 150, bgcolor: "#f5f5f5" }}>
                 <CardMedia
                   component="img"
-                  image={img.url}
+                  image={authenticatedMediaUrl(img.url)}
                   alt={img.displayName}
                   onClick={() => setLightboxImage(img)}
                   sx={{
@@ -196,7 +205,7 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
               </Box>
               <CardContent sx={{ minWidth: 0, p: gridSize === "large" ? 2 : 1, "&:last-child": { pb: gridSize === "large" ? 2 : 1 } }}>
                 {editingId === img.id ? (
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, width: "100%" }}>
+                    <Stack direction="row" spacing={1} sx={{ ...({ minWidth: 0, width: "100%" }), alignItems: "center" }}>
                       <TextField
                         size="small"
                         fullWidth
@@ -216,22 +225,22 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
                       </IconButton>
                     </Stack>
                   ) : (
-                    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1} sx={{ minWidth: 0, width: "100%" }}>
+                    <Stack direction="row" spacing={1} sx={{ ...({ minWidth: 0, width: "100%" }), alignItems: "flex-start", justifyContent: "space-between" }}>
                       <Box sx={{ overflow: "hidden", minWidth: 0, flexGrow: 1 }}>
-                        <Typography variant="subtitle1" fontWeight="600" noWrap title={img.displayName} mb={0.5}>
+                        <Typography variant="subtitle1" noWrap title={img.displayName} sx={{ fontWeight: "600", mb: 0.5 }}>
                           {img.displayName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" component="div" mb={0.5} noWrap>
+                        <Typography variant="caption" color="text.secondary" component="div" noWrap sx={{ mb: 0.5 }}>
                           {gridSize === "large" ? "Size: " : ""}{formatSize(img.sizeBytes)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" component="div" mb={0.5} noWrap title={img.mimeType}>
+                        <Typography variant="caption" color="text.secondary" component="div" noWrap title={img.mimeType} sx={{ mb: 0.5 }}>
                           {gridSize === "large" ? "Type: " : ""}{img.mimeType}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" component="div" noWrap title={img.uploaderName || img.uploadedBy}>
                           {gridSize === "large" ? "Uploaded by: " : ""}{img.uploaderName || img.uploadedBy}
                         </Typography>
                       </Box>
-                      <Stack direction="column" spacing={0.5} flexShrink={0}>
+                      <Stack direction="column" spacing={0.5} sx={{ flexShrink: 0 }}>
                         <Tooltip title="Rename">
                           <IconButton size="small" onClick={() => handleStartEdit(img)}>
                             <Edit2 size={14} />
@@ -256,8 +265,7 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
         open={!!lightboxImage}
         onClose={() => setLightboxImage(null)}
         maxWidth="lg"
-        fullWidth
-        PaperProps={{
+        fullWidth slotProps={{ paper: {
           sx: {
             bgcolor: "transparent",
             boxShadow: "none",
@@ -267,12 +275,12 @@ export const ImageLibraryView: React.FC<ImageLibraryViewProps> = ({ scope }) => 
             justifyContent: "center",
             overflow: "hidden"
           }
-        }}
+        } }}
       >
         <Box sx={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
           {lightboxImage && (
             <img
-              src={lightboxImage.url}
+              src={authenticatedMediaUrl(lightboxImage.url)}
               alt={lightboxImage.displayName}
               style={{
                 maxWidth: "100%",

@@ -13,27 +13,27 @@ func TestPostgresTaskRepository(t *testing.T) {
 
 	docRepo := NewPostgresDocumentRepository(db)
 	doc := &domain.Document{
-		ID: "doc_for_task",
-		Title: "Task Doc",
-		Slug: "task-doc",
-		ProjectID: "proj_wiki",
-		TeamID: "team_eng",
+		ID:          "doc_for_task",
+		Title:       "Task Doc",
+		Slug:        "task-doc",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
 		CreatedByID: "sh4ag0cxowti",
 		UpdatedByID: "sh4ag0cxowti",
-		Content: "{}",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	_ = docRepo.Create(ctx, doc)
 
 	tasks := []*domain.Task{
 		{
-			ID: "task_1",
+			ID:         "task_1",
 			DocumentID: "doc_for_task",
-			Assignee: "sh4ag0cxowti",
-			Content: "Do this",
-			Completed: false,
-			CreatedAt: time.Now(),
+			Assignee:   "sh4ag0cxowti",
+			Content:    "Do this",
+			Completed:  false,
+			CreatedAt:  time.Now(),
 		},
 	}
 
@@ -45,7 +45,7 @@ func TestPostgresTaskRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get tasks: %v", err)
 	}
-	
+
 	found := false
 	for _, tsk := range fetched {
 		if tsk.ID == "task_1" {

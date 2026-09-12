@@ -30,10 +30,12 @@ func RequestLogger(next http.Handler) http.Handler {
 			// Parse URL and redact the "token" query parameter if present
 			u := *r.URL
 			q := u.Query()
-			if q.Has("token") {
-				q.Set("token", "[REDACTED]")
-				u.RawQuery = q.Encode()
+			for _, key := range []string{"token", "authToken", "mediaToken"} {
+				if q.Has(key) {
+					q.Set(key, "[REDACTED]")
+				}
 			}
+			u.RawQuery = q.Encode()
 
 			log.Printf("\"%s %s://%s%s %s\" from %s - %d %dB in %s",
 				r.Method, scheme, r.Host, u.RequestURI(), r.Proto, r.RemoteAddr,

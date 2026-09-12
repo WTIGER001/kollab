@@ -1,8 +1,8 @@
-import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthGuard } from './AuthGuard';
 import { useAuth } from 'react-oidc-context';
+import { useAppStore } from '../store/useAppStore';
 
 // Mock the react-oidc-context
 vi.mock('react-oidc-context', () => ({
@@ -15,6 +15,8 @@ describe('AuthGuard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.removeItem('kollab:theme-mode');
+    useAppStore.setState({ themeMode: 'dark' });
     
     // Default mock implementation
     (useAuth as any).mockReturnValue({
@@ -39,7 +41,7 @@ describe('AuthGuard', () => {
   it('renders a loading spinner when auth is loading', () => {
     (useAuth as any).mockReturnValue({ isLoading: true });
     render(
-      <AuthGuard isMockMode={false} apiAuthError={false}>
+      <AuthGuard isMockMode={false} authMode="oidc" apiAuthError={false}>
         <div>Content</div>
       </AuthGuard>
     );
@@ -54,7 +56,7 @@ describe('AuthGuard', () => {
     
     vi.useFakeTimers();
     render(
-      <AuthGuard isMockMode={false} apiAuthError={false}>
+      <AuthGuard isMockMode={false} authMode="oidc" apiAuthError={false}>
         <div>Content</div>
       </AuthGuard>
     );
@@ -76,12 +78,12 @@ describe('AuthGuard', () => {
       </AuthGuard>
     );
     
-    expect(screen.getByText('API Authentication Failed')).toBeInTheDocument();
+    expect(screen.getByText('Your session has expired')).toBeInTheDocument();
   });
 
   it('renders login UI when not authenticated', () => {
     render(
-      <AuthGuard isMockMode={false} apiAuthError={false} welcomeTitle="Welcome to Kollab">
+      <AuthGuard isMockMode={false} authMode="oidc" apiAuthError={false} welcomeTitle="Welcome to Kollab">
         <div>Content</div>
       </AuthGuard>
     );
@@ -94,11 +96,40 @@ describe('AuthGuard', () => {
     (useAuth as any).mockReturnValue({ isAuthenticated: true, user: { expired: false } });
     
     render(
-      <AuthGuard isMockMode={false} apiAuthError={false}>
+      <AuthGuard isMockMode={false} authMode="oidc" apiAuthError={false}>
         <div data-testid="child">Protected Content</div>
       </AuthGuard>
     );
     
     expect(screen.getByTestId('child')).toBeInTheDocument();
+  });
+
+  it('renders readable, visible labels while creating the first local administrator', () => {
+    render(
+      <AuthGuard isMockMode={false} authMode="local" localSetupRequired={true} apiAuthError={false}>
+        <div>Content</div>
+      </AuthGuard>
+    );
+
+    expect(screen.getByText('Create the first administrator for this Kollab installation.')).toBeInTheDocument();
+    expect(screen.getByText('Username')).toBeInTheDocument();
+    expect(screen.getByText('Your name', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('Email', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create administrator' })).toBeInTheDocument();
+  });
+
+  it('switches and remembers the theme from local sign-in', () => {
+    render(
+      <AuthGuard isMockMode={false} authMode="local" apiAuthError={false}>
+        <div>Content</div>
+      </AuthGuard>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }));
+
+    expect(useAppStore.getState().themeMode).toBe('light');
+    expect(localStorage.setItem).toHaveBeenCalledWith('kollab:theme-mode', 'light');
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
   });
 });

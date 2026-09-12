@@ -26,7 +26,10 @@ func DocumentAccessMiddleware(evaluator *permissions.AccessEvaluator, action str
 			}
 
 			userID, _ := GetUserID(r.Context())
-			shareToken := r.URL.Query().Get("token")
+			shareToken := r.Header.Get("X-Share-Token")
+			if shareToken == "" {
+				shareToken = r.URL.Query().Get("token")
+			}
 			sharePassword := r.Header.Get("X-Share-Password")
 
 			allowed, reason, err := evaluator.EvaluateDocumentAccess(r.Context(), userID, id, action, shareToken, sharePassword)

@@ -24,3 +24,7 @@ The Project Portal rigorously conforms to the Kollab dynamic Theme Engine:
 ## Routing Isolation
 
 Previously, `/teams/:teamId/p/:projectId` routed to the `TeamPortalWrapper`, creating a confusing user experience where clicking a Project rendered the parent Team's workspace instead of the Project's workspace. By introducing `ProjectPortalWrapper`, we effectively decouple the Team UI from the Project UI, establishing a distinct routing boundary.
+
+## Empty-project handoff
+
+When `fetchDocuments(project.id)` resolves to an empty list, `ProjectPortal` uses the shared `createPageOpen` UI flag to request `MainLayout`'s existing `CreatePageWizardModal`. The layout retains ownership of document creation and derives the correct project/team context from the current route. This keeps the portal empty state actionable without creating a second document-creation implementation.

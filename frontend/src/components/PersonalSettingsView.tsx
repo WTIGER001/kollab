@@ -1,8 +1,9 @@
+import { useSession } from "../auth/SessionContext";
 import React, { useState } from "react";
 import { 
+  IconButton,
   Box, 
   Typography, 
-  Button,
   FormControl,
   FormLabel,
   RadioGroup,
@@ -32,9 +33,10 @@ export const PersonalSettingsView: React.FC<PersonalSettingsViewProps> = ({
   onBack,
   personalPagesCount
 }) => {
+  const { user } = useSession();
   const [tabValue, setTabValue] = useState(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -190,7 +192,7 @@ export const PersonalSettingsView: React.FC<PersonalSettingsViewProps> = ({
       )}
       {tabValue === 2 && (
         <Box sx={{ p: 4, animation: "fadeIn 0.3s ease" }}>
-          <IntegrationsManager scope="user" entityId={currentUser.id} />
+          <IntegrationsManager scope="user" entityId={user?.id || ""} />
         </Box>
       )}
     </Box>

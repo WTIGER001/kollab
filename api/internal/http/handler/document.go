@@ -69,7 +69,19 @@ func (h *DocumentHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(docs)
+	visible := make([]*domain.Document, 0, len(docs))
+	for _, item := range docs {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) ListProperties(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +97,19 @@ func (h *DocumentHandler) ListProperties(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(properties)
+	visible := properties[:0]
+	for _, item := range properties {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.DocumentID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +248,11 @@ func (h *DocumentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
 		return
 	}
+	actorID, _ := middleware.GetUserID(r.Context())
+	if !h.evaluator.CanAccessSubtree(r.Context(), actorID, id, "delete") {
+		http.Error(w, "You need access to every page in this hierarchy", 403)
+		return
+	}
 
 	permanent := r.URL.Query().Get("permanent") == "true"
 	var err error
@@ -269,7 +298,19 @@ func (h *DocumentHandler) ListTrash(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(docs)
+	visible := make([]*domain.Document, 0, len(docs))
+	for _, item := range docs {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) Restore(w http.ResponseWriter, r *http.Request) {
@@ -305,6 +346,11 @@ func (h *DocumentHandler) Move(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request: document ID is required", http.StatusBadRequest)
 		return
 	}
+	actorID, _ := middleware.GetUserID(r.Context())
+	if !h.evaluator.CanAccessSubtree(r.Context(), actorID, id, "write") {
+		http.Error(w, "You need access to every page in this hierarchy", 403)
+		return
+	}
 
 	var req moveDocumentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -312,7 +358,21 @@ func (h *DocumentHandler) Move(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	doc, err := h.docService.MoveDocument(r.Context(), id, req.ParentID, req.ProjectID, req.TeamID)
+	userID, _ := middleware.GetUserID(r.Context())
+	if req.TeamID == "" && req.ProjectID == "" && req.ParentID == nil {
+		current, _, err := h.docService.GetDocument(r.Context(), id)
+		if err != nil {
+			http.Error(w, "Document not found", http.StatusNotFound)
+			return
+		}
+		req.TeamID, req.ProjectID = current.TeamID, current.ProjectID
+	}
+	teamID, projectID, err := h.evaluator.ResolveDestination(r.Context(), userID, req.TeamID, req.ProjectID, req.ParentID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	doc, err := h.docService.MoveDocument(r.Context(), id, req.ParentID, projectID, teamID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -385,6 +445,10 @@ func (h *DocumentHandler) GetVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if version.DocumentID != chi.URLParam(r, "id") {
+		http.Error(w, "Version not found", http.StatusNotFound)
+		return
+	}
 	_ = json.NewEncoder(w).Encode(version)
 }
 
@@ -405,6 +469,7 @@ func (h *DocumentHandler) RestoreVersion(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h.hub != nil {
+		h.hub.ResetDocument(doc.ID)
 		h.hub.BroadcastToAll(ws.WSMessage{Type: "document-tree-updated"})
 	}
 
@@ -439,6 +504,10 @@ func (h *DocumentHandler) CreateMilestone(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	if version.DocumentID != chi.URLParam(r, "id") {
+		http.Error(w, "Version not found", http.StatusNotFound)
+		return
+	}
 	_ = json.NewEncoder(w).Encode(version)
 }
 
@@ -542,7 +611,19 @@ func (h *DocumentHandler) ListFavorites(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(favs)
+	visible := favs[:0]
+	for _, item := range favs {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.DocumentID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) ListRecent(w http.ResponseWriter, r *http.Request) {
@@ -564,7 +645,19 @@ func (h *DocumentHandler) ListRecent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(docs)
+	visible := make([]*domain.Document, 0, len(docs))
+	for _, item := range docs {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) AddFavorite(w http.ResponseWriter, r *http.Request) {
@@ -780,7 +873,19 @@ func (h *DocumentHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(tasks)
+	visible := tasks[:0]
+	for _, item := range tasks {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.DocumentID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) GetMentions(w http.ResponseWriter, r *http.Request) {
@@ -797,7 +902,19 @@ func (h *DocumentHandler) GetMentions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(docs)
+	visible := make([]*domain.Document, 0, len(docs))
+	for _, item := range docs {
+		userID, _ := middleware.GetUserID(r.Context())
+		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "read", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	_ = json.NewEncoder(w).Encode(visible)
 }
 
 func (h *DocumentHandler) Export(w http.ResponseWriter, r *http.Request) {
@@ -831,6 +948,20 @@ func (h *DocumentHandler) Export(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	userID, _ := middleware.GetUserID(r.Context())
+	visible := make([]*domain.Document, 0, len(allDocs))
+	for _, item := range allDocs {
+		allowed, _, accessErr := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "read", "", "")
+		if accessErr != nil {
+			http.Error(w, "Unable to verify export access", 500)
+			return
+		}
+		if allowed {
+			visible = append(visible, item)
+		}
+	}
+	allDocs = visible
 
 	fileName := sanitizeFileName(doc.Title)
 
@@ -887,10 +1018,7 @@ func (h *DocumentHandler) Export(w http.ResponseWriter, r *http.Request) {
 
 		pdfBytes, err := docExporter.PrintPDF(r.Context(), htmlContent)
 		if err != nil {
-			// Fallback to html raw export on error/chromedp failure
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.html\"", fileName))
-			_, _ = w.Write([]byte(htmlContent))
+			http.Error(w, "PDF export is unavailable. Try HTML export or contact your administrator.", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -1179,6 +1307,19 @@ func (h *DocumentHandler) CreateShareLink(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if req.Scope != "anonymous" && req.Scope != "anyone" && req.Scope != "organization" {
+		http.Error(w, "Invalid sharing scope", 400)
+		return
+	}
+	if req.RoleID != "builtin.wiki.document.viewer" && req.RoleID != "builtin.wiki.document.commenter" && req.RoleID != "builtin.wiki.document.editor" {
+		http.Error(w, "Sharing links support viewer, commenter, or editor access", 400)
+		return
+	}
+	if req.ExpiresInDays < 0 || req.ExpiresInDays > 3650 || len(req.Password) > 72 {
+		http.Error(w, "Invalid sharing expiry or password length", 400)
+		return
+	}
+
 	// Generate plain token
 	rawBytes := make([]byte, 16)
 	if _, err := cryptoRand.Read(rawBytes); err != nil {
@@ -1259,7 +1400,7 @@ func (h *DocumentHandler) ListShareLinks(w http.ResponseWriter, r *http.Request)
 		CreatedAt time.Time  `json:"createdAt"`
 	}
 
-	var links []ShareLink
+	links := []ShareLink{}
 	for rows.Next() {
 		var l ShareLink
 		if err := rows.Scan(&l.TokenHash, &l.RoleID, &l.Scope, &l.ExpiresAt, &l.CreatedAt); err != nil {

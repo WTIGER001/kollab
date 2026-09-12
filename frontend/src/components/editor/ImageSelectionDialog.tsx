@@ -1,3 +1,5 @@
+import { authenticatedMediaUrl } from "../../services/api";
+import { getAttachmentUrl } from "../../services/api";
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -24,7 +26,6 @@ import { Upload, Paperclip, Image as ImageIcon, Link as LinkIcon } from "lucide-
 import {
   uploadAttachment,
   fetchLibraryImages,
-  API_BASE_URL,
 } from "../../services/api";
 import type { Attachment, LibraryImage } from "../../services/api";
 
@@ -102,7 +103,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
       try {
         const att = await uploadAttachment(activeDocId, file);
         onSelect({
-          src: att.url,
+          src: getAttachmentUrl(att.id),
         });
       } catch (err) {
         console.error("Failed to upload attachment:", err);
@@ -116,7 +117,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
 
   const handleSelectAttachment = (att: Attachment) => {
     onSelect({
-      src: att.url,
+      src: getAttachmentUrl(att.id),
     });
   };
 
@@ -171,10 +172,10 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
             ) : (
               <Grid container spacing={2}>
                 {imageAttachments.map((att) => (
-                  <Grid item xs={4} key={att.id} sx={{ minWidth: 0 }}>
+                  <Grid key={att.id} sx={{ minWidth: 0 }} size={{ xs: 4 }}>
                     <Card variant="outlined">
                       <CardActionArea onClick={() => handleSelectAttachment(att)}>
-                        <CardMedia component="img" height="100" image={att.url} sx={{ objectFit: "cover" }} />
+                        <CardMedia component="img" height="100" image={authenticatedMediaUrl(getAttachmentUrl(att.id))} sx={{ objectFit: "cover" }} />
                         <Box sx={{ p: 1 }}>
                           <Typography variant="caption" noWrap component="div" title={att.filename}>
                             {att.filename}
@@ -221,13 +222,13 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
             ) : (
               <Grid container spacing={2} sx={{ overflowY: "auto", flexGrow: 1 }}>
                 {libraryImages.map((img) => (
-                  <Grid item xs={4} key={img.id} sx={{ minWidth: 0 }}>
+                  <Grid key={img.id} sx={{ minWidth: 0 }} size={{ xs: 4 }}>
                     <Card variant="outlined">
                       <CardActionArea onClick={() => handleSelectLibraryImage(img)}>
                         <CardMedia
                           component="img"
                           height="100"
-                          image={img.url}
+                          image={authenticatedMediaUrl(img.url)}
                           sx={{ objectFit: "cover" }}
                         />
                         <Box sx={{ p: 1 }}>
@@ -261,7 +262,7 @@ export const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({
             {urlInput.trim() && !urlError && (
               <Box sx={{ mt: 3, flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", bgcolor: "#f5f5f5", borderRadius: 2, overflow: "hidden", minHeight: 150 }}>
                 <img
-                  src={urlInput.trim()}
+                  src={authenticatedMediaUrl(urlInput.trim())}
                   alt="URL Preview"
                   style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain" }}
                   onError={() => setUrlError(true)}

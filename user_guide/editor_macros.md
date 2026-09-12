@@ -4,6 +4,10 @@ Kollab includes powerful widgets to structure, format, and annotate your documen
 
 The editor and its macro controls are also available in the app's offline/mock workspace, so you can preview a document without a backend connection.
 
+For a local preview, Kollab opens at `http://localhost:8090`. This address is useful when reviewing editor and macro behavior before sharing a page.
+
+If you run Kollab locally, `./dev.sh` starts the supporting development services and opens the editor preview at that address. On macOS, it also starts Colima automatically when Docker is not already running and Colima is installed. Press `Ctrl+C` when you finish reviewing; use `./dev.sh --down` to also stop the supporting services.
+
 When a page is in read-only mode, select **Analytics** in its header to open its Page Analytics panel. This is a view-only action; choose **Edit** when you want to change page content or macros.
 
 ---

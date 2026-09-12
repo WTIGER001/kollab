@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
-  DialogContent,
   DialogActions,
   Button,
   Box,
@@ -115,7 +114,7 @@ export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth slotProps={{ paper: {
       sx: {
         height: 500,
         bgcolor: "var(--panel-color)",
@@ -124,7 +123,7 @@ export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
         border: "var(--border-width, 1px) var(--border-style, solid) var(--border-color)",
         borderRadius: "var(--border-radius-card, 8px)"
       }
-    }}>
+    } }}>
       <DialogTitle sx={{ p: 2, borderBottom: "1px solid var(--border-color)" }}>
         <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>
           Insert Link
@@ -198,9 +197,7 @@ export const InsertLinkDialog: React.FC<InsertLinkDialogProps> = ({
                           </ListItemIcon>
                           <ListItemText 
                             primary={doc.title} 
-                            secondary={`in ${doc.projectId ? 'Project' : 'Team'}`}
-                            primaryTypographyProps={{ fontWeight: 600, fontSize: "14px", color: isSelected ? "var(--primary-color)" : "inherit" }}
-                            secondaryTypographyProps={{ fontSize: "12px" }}
+                            secondary={`in ${doc.projectId ? 'Project' : 'Team'}`} slotProps={{ primary: { sx: { fontWeight: 600, fontSize: "14px", color: isSelected ? "var(--primary-color)" : "inherit" } }, secondary: { sx: { fontSize: "12px" } } }}
                           />
                         </ListItemButton>
                       );

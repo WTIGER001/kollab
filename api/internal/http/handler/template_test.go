@@ -107,14 +107,21 @@ func TestTemplateHandlerCreateAndList(t *testing.T) {
 }
 
 func TestTemplateHandlerGetUpdateAndDelete(t *testing.T) {
+	ownerID := "user-1"
+	secret := []byte("template-test-secret-at-least-32-bytes")
+	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"user_id": ownerID, "exp": time.Now().Add(time.Hour).Unix()}).SignedString(secret)
+	authorize := func(fn http.HandlerFunc, w http.ResponseWriter, r *http.Request) {
+		r.Header.Set("Authorization", "Bearer "+token)
+		middleware.AuthMiddleware(secret, nil, nil)(fn).ServeHTTP(w, r)
+	}
 	repository := &memoryTemplateRepository{templates: map[string]*domain.Template{
-		"template-1": {ID: "template-1", Title: "Original"},
+		"template-1": {ID: "template-1", Title: "Original", Scope: domain.TemplateScopePersonal, UserID: &ownerID},
 	}}
 	templateHandler := handler.NewTemplateHandler(repository)
 
 	getRequest := withURLParams(httptest.NewRequest(http.MethodGet, "/api/templates/template-1", nil), map[string]string{"id": "template-1"})
 	getResponse := httptest.NewRecorder()
-	templateHandler.GetTemplate(getResponse, getRequest)
+	authorize(templateHandler.GetTemplate, getResponse, getRequest)
 	if getResponse.Code != http.StatusOK {
 		t.Fatalf("expected template, got %d", getResponse.Code)
 	}
@@ -125,21 +132,21 @@ func TestTemplateHandlerGetUpdateAndDelete(t *testing.T) {
 
 	updateRequest := withURLParams(httptest.NewRequest(http.MethodPut, "/api/templates/template-1", bytes.NewBufferString(`{"title":"Updated"}`)), map[string]string{"id": "template-1"})
 	updateResponse := httptest.NewRecorder()
-	templateHandler.UpdateTemplate(updateResponse, updateRequest)
+	authorize(templateHandler.UpdateTemplate, updateResponse, updateRequest)
 	if updateResponse.Code != http.StatusOK || repository.templates["template-1"].Title != "Updated" {
 		t.Fatalf("template was not updated: %d %#v", updateResponse.Code, repository.templates["template-1"])
 	}
 
 	deleteRequest := withURLParams(httptest.NewRequest(http.MethodDelete, "/api/templates/template-1", nil), map[string]string{"id": "template-1"})
 	deleteResponse := httptest.NewRecorder()
-	templateHandler.DeleteTemplate(deleteResponse, deleteRequest)
+	authorize(templateHandler.DeleteTemplate, deleteResponse, deleteRequest)
 	if deleteResponse.Code != http.StatusNoContent {
 		t.Fatalf("expected deletion, got %d", deleteResponse.Code)
 	}
 
 	notFoundRequest := withURLParams(httptest.NewRequest(http.MethodGet, "/api/templates/missing", nil), map[string]string{"id": "missing"})
 	notFoundResponse := httptest.NewRecorder()
-	templateHandler.GetTemplate(notFoundResponse, notFoundRequest)
+	authorize(templateHandler.GetTemplate, notFoundResponse, notFoundRequest)
 	if notFoundResponse.Code != http.StatusNotFound {
 		t.Fatalf("expected not found response, got %d", notFoundResponse.Code)
 	}

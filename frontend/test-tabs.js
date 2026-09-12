@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 (async () => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto('http://localhost:5173/personal', { waitUntil: 'networkidle0' });
+  await page.goto('http://localhost:8090/personal', { waitUntil: 'networkidle0' });
   
   // Click "New Page"
   await page.evaluate(() => {

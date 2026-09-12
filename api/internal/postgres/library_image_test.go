@@ -14,27 +14,27 @@ func TestPostgresLibraryImageRepository(t *testing.T) {
 	// Create base image first
 	imgRepo := NewPostgresImageRepository(db)
 	baseImg := &domain.ImageMetadata{
-		ID: "img_123",
-		Filename: "header.png",
-		MimeType: "image/png",
-		OriginalWidth: 800,
+		ID:             "img_123",
+		Filename:       "header.png",
+		MimeType:       "image/png",
+		OriginalWidth:  800,
 		OriginalHeight: 600,
-		CreatedAt: time.Now(),
+		CreatedAt:      time.Now(),
 	}
 	_ = imgRepo.SaveMetadata(ctx, baseImg)
 
 	img := &domain.LibraryImage{
-		ID: "libimg_1",
-		ImageID: "img_123",
-		DisplayName: "Header",
-		Scope: "global",
-		Filename: "header.png",
-		MimeType: "image/png",
-		SizeBytes: 2048,
-		URL: "http://localhost/images/header.png",
-		UploadedBy: "sh4ag0cxowti",
+		ID:           "libimg_1",
+		ImageID:      "img_123",
+		DisplayName:  "Header",
+		Scope:        "global",
+		Filename:     "header.png",
+		MimeType:     "image/png",
+		SizeBytes:    2048,
+		URL:          "http://localhost/images/header.png",
+		UploadedBy:   "sh4ag0cxowti",
 		UploaderName: "admin",
-		CreatedAt: time.Now(),
+		CreatedAt:    time.Now(),
 	}
 
 	if err := repo.Save(ctx, img); err != nil {

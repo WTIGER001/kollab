@@ -19,7 +19,7 @@ func NewPostgresUserRepository(db *pgxpool.Pool) *PostgresUserRepository {
 }
 
 func (r *PostgresUserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
-	row := r.db.QueryRow(ctx, "SELECT id, username, password_hash, COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users WHERE username = $1", username)
+	row := r.db.QueryRow(ctx, "SELECT id, username, COALESCE(password_hash, ''), COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users WHERE username = $1", username)
 	var u domain.User
 	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Email, &u.DisplayName, &u.IsActive); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -31,7 +31,7 @@ func (r *PostgresUserRepository) GetByUsername(ctx context.Context, username str
 }
 
 func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	row := r.db.QueryRow(ctx, "SELECT id, username, password_hash, COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users WHERE id = $1", id)
+	row := r.db.QueryRow(ctx, "SELECT id, username, COALESCE(password_hash, ''), COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users WHERE id = $1", id)
 	var u domain.User
 	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Email, &u.DisplayName, &u.IsActive); err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*domai
 }
 
 func (r *PostgresUserRepository) List(ctx context.Context) ([]*domain.User, error) {
-	rows, err := r.db.Query(ctx, "SELECT id, username, password_hash, COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users ORDER BY username")
+	rows, err := r.db.Query(ctx, "SELECT id, username, COALESCE(password_hash, ''), COALESCE(email, ''), COALESCE(display_name, ''), is_active FROM users ORDER BY username")
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +89,29 @@ func (r *PostgresUserRepository) SetActive(ctx context.Context, id string, activ
 func (r *PostgresUserRepository) UpdatePassword(ctx context.Context, id, passwordHash string) error {
 	_, err := r.db.Exec(ctx, "UPDATE users SET password_hash = $2 WHERE id = $1", id, passwordHash)
 	return err
+}
+
+func (r *PostgresUserRepository) UpdateProfile(ctx context.Context, id, email, displayName string) (*domain.User, error) {
+	row := r.db.QueryRow(ctx, "UPDATE users SET email = $2, display_name = $3 WHERE id = $1 RETURNING id, username, COALESCE(password_hash, ''), COALESCE(email, ''), COALESCE(display_name, ''), is_active", id, email, displayName)
+	var u domain.User
+	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Email, &u.DisplayName, &u.IsActive); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *PostgresUserRepository) Delete(ctx context.Context, id string) error {
+	command, err := r.db.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	if command.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+	return nil
 }
 
 // CreateInitialLocalAdmin serializes first-account creation so a public setup

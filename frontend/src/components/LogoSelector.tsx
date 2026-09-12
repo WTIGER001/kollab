@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -94,7 +95,7 @@ export const LogoSelector: React.FC<LogoSelectorProps> = ({
           }}
         >
           {value ? (
-            <img src={value} alt="Logo preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            <img src={authenticatedMediaUrl(value)} alt="Logo preview" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           ) : (
             <ImageIcon size={32} color="var(--text-disabled)" />
           )}
@@ -165,7 +166,7 @@ export const LogoSelector: React.FC<LogoSelectorProps> = ({
           ) : (
             <Grid container spacing={2}>
               {images.map((img) => (
-                <Grid item xs={6} sm={4} md={3} key={img.id}>
+                <Grid key={img.id} size={{ xs: 6, sm: 4, md: 3 }}>
                   <Card 
                     sx={{ 
                       borderRadius: 2, 
@@ -182,12 +183,12 @@ export const LogoSelector: React.FC<LogoSelectorProps> = ({
                       <CardMedia
                         component="img"
                         height="120"
-                        image={img.url}
+                        image={authenticatedMediaUrl(img.url)}
                         alt={img.displayName}
                         sx={{ objectFit: "contain", p: 1, bgcolor: "background.paper" }}
                       />
                       <Box sx={{ p: 1 }}>
-                        <Typography variant="caption" noWrap display="block" color="text.primary">
+                        <Typography variant="caption" noWrap color="text.primary" sx={{ display: "block" }}>
                           {img.displayName}
                         </Typography>
                       </Box>

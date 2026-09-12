@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Button, IconButton, Toolbar, AppBar } from "@mui/material";
+import { Box, Typography, IconButton, Toolbar, AppBar } from "@mui/material";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { HelpAdmin } from "./help/HelpAdmin";
 

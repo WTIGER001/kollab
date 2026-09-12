@@ -9,27 +9,33 @@ import { useAppStore } from '../store/useAppStore';
 import { useTeams, useAllProjects, useDocuments, useSystemSettings } from '../hooks/queries';
 import { useDocumentTree } from '../hooks/useDocumentTree';
 import { getLegacyNavigateFn } from '../utils/navigation';
-import { useAuth } from 'react-oidc-context';
+import { useSession } from '../auth/SessionContext';
 import { createDocument, deleteDocument, moveDocument, restoreDocument, updateDocument } from '../services/api';
 import { useRecentSpacesStore } from '../store/useRecentSpacesStore';
+import { useToastStore } from '../store/useToastStore';
 import { CreatePageWizardModal } from '../components/CreatePageWizardModal';
+import { AdminSidebar } from '../components/AdminSidebar';
 import type { Template } from '../services/api';
+import { resolveDocumentParent } from '../utils/documentCreation';
+import { useQueryClient } from '@tanstack/react-query';
 
-export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) => {
+export const MainLayout: React.FC<{ isMockMode?: boolean; authMode?: "oidc" | "local" }> = ({ isMockMode, authMode = "oidc" }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const legacyNavigate = getLegacyNavigateFn(navigate);
   const { teamId, projectId, docId } = useParams();
   const location = useLocation();
   
   const { data: teams = [] } = useTeams();
   const { data: allProjects = [] } = useAllProjects();
-  const { data: systemSettings } = useSystemSettings();
+  const { user, logout } = useSession();
+  const { data: systemSettings } = useSystemSettings({ enabled: !!user?.isAdmin });
 
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [pendingParentId, setPendingParentId] = useState<string | undefined>(undefined);
   
   // Resolve correct IDs from the route params
-  let actualTeamId = teamId === 'personal' ? null : teamId;
+  let actualTeamId: string | null = teamId === 'personal' ? null : teamId || null;
   let actualProjectId = projectId || null;
   
   if (teamId && teamId !== 'personal') {
@@ -48,6 +54,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   
   // If the route is /personal, use the personal team ID
   const isPersonalRoute = location.pathname === '/personal' || location.pathname.startsWith('/personal/');
+  const isAdminRoute = location.pathname.startsWith('/_admin');
   if (isPersonalRoute) {
     const personalTeam = teams.find(t => t.id.startsWith('personal_'));
     if (personalTeam) {
@@ -59,9 +66,9 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   const filteredDocs = (flatDocs || []).filter(d => d.id !== actualTeamId && d.id !== projectId);
   const documentsTree = useDocumentTree(filteredDocs);
   
-	const auth = useAuth();
-  const displayName = isMockMode ? "Developer Admin" : auth?.user?.profile.name || auth?.user?.profile.preferred_username || "User";
-  const username = isMockMode ? "dev_admin" : auth?.user?.profile.preferred_username || auth?.user?.profile.username || "user";
+
+  const displayName = isMockMode ? "Developer Admin" : user?.displayName || user?.username || "User";
+  const username = isMockMode ? "dev_admin" : user?.username || "user";
 
   const {
     sidebarOpen,
@@ -74,16 +81,16 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     setSidebarOpen,
     sidebarWidth,
     setSidebarWidth,
-    setCreateSpaceOpen,
-    activeThemeId,
-    setActiveThemeId
-  } = useAppStore();
+    openCreateSpace,
+    createPageOpen,
+    setCreatePageOpen  } = useAppStore();
 
   const isMobile = useMediaQuery("(max-width:768px)");
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   
   const { recentSpaces, syncSpaces } = useRecentSpacesStore();
+  const { showToast } = useToastStore();
 
   useEffect(() => {
     if (teams.length > 0 || allProjects.length > 0) {
@@ -119,7 +126,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
   // Mutation wrappers to trigger a query refetch instead of mutating state
   const handleAddDoc = (parentId?: string, bypassWizard?: boolean) => {
     if (bypassWizard) {
-      executeAddDoc(null, "Untitled Document", parentId || null);
+      void executeAddDoc(null, "Untitled Document", parentId || null).catch(() => undefined);
     } else {
       setPendingParentId(parentId);
       setTemplateModalOpen(true);
@@ -133,22 +140,32 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     customProjectId?: string,
     customTeamId?: string
   ) => {
-    setTemplateModalOpen(false);
     try {
       const pId = customProjectId !== undefined ? customProjectId : actualProjectId;
       const tId = customTeamId !== undefined ? customTeamId : actualTeamId;
-      
-      const parent = customParentId || pendingParentId || (pId ? pId : tId);
-      if (!parent) return; // Cannot create document without a team or project context
+
+      if (!pId && !tId) {
+        throw new Error("Choose a team or project before creating a page.");
+      }
+
+      // A top-level page must have no document parent. Team and project IDs are
+      // space identifiers, not document IDs, and cannot be used as parent_id.
+      const parent = resolveDocumentParent(customParentId, pendingParentId);
       
       const title = customTitle || (template ? template.title : "Untitled Document");
       const content = template ? template.content : undefined;
       
-      const newDoc = await createDocument(title, pId || null, tId, parent, undefined, content);
-      refetchDocs();
+      const newDoc = await createDocument(title, pId || null, tId || "", parent, undefined, content);
+      await queryClient.invalidateQueries({ queryKey: ['documents', pId || null, tId || null] });
+      setTemplateModalOpen(false);
+      setCreatePageOpen(false);
+      setPendingParentId(undefined);
+      showToast("Page created.", "success");
       legacyNavigate(tId, pId || null, newDoc.id);
     } catch (e) {
       console.error(e);
+      showToast(e instanceof Error ? e.message : "Could not create the page. Please try again.", "error");
+      throw e;
     }
   };
 
@@ -170,8 +187,8 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
 
   const handleImportMarkdown = async (parentId: string | undefined, title: string, markdown: string) => {
     try {
-      const parent = parentId || (actualProjectId ? actualProjectId : actualTeamId);
-      if (!parent) return;
+      const parent = parentId || null;
+      if (!actualTeamId) return;
 
       const newDoc = await createDocument(title, actualProjectId || null, actualTeamId, parent);
       
@@ -204,6 +221,8 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
     refetchDocs();
   };
 
+  if (isAdminRoute && !isMockMode && !user?.isAdmin) return <Box sx={{ p: 3 }}>Administrator access is required for this page.</Box>;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden", bgcolor: "background.default", fontFamily: "var(--font-sans)" }}>
       {/* Classification Security Banner */}
@@ -215,7 +234,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         selectedTeamId={actualTeamId}
         displayName={displayName}
         username={username as string}
-        onLogout={() => auth?.signoutRedirect()}
+        onLogout={() => logout()}
         themeMode={themeMode}
         onToggleThemeMode={toggleThemeMode}
         onOpenHelp={() => setHelpOpen(true)}
@@ -236,7 +255,9 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
       {/* Bottom Area: Sidebar + Content */}
       <Box sx={{ display: "flex", flex: 1, height: "calc(100vh - 48px)", overflow: "hidden", position: "relative" }}>
         {/* Sidebar Navigation */}
-        {sidebarOpen && (
+        {isAdminRoute ? (
+          (!isMobile || sidebarOpen) && <AdminSidebar authMode={authMode} onClose={isMobile ? () => setSidebarOpen(false) : undefined} />
+        ) : sidebarOpen && (
           <Sidebar
             documents={documentsTree}
             activeDocId={docId || null}
@@ -252,7 +273,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
             navigateTo={legacyNavigate}
             width={sidebarWidth}
             recentSpaces={recentSpaces}
-            onOpenCreateSpace={() => setCreateSpaceOpen(true)}
+            onOpenCreateSpace={() => openCreateSpace()}
             onRestoreDoc={handleRestoreDoc}
             onDeleteDocPermanently={handleDeleteDocPermanently}
             isMobile={isMobile}
@@ -261,7 +282,7 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
         )}
 
         {/* Resizable Drag Handle */}
-        {!isMobile && sidebarOpen && (
+        {!isAdminRoute && !isMobile && sidebarOpen && (
           <Box
             onMouseDown={startResizing}
             onMouseEnter={() => setIsHovered(true)}
@@ -301,8 +322,11 @@ export const MainLayout: React.FC<{ isMockMode?: boolean }> = ({ isMockMode }) =
       </Box>
 
       <CreatePageWizardModal
-        open={templateModalOpen}
-        onClose={() => setTemplateModalOpen(false)}
+        open={templateModalOpen || createPageOpen}
+        onClose={() => {
+          setTemplateModalOpen(false);
+          setCreatePageOpen(false);
+        }}
         teams={teams}
         projects={allProjects}
         currentTeamId={actualTeamId}

@@ -28,6 +28,7 @@ type UserHandler struct {
 
 type loginAttempt struct {
 	failures     int
+	lastAttempt  time.Time
 	blockedUntil time.Time
 }
 
@@ -56,9 +57,14 @@ func (h *UserHandler) loginAttemptKey(r *http.Request, username string) string {
 func (h *UserHandler) localLoginBlocked(key string) bool {
 	h.loginMu.Lock()
 	defer h.loginMu.Unlock()
+	for existing, attempt := range h.loginAttempts {
+		if time.Since(attempt.lastAttempt) > localLoginBlockDuration {
+			delete(h.loginAttempts, existing)
+		}
+	}
 	attempt, ok := h.loginAttempts[key]
 	if !ok {
-		return false
+		return len(h.loginAttempts) >= 10000
 	}
 	if attempt.blockedUntil.IsZero() {
 		return false
@@ -73,7 +79,17 @@ func (h *UserHandler) localLoginBlocked(key string) bool {
 func (h *UserHandler) recordLocalLoginFailure(key string) {
 	h.loginMu.Lock()
 	defer h.loginMu.Unlock()
+	now := time.Now()
+	for existing, attempt := range h.loginAttempts {
+		if now.Sub(attempt.lastAttempt) > localLoginBlockDuration {
+			delete(h.loginAttempts, existing)
+		}
+	}
+	if len(h.loginAttempts) >= 10000 {
+		return
+	}
 	attempt := h.loginAttempts[key]
+	attempt.lastAttempt = now
 	attempt.failures++
 	if attempt.failures >= localLoginMaxFailures {
 		attempt.blockedUntil = time.Now().Add(localLoginBlockDuration)
@@ -91,7 +107,7 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	theme, _ := h.themeService.GetDefaultTheme(r.Context())
 
 	welcomeTitle := "Welcome to Kollab"
-	welcomeText := "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces."
+	welcomeText := "Your workspace for shared notes, plans, and knowledge."
 	logoUrl := ""
 	logoSize := "Medium"
 	legalDisclaimer := ""
@@ -112,6 +128,14 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	h.localSetupMu.RLock()
 	localSetupRequired := h.localSetupRequired
 	h.localSetupMu.RUnlock()
+	if h.oidcConfig["authMode"] == "local" {
+		users, err := h.authService.ListLocalUsers(r.Context())
+		if err != nil {
+			http.Error(w, "Unable to load authentication configuration", http.StatusServiceUnavailable)
+			return
+		}
+		localSetupRequired = len(users) == 0
+	}
 	resp := map[string]interface{}{
 		"authority":           h.oidcConfig["authority"],
 		"clientId":            h.oidcConfig["clientId"],
@@ -130,6 +154,9 @@ func (h *UserHandler) GetOIDCConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	// Setup status changes immediately after the first administrator is created.
+	// It must never be served from a stale browser cache.
+	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
@@ -247,6 +274,12 @@ func (h *UserHandler) SetLocalUserActive(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
 	}
+	if !req.IsActive {
+		if currentUserID, _ := middleware.GetUserID(r.Context()); currentUserID == id {
+			http.Error(w, "You cannot disable the account you are signed in with", http.StatusBadRequest)
+			return
+		}
+	}
 	if err := h.authService.SetLocalUserActive(r.Context(), id, req.IsActive); err != nil {
 		http.Error(w, "Unable to update user", http.StatusInternalServerError)
 		return
@@ -277,9 +310,47 @@ func (h *UserHandler) SetLocalUserPassword(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *UserHandler) UpdateLocalUser(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	var req struct {
+		Email       string `json:"email"`
+		DisplayName string `json:"displayName"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+	user, err := h.authService.UpdateLocalUser(r.Context(), id, req.Email, req.DisplayName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(user)
+}
+
+func (h *UserHandler) DeleteLocalUser(w http.ResponseWriter, r *http.Request) {
+	if !requireSystemAdmin(w, r) {
+		return
+	}
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+	if currentUserID, _ := middleware.GetUserID(r.Context()); currentUserID == id {
+		http.Error(w, "You cannot remove the account you are signed in with", http.StatusBadRequest)
+		return
+	}
+	if err := h.authService.DeleteLocalUser(r.Context(), id); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -302,7 +373,7 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&req); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 interface Space {
   id: string;
+  name: string;
   type: 'personal' | 'team' | 'project';
   [key: string]: any;
 }

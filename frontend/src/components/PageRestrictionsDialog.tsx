@@ -17,7 +17,6 @@ import {
   FormControlLabel,
   Stack,
   IconButton,
-  Divider,
   Tabs,
   Tab,
   Paper,
@@ -28,7 +27,7 @@ import {
   TableHead,
   TableRow
 } from "@mui/material";
-import { Shield, ShieldAlert, ShieldCheck, UserPlus, Trash2, Users, User, Info } from "lucide-react";
+import { Shield, ShieldCheck, UserPlus, Trash2, Users, User } from "lucide-react";
 import { 
   fetchDocumentPermissions, 
   addPermissionGrant, 
@@ -48,7 +47,7 @@ interface PageRestrictionsDialogProps {
 interface TeamInfo {
   id: string;
   name: string;
-  abbreviation: string;
+  abbreviation?: string;
 }
 
 interface UserInfo {
@@ -69,7 +68,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
   // Document permissions state
   const [classification, setClassification] = useState<"public" | "internal" | "confidential" | "pii">("internal");
   const [inheritanceBroken, setInheritanceBroken] = useState<boolean>(false);
-  const [projectId, setProjectId] = useState<string>("");
+  const [, setProjectId] = useState<string>("");
   const [teamId, setTeamId] = useState<string>("");
   const [grants, setGrants] = useState<any[]>([]);
 
@@ -236,8 +235,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
       open={open}
       onClose={onClose}
       maxWidth="sm"
-      fullWidth
-      PaperProps={{
+      fullWidth slotProps={{ paper: {
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
@@ -246,7 +244,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
           color: "var(--text-primary)",
           p: 1
         }
-      }}
+      } }}
     >
       <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, fontSize: "18px", pb: 1, display: "flex", alignItems: "center", gap: 1 }}>
         <Shield size={20} className="primary-icon" style={{ color: "var(--primary-color)" }} />
@@ -344,7 +342,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                     {/* Row 1: All Team / Project Users */}
                     <TableRow sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                       <TableCell>
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                           <Users size={16} style={{ color: "var(--primary-color)" }} />
                           <Box>
                             <Typography variant="body2" sx={{ fontSize: "13px", fontWeight: 600 }}>
@@ -385,7 +383,7 @@ export const PageRestrictionsDialog: React.FC<PageRestrictionsDialogProps> = ({
                       .map((g) => (
                         <TableRow key={g.id} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                           <TableCell>
-                            <Stack direction="row" spacing={1} alignItems="center">
+                            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                               {g.granteeType === "user" ? (
                                 <User size={16} style={{ color: "text.secondary" }} />
                               ) : (

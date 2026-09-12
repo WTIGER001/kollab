@@ -17,9 +17,10 @@ import {
   CircularProgress,
   TextField,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Button
 } from "@mui/material";
-import { Clock, ExternalLink, ArrowUpDown, Calendar, Search } from "lucide-react";
+import { Clock, ExternalLink, ArrowUpDown, Calendar, Search, ArrowRight, FilePlus2, FolderPlus, Rocket } from "lucide-react";
 import { fetchRecentDocuments } from "../services/api";
 import type { Document, Team, Project } from "../services/api";
 
@@ -27,6 +28,9 @@ interface RecentPagesViewProps {
   onNavigate: (documentId: string, teamId: string, projectId: string | null) => void;
   teams: Team[];
   projects: Project[];
+  onCreateSpace: () => void;
+  onOpenPersonalSpace: () => void;
+  onOpenSharedSpace: () => void;
 }
 
 type SortType = "accessed" | "created" | "az" | "parent";
@@ -35,7 +39,10 @@ type ActivityType = "both" | "views" | "edits";
 export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
   onNavigate,
   teams,
-  projects
+  projects,
+  onCreateSpace,
+  onOpenPersonalSpace,
+  onOpenSharedSpace,
 }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +73,7 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
     onNavigate(doc.id, teamArg, projectArg);
   };
 
-  const getSpaceDetails = (teamId: string, projectId: string) => {
+  const getSpaceDetails = (teamId: string, projectId: string | null) => {
     if (teamId.startsWith("personal_") || teamId === "personal") {
       return { name: "Personal Space", type: "personal" };
     }
@@ -131,6 +138,9 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
   };
 
   const displayList = getFilteredAndSortedDocuments();
+  const personalSpaceExists = teams.some((team) => team.id.startsWith("personal_"));
+  const hasSharedSpace = teams.some((team) => !team.id.startsWith("personal_"));
+  const isWelcomeState = !loading && activityFilter === "both" && documents.length === 0 && searchQuery.trim() === "";
 
   return (
     <Box sx={{ 
@@ -152,12 +162,12 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
             <Clock size={16} className="text-primary" />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 800, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>
-            Recent Pages
+            {isWelcomeState ? "Welcome to Kollab" : "Recent Pages"}
           </Typography>
         </Box>
 
         {/* Filter controls and Sorting */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        {!isWelcomeState && <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           {/* Search bar */}
           <TextField
             placeholder="Filter by title or space..."
@@ -258,7 +268,7 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
               </MenuItem>
             </Select>
           </FormControl>
-        </Box>
+        </Box>}
       </Box>
 
       {/* Main Content Area */}
@@ -273,14 +283,82 @@ export const RecentPagesView: React.FC<RecentPagesViewProps> = ({
             <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <CircularProgress size={32} />
             </Box>
+          ) : isWelcomeState ? (
+            <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", py: { xs: 4, md: 8 } }}>
+              <Box sx={{ width: "100%", maxWidth: 760, textAlign: "center" }}>
+                <Box sx={{
+                  mx: "auto",
+                  mb: 2.5,
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--primary-color)",
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--primary-color) 28%, transparent)",
+                }}>
+                  <Rocket size={27} strokeWidth={1.7} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: "text.primary", fontFamily: '"Outfit", sans-serif', letterSpacing: "-0.02em", mb: 1.25 }}>
+                  How would you like to start?
+                </Typography>
+                <Typography variant="body1" sx={{ color: "text.secondary", maxWidth: 510, mx: "auto", lineHeight: 1.65, mb: 3 }}>
+                  Work privately in Personal Space, or set up a shared team workspace. You can use both whenever you need them.
+                </Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: personalSpaceExists ? "1fr 1fr" : "1fr" }, maxWidth: 610, mx: "auto", gap: 1.5, textAlign: "left", mb: 4 }}>
+                  {personalSpaceExists && (
+                    <Box sx={{ p: 2.25, border: "1px solid var(--border-color)", borderRadius: "var(--border-radius-card)", backgroundColor: "var(--glass-bg)", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1.25 }}>
+                      <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "text.primary", fontFamily: '"Outfit", sans-serif' }}>Personal space</Typography>
+                      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.55, flex: 1 }}>Keep private notes, drafts, and ideas to yourself.</Typography>
+                      <Button variant="outlined" onClick={onOpenPersonalSpace} sx={{ borderColor: "var(--border-color)", color: "text.primary", borderRadius: "var(--border-radius-button)", textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, "&:hover": { borderColor: "var(--primary-color)", backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)" } }}>Open Personal Space</Button>
+                    </Box>
+                  )}
+                  <Box sx={{ p: 2.25, border: "1px solid color-mix(in srgb, var(--primary-color) 28%, var(--border-color))", borderRadius: "var(--border-radius-card)", backgroundColor: "color-mix(in srgb, var(--primary-color) 6%, var(--glass-bg))", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1.25 }}>
+                    <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "text.primary", fontFamily: '"Outfit", sans-serif' }}>Shared workspace</Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.55, flex: 1 }}>{hasSharedSpace ? "Continue in a team space you already belong to." : "Create a team space for projects, people, and shared knowledge."}</Typography>
+                    <Button variant="contained" onClick={hasSharedSpace ? onOpenSharedSpace : onCreateSpace} endIcon={<ArrowRight size={15} />} sx={{ borderRadius: "var(--border-radius-button)", textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, boxShadow: "var(--shadow-button)" }}>{hasSharedSpace ? "Open shared workspace" : "Create team space"}</Button>
+                  </Box>
+                </Box>
+                {hasSharedSpace && (
+                  <Button variant="text" onClick={onCreateSpace} sx={{ mb: 4, color: "var(--primary-color)", textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700 }}>Create a new team space instead</Button>
+                )}
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1.5, textAlign: "left" }}>
+                  {[
+                    { icon: <FolderPlus size={18} />, title: "1. Choose a space", detail: "Start privately or with a team.", complete: hasSharedSpace || personalSpaceExists },
+                    { icon: <Rocket size={18} />, title: "2. Add a project", detail: "Organize work by initiative.", complete: projects.length > 0 },
+                    { icon: <FilePlus2 size={18} />, title: "3. Write your first page", detail: "Choose a blank page or template.", complete: false },
+                  ].map((step) => (
+                    <Box key={step.title} sx={{
+                      p: 2,
+                      minHeight: 132,
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "var(--border-radius-card)",
+                      backgroundColor: "var(--glass-bg)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: step.complete ? "var(--primary-color)" : "var(--text-secondary)" }}>
+                        {step.icon}
+                        <Typography sx={{ fontSize: "13px", fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "text.primary" }}>{step.title}</Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.5 }}>{step.detail}</Typography>
+                      {step.complete && <Typography variant="caption" sx={{ color: "var(--primary-color)", fontWeight: 700 }}>Ready</Typography>}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
           ) : displayList.length === 0 ? (
             <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, color: "text.disabled", textAlign: "center" }}>
               <Clock size={48} style={{ strokeWidth: 1.5, color: "var(--text-disabled)", marginBottom: 16 }} />
               <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", mb: 1, fontFamily: '"Outfit", sans-serif' }}>
-                No Recent Activity
+                No matching pages
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 320, lineHeight: 1.6 }}>
-                Documents you view or edit will appear here automatically.
+                Try a different title, space, or activity filter.
               </Typography>
             </Box>
           ) : (

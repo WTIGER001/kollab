@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -58,7 +59,9 @@
     "tailwind-merge": "^3.6.0",
     "three": "^0.185.0",
     "yjs": "^13.6.31",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "dompurify": "3.4.11",
+    "@tiptap/y-tiptap": "^3.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

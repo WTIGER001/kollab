@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
-import { Box, CircularProgress, Typography, Button } from "@mui/material";
+import { Box, CircularProgress, Typography, Button, IconButton, Tooltip } from "@mui/material";
+import { Moon, Sun } from "lucide-react";
+import { useAppStore } from "../store/useAppStore";
 
 interface AuthGuardProps {
   isMockMode: boolean;
@@ -21,7 +23,7 @@ interface AuthGuardProps {
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({
   isMockMode,
-  authMode = "oidc",
+  authMode = "local",
   localSetupRequired = false,
   localToken,
   onLocalLogin,
@@ -36,6 +38,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   children
 }) => {
 	const auth = useAuth();
+  const { themeMode, toggleThemeMode } = useAppStore();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -78,11 +81,11 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   if (apiAuthError) {
     return (
       <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 2 }}>
-        <Typography variant="h5" color="error">API Authentication Failed</Typography>
-        <Typography color="text.secondary">The Go backend rejected your token with a 401 Unauthorized.</Typography>
-        <Typography color="text.secondary">Please check your Go backend console for "JWT validation failed" to see exactly why it is rejecting the token.</Typography>
+        <Typography variant="h5" color="error">Your session has expired</Typography>
+        <Typography color="text.secondary">Sign in again to continue.</Typography>
+
         <Button variant="contained" onClick={() => { auth?.removeUser(); window.location.href = "/"; }}>
-          Clear Session & Restart
+          Sign in again
         </Button>
       </Box>
     );
@@ -127,6 +130,24 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
         backgroundImage: 'radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--primary-color) 15%, transparent) 0%, transparent 80%)',
         p: 4 
       }}>
+        <Tooltip title={`Switch to ${themeMode === "dark" ? "light" : "dark"} theme`}>
+          <IconButton
+            aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} theme`}
+            onClick={toggleThemeMode}
+            sx={{
+              position: "fixed",
+              top: 20,
+              right: 20,
+              color: "var(--text-primary)",
+              backgroundColor: "var(--glass-bg)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--border-radius-button)",
+              "&:hover": { backgroundColor: "var(--panel-color)" },
+            }}
+          >
+            {themeMode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+          </IconButton>
+        </Tooltip>
         <Box sx={{ 
           p: 6, 
           borderRadius: 4, 
@@ -164,7 +185,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
               </Typography>
             )}
             {welcomeText && (
-              <Typography sx={{ color: 'text.secondary', fontSize: '1.05rem', lineHeight: 1.5 }}>
+              <Typography sx={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 500, lineHeight: 1.5 }}>
                 {welcomeText}
               </Typography>
             )}
@@ -177,12 +198,24 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
           </Box>
 
           {authMode === "local" ? (
-            <Box component="form" onSubmit={localSetupRequired ? submitInitialSetup : submitLocalLogin} sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-              {localSetupRequired && <Typography sx={{ color: "var(--text-secondary)", textAlign: "left" }}>Create the first administrator for this Kollab installation.</Typography>}
-              <input aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />
-              {localSetupRequired && <input aria-label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} autoComplete="name" style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />}
-              {localSetupRequired && <input aria-label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />}
-              <input aria-label="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required style={{ padding: 12, borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)" }} />
+          <Box component="form" onSubmit={localSetupRequired ? submitInitialSetup : submitLocalLogin} sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 2, "& input::placeholder": { color: "var(--text-secondary)", opacity: 1 } }}>
+              {localSetupRequired && <Typography sx={{ color: "var(--text-primary)", textAlign: "left", fontSize: "1rem", lineHeight: 1.5 }}>Create the first administrator for this Kollab installation.</Typography>}
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0.75, textAlign: "left" }}>
+                <label htmlFor="local-username" style={{ color: "var(--text-primary)", fontSize: "1rem", fontWeight: 650 }}>Username</label>
+                <input id="local-username" aria-label="Username" placeholder="e.g. alex" value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required style={{ padding: "0.8rem 0.9rem", minHeight: 48, boxSizing: "border-box", borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1.4 }} />
+              </Box>
+              {localSetupRequired && <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0.75, textAlign: "left" }}>
+                <label htmlFor="local-display-name" style={{ color: "var(--text-primary)", fontSize: "1rem", fontWeight: 650 }}>Your name <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                <input id="local-display-name" aria-label="Display name" placeholder="e.g. Alex Morgan" value={displayName} onChange={(event) => setDisplayName(event.target.value)} autoComplete="name" style={{ padding: "0.8rem 0.9rem", minHeight: 48, boxSizing: "border-box", borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1.4 }} />
+              </Box>}
+              {localSetupRequired && <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0.75, textAlign: "left" }}>
+                <label htmlFor="local-email" style={{ color: "var(--text-primary)", fontSize: "1rem", fontWeight: 650 }}>Email <span style={{ fontWeight: 400 }}>(optional)</span></label>
+                <input id="local-email" aria-label="Email" type="email" placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" style={{ padding: "0.8rem 0.9rem", minHeight: 48, boxSizing: "border-box", borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1.4 }} />
+              </Box>}
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 0.75, textAlign: "left" }}>
+                <label htmlFor="local-password" style={{ color: "var(--text-primary)", fontSize: "1rem", fontWeight: 650 }}>Password</label>
+                <input id="local-password" aria-label="Password" type="password" placeholder={localSetupRequired ? "Use at least 8 characters" : "Enter your password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={localSetupRequired ? "new-password" : "current-password"} required style={{ padding: "0.8rem 0.9rem", minHeight: 48, boxSizing: "border-box", borderRadius: "var(--border-radius-button)", border: "1px solid var(--border-color)", background: "var(--panel-color)", color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1.4 }} />
+              </Box>
               {loginError && <Typography color="error" variant="body2">{loginError}</Typography>}
               <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>{isSubmitting ? "Working…" : localSetupRequired ? "Create administrator" : "Sign in"}</Button>
             </Box>

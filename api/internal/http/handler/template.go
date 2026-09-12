@@ -8,6 +8,7 @@ import (
 
 	"kollab/api/internal/domain"
 	mid "kollab/api/internal/http/middleware"
+	"kollab/api/internal/permissions"
 )
 
 type TemplateHandler struct {
@@ -31,16 +32,13 @@ func (h *TemplateHandler) CreateTemplate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Simple authorization: Only allow users to create team or personal templates.
-	// System templates could be restricted to admins, but for now we enforce via DB manually or trust the client.
-	// Ideally, check if user is admin to create "system" templates.
-	
 	if t.Scope == domain.TemplateScopePersonal {
 		t.UserID = &userID
 		t.TeamID = nil
-	} else if t.Scope == domain.TemplateScopeTeam {
-		// user must provide TeamID
-		t.UserID = nil
+	}
+	if !templateAccess(r, &t, "write") {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
 	}
 
 	if err := h.templateRepo.Create(r.Context(), &t); err != nil {
@@ -66,6 +64,10 @@ func (h *TemplateHandler) GetTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !templateAccess(r, t, "read") {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(t)
 }
@@ -105,7 +107,13 @@ func (h *TemplateHandler) ListTemplates(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(templates)
+	visible := make([]*domain.Template, 0, len(templates))
+	for _, t := range templates {
+		if templateAccess(r, t, "read") {
+			visible = append(visible, t)
+		}
+	}
+	json.NewEncoder(w).Encode(visible)
 }
 
 func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +124,19 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	existing, err := h.templateRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Template not found", http.StatusNotFound)
+		return
+	}
+	if !templateAccess(r, existing, "write") {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 	t.ID = id
+	t.Scope = existing.Scope
+	t.TeamID = existing.TeamID
+	t.UserID = existing.UserID
 
 	if err := h.templateRepo.Update(r.Context(), &t); err != nil {
 		if err.Error() == "template not found" {
@@ -134,6 +154,15 @@ func (h *TemplateHandler) UpdateTemplate(w http.ResponseWriter, r *http.Request)
 func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
+	existing, err := h.templateRepo.GetByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Template not found", http.StatusNotFound)
+		return
+	}
+	if !templateAccess(r, existing, "write") {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 	if err := h.templateRepo.Delete(r.Context(), id); err != nil {
 		if err.Error() == "template not found" {
 			http.Error(w, "Template not found", http.StatusNotFound)
@@ -144,4 +173,16 @@ func (h *TemplateHandler) DeleteTemplate(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func templateAccess(r *http.Request, t *domain.Template, action string) bool {
+	userID, _ := mid.GetUserID(r.Context())
+	id := ""
+	if t.Scope == domain.TemplateScopePersonal && t.UserID != nil {
+		id = *t.UserID
+	}
+	if t.Scope == domain.TemplateScopeTeam && t.TeamID != nil {
+		id = *t.TeamID
+	}
+	return permissions.CanAccessScope(r.Context(), userID, string(t.Scope), id, action)
 }

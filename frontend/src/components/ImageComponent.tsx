@@ -1,3 +1,4 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import { Box, IconButton, Tooltip, Divider, Button } from "@mui/material";
@@ -17,7 +18,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
   };
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (!originalWidth && size === "O") {
+    if (editor?.isEditable && !originalWidth && size === "O") {
       const img = e.currentTarget;
       if (img.naturalWidth) {
         updateAttributes({
@@ -46,7 +47,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
         }}
         sx={{ 
           position: "relative", 
-          border: (selected && editor?.isEditable) ? "2px solid #8b5cf6" : "2px solid transparent",
+          border: (selected && editor?.isEditable) ? "2px solid var(--primary-color)" : "2px solid transparent",
           borderRadius: 2,
           overflow: "hidden",
           transition: "all 0.2s ease",
@@ -56,7 +57,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
         }}
       >
         <img 
-          src={src} 
+          src={authenticatedMediaUrl(src)}
           alt={alt || "Uploaded image"} 
           onLoad={handleImageLoad}
           style={{ 
@@ -80,7 +81,7 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
               display: "flex", 
               alignItems: "center", 
               gap: 0.5, 
-              backgroundColor: "rgba(20, 22, 33, 0.95)",
+              backgroundColor: "var(--panel-color)",
               border: "1px solid var(--border-color)",
               borderRadius: 2,
               p: 0.5,
@@ -88,22 +89,22 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
               transition: "opacity 0.2s ease",
               zIndex: 10,
               pointerEvents: "auto",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
+              boxShadow: "var(--shadow-elevation)"
             }}
           >
             {/* Alignment */}
             <Tooltip title="Align Left" arrow>
-              <IconButton size="small" onClick={() => handleAlign("left")} sx={{ color: alignment === "left" ? "primary.light" : "rgba(255,255,255,0.6)", p: 0.5 }}>
+              <IconButton size="small" onClick={() => handleAlign("left")} sx={{ color: alignment === "left" ? "primary.light" : "var(--text-secondary)", p: 0.5 }}>
                 <AlignLeft size={14} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Align Center" arrow>
-              <IconButton size="small" onClick={() => handleAlign("center")} sx={{ color: alignment === "center" ? "primary.light" : "rgba(255,255,255,0.6)", p: 0.5 }}>
+              <IconButton size="small" onClick={() => handleAlign("center")} sx={{ color: alignment === "center" ? "primary.light" : "var(--text-secondary)", p: 0.5 }}>
                 <AlignCenter size={14} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Align Right" arrow>
-              <IconButton size="small" onClick={() => handleAlign("right")} sx={{ color: alignment === "right" ? "primary.light" : "rgba(255,255,255,0.6)", p: 0.5 }}>
+              <IconButton size="small" onClick={() => handleAlign("right")} sx={{ color: alignment === "right" ? "primary.light" : "var(--text-secondary)", p: 0.5 }}>
                 <AlignRight size={14} />
               </IconButton>
             </Tooltip>
@@ -112,18 +113,18 @@ export const ImageComponent = ({ editor, node, getPos, updateAttributes, deleteN
    
             {/* Size Selectors */}
             {(!originalWidth || originalWidth > 300) && (
-              <Button size="small" onClick={() => handleSize("1")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "1" ? "primary.light" : "rgba(255,255,255,0.6)" }}>SM</Button>
+              <Button size="small" onClick={() => handleSize("1")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "1" ? "primary.light" : "var(--text-secondary)" }}>SM</Button>
             )}
             {(!originalWidth || originalWidth > 600) && (
-              <Button size="small" onClick={() => handleSize("2")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "2" ? "primary.light" : "rgba(255,255,255,0.6)" }}>MED</Button>
+              <Button size="small" onClick={() => handleSize("2")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "2" ? "primary.light" : "var(--text-secondary)" }}>MED</Button>
             )}
             {(!originalWidth || originalWidth > 900) && (
-              <Button size="small" onClick={() => handleSize("3")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "3" ? "primary.light" : "rgba(255,255,255,0.6)" }}>LG</Button>
+              <Button size="small" onClick={() => handleSize("3")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "3" ? "primary.light" : "var(--text-secondary)" }}>LG</Button>
             )}
             {(!originalWidth || originalWidth > 1200) && (
-              <Button size="small" onClick={() => handleSize("4")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "4" ? "primary.light" : "rgba(255,255,255,0.6)" }}>XL</Button>
+              <Button size="small" onClick={() => handleSize("4")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "4" ? "primary.light" : "var(--text-secondary)" }}>XL</Button>
             )}
-            <Button size="small" onClick={() => handleSize("O")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "O" ? "primary.light" : "rgba(255,255,255,0.6)" }}>ORIG</Button>
+            <Button size="small" onClick={() => handleSize("O")} sx={{ minWidth: 28, fontSize: "10px", p: 0.5, color: size === "O" ? "primary.light" : "var(--text-secondary)" }}>ORIG</Button>
    
             <Divider orientation="vertical" flexItem sx={{ mx: 0.25, height: 16, borderColor: "var(--border-color)" }} />
    

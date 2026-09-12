@@ -48,21 +48,20 @@ Kollab is a premium, real-time collaborative block-based document workspace and 
 ## 🏁 Getting Started
 
 ### Prerequisites
-- [Go 1.21+](https://go.dev/doc/install)
-- [Node.js 18+](https://nodejs.org/)
+- [Go 1.26.2+](https://go.dev/doc/install)
+- [Node.js 22+](https://nodejs.org/)
 - [PostgreSQL 15+](https://www.postgresql.org/download/) (configured with the `pgvector` extension)
 
 ### 1. Database Setup
-Create a PostgreSQL database and run the schema setup:
-```bash
-psql -d kollab -f api/internal/postgres/init.sql
-```
+Create a PostgreSQL database with the `pgvector` extension available. The backend applies versioned migrations automatically at startup; do not manually replay `init.sql` against an existing installation.
 
 ### 2. Run the Go Backend Server
-Navigate to the root level and boot the Go API/WS router:
+Set `DATABASE_URL` and a private `JWT_SECRET` of at least 32 bytes in your environment, then run:
 ```bash
-go run api/cmd/server/main.go
+cd api
+AUTH_MODE=local PORT=8081 go run ./cmd/server
 ```
+For an explicitly disposable local database only, set `DEV_DATABASE=true` instead of `DATABASE_URL`. This requires Docker and seeds sample data. Production startup fails if its persistent database URL is absent.
 
 ### 3. Run the React Frontend Application
 Install dependencies and launch the Vite development server:
@@ -71,26 +70,26 @@ cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:5173` in your web browser.
+Open `http://localhost:8090` in your web browser. Kollab reserves host port `8081` for its local API; the service itself continues to listen on `8080` inside Docker. The dev server uses port `8090` strictly, so it reports a conflict instead of silently choosing a different address.
 
 ### 🐳 Docker Development Workflow (Alternative)
 
 If you want to run the database and the Go backend inside Docker (which includes LibreOffice out-of-the-box for high-fidelity document previews) while still using Go `air` for hot-reloading:
 
-1. **Start the Docker development environment**:
-   Run the dev compose setup from the repository root:
+1. **Start the full development workspace**:
+   From the repository root, run:
    ```bash
-   docker compose -f docker-compose.dev.yml up --build
+   ./dev.sh
    ```
-   This builds the development Go image, installs LibreOffice and fonts, mounts the `./api` directory for live syncing, starts the `pgvector` database, and runs the API under `air` on `localhost:8080`.
+   This builds and starts the development Go image, pgvector database, and media-preview service in Docker, then starts Vite at `http://localhost:8090` in the current terminal. It installs frontend dependencies only if `frontend/node_modules` is missing.
 
-2. **Run the React Frontend Application locally**:
-   In another terminal, start your local Vite development server:
+2. **Stop development services**:
+   Press `Ctrl+C` to stop Vite. To stop the Docker services as well, run:
    ```bash
-   cd frontend
-   npm run dev
+   ./dev.sh --down
    ```
-   Vite will proxy all `/api` and websocket requests to the hot-reloading Docker container on `http://localhost:8080`.
+
+   You can still start Docker Compose and Vite manually if you prefer separate terminals.
 
 ---
 
@@ -106,3 +105,9 @@ npx tsc --noEmit
 ```bash
 go test ./...
 ```
+
+## Multiple API processes and offline synchronization
+
+The Docker Compose configuration defaults to two API replicas. Set `API_REPLICAS` to override the count. Replicas must share PostgreSQL, `JWT_SECRET`, authentication settings, and the same writable uploads mount. The supplied Caddy configuration discovers and balances those replicas.
+
+Separate installations can exchange signed v3 synchronization packages in both directions with explicit conflict review. Old sync formats are unsupported. See the [administrator guide](user_guide/synchronization.md) and [technical design](design/multi_instance_sync.md). Azure backup and Jira remain prototypes.

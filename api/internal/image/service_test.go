@@ -39,14 +39,18 @@ func (m *mockStorage) DeleteFolder(ctx context.Context, folderKey string) error 
 func TestImageServiceUpload(t *testing.T) {
 	svc := NewImageService(&mockImageRepo{}, &mockStorage{})
 
-	// This data isn't a valid image, so it should fallback to 0x0
-	meta, err := svc.UploadImage(context.Background(), "test.png", "image/png", []byte("bad data"))
-	if err != nil {
-		t.Fatalf("unexpected err: %v", err)
+	if _, err := svc.UploadImage(context.Background(), "test.png", "image/png", []byte("bad data")); err == nil {
+		t.Fatal("invalid image accepted")
 	}
-	if meta.OriginalWidth != 0 {
-		t.Errorf("expected 0 width for invalid image data")
+	for _, svg := range []string{`<svg><script>alert(1)</script></svg>`, `<svg onload="alert(1)"></svg>`, `<svg><use href="https://example.com/image.svg"/></svg>`} {
+		if _, err := svc.UploadImage(context.Background(), "image.svg", "image/svg+xml", []byte(svg)); err == nil {
+			t.Fatal("active SVG accepted")
+		}
 	}
+	if _, err := svc.UploadImage(context.Background(), "image.svg", "text/plain", []byte(`<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0L1 1"/></svg>`)); err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func TestImageServiceGet(t *testing.T) {

@@ -1,18 +1,15 @@
+import { authenticatedMediaUrl } from "../services/api";
 import React, { useEffect, useState } from "react";
 import { 
   Box, 
   Typography, 
-  Card, 
-  CardContent, 
   Avatar, 
   Button, 
   List, 
   ListItem, 
   ListItemAvatar, 
   ListItemText, 
-  Divider,
-  Paper
-} from "@mui/material";
+  Divider} from "@mui/material";
 import { 
   Settings, 
   Users, 
@@ -22,6 +19,7 @@ import {
 import { fetchTeamUsers } from "../services/api";
 import type { Team, Project } from "../services/api";
 import { UserAvatar } from "./UserAvatar";
+import { useAppStore } from "../store/useAppStore";
 
 interface TeamPortalProps {
   team: Team;
@@ -36,6 +34,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
   onSelectProject,
   navigateTo
 }) => {
+  const openCreateSpace = useAppStore((state) => state.openCreateSpace);
   const [members, setMembers] = useState<{ id: string; username: string }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
@@ -81,7 +80,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Avatar 
-                src={team.logoUrl || undefined}
+                src={authenticatedMediaUrl(team.logoUrl || undefined)}
                 variant={team.logoUrl ? "square" : "circular"}
                 sx={{ 
                   bgcolor: team.logoUrl ? "transparent" : "primary.main", 
@@ -167,7 +166,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar 
-                      src={proj.logoUrl || undefined}
+                      src={authenticatedMediaUrl(proj.logoUrl || undefined)}
                       variant={proj.logoUrl ? "square" : "circular"}
                       sx={{ 
                         width: 32, 
@@ -199,10 +198,21 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
               </Box>
             ))}
             {projects.length === 0 && (
-              <Box sx={{ p: 4, textAlign: "center", border: "1px dashed var(--border-color)", bgcolor: "transparent", gridColumn: "1 / -1", borderRadius: 2 }}>
-                <Typography variant="subtitle2" sx={{ color: "text.disabled" }}>
-                  No projects found under this team.
+              <Box sx={{ p: { xs: 3, sm: 4 }, textAlign: "center", border: "1px dashed var(--border-color)", bgcolor: "var(--glass-bg)", gridColumn: "1 / -1", borderRadius: "var(--border-radius-card)" }}>
+                <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 700, fontFamily: '"Outfit", sans-serif', mb: 1 }}>
+                  Your team is ready for its first project
                 </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 420, mx: "auto", mb: 2.5, lineHeight: 1.6 }}>
+                  Projects give an initiative its own pages, settings, and a clear home in the sidebar.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Briefcase size={15} />}
+                  onClick={() => openCreateSpace({ initialTab: 1, teamId: team.id })}
+                  sx={{ textTransform: "none", fontFamily: '"Outfit", sans-serif', fontWeight: 700, borderRadius: "var(--border-radius-button)", boxShadow: "var(--shadow-button)" }}
+                >
+                  Create a project
+                </Button>
               </Box>
             )}
           </Box>
@@ -246,7 +256,7 @@ export const TeamPortal: React.FC<TeamPortalProps> = ({
                     } 
                     secondary={
                       <Typography sx={{ fontSize: "11px", color: "text.disabled" }}>
-                        {member.id === "sh4ag0cxowti" || member.id === "mock-user-id" ? "Team Admin" : "Member"}
+                        Member
                       </Typography>
                     }
                   />

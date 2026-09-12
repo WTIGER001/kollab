@@ -4,7 +4,6 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  Avatar,
   Menu,
   MenuItem,
   Divider,
@@ -18,15 +17,12 @@ import {
   MoreHorizontal,
   History,
   BarChart2,
-  Share2,
   Star,
   Check,
   Cloud,
   Edit,
   FileUp,
   FolderInput,
-  Download,
-  Lock,
   Link2,
   Trash2,
   Settings,
@@ -38,7 +34,6 @@ import {
   MessageSquareOff,
   Bell,
 } from "lucide-react";
-import { UserAvatar } from "../UserAvatar";
 
 export interface EditorHeaderProps {
   editor: any;
@@ -55,6 +50,7 @@ export interface EditorHeaderProps {
   breadcrumbsList: any[];
   isEditing: boolean;
   setIsEditing: (val: boolean) => void;
+  canEdit?: boolean;
   showComments?: boolean;
   setShowComments?: (val: boolean) => void;
   uniqueActiveUsers: any[];
@@ -96,6 +92,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   breadcrumbsList,
   isEditing,
   setIsEditing,
+  canEdit = true,
   showComments,
   setShowComments,
   uniqueActiveUsers,
@@ -362,7 +359,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   const initials = user.username
                     ? user.username
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")
                         .substring(0, 2)
                         .toUpperCase()
@@ -600,7 +597,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <Button
                     variant="outlined"
                     size="small"
-                    disabled={!!deletedAt}
+                    disabled={!!deletedAt || !canEdit}
                     onClick={() => setSharingLinksDialogOpen(true)}
                     sx={{
                       fontSize: "11px",
@@ -644,7 +641,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 <Button
                   variant="contained"
                   size="small"
-                  disabled={!!deletedAt}
+                  disabled={!!deletedAt || !canEdit}
                   onClick={() => setIsEditing(true)}
                   sx={{
                     fontSize: "11px",
@@ -655,7 +652,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     minWidth: { xs: 26, sm: "auto" },
                     borderRadius: "5px",
                     backgroundColor: "var(--primary-color)",
-                    color: "#ffffff",
+                    color: "var(--primary-contrast)",
                     boxShadow: "none",
                     textTransform: "none",
                     "&:hover": {
@@ -755,7 +752,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 >
                   <IconButton
                     size="small"
-                    disabled={!!deletedAt}
+                    disabled={!!deletedAt || !canEdit}
                     onClick={handleOpenMoreMenu}
                     sx={{
                       color: "text.secondary",

@@ -122,6 +122,20 @@ func (s *AuthService) SetLocalUserPassword(ctx context.Context, id, password str
 	return s.repo.UpdatePassword(ctx, id, string(hash))
 }
 
+func (s *AuthService) UpdateLocalUser(ctx context.Context, id, email, displayName string) (*domain.User, error) {
+	if strings.TrimSpace(id) == "" {
+		return nil, errors.New("user ID is required")
+	}
+	return s.repo.UpdateProfile(ctx, id, strings.TrimSpace(email), strings.TrimSpace(displayName))
+}
+
+func (s *AuthService) DeleteLocalUser(ctx context.Context, id string) error {
+	if strings.TrimSpace(id) == "" {
+		return errors.New("user ID is required")
+	}
+	return s.repo.Delete(ctx, id)
+}
+
 func (s *AuthService) Login(ctx context.Context, username, password string) (string, error) {
 	user, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
@@ -136,9 +150,10 @@ func (s *AuthService) Login(ctx context.Context, username, password string) (str
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  user.ID,
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(), // 24 hours
+		"user_id":            user.ID,
+		"username":           user.Username,
+		"credential_version": domain.CredentialVersion(user.PasswordHash),
+		"exp":                time.Now().Add(time.Hour * 24).Unix(), // 24 hours
 	})
 
 	return token.SignedString(s.jwtSecret)

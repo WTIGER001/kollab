@@ -36,7 +36,7 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 		TrashRetentionCustomDays: 30,
 		AIRateLimit:              10,
 		WelcomeTitle:             "Welcome to Kollab",
-		WelcomeText:              "A premium block-based document workspace. Connect with Logto Single-Sign-On (SSO) to synchronize your team workspaces.",
+		WelcomeText:              "Your workspace for shared notes, plans, and knowledge.",
 		AuthLoginButtonText:      "Log In to Workspace",
 		AsposeEnabled:            true,
 	}
@@ -278,7 +278,7 @@ func (r *PostgresSystemRepository) GetAuditLogsForPage(ctx context.Context, docI
 	}
 	defer rows.Close()
 
-	var logs []*domain.AuditLog
+	logs := make([]*domain.AuditLog, 0)
 	for rows.Next() {
 		var l domain.AuditLog
 		err := rows.Scan(&l.ID, &l.DocumentID, &l.UserID, &l.Action, &l.CreatedAt, &l.UserDisplayName, &l.UserEmail)
@@ -338,71 +338,22 @@ func (r *PostgresSystemRepository) Ping(ctx context.Context) error {
 }
 
 func (r *PostgresSystemRepository) ExportBackup(ctx context.Context) (map[string]interface{}, error) {
-	tables := []string{"users", "teams", "projects", "documents", "comments", "principal_roles", "tags"}
-	result := make(map[string]interface{})
-
-	for _, table := range tables {
-		rows, err := r.db.Query(ctx, fmt.Sprintf("SELECT * FROM %s", table))
-		if err != nil {
-			// If table doesn't exist or query fails, just skip it or log it
-			log.Printf("[WARN] ExportBackup failed for table %s: %v", table, err)
-			result[table] = []interface{}{}
-			continue
-		}
-
-		fieldDescriptions := rows.FieldDescriptions()
-		var list []map[string]interface{}
-
-		for rows.Next() {
-			values, err := rows.Values()
-			if err != nil {
-				rows.Close()
-				return nil, fmt.Errorf("failed to scan table %s row values: %w", table, err)
-			}
-
-			rowMap := make(map[string]interface{})
-			for i, fd := range fieldDescriptions {
-				rowMap[fd.Name] = values[i]
-			}
-			list = append(list, rowMap)
-		}
-		rows.Close()
-		result[table] = list
-	}
-
-	return result, nil
+	return r.exportDatabase(ctx)
 }
 
 func (r *PostgresSystemRepository) GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error) {
-	rows, err := r.db.Query(ctx, "SELECT id, table_name, action, row_id, row_data, created_at FROM db_operations_log WHERE id > $1 ORDER BY id ASC", sinceID)
+	rows, err := r.db.Query(ctx, "SELECT to_jsonb(e) FROM replication_events e WHERE id>$1 ORDER BY id", sinceID)
 	if err != nil {
-		// If table doesn't exist yet (e.g. fresh db or pre-trigger migration), return empty slice
-		log.Printf("[WARN] GetSyncOperations query failed: %v", err)
-		return []map[string]interface{}{}, nil
+		return nil, err
 	}
 	defer rows.Close()
-
-	var list []map[string]interface{}
+	result := []map[string]interface{}{}
 	for rows.Next() {
-		var id int
-		var tableName, action, rowID string
-		var rowData interface{}
-		var createdAt time.Time
-
-		err := rows.Scan(&id, &tableName, &action, &rowID, &rowData, &createdAt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan db_operations_log row: %w", err)
+		var event map[string]interface{}
+		if err = rows.Scan(&event); err != nil {
+			return nil, err
 		}
-
-		op := map[string]interface{}{
-			"id":         id,
-			"table_name": tableName,
-			"action":     action,
-			"row_id":     rowID,
-			"row_data":   rowData,
-			"created_at": createdAt,
-		}
-		list = append(list, op)
+		result = append(result, event)
 	}
-	return list, nil
+	return result, rows.Err()
 }

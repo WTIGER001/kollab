@@ -16,11 +16,12 @@ export interface Project {
 }
 
 export interface Document {
+  teamId: string;
   id: string;
   title: string;
   slug: string;
   content: string;
-  projectId: string;
+  projectId: string | null;
   parentId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -94,11 +95,17 @@ export interface Template {
   createdAt: string;
 }
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:8080" : window.location.origin);
-export const WS_BASE_URL = import.meta.env.VITE_WS_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "ws://localhost:8080" : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`);
+export const API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin;
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL || API_BASE_URL.replace(/^http/, "ws");
 
 const BASE_URL = API_BASE_URL;
 let apiToken: string | null = null;
+let sharedAccess: { documentId: string; token: string; password: string; mediaToken?: string } | null = null;
+export const setSharedAccess = (value: typeof sharedAccess) => { sharedAccess = value; };
+export const getSharedHeaders = (documentId: string): Record<string, string> => sharedAccess?.documentId === documentId ? { "X-Share-Token": sharedAccess.token, "X-Share-Password": sharedAccess.password } : {};
+export const getSharedProtocol = (documentId: string): string[] => sharedAccess?.documentId === documentId ? ["kollab", "share." + btoa(unescape(encodeURIComponent(JSON.stringify(sharedAccess)))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_")] : [];
+export const openSharedDocument = (token: string, password: string): Promise<{ document: Document; html: string; canWrite: boolean; canComment: boolean; mediaToken: string }> => request("/api/shared-links/open", {method: "POST", body: JSON.stringify({token,password}), suppress401: true});
+
 let onUnauthorizedCallback: (() => void) | null = null;
 
 export const setApiToken = (token: string | null) => {
@@ -123,6 +130,8 @@ export interface LocalUser {
   isActive: boolean;
 }
 
+export const fetchCurrentUser = (): Promise<LocalUser & { isAdmin: boolean }> => request("/api/me");
+
 export const fetchLocalUsers = (): Promise<LocalUser[]> => request("/api/admin/users");
 export const createLocalUser = (user: Omit<LocalUser, "id" | "isActive"> & { password: string }): Promise<LocalUser> =>
   request("/api/admin/users", { method: "POST", body: JSON.stringify(user) });
@@ -130,9 +139,15 @@ export const setLocalUserActive = (id: string, isActive: boolean): Promise<void>
   request(`/api/admin/users/${encodeURIComponent(id)}/active`, { method: "PUT", body: JSON.stringify({ isActive }) });
 export const setLocalUserPassword = (id: string, password: string): Promise<void> =>
   request(`/api/admin/users/${encodeURIComponent(id)}/password`, { method: "PUT", body: JSON.stringify({ password }) });
+export const updateLocalUser = (id: string, user: Pick<LocalUser, "email" | "displayName">): Promise<LocalUser> =>
+  request(`/api/admin/users/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(user) });
+export const deleteLocalUser = (id: string): Promise<void> =>
+  request(`/api/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" });
 
 const request = async (path: string, options: RequestInit & { suppress401?: boolean } = {}) => {
   const headers = new Headers(options.headers || {});
+  const target = path.match(/^\/api\/documents\/([^/?]+)/)?.[1];
+  if (target) Object.entries(getSharedHeaders(decodeURIComponent(target))).forEach(([key,value]) => headers.set(key,value));
   if (!(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
@@ -140,7 +155,8 @@ const request = async (path: string, options: RequestInit & { suppress401?: bool
     headers.set("Authorization", `Bearer ${apiToken}`);
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const url = /^\/api\/attachments\//.test(path) ? authenticatedMediaUrl(`${BASE_URL}${path}`)! : `${BASE_URL}${path}`;
+  const res = await fetch(url, {
     ...options,
     headers,
   });
@@ -260,11 +276,12 @@ export const createDocument = (
   projectId: string | null,
   teamId: string,
   parentId?: string | null,
-  slug?: string
+  slug?: string,
+  content?: string
 ): Promise<Document> => {
   return request("/api/documents", {
     method: "POST",
-    body: JSON.stringify({ title, projectId, teamId, parentId: parentId || null, slug }),
+    body: JSON.stringify({ title, projectId, teamId, parentId: parentId || null, slug, content }),
   });
 };
 
@@ -350,9 +367,13 @@ export const checkSlug = (
 };
 
 export const fetchOIDCConfig = (): Promise<{
+  authMode: "oidc" | "local";
+  localSetupRequired: boolean;
   authority: string;
   clientId: string;
   redirectUri: string;
+  apiAudience?: string;
+  apiScope?: string;
   theme: WorkspaceTheme | null;
   welcomeTitle?: string;
   welcomeText?: string;
@@ -523,6 +544,8 @@ export const createProject = (
 };
 
 export interface Favorite {
+  teamId: string;
+  projectId: string | null;
   userId: string;
   documentId: string;
   title: string;
@@ -736,6 +759,20 @@ export const retryPreviewGeneration = (attachmentId: string): Promise<void> => {
   });
 };
 
+export const getAttachmentUrl = (id: string): string => `${BASE_URL}/api/attachments/${encodeURIComponent(id)}`;
+export const authenticatedMediaUrl = (src: string | undefined): string | undefined => {
+  if (!src) return undefined;
+  try {
+    const url = new URL(src, BASE_URL);
+    const api = new URL(BASE_URL, window.location.origin);
+    if (url.origin === api.origin && /^\/api\/(attachments|images)\//.test(url.pathname)) {
+      if (apiToken) url.searchParams.set('authToken', apiToken);
+      if (sharedAccess?.mediaToken) url.searchParams.set('mediaToken', sharedAccess.mediaToken);
+    }
+    return url.toString();
+  } catch { return src; }
+};
+
 export const getApiToken = (): string | null => {
   return apiToken;
 };
@@ -744,7 +781,7 @@ export const uploadAttachment = (docId: string, file: File): Promise<Attachment>
   const formData = new FormData();
   formData.append("file", file);
 
-  const headers = new Headers();
+  const headers = new Headers(getSharedHeaders(docId));
   if (apiToken) {
     headers.set("Authorization", `Bearer ${apiToken}`);
   }
@@ -825,12 +862,12 @@ export const fetchAllDocumentTags = (): Promise<Record<string, Tag[]>> => {
   return request("/api/tags/document-associations");
 };
 
-export const fetchUserMentions = (username: string): Promise<DocumentItem[]> => {
+export const fetchUserMentions = (username: string): Promise<Document[]> => {
   return request(`/api/mentions?username=${encodeURIComponent(username)}`);
 };
 
 export const downloadDocumentExport = async (documentId: string, format: string, hierarchy: boolean, title: string) => {
-  const headers = new Headers();
+  const headers = new Headers(getSharedHeaders(documentId));
   if (apiToken) {
     headers.set("Authorization", `Bearer ${apiToken}`);
   }
@@ -1047,6 +1084,15 @@ export const restoreBackup = async (formData: FormData): Promise<{ message: stri
   return res.json();
 };
 
+export interface SyncConflict {
+  id: string; table: string; key: string; local: unknown; incoming: unknown;
+  localDeleted: boolean; incomingDeleted: boolean;
+}
+export class SyncConflictError extends Error {
+  conflict: SyncConflict;
+  constructor(message: string, conflict: SyncConflict) { super(message); this.conflict = conflict; }
+}
+
 export const importSyncPackage = async (formData: FormData): Promise<{ message: string; importedCount?: number }> => {
   const headers = new Headers();
   if (apiToken) {
@@ -1057,6 +1103,7 @@ export const importSyncPackage = async (formData: FormData): Promise<{ message: 
     headers,
     body: formData,
   });
+  if (res.status === 409 && res.headers.get("Content-Type")?.includes("application/json")) { const result = await res.json(); throw new SyncConflictError(result.message || "Conflicting changes", result.conflict); }
   if (!res.ok) {
     if (res.status === 401 && onUnauthorizedCallback) {
       onUnauthorizedCallback();
@@ -1068,6 +1115,7 @@ export const importSyncPackage = async (formData: FormData): Promise<{ message: 
 };
 
 export interface LibraryImage {
+  uploaderName?: string;
   id: string;
   filename: string;
   displayName: string;
@@ -1191,3 +1239,5 @@ export const deleteTemplate = async (id: string): Promise<void> => {
   });
   return handleResponse(res);
 };
+
+export const fetchDocumentCapabilities = (id: string): Promise<Record<"write" | "comment" | "delete" | "grant", boolean>> => request(`/api/documents/${encodeURIComponent(id)}/capabilities`);

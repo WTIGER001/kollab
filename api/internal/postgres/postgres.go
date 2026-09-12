@@ -65,7 +65,17 @@ func registeredMigrations() ([]migration, error) {
 // ledger makes schema evolution explicit and detects a changed migration before
 // it can silently alter an already-deployed database.
 func Migrate(ctx context.Context, db *pgxpool.Pool) error {
-	if _, err := db.Exec(ctx, `
+	conn, err := db.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	if _, err := conn.Exec(ctx, "SELECT pg_advisory_lock(73462001)"); err != nil {
+		return err
+	}
+	defer func() { _, _ = conn.Exec(context.Background(), "SELECT pg_advisory_unlock(73462001)") }()
+
+	if _, err := conn.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version VARCHAR(64) PRIMARY KEY,
 			checksum VARCHAR(64) NOT NULL,
@@ -82,7 +92,7 @@ func Migrate(ctx context.Context, db *pgxpool.Pool) error {
 		checksumBytes := sha256.Sum256([]byte(migration.sql))
 		checksum := hex.EncodeToString(checksumBytes[:])
 		var appliedChecksum string
-		err := db.QueryRow(ctx, "SELECT checksum FROM schema_migrations WHERE version = $1", migration.version).Scan(&appliedChecksum)
+		err := conn.QueryRow(ctx, "SELECT checksum FROM schema_migrations WHERE version = $1", migration.version).Scan(&appliedChecksum)
 		if err == nil {
 			if appliedChecksum != checksum {
 				return fmt.Errorf("migration %s checksum mismatch: deployed migrations are immutable", migration.version)
@@ -93,7 +103,7 @@ func Migrate(ctx context.Context, db *pgxpool.Pool) error {
 			return fmt.Errorf("read migration ledger: %w", err)
 		}
 
-		tx, err := db.Begin(ctx)
+		tx, err := conn.Begin(ctx)
 		if err != nil {
 			return fmt.Errorf("start migration %s: %w", migration.version, err)
 		}

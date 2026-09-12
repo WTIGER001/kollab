@@ -8,9 +8,8 @@ import {
   InputBase,
   CircularProgress,
 } from "@mui/material";
-import { X, RotateCcw, Clock, Save, Star } from "lucide-react";
+import { X } from "lucide-react";
 import type { DocumentVersion } from "../../services/api";
-import { UserAvatar } from "../UserAvatar";
 
 export interface EditorHistoryDrawerProps {
   historyOpen: boolean;

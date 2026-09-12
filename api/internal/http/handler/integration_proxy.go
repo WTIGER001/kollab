@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/gitlab-org/api/client-go"
@@ -27,6 +29,9 @@ func (h *IntegrationHandler) ProxyGitLabIssues(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if !integrationAccess(w, r, string(integration.Scope), integration.EntityID, "read") {
+		return
+	}
 	if integration.Provider != "gitlab" {
 		http.Error(w, "Integration is not a GitLab provider", http.StatusBadRequest)
 		return
@@ -50,7 +55,7 @@ func (h *IntegrationHandler) ProxyGitLabIssues(w http.ResponseWriter, r *http.Re
 	}
 	baseURL = strings.TrimSuffix(baseURL, "/")
 
-	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(baseURL))
+	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(baseURL), gitlab.WithHTTPClient(gitLabHTTPClient()))
 	if err != nil {
 		http.Error(w, "Failed to initialize GitLab client", http.StatusInternalServerError)
 		return
@@ -64,34 +69,11 @@ func (h *IntegrationHandler) ProxyGitLabIssues(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	state := "opened"
-	var gitlabIssues []*gitlab.Issue
-
-	// Attempt to fetch as Project Issues first
-	opt := &gitlab.ListProjectIssuesOptions{
-		State: &state,
-	}
-	if len(parsedLabels) > 0 {
-		lbls := gitlab.LabelOptions(parsedLabels)
-		opt.Labels = &lbls
-	}
-
-	gitlabIssues, resp, err := client.Issues.ListProjectIssues(projectId, opt, gitlab.WithContext(r.Context()))
-
-	// If 404 Not Found, fallback to Group Issues
-	if err != nil && resp != nil && resp.StatusCode == http.StatusNotFound {
-		groupOpt := &gitlab.ListGroupIssuesOptions{
-			State: &state,
-		}
-		if len(parsedLabels) > 0 {
-			lbls := gitlab.LabelOptions(parsedLabels)
-			groupOpt.Labels = &lbls
-		}
-		gitlabIssues, resp, err = client.Issues.ListGroupIssues(projectId, groupOpt, gitlab.WithContext(r.Context()))
-	}
-
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	gitlabIssues, err := fetchGitLabIssues(ctx, client, projectId, parsedLabels)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to fetch GitLab issues: %v", err), http.StatusBadGateway)
+		http.Error(w, "GitLab could not return all matching issues. Check the connection or narrow the labels filter.", http.StatusBadGateway)
 		return
 	}
 
@@ -138,4 +120,54 @@ func (h *IntegrationHandler) ProxyGitLabIssues(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(payload)
+}
+
+// A configured provider may be internal, but redirects must never forward its
+// private token to a different origin.
+func gitLabHTTPClient() *http.Client {
+	return &http.Client{Timeout: 15 * time.Second, CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 5 {
+			return fmt.Errorf("too many provider redirects")
+		}
+		original := via[0].URL
+		if req.URL.Scheme != original.Scheme || req.URL.Host != original.Host {
+			return fmt.Errorf("provider redirect changed origin")
+		}
+		return nil
+	}}
+}
+
+func fetchGitLabIssues(ctx context.Context, client *gitlab.Client, project string, labels []string) ([]*gitlab.Issue, error) {
+	state := "opened"
+	lbls := gitlab.LabelOptions(labels)
+	var issues []*gitlab.Issue
+	group := false
+	page := int64(1)
+	for count := 0; count < 100; count++ {
+		options := gitlab.ListOptions{Page: page, PerPage: 100}
+		var batch []*gitlab.Issue
+		var response *gitlab.Response
+		var err error
+		if !group {
+			batch, response, err = client.Issues.ListProjectIssues(project, &gitlab.ListProjectIssuesOptions{ListOptions: options, State: &state, Labels: &lbls}, gitlab.WithContext(ctx))
+			if err != nil && response != nil && response.StatusCode == http.StatusNotFound && page == 1 {
+				group = true
+			}
+		}
+		if group {
+			batch, response, err = client.Issues.ListGroupIssues(project, &gitlab.ListGroupIssuesOptions{ListOptions: options, State: &state, Labels: &lbls}, gitlab.WithContext(ctx))
+		}
+		if err != nil {
+			return nil, err
+		}
+		issues = append(issues, batch...)
+		if response == nil || response.NextPage == 0 {
+			return issues, nil
+		}
+		if response.NextPage <= page {
+			return nil, fmt.Errorf("invalid provider pagination")
+		}
+		page = response.NextPage
+	}
+	return nil, fmt.Errorf("issue result exceeds 100 pages")
 }

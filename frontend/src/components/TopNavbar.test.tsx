@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TopNavbar } from './TopNavbar';
@@ -89,7 +88,7 @@ describe('TopNavbar', () => {
     const originalLocation = window.location;
     // @ts-ignore
     delete window.location;
-    window.location = { ...originalLocation, href: '' };
+    vi.stubGlobal('location', { ...originalLocation, href: '' });
 
     render(<TopNavbar {...defaultProps} />);
     const searchInput = screen.getByLabelText('global search');
@@ -100,7 +99,7 @@ describe('TopNavbar', () => {
     expect(window.location.href).toBe('/search?q=test%20query');
 
     // Restore window.location
-    window.location = originalLocation;
+    vi.stubGlobal('location', originalLocation);
   });
 
   it('opens profile menu and triggers actions', () => {

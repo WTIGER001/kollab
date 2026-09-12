@@ -58,7 +58,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
       <DialogTitle>Template Gallery</DialogTitle>
       
       <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3 }}>
-        <Tabs value={activeTab} onChange={(e, val) => setActiveTab(val)}>
+        <Tabs value={activeTab} onChange={(_e, val) => setActiveTab(val)}>
           <Tab label="Page Templates" value="page" icon={<FileText size={16} />} iconPosition="start" />
           <Tab label="Block Snippets" value="block" icon={<GridIcon size={16} />} iconPosition="start" />
         </Tabs>
@@ -66,17 +66,17 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
 
       <DialogContent sx={{ minHeight: "300px", bgcolor: "var(--bg-color)" }}>
         {loading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
             <CircularProgress />
           </Box>
         ) : templates.length === 0 ? (
-          <Box display="flex" justifyContent="center" alignItems="center" height="100%" flexDirection="column" gap={2}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", flexDirection: "column", gap: 2 }}>
             <Typography color="text.secondary">No templates found.</Typography>
           </Box>
         ) : (
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {templates.map((tpl) => (
-              <Grid item xs={12} sm={6} md={4} key={tpl.id}>
+              <Grid key={tpl.id} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Card 
                   sx={{ 
                     cursor: "pointer", 

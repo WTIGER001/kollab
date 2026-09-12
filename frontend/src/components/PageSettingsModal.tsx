@@ -91,7 +91,7 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth slotProps={{ paper: {
       sx: {
         bgcolor: "var(--bg-color)",
         color: "var(--text-primary)",
@@ -99,9 +99,9 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
         backgroundImage: "none",
         boxShadow: "var(--shadow-elevation)"
       }
-    }}>
+    } }}>
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
-        <Typography variant="h6" fontWeight="bold">Page Settings</Typography>
+        <Typography variant="h6" sx={{ fontWeight: "bold" }}>Page Settings</Typography>
         <IconButton onClick={onClose} sx={{ color: "var(--text-secondary)" }}>
           <X size={20} />
         </IconButton>
@@ -143,10 +143,9 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
               "& .MuiFormHelperText-root": {
                 color: "var(--text-secondary)"
               }
-            }}
-            InputProps={{
+            }} slotProps={{ input: {
               startAdornment: <Typography sx={{ color: "var(--text-secondary)", mr: 1, userSelect: "none" }}>/</Typography>
-            }}
+            } }}
           />
         </Box>
       </DialogContent>

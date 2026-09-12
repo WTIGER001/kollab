@@ -56,8 +56,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       open={open}
       onClose={loading ? undefined : onClose}
       maxWidth="xs"
-      fullWidth
-      PaperProps={{
+      fullWidth slotProps={{ paper: {
         sx: {
           borderRadius: 3,
           boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
@@ -66,7 +65,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           color: "var(--text-color, #1f2937)",
           p: 1
         }
-      }}
+      } }}
     >
       <DialogTitle sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600, fontSize: "18px", pb: 1 }}>
         Export Document

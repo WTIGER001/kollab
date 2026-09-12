@@ -43,7 +43,7 @@ func TestDocumentService(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Create a document
-	content := "Hello world"
+	content := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello world"}]}]}`
 	doc, err := service.CreateDocument(ctx, "Test Doc", "test-doc", "proj_wiki", "team_eng", nil, "user1", &content)
 	if err != nil {
 		t.Fatalf("expected no error creating document, got %v", err)

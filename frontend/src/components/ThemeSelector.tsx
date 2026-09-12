@@ -1,8 +1,8 @@
+import { getContrastRatio } from "@mui/material/styles";
 import React from 'react';
 import { 
-  Grid, Card, CardContent, Typography, Box, 
-  Button, IconButton
-} from '@mui/material';
+  Card, CardContent, Typography, Box,
+  Button} from '@mui/material';
 import type { ThemePreset } from '../theme/types';
 
 interface ThemeSelectorProps {
@@ -85,10 +85,12 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                       justifyContent: 'flex-end'
                     }}>
                       <Button 
-                        variant="contained" 
+                        variant="contained"
+                        aria-label={`Select ${preset.name}`}
+                        aria-pressed={isActive}
                         sx={{ 
                           bgcolor: colors.primary, 
-                          color: '#fff',
+                          color: getContrastRatio(colors.primary, '#fff') >= 4.5 ? '#fff' : '#111',
                           borderRadius: preset.cssVariables['--border-radius-button'],
                           boxShadow: preset.cssVariables['--shadow-button'],
                           fontFamily: preset.cssVariables['--font-sans'] || 'inherit',

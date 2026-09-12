@@ -309,7 +309,7 @@ func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.User
 					return
 				}
 				tokenString = parts[1]
-			} else if strings.HasPrefix(r.URL.Path, "/api/attachments/") {
+			} else if strings.HasPrefix(r.URL.Path, "/api/attachments/") || strings.HasPrefix(r.URL.Path, "/api/images/") {
 				// Browser elements cannot send Authorization headers. This narrow
 				// exception is limited to attachment rendering routes.
 				tokenString = r.URL.Query().Get("authToken")
@@ -360,19 +360,29 @@ func AuthMiddleware(jwtSecret []byte, jwksCache *JWKSCache, userRepo domain.User
 				displayName = username
 			}
 
-			// Perform lazy user detail upsert in the background
+			// Local users must still exist and be active. Never upsert a local user
+			// from stale token claims; doing so resurrects deleted accounts and overwrites profiles.
 			if userRepo != nil {
-				go func() {
-					u := &domain.User{
-						ID:          userID,
-						Username:    username,
-						Email:       email,
-						DisplayName: displayName,
+				if jwksCache.AllowsLocalCredentials() {
+					current, err := userRepo.GetByID(r.Context(), userID)
+					version, _ := claims["credential_version"].(string)
+					if err != nil || current == nil || !current.IsActive || version != domain.CredentialVersion(current.PasswordHash) {
+						http.Error(w, "Unauthorized: session expired", http.StatusUnauthorized)
+						return
 					}
-					if err := userRepo.Upsert(context.Background(), u); err != nil {
-						log.Printf("Warning: failed to upsert user details: %v", err)
+					username = current.Username
+				} else {
+					u := &domain.User{ID: userID, Username: username, Email: email, DisplayName: displayName, IsActive: true}
+					if err := userRepo.Upsert(r.Context(), u); err != nil {
+						http.Error(w, "Unable to establish user session", http.StatusServiceUnavailable)
+						return
 					}
-				}()
+					current, err := userRepo.GetByID(r.Context(), userID)
+					if err != nil || current == nil || !current.IsActive {
+						http.Error(w, "Unauthorized: account disabled", http.StatusUnauthorized)
+						return
+					}
+				}
 			}
 
 			ctx := context.WithValue(r.Context(), userIDKey, userID)

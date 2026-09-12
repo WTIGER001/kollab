@@ -3,6 +3,7 @@ import { useAppStore } from './useAppStore';
 
 describe('useAppStore', () => {
   beforeEach(() => {
+    localStorage.removeItem('kollab:theme-mode');
     // Reset store state before each test
     useAppStore.setState({
       sidebarOpen: true,
@@ -49,6 +50,7 @@ describe('useAppStore', () => {
     
     setThemeMode('light');
     expect(useAppStore.getState().themeMode).toBe('light');
+    expect(localStorage.setItem).toHaveBeenCalledWith('kollab:theme-mode', 'light');
   });
 
   it('toggles developer mode', () => {
@@ -62,8 +64,11 @@ describe('useAppStore', () => {
   it('sets simple properties correctly', () => {
     const { setActiveThemeId, setHelpOpen, setCreateSpaceOpen, setSidebarWidth } = useAppStore.getState();
     
-    setActiveThemeId('ocean');
-    expect(useAppStore.getState().activeThemeId).toBe('ocean');
+    setActiveThemeId('workbench');
+    expect(useAppStore.getState().activeThemeId).toBe('workbench');
+    expect(localStorage.setItem).toHaveBeenCalledWith('kollab:theme-preset', 'workbench');
+    setActiveThemeId('unknown-preset');
+    expect(useAppStore.getState().activeThemeId).toBe('workbench');
     
     setHelpOpen(true);
     expect(useAppStore.getState().helpOpen).toBe(true);

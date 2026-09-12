@@ -12,7 +12,7 @@ func TestPostgresSystemRepository(t *testing.T) {
 	repo := NewPostgresSystemRepository(db)
 
 	settings := &domain.SystemSettings{
-		AuditRetentionPolicy: "forever",
+		AuditRetentionPolicy:     "forever",
 		AuditRetentionCustomDays: 0,
 	}
 
@@ -31,25 +31,25 @@ func TestPostgresSystemRepository(t *testing.T) {
 
 	docRepo := NewPostgresDocumentRepository(db)
 	doc := &domain.Document{
-		ID: "doc_for_audit",
-		Title: "Audit Doc",
-		Slug: "audit-doc",
-		ProjectID: "proj_wiki",
-		TeamID: "team_eng",
+		ID:          "doc_for_audit",
+		Title:       "Audit Doc",
+		Slug:        "audit-doc",
+		ProjectID:   "proj_wiki",
+		TeamID:      "team_eng",
 		CreatedByID: "sh4ag0cxowti",
 		UpdatedByID: "sh4ag0cxowti",
-		Content: "{}",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Content:     "{}",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	_ = docRepo.Create(ctx, doc)
 
 	auditLog := &domain.AuditLog{
-		ID: "log_1",
-		UserID: "sh4ag0cxowti",
-		Action: "update",
+		ID:         "log_1",
+		UserID:     "sh4ag0cxowti",
+		Action:     "update",
 		DocumentID: "doc_for_audit",
-		CreatedAt: time.Now(),
+		CreatedAt:  time.Now(),
 	}
 
 	if err := repo.RecordAuditLog(ctx, auditLog); err != nil {

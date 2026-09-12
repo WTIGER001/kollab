@@ -2,6 +2,12 @@
 
 This document details the architecture, configurations, and collaborative sync loop of the Tiptap/ProseMirror editor canvas in Project Kollab, as well as read-only editing states and document statistics.
 
+## Local development endpoint
+
+The Vite development server is configured for `http://localhost:8090` with `strictPort: true`. The Go server's local authentication configuration, CORS allowlist, Docker development environment, and Playwright base URL use the same browser origin. The API and WebSocket proxy use host port `8081`; the Go service continues to listen on port `8080` inside Docker.
+
+`dev.sh` is the repository launcher for this composition. It first probes the active Docker context with `docker info`. If the daemon is unavailable and the `colima` executable exists, the launcher synchronously runs `colima start`; otherwise, it exits with instructions to start Docker. It then resolves the supported Docker Compose command, runs `docker-compose.dev.yml` in detached mode, installs frontend dependencies only when absent, and uses `exec npm run dev` so the terminal is attached to Vite. `dev.sh --down` delegates cleanup to Docker Compose; interrupting Vite does not stop the development containers.
+
 ---
 
 ## 1. Tiptap & ProseMirror Core Architecture

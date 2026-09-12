@@ -14,7 +14,7 @@ export const HelpTemplates: React.FC = () => {
 
       <Stack spacing={4}>
         <Box>
-          <Stack direction="row" alignItems="center" spacing={1.5} mb={2}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 2 }}>
             <FileText size={20} color="var(--primary-color)" />
             <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Page Templates</Typography>
           </Stack>
@@ -30,7 +30,7 @@ export const HelpTemplates: React.FC = () => {
         <Divider sx={{ borderColor: "var(--border-color)", opacity: 0.5 }} />
 
         <Box>
-          <Stack direction="row" alignItems="center" spacing={1.5} mb={2}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 2 }}>
             <Grid size={20} color="var(--primary-color)" />
             <Typography variant="h6" sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Block Snippets</Typography>
           </Stack>

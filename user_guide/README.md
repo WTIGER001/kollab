@@ -8,6 +8,9 @@ Welcome to the Project Kollab user guide! This manual describes how to use all t
 
 Explore the following help pages to learn how to use the wiki features:
 
+### 🚀 [Getting Started](first_start.md)
+*Create your first team space, project, and page with the guided welcome path.*
+
 ### 🔍 [1. Searching Documents](file:///Users/johnbauer/Dev/Personal/kollab/user_guide/search.md)
 *Learn how to trigger the global search overlay, use natural language queries, and locate documents inside your projects.*
 
@@ -73,3 +76,7 @@ Explore the following help pages to learn how to use the wiki features:
 
 ### 🔔 [23. Watching Pages](watching_pages.md)
 *Learn how to subscribe to an individual page from its editor header.*
+
+- [Production readiness updates](production_readiness.md)
+
+- [Exchange changes between installations](synchronization.md)

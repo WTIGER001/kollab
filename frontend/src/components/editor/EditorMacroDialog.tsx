@@ -142,7 +142,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
           <Tabs
             orientation="vertical"
             value={activeCategoryTab}
-            onChange={(e, val) => setActiveCategoryTab(val)}
+            onChange={(_e, val) => setActiveCategoryTab(val)}
             variant="scrollable"
             sx={{
               borderRight: "1px solid var(--border-color)",

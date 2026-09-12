@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Grid,
   Card,
   CardActionArea,
   CardContent,
@@ -25,7 +24,60 @@ import type { Template, Team, Project } from "../services/api";
 import { useDocuments } from "../hooks/queries";
 import { useDocumentTree } from "../hooks/useDocumentTree";
 import { getMoveCandidates } from "./Sidebar";
-import type { DocumentItem } from "../hooks/useDocumentTree";
+
+const firstStartTemplates: Template[] = [
+  {
+    id: "first-start-project-brief",
+    title: "Project Brief",
+    description: "Clarify the goal, scope, owners, and first milestones.",
+    content: JSON.stringify({ type: "doc", content: [
+      { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Project brief" }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Goal" }] },
+      { type: "paragraph", content: [{ type: "text", text: "What outcome are we trying to create?" }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Scope" }] },
+      { type: "paragraph", content: [{ type: "text", text: "What is included, and what is intentionally out of scope?" }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Milestones" }] },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "First milestone" }] }] }] },
+    ] }),
+    scope: "system",
+    templateType: "page",
+    createdAt: "",
+  },
+  {
+    id: "first-start-meeting-notes",
+    title: "Meeting Notes",
+    description: "Capture decisions, discussion points, and follow-ups.",
+    content: JSON.stringify({ type: "doc", content: [
+      { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Meeting notes" }] },
+      { type: "paragraph", content: [{ type: "text", text: "Date: " }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Discussion" }] },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Topic" }] }] }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Decisions" }] },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Decision" }] }] }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Next steps" }] },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Owner — action — due date" }] }] }] },
+    ] }),
+    scope: "system",
+    templateType: "page",
+    createdAt: "",
+  },
+  {
+    id: "first-start-team-wiki",
+    title: "Team Wiki",
+    description: "Create a practical home for team context and links.",
+    content: JSON.stringify({ type: "doc", content: [
+      { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Team wiki" }] },
+      { type: "paragraph", content: [{ type: "text", text: "A shared starting point for this team." }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "What we do" }] },
+      { type: "paragraph", content: [{ type: "text", text: "Describe the team’s purpose and responsibilities." }] },
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Useful links" }] },
+      { type: "bulletList", content: [{ type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "Add a useful link" }] }] }] },
+    ] }),
+    scope: "system",
+    templateType: "page",
+    createdAt: "",
+  },
+];
 
 interface CreatePageWizardModalProps {
   open: boolean;
@@ -180,8 +232,8 @@ export const CreatePageWizardModal: React.FC<CreatePageWizardModalProps> = ({
             <Box key={t.id}>
               <Card
                 sx={{
-                  border: selectedTemplate?.id === t.id ? "2px solid var(--primary-color)" : "1px solid var(--border-color)",
-                  boxShadow: selectedTemplate?.id === t.id ? "0 0 0 4px rgba(111, 66, 193, 0.1)" : "none",
+                  border: (selectedTemplate !== "blank" && selectedTemplate?.id === t.id) ? "2px solid var(--primary-color)" : "1px solid var(--border-color)",
+                  boxShadow: (selectedTemplate !== "blank" && selectedTemplate?.id === t.id) ? "0 0 0 4px rgba(111, 66, 193, 0.1)" : "none",
                   backgroundColor: "var(--glass-bg)",
                   height: "120px",
                   width: "100%",
@@ -236,9 +288,10 @@ export const CreatePageWizardModal: React.FC<CreatePageWizardModalProps> = ({
               </Box>
             ) : (
               <Box>
+                {renderTemplatesGroup("Start Here", firstStartTemplates)}
                 {renderTemplatesGroup("System", templates.filter(t => t.scope === "system"))}
                 {renderTemplatesGroup("Team", templates.filter(t => t.scope === "team"))}
-                {renderTemplatesGroup("Project", templates.filter(t => t.scope === "project"))}
+                {renderTemplatesGroup("Project", templates.filter(() => false))}
                 {renderTemplatesGroup("Personal", templates.filter(t => t.scope === "personal"))}
               </Box>
             )}
@@ -253,13 +306,11 @@ export const CreatePageWizardModal: React.FC<CreatePageWizardModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Untitled Document"
-              InputProps={{
+              autoFocus slotProps={{ input: {
                 sx: { fontFamily: '"Outfit", sans-serif' }
-              }}
-              InputLabelProps={{
+              }, inputLabel: {
                 sx: { fontFamily: '"Outfit", sans-serif' }
-              }}
-              autoFocus
+              } }}
             />
 
             <FormControl fullWidth size="small">

@@ -14,7 +14,6 @@ import {
   InputBase
 } from "@mui/material";
 import { 
-  Layers, 
   Search, 
   HelpCircle, 
   Sun, 

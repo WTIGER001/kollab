@@ -7,7 +7,7 @@ export const TabsNodeView = (props: any) => {
   const { node, updateAttributes, getPos, editor } = props;
   const [activeTab, setActiveTab] = React.useState(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 

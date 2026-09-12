@@ -12,12 +12,12 @@ func TestPostgresImageRepository(t *testing.T) {
 	repo := NewPostgresImageRepository(db)
 
 	img := &domain.ImageMetadata{
-		ID: "img_1",
-		Filename: "test.png",
-		MimeType: "image/png",
-		OriginalWidth: 800,
+		ID:             "img_1",
+		Filename:       "test.png",
+		MimeType:       "image/png",
+		OriginalWidth:  800,
 		OriginalHeight: 600,
-		CreatedAt: time.Now(),
+		CreatedAt:      time.Now(),
 	}
 
 	if err := repo.SaveMetadata(ctx, img); err != nil {

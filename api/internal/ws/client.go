@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"time"
@@ -14,7 +15,7 @@ func (c *Client) ReadPump() {
 		c.Conn.Close()
 	}()
 
-	c.Conn.SetReadLimit(512 * 1024) // 512 KB max message size
+	c.Conn.SetReadLimit(34 * 1024 * 1024) // bounded CRDT snapshot plus readable projection
 	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.Conn.SetPongHandler(func(string) error {
 		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -38,10 +39,8 @@ func (c *Client) ReadPump() {
 
 		switch wsMsg.Type {
 		case "join":
-			if c.DocID != wsMsg.DocID && wsMsg.DocID != "" {
-				c.Hub.Unregister <- c
-				c.DocID = wsMsg.DocID
-				c.Hub.Register <- c
+			if wsMsg.DocID != c.DocID {
+				return
 			}
 		case "cursor":
 			wsMsg.UserID = c.UserID
@@ -56,6 +55,13 @@ func (c *Client) ReadPump() {
 				}
 			}
 		case "sync":
+			if _, err := base64.StdEncoding.DecodeString(wsMsg.Update); err != nil {
+				continue
+			}
+			if c.Authorize != nil && !c.Authorize("write") {
+				continue
+			}
+			wsMsg.DocID = c.DocID
 			payload, err := json.Marshal(wsMsg)
 			if err == nil {
 				c.Hub.Broadcast <- BroadcastMessage{
@@ -64,6 +70,8 @@ func (c *Client) ReadPump() {
 					Exclude:    c,
 					IsSync:     true,
 					SyncUpdate: wsMsg.Update,
+					Content:    wsMsg.Content,
+					Version:    wsMsg.Version, Snapshot: wsMsg.Snapshot, RequestID: wsMsg.RequestID,
 				}
 			}
 		case "leave":
@@ -82,6 +90,9 @@ func (c *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-c.Send:
+			if c.Authorize != nil && !c.Authorize("read") {
+				return
+			}
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
 				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -104,6 +115,9 @@ func (c *Client) WritePump() {
 				return
 			}
 		case <-ticker.C:
+			if c.Authorize != nil && !c.Authorize("read") {
+				return
+			}
 			c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return

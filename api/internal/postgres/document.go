@@ -3,6 +3,7 @@ package postgres
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,7 +25,7 @@ func NewPostgresDocumentRepository(db *pgxpool.Pool) *PostgresDocumentRepository
 
 func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*domain.Document, error) {
 	row := r.db.QueryRow(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -45,7 +46,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				doc = domain.Document{
 					ID:        id,
 					Title:     teamName,
-					Content:   `{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"` + teamName + `"}]}]}`,
+					Content:   portalDocumentContent(teamName),
 					ProjectID: "",
 					TeamID:    id,
 					CreatedAt: time.Now(),
@@ -66,7 +67,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 				doc = domain.Document{
 					ID:        id,
 					Title:     projName,
-					Content:   `{"type":"doc","content":[{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"` + projName + `"}]}]}`,
+					Content:   portalDocumentContent(projName),
 					ProjectID: id,
 					TeamID:    teamID,
 					CreatedAt: time.Now(),
@@ -89,7 +90,7 @@ func (r *PostgresDocumentRepository) GetByID(ctx context.Context, id string) (*d
 func (r *PostgresDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug string) (*domain.Document, string, error) {
 	// First try to find by ID or Slug directly in documents
 	row := r.db.QueryRow(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -112,7 +113,7 @@ func (r *PostgresDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug
 
 	// If not found, check document_slug_aliases
 	aliasRow := r.db.QueryRow(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -136,7 +137,7 @@ func (r *PostgresDocumentRepository) GetByIDOrSlug(ctx context.Context, idOrSlug
 
 func (r *PostgresDocumentRepository) GetByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -151,7 +152,7 @@ func (r *PostgresDocumentRepository) GetByProjectID(ctx context.Context, project
 	}
 	defer rows.Close()
 
-	var docs []*domain.Document
+	docs := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -165,7 +166,7 @@ func (r *PostgresDocumentRepository) GetByProjectID(ctx context.Context, project
 
 func (r *PostgresDocumentRepository) GetByTeamID(ctx context.Context, teamId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -180,7 +181,7 @@ func (r *PostgresDocumentRepository) GetByTeamID(ctx context.Context, teamId str
 	}
 	defer rows.Close()
 
-	var docs []*domain.Document
+	docs := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -202,7 +203,7 @@ func (r *PostgresDocumentRepository) GetDescendants(ctx context.Context, documen
 			JOIN descendants ON d.parent_id = descendants.id
 			WHERE d.deleted_at IS NULL
 		)
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''), d.deleted_at
@@ -217,7 +218,7 @@ func (r *PostgresDocumentRepository) GetDescendants(ctx context.Context, documen
 	}
 	defer rows.Close()
 
-	var documents []*domain.Document
+	documents := make([]*domain.Document, 0)
 	for rows.Next() {
 		var document domain.Document
 		if err := rows.Scan(&document.ID, &document.Title, &document.Slug, &document.Content, &document.ProjectID, &document.TeamID, &document.ParentID, &document.CreatedAt, &document.UpdatedAt, &document.CreatedByID, &document.UpdatedByID, &document.CreatedBy, &document.UpdatedBy, &document.DeletedAt); err != nil {
@@ -329,7 +330,7 @@ func (r *PostgresDocumentRepository) Delete(ctx context.Context, id string) erro
 
 func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, projectId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -344,7 +345,7 @@ func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, pr
 	}
 	defer rows.Close()
 
-	var docs []*domain.Document
+	docs := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -358,7 +359,7 @@ func (r *PostgresDocumentRepository) GetTrashByProjectID(ctx context.Context, pr
 
 func (r *PostgresDocumentRepository) GetTrashByTeamID(ctx context.Context, teamId string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, COALESCE(d.slug, ''), d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE(d.slug, ''), COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -373,7 +374,7 @@ func (r *PostgresDocumentRepository) GetTrashByTeamID(ctx context.Context, teamI
 	}
 	defer rows.Close()
 
-	var docs []*domain.Document
+	docs := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Slug, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -447,7 +448,7 @@ func (r *PostgresDocumentRepository) GetVersions(ctx context.Context, docID stri
 	}
 	defer rows.Close()
 
-	var list []*domain.DocumentVersion
+	list := make([]*domain.DocumentVersion, 0)
 	for rows.Next() {
 		var v domain.DocumentVersion
 		err := rows.Scan(&v.ID, &v.DocumentID, &v.Content, &v.VersionNumber, &v.CreatedBy, &v.ChangeSummary, &v.CreatedAt)
@@ -535,7 +536,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 		vStr := formatVector(embedding)
 		if isAll {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -550,7 +551,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 			)
 		} else if isTeam {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -565,7 +566,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 			)
 		} else {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -583,7 +584,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 		searchPattern := "%" + query + "%"
 		if isAll {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -591,13 +592,13 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 				 FROM documents d
 				 LEFT JOIN users u1 ON d.created_by = u1.id
 				 LEFT JOIN users u2 ON d.updated_by = u2.id
-				 WHERE d.deleted_at IS NULL AND (d.title ILIKE $1 OR d.content ILIKE $1)
+				 WHERE d.deleted_at IS NULL AND (d.title ILIKE $1 OR COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) ILIKE $1)
 				 LIMIT 20`,
 				searchPattern,
 			)
 		} else if isTeam {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -605,13 +606,13 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 				 FROM documents d
 				 LEFT JOIN users u1 ON d.created_by = u1.id
 				 LEFT JOIN users u2 ON d.updated_by = u2.id
-				 WHERE d.team_id = $1 AND d.deleted_at IS NULL AND (d.title ILIKE $2 OR d.content ILIKE $2)
+				 WHERE d.team_id = $1 AND d.deleted_at IS NULL AND (d.title ILIKE $2 OR COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) ILIKE $2)
 				 LIMIT 20`,
 				projectId, searchPattern,
 			)
 		} else {
 			rows, err = r.db.Query(ctx,
-				`SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+				`SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 				        COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 				        COALESCE(u1.display_name, u1.username, ''),
 				        COALESCE(u2.display_name, u2.username, ''),
@@ -619,7 +620,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 				 FROM documents d
 				 LEFT JOIN users u1 ON d.created_by = u1.id
 				 LEFT JOIN users u2 ON d.updated_by = u2.id
-				 WHERE d.project_id = $1 AND d.deleted_at IS NULL AND (d.title ILIKE $2 OR d.content ILIKE $2)
+				 WHERE d.project_id = $1 AND d.deleted_at IS NULL AND (d.title ILIKE $2 OR COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) ILIKE $2)
 				 LIMIT 20`,
 				projectId, searchPattern,
 			)
@@ -631,7 +632,7 @@ func (r *PostgresDocumentRepository) Search(ctx context.Context, query string, p
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	list := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -707,7 +708,7 @@ func (r *PostgresDocumentRepository) GetAnalytics(ctx context.Context, documentI
 	}
 	defer rows.Close()
 
-	var history []domain.AnalyticsDataPoint
+	history := make([]domain.AnalyticsDataPoint, 0)
 	for rows.Next() {
 		var dp domain.AnalyticsDataPoint
 		err := rows.Scan(&dp.Date, &dp.Views, &dp.UniqueVisitors)
@@ -965,7 +966,7 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 		query := `
 			SELECT id, title, content, project_id, team_id, parent_id, created_at, updated_at, created_by_id, updated_by_id, created_by, updated_by, deleted_at
 			FROM (
-				SELECT DISTINCT ON (d.id) d.id, d.title, d.content, COALESCE(d.project_id, '') AS project_id, d.team_id, d.parent_id, d.created_at, d.updated_at,
+				SELECT DISTINCT ON (d.id) d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, '') AS project_id, d.team_id, d.parent_id, d.created_at, d.updated_at,
 				       COALESCE(d.created_by, '') AS created_by_id, COALESCE(d.updated_by, '') AS updated_by_id,
 				       COALESCE(u1.display_name, u1.username, '') AS created_by,
 				       COALESCE(u2.display_name, u2.username, '') AS updated_by,
@@ -984,7 +985,7 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 		rows, err = r.db.Query(ctx, query, userID)
 	} else if filterType == "edits" {
 		query := `
-			SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+			SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 			       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 			       COALESCE(u1.display_name, u1.username, ''),
 			       COALESCE(u2.display_name, u2.username, ''),
@@ -1001,7 +1002,7 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 		query := `
 			SELECT id, title, content, project_id, team_id, parent_id, created_at, updated_at, created_by_id, updated_by_id, created_by, updated_by, deleted_at
 			FROM (
-				SELECT DISTINCT ON (d.id) d.id, d.title, d.content, COALESCE(d.project_id, '') AS project_id, d.team_id, d.parent_id, d.created_at, d.updated_at,
+				SELECT DISTINCT ON (d.id) d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, '') AS project_id, d.team_id, d.parent_id, d.created_at, d.updated_at,
 				       COALESCE(d.created_by, '') AS created_by_id, COALESCE(d.updated_by, '') AS updated_by_id,
 				       COALESCE(u1.display_name, u1.username, '') AS created_by,
 				       COALESCE(u2.display_name, u2.username, '') AS updated_by,
@@ -1025,7 +1026,7 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	list := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -1039,7 +1040,7 @@ func (r *PostgresDocumentRepository) GetRecent(ctx context.Context, userID strin
 
 func (r *PostgresDocumentRepository) GetDocumentsWithMention(ctx context.Context, username string) ([]*domain.Document, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT d.id, d.title, d.content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
+		SELECT d.id, d.title, COALESCE((SELECT cs.content FROM collaborative_states cs WHERE cs.document_id=d.id), d.content) AS content, COALESCE(d.project_id, ''), d.team_id, d.parent_id, d.created_at, d.updated_at,
 		       COALESCE(d.created_by, ''), COALESCE(d.updated_by, ''),
 		       COALESCE(u1.display_name, u1.username, ''),
 		       COALESCE(u2.display_name, u2.username, ''),
@@ -1057,7 +1058,7 @@ func (r *PostgresDocumentRepository) GetDocumentsWithMention(ctx context.Context
 	}
 	defer rows.Close()
 
-	var list []*domain.Document
+	list := make([]*domain.Document, 0)
 	for rows.Next() {
 		var doc domain.Document
 		err := rows.Scan(&doc.ID, &doc.Title, &doc.Content, &doc.ProjectID, &doc.TeamID, &doc.ParentID, &doc.CreatedAt, &doc.UpdatedAt, &doc.CreatedByID, &doc.UpdatedByID, &doc.CreatedBy, &doc.UpdatedBy, &doc.DeletedAt)
@@ -1118,4 +1119,9 @@ func (r *PostgresDocumentRepository) ListProperties(ctx context.Context, project
 		properties = append(properties, property)
 	}
 	return properties, rows.Err()
+}
+
+func portalDocumentContent(name string) string {
+	content, _ := json.Marshal(map[string]any{"type": "doc", "content": []any{map[string]any{"type": "heading", "attrs": map[string]any{"level": 1}, "content": []any{map[string]any{"type": "text", "text": name}}}}})
+	return string(content)
 }

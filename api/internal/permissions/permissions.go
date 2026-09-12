@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	scopeDatabase *pgxpool.Pool
 	// Service is the global go-permissions authorization service.
 	Service *goperm.Service
 
@@ -29,6 +30,7 @@ var (
 
 // InitPermissions initializes the go-permissions service (Postgres or in-memory fallback).
 func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
+	scopeDatabase = db
 	var store goperm.PermissionStore
 	var idProvider goperm.IdentityProvider
 
@@ -36,6 +38,10 @@ func InitPermissions(ctx context.Context, db *pgxpool.Pool) error {
 		pgStore := gopermpostgres.NewStore(db)
 		if err := pgStore.EnsureSchema(ctx); err != nil {
 			return fmt.Errorf("failed to ensure permissions schema: %w", err)
+		}
+		// Library row IDs are local sequences, not portable replication identities.
+		if err := configureSyncIdentity(ctx, db); err != nil {
+			return err
 		}
 		store = pgStore
 		idProvider = NewKollabIdentityProvider(db)

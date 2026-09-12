@@ -6,20 +6,20 @@ import (
 )
 
 type SystemSettings struct {
-	AuditRetentionPolicy     string `json:"auditRetentionPolicy"`
-	AuditRetentionCustomDays int    `json:"auditRetentionCustomDays"`
-	AuditLogDestination      string `json:"auditLogDestination"`
-	TrashRetentionPolicy     string `json:"trashRetentionPolicy"`
-	TrashRetentionCustomDays int    `json:"trashRetentionCustomDays"`
-	AIRateLimit              int    `json:"aiRateLimit"`
-	WelcomeTitle             string `json:"welcomeTitle"`
-	WelcomeText              string `json:"welcomeText"`
-	AuthLogoURL              string `json:"authLogoUrl"`
-	AuthLogoSize             string `json:"authLogoSize"`
-	AuthLegalDisclaimer      string `json:"authLegalDisclaimer"`
-	AuthLoginButtonText      string `json:"authLoginButtonText"`
-	AsposeEnabled            bool   `json:"asposeEnabled"`
-	AsposeLicense            string `json:"asposeLicense"`
+	AuditRetentionPolicy          string `json:"auditRetentionPolicy"`
+	AuditRetentionCustomDays      int    `json:"auditRetentionCustomDays"`
+	AuditLogDestination           string `json:"auditLogDestination"`
+	TrashRetentionPolicy          string `json:"trashRetentionPolicy"`
+	TrashRetentionCustomDays      int    `json:"trashRetentionCustomDays"`
+	AIRateLimit                   int    `json:"aiRateLimit"`
+	WelcomeTitle                  string `json:"welcomeTitle"`
+	WelcomeText                   string `json:"welcomeText"`
+	AuthLogoURL                   string `json:"authLogoUrl"`
+	AuthLogoSize                  string `json:"authLogoSize"`
+	AuthLegalDisclaimer           string `json:"authLegalDisclaimer"`
+	AuthLoginButtonText           string `json:"authLoginButtonText"`
+	AsposeEnabled                 bool   `json:"asposeEnabled"`
+	AsposeLicense                 string `json:"asposeLicense"`
 	ClassificationBannerEnabled   bool   `json:"classificationBannerEnabled"`
 	ClassificationBannerText      string `json:"classificationBannerText"`
 	ClassificationBannerBgColor   string `json:"classificationBannerBgColor"`
@@ -47,6 +47,8 @@ type SystemRepository interface {
 	Ping(ctx context.Context) error
 	ExportBackup(ctx context.Context) (map[string]interface{}, error)
 	GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error)
+	RestoreBackup(ctx context.Context, data map[string]interface{}) error
+	ApplySyncOperations(ctx context.Context, ops []map[string]interface{}) error
 }
 
 type SystemService interface {
@@ -61,4 +63,6 @@ type SystemService interface {
 	Ping(ctx context.Context) error
 	ExportBackup(ctx context.Context) (map[string]interface{}, error)
 	GetSyncOperations(ctx context.Context, sinceID int) ([]map[string]interface{}, error)
+	RestoreBackup(ctx context.Context, data map[string]interface{}) error
+	ApplySyncOperations(ctx context.Context, ops []map[string]interface{}) error
 }

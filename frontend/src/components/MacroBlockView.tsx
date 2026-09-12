@@ -1,3 +1,6 @@
+import { authenticatedMediaUrl } from "../services/api";
+import { useSession } from "../auth/SessionContext";
+import { sanitizeMarkup } from "../utils/markup";
 import React, { useContext, useState, useEffect } from "react";
 import { NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
@@ -42,7 +45,6 @@ import {
   FileUp,
   Paperclip,
   Download,
-  Eye,
   File,
   Image as ImageIcon,
   BookOpen,
@@ -526,19 +528,21 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
   const [allTags, setAllTags] = useState<TagType[]>([]);
   const [docTagsMap, setDocTagsMap] = useState<Record<string, TagType[]>>({});
-  const [tagsLoading, setTagsLoading] = useState(false);
+  const [, setTagsLoading] = useState(false);
 
+  const session = useSession();
+  const [issueConnectionId, setIssueConnectionId] = useState("");
   const [gitlabConnections, setGitlabConnections] = useState<any[]>([]);
   const [gitlabConnectionsLoading, setGitlabConnectionsLoading] = useState(false);
 
   useEffect(() => {
-    if (type !== "gitlab-issue-list") return;
+    if (type !== "gitlab-issue-list" && type !== "jira-gitlab-issue") return;
     const fetchConnections = async () => {
       setGitlabConnectionsLoading(true);
       try {
         const scopes = [
           { scope: "system", entityId: "" },
-          { scope: "user", entityId: auth.user?.profile.sub || "" }
+          { scope: "user", entityId: session.user?.id || "" }
         ];
         if (context?.selectedTeamId) {
           scopes.push({ scope: "team", entityId: context.selectedTeamId });
@@ -566,7 +570,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       }
     };
     if (isEditable) fetchConnections();
-  }, [type, auth.user, context?.selectedTeamId, context?.selectedProjectId, isEditable]);
+  }, [type, session.user?.id, context?.selectedTeamId, context?.selectedProjectId, isEditable]);
 
   useEffect(() => {
     if (type === "page-index") {
@@ -602,6 +606,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       .then((res) => {
         if (res && res.text) {
           const pos = getPos();
+    if (pos === undefined || editor.isDestroyed) return;
           editor.chain().focus()
             .insertContentAt(pos, res.text)
             .run();
@@ -685,6 +690,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const handleImportMarkdown = (markdown: string) => {
     const htmlContent = parseMarkdownToHtml(markdown);
     const pos = getPos();
+    if (pos === undefined || editor.isDestroyed) return;
     editor.chain()
       .focus()
       .insertContentAt(pos, htmlContent)
@@ -838,10 +844,10 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       {properties.map((property: any, index: number) => (
                         <TableRow key={index}>
                           <TableCell sx={{ width: "35%", borderColor: "var(--border-color)", fontWeight: 600, color: "var(--text-primary)" }}>
-                            {isEditable ? <TextField value={property.key || ""} onChange={(event) => updateProperty(index, "key", event.target.value)} variant="standard" placeholder="Property" fullWidth inputProps={{ "aria-label": `Property name ${index + 1}` }} /> : property.key || "Untitled property"}
+                            {isEditable ? <TextField value={property.key || ""} onChange={(event) => updateProperty(index, "key", event.target.value)} variant="standard" placeholder="Property" fullWidth slotProps={{ htmlInput: { "aria-label": `Property name ${index + 1}` } }} /> : property.key || "Untitled property"}
                           </TableCell>
                           <TableCell sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}>
-                            {isEditable ? <TextField value={property.value || ""} onChange={(event) => updateProperty(index, "value", event.target.value)} variant="standard" placeholder="Value" fullWidth inputProps={{ "aria-label": `Property value ${index + 1}` }} /> : property.value || "—"}
+                            {isEditable ? <TextField value={property.value || ""} onChange={(event) => updateProperty(index, "value", event.target.value)} variant="standard" placeholder="Value" fullWidth slotProps={{ htmlInput: { "aria-label": `Property value ${index + 1}` } }} /> : property.value || "—"}
                           </TableCell>
                           {isEditable && <TableCell sx={{ width: 40, borderColor: "var(--border-color)" }}><IconButton aria-label={`Remove property ${index + 1}`} size="small" onClick={() => updateConfig("properties", properties.filter((_: unknown, propertyIndex: number) => propertyIndex !== index))}><Trash2 size={14} /></IconButton></TableCell>}
                         </TableRow>
@@ -868,7 +874,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               </Box>
               {reviewError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{reviewError}</Typography> : !documentReview ? <Box sx={{ p: 2 }}><CircularProgress size={18} /></Box> : <Box sx={{ p: 2, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
                 {isEditable ? <FormControl size="small" sx={{ minWidth: 150 }}><Select value={documentReview.status} onChange={(event) => saveDocumentReview(event.target.value as DocumentReview["status"], documentReview.nextReviewAt)} aria-label="Review status"><MenuItem value="draft">Draft</MenuItem><MenuItem value="in_review">In review</MenuItem><MenuItem value="approved">Approved</MenuItem><MenuItem value="stale">Stale</MenuItem></Select></FormControl> : <Typography sx={{ color: "var(--text-primary)", fontSize: "13px", textTransform: "capitalize" }}>{documentReview.status.replace("_", " ")}</Typography>}
-                {isEditable ? <TextField label="Next review" type="date" size="small" value={documentReview.nextReviewAt ? documentReview.nextReviewAt.slice(0, 10) : ""} onChange={(event) => saveDocumentReview(documentReview.status, event.target.value ? new Date(`${event.target.value}T00:00:00Z`).toISOString() : null)} InputLabelProps={{ shrink: true }} /> : <Typography sx={{ color: "var(--text-secondary)", fontSize: "13px" }}>{documentReview.nextReviewAt ? `Next review: ${new Date(documentReview.nextReviewAt).toLocaleDateString()}` : "No review date set"}</Typography>}
+                {isEditable ? <TextField label="Next review" type="date" size="small" value={documentReview.nextReviewAt ? documentReview.nextReviewAt.slice(0, 10) : ""} onChange={(event) => saveDocumentReview(documentReview.status, event.target.value ? new Date(`${event.target.value}T00:00:00Z`).toISOString() : null)} slotProps={{ inputLabel: { shrink: true } }} /> : <Typography sx={{ color: "var(--text-secondary)", fontSize: "13px" }}>{documentReview.nextReviewAt ? `Next review: ${new Date(documentReview.nextReviewAt).toLocaleDateString()}` : "No review date set"}</Typography>}
               </Box>}
             </Paper>
           )}
@@ -897,7 +903,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     }}
                   />
 
-                  <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                     <Button
                       variant="contained"
                       size="small"
@@ -979,7 +985,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                       <Box 
                         className="markdown-rendered-content"
-                        dangerouslySetInnerHTML={{ __html: parseMarkdownToHtml(config.markdown) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeMarkup(parseMarkdownToHtml(config.markdown)) }}
                         sx={{
                           fontSize: "13.5px",
                           lineHeight: 1.6,
@@ -1207,7 +1213,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     ) : chartType === "pie" ? (
                       <PieChart>
                         <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} label>
-                          {data.map((entry: any, index: number) => (
+                          {data.map((_entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(255,255,255,0.05)" />
                           ))}
                         </Pie>
@@ -1450,9 +1456,9 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             const sortItems = (items: DocumentItem[]) => {
               const sorted = [...items].sort((a, b) => {
                 if (sortBy === "created") {
-                  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                  return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
                 } else if (sortBy === "updated") {
-                  return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+                  return new Date(a.updatedAt || 0).getTime() - new Date(b.updatedAt || 0).getTime();
                 } else {
                   return (a.title || "").localeCompare(b.title || "");
                 }
@@ -1549,7 +1555,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   >
                     {processed.map((item) => {
                       const titleText = item.title || "Untitled";
-                      const excerptText = extractExcerpt(item.content);
+                      const excerptText = extractExcerpt(item.content || "");
                       return (
                         <Box 
                           component="li" 
@@ -1581,7 +1587,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   >
                     {processed.map((item) => {
                       const titleText = item.title || "Untitled";
-                      const excerptText = extractExcerpt(item.content);
+                      const excerptText = extractExcerpt(item.content || "");
                       return (
                         <Box key={item.id} sx={{ mb: 0.5 }}>
                           {renderItemContent(item, titleText, excerptText, false)}
@@ -1605,7 +1611,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 >
                   {processed.map((item) => {
                     const titleText = item.title || "Untitled";
-                    const excerptText = extractExcerpt(item.content);
+                    const excerptText = extractExcerpt(item.content || "");
                     return (
                       <Box key={item.id} sx={{ mb: 1.5 }}>
                         <Paper
@@ -1665,8 +1671,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 return sorted.sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
               }
               return sorted.sort((a, b) => {
-                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                const dateA = a.updatedAt ? new Date(a.updatedAt || 0).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt || 0).getTime() : 0;
                 return dateB - dateA;
               });
             };
@@ -1787,8 +1793,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             const sortBy = config.sortBy || "name";
             const sortedDocs = [...filteredDocs].sort((a, b) => {
               if (sortBy === "updated") {
-                const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-                const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                const timeA = a.updatedAt ? new Date(a.updatedAt || 0).getTime() : 0;
+                const timeB = b.updatedAt ? new Date(b.updatedAt || 0).getTime() : 0;
                 return timeB - timeA;
               } else {
                 return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
@@ -2074,7 +2080,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       key={att.id}
                       elevation={0}
                       component="a"
-                      href={`${API_BASE_URL}/api/attachments/${att.id}`}
+                      href={authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${att.id}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{
@@ -2180,7 +2186,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             <IconButton 
                               size="small" 
                               component="a"
-                              href={`${API_BASE_URL}/api/attachments/${att.id}`}
+                              href={authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${att.id}`)}
                               download={att.filename}
                               sx={{ p: 0.5, color: "text.secondary", "&:hover": { color: "primary.light" } }}
                             >
@@ -2247,7 +2253,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   <Paperclip size={14} style={{ color: "var(--primary-color, #8b5cf6)" }} />
                   <Typography 
                     component="a" 
-                    href={`${API_BASE_URL}/api/attachments/${att.id}`}
+                    href={authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${att.id}`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{ 
@@ -2271,7 +2277,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 <Paper
                   elevation={0}
                   component="a"
-                  href={`${API_BASE_URL}/api/attachments/${att.id}`}
+                  href={authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${att.id}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   sx={{
@@ -2372,7 +2378,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                 return (
                   <Box 
                     onClick={() => !isEditable && setIsDrawioFullscreen(true)}
-                    dangerouslySetInnerHTML={{ __html: processedSvg }} 
+                    dangerouslySetInnerHTML={{ __html: sanitizeMarkup(processedSvg) }}
                     sx={{
                       width: "100%",
                       maxHeight: "500px",
@@ -2508,11 +2514,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   <Box 
                     onClick={() => setIsDrawioFullscreen(false)}
                     dangerouslySetInnerHTML={{ 
-                      __html: (config.svg || "")
+                      __html: sanitizeMarkup((config.svg || "")
                         .replace(
                           /@media\s*\(prefers-color-scheme:\s*dark\)/gi, 
                           isDrawioDark ? "@media all" : "@media (max-width: 1px)"
-                        )
+                        ))
                     }}
                     sx={{
                       flex: 1,
@@ -2564,7 +2570,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               {config.svg ? (
                 <Box 
                   onClick={() => !isEditable && setIsExcalidrawFullscreen(true)}
-                  dangerouslySetInnerHTML={{ __html: config.svg }} 
+                  dangerouslySetInnerHTML={{ __html: sanitizeMarkup(config.svg) }}
                   sx={{
                     width: "100%",
                     maxHeight: "500px",
@@ -2753,7 +2759,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
                   <Box 
                     onClick={() => setIsExcalidrawFullscreen(false)}
-                    dangerouslySetInnerHTML={{ __html: config.svg || "" }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeMarkup(config.svg || "") }}
                     sx={{
                       flex: 1,
                       display: "flex",
@@ -2837,7 +2843,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     }}>
                       {renderedMermaidSvg ? (
                         <Box 
-                          dangerouslySetInnerHTML={{ __html: renderedMermaidSvg }} 
+                          dangerouslySetInnerHTML={{ __html: sanitizeMarkup(renderedMermaidSvg) }}
                           sx={{
                             width: "100%",
                             "& svg": {
@@ -2893,7 +2899,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   >
                     {renderedMermaidSvg ? (
                       <Box 
-                        dangerouslySetInnerHTML={{ __html: renderedMermaidSvg }} 
+                        dangerouslySetInnerHTML={{ __html: sanitizeMarkup(renderedMermaidSvg) }}
                         sx={{
                           width: "100%",
                           "& svg": {
@@ -2928,6 +2934,10 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
                     JIRA / GitLab Issue Card Integration
                   </Typography>
+                  <Select size="small" fullWidth displayEmpty value={issueConnectionId} onChange={event => setIssueConnectionId(event.target.value)} sx={{ mb: 2 }}>
+                    <MenuItem value="">Jira prototype / Select a GitLab connection</MenuItem>
+                    {gitlabConnections.map(connection => <MenuItem key={connection.id} value={connection.id}>{connection.name}</MenuItem>)}
+                  </Select>
                   <TextField
                     placeholder="https://jira.company.com/browse/KOL-1024"
                     fullWidth
@@ -2943,11 +2953,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       if (!input || !input.value) return;
                       const url = input.value;
                       try {
-                        const res = await fetch(`${API_BASE_URL}/api/integrations/issues?url=${encodeURIComponent(url)}`, {
+                        const endpoint = issueConnectionId ? `/api/integrations/connections/${issueConnectionId}/proxy/gitlab/issue` : "/api/integrations/issues";
+                        const res = await fetch(`${API_BASE_URL}${endpoint}?url=${encodeURIComponent(url)}`, {
                           headers: {
                             Authorization: `Bearer ${getApiToken() || ""}`
                           }
                         });
+                        if (!res.ok) throw new Error(await res.text());
                         const data = await res.json();
                         updateAttributes({
                           config: {
@@ -3122,7 +3134,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     variant="contained"
                     size="small"
                     onClick={async () => {
-                      const sel = document.getElementById("issue-list-integration-select") as HTMLSelectElement;
                       const projIn = document.getElementById("issue-list-project-input") as HTMLInputElement;
                       const lblIn = document.getElementById("issue-list-labels-input") as HTMLInputElement;
                       
@@ -3146,6 +3157,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                           }
                         });
                         if (!res.ok) throw new Error("Failed to fetch");
+                        if (!res.ok) throw new Error(await res.text());
                         const data = await res.json();
                         updateAttributes({
                           config: {
@@ -3365,11 +3377,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 
             {type === "hero" && (
               <Stack spacing={1.5}>
-                <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
                   <TextField fullWidth label="Title" size="small" value={config.title || ""} onChange={(e) => updateConfig("title", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
                   <TextField label="Color" size="small" type="color" value={config.titleColor || "#ffffff"} onChange={(e) => updateConfig("titleColor", e.target.value)} sx={{ width: 70 }} slotProps={{ inputLabel: { shrink: true }, input: { sx: { height: 36, p: 0, cursor: "pointer" } } }} />
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
                   <TextField fullWidth label="Subtitle" size="small" multiline minRows={2} value={config.subtitle || ""} onChange={(e) => updateConfig("subtitle", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px" } } }} />
                   <TextField label="Color" size="small" type="color" value={config.subtitleColor || "#ffffff"} onChange={(e) => updateConfig("subtitleColor", e.target.value)} sx={{ width: 70 }} slotProps={{ inputLabel: { shrink: true }, input: { sx: { height: 36, p: 0, cursor: "pointer" } } }} />
                 </Stack>
@@ -3457,9 +3469,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     variant="outlined"
                     size="small"
                     value={config.depthCustom || ""}
-                    onChange={(e) => updateConfig("depthCustom", e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    InputProps={{ sx: { fontSize: "13px", height: 36 } }}
+                    onChange={(e) => updateConfig("depthCustom", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px", height: 36 } } }}
                   />
                 )}
 
@@ -3522,9 +3532,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   variant="outlined"
                   size="small"
                   value={config.limit || ""}
-                  onChange={(e) => updateConfig("limit", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  InputProps={{ sx: { fontSize: "13px", height: 36 } }}
+                  onChange={(e) => updateConfig("limit", e.target.value)} slotProps={{ inputLabel: { shrink: true }, input: { sx: { fontSize: "13px", height: 36 } } }}
                 />
               </>
             )}
@@ -3645,8 +3653,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   variant="outlined"
                   size="small"
                   value={config.title || ""}
-                  onChange={(e) => updateConfig("title", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => updateConfig("title", e.target.value)} slotProps={{ inputLabel: { shrink: true } }}
                 />
                 <FormControl fullWidth variant="outlined" size="small">
                   <FormLabel sx={{ fontSize: "11px", fontWeight: 700, color: "text.secondary", mb: 0.75, textTransform: "uppercase" }}>Chart Type</FormLabel>
@@ -3668,14 +3675,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   size="small"
                   value={config.data || ""}
                   onChange={(e) => updateConfig("data", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
                   placeholder='[{"name": "Jan", "value": 400}]'
                   sx={{ 
                     "& .MuiInputBase-input": { 
                       fontFamily: "monospace", 
                       fontSize: "12px" 
                     } 
-                  }}
+                  }} slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Stack>
             )}
@@ -3688,8 +3694,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   variant="outlined"
                   size="small"
                   value={config.title || ""}
-                  onChange={(e) => updateConfig("title", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => updateConfig("title", e.target.value)} slotProps={{ inputLabel: { shrink: true } }}
                 />
                 <TextField
                   fullWidth
@@ -3700,14 +3705,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   size="small"
                   value={config.epics || ""}
                   onChange={(e) => updateConfig("epics", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
                   placeholder='[{"title": "Phase 1", "start": 0, "duration": 2, "color": "#818cf8"}]'
                   sx={{ 
                     "& .MuiInputBase-input": { 
                       fontFamily: "monospace", 
                       fontSize: "12px" 
                     } 
-                  }}
+                  }} slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Stack>
             )}
@@ -3720,8 +3724,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   variant="outlined"
                   size="small"
                   value={config.title || ""}
-                  onChange={(e) => updateConfig("title", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
+                  onChange={(e) => updateConfig("title", e.target.value)} slotProps={{ inputLabel: { shrink: true } }}
                 />
                 <TextField
                   fullWidth
@@ -3732,14 +3735,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   size="small"
                   value={config.events || ""}
                   onChange={(e) => updateConfig("events", e.target.value)}
-                  InputLabelProps={{ shrink: true }}
                   placeholder='[{"title": "Event 1", "start": "2026-07-10T10:00:00Z", "end": "2026-07-10T11:00:00Z"}]'
                   sx={{ 
                     "& .MuiInputBase-input": { 
                       fontFamily: "monospace", 
                       fontSize: "12px" 
                     } 
-                  }}
+                  }} slotProps={{ inputLabel: { shrink: true } }}
                 />
               </Stack>
             )}

@@ -9,12 +9,12 @@ import (
 func TestHub_RegisterAndUnregister(t *testing.T) {
 	hub := NewHub(nil)
 	go hub.Run()
-	
+
 	client := &Client{
-		UserID:   "user1",
-		DocID:    "doc1",
-		Send:     make(chan []byte, 256),
-		Hub:      hub,
+		UserID: "user1",
+		DocID:  "doc1",
+		Send:   make(chan []byte, 256),
+		Hub:    hub,
 	}
 
 	// Test register
@@ -64,8 +64,12 @@ func TestHub_Broadcast(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Flush registration presence/sync-history messages
-	for len(client1.Send) > 0 { <-client1.Send }
-	for len(client2.Send) > 0 { <-client2.Send }
+	for len(client1.Send) > 0 {
+		<-client1.Send
+	}
+	for len(client2.Send) > 0 {
+		<-client2.Send
+	}
 
 	// Broadcast
 	msg := BroadcastMessage{
@@ -107,7 +111,9 @@ func TestBroadcastToAll(t *testing.T) {
 	}
 	hub.Register <- client
 	time.Sleep(10 * time.Millisecond)
-	for len(client.Send) > 0 { <-client.Send } // clear channel
+	for len(client.Send) > 0 {
+		<-client.Send
+	} // clear channel
 
 	hub.BroadcastToAll(WSMessage{Type: "test"})
 	time.Sleep(10 * time.Millisecond)
