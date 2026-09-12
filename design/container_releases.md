@@ -39,6 +39,8 @@ Build/publication/download failures leave the prior containers running. Startup 
 
 `build.sh` uses `docker buildx build --load`, defaults to `linux/amd64` and tag `local`, and builds the three images sequentially. `--platform linux/arm64` supports native ARM development; `--tag` selects a local image tag. Converter source uses its pinned Git URL. Local builds use the working tree and do not publish, deploy, or start containers. The API and frontend Dockerfiles match CI. Frontend Node has a 2 GiB heap limit and Go builds use bounded parallelism; build contexts exclude local secrets and generated files.
 
+The script detects both `docker buildx` and Homebrew's standalone `docker-buildx` executable. This supports Colima installations without rewriting the operator's global Docker configuration. If neither is installed, it exits with installation instructions before building.
+
 ## Verification
 
 `python3 -m unittest discover -s tests -p 'test_release_scripts.py'` exercises the scripts with a fake Docker CLI: download-before-replacement ordering, no compilation on the host, preservation of the selected release on a failed download, failure for an unhealthy or absent API, and local architecture/tag/load behavior. The reusable verification workflow runs these checks. Actual image compilation and registry access are validated by the image jobs before deployment.

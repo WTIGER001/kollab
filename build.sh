@@ -34,10 +34,19 @@ if [[ ! "$converter_revision" =~ ^[a-f0-9]{40}$ ]]; then
   exit 1
 fi
 docker info >/dev/null
-docker buildx version >/dev/null
+if docker buildx version >/dev/null 2>&1; then
+  buildx=(docker buildx)
+elif command -v docker-buildx >/dev/null 2>&1; then
+  # Homebrew also supplies a standalone executable, even when Docker's plugin
+  # search path has not been configured. Preserve the user's Docker settings.
+  buildx=(docker-buildx)
+else
+  echo "Docker Buildx is required. On a Homebrew/Colima Mac, run: brew install docker-buildx" >&2
+  exit 1
+fi
 
 image_prefix=ghcr.io/wtiger001/kollab
-docker buildx build --platform "$platform" --load --tag "$image_prefix-api:$tag" --file api/Dockerfile ./api
-docker buildx build --platform "$platform" --load --tag "$image_prefix-caddy:$tag" --file Caddy.Dockerfile .
-docker buildx build --platform "$platform" --load --tag "$image_prefix-media-preview:$tag" "https://github.com/WTIGER001/media-preview.git#$converter_revision"
+"${buildx[@]}" build --platform "$platform" --load --tag "$image_prefix-api:$tag" --file api/Dockerfile ./api
+"${buildx[@]}" build --platform "$platform" --load --tag "$image_prefix-caddy:$tag" --file Caddy.Dockerfile .
+"${buildx[@]}" build --platform "$platform" --load --tag "$image_prefix-media-preview:$tag" "https://github.com/WTIGER001/media-preview.git#$converter_revision"
 echo "Built all images locally for $platform with tag $tag."

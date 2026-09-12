@@ -14,7 +14,7 @@ The document converter is built from the exact revision in [`media-preview.ref`]
 
 ## Build images on your computer
 
-With Docker running, execute `./build.sh` from the repository root. It builds the same three images and loads them into your local Docker image store with the tag `local`. It does not publish, deploy, or start containers. The default target is `linux/amd64`, matching DigitalOcean; an Apple Silicon Mac may use emulation and take longer.
+With Docker running and Buildx installed, execute `./build.sh` from the repository root. Docker Desktop includes Buildx; with Homebrew/Colima, install it using `brew install docker-buildx`. The script accepts either Docker's plugin or the standalone Homebrew executable without changing your Docker settings. It builds the same three images and loads them into your local Docker image store with the tag `local`. It does not publish, deploy, or start containers. The default target is `linux/amd64`, matching DigitalOcean; an Apple Silicon Mac may use emulation and take longer.
 
 - `./build.sh --platform linux/arm64` builds native images for an ARM development machine.
 - `./build.sh --tag review` chooses another local tag.

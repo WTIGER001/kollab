@@ -32,6 +32,8 @@ import json, os, sys
 args = sys.argv[1:]
 with open(os.environ['RELEASE_TEST_LOG'], 'a') as log:
     log.write(json.dumps(args) + '\\n')
+if args == ['buildx', 'version'] and os.environ.get('NO_BUILDX_PLUGIN'):
+    sys.exit(1)
 if args == ['compose', 'pull'] and os.environ.get('FAIL_PULL'):
     sys.exit(1)
 if args[:2] == ['compose', 'ps'] and not os.environ.get('NO_REPLICAS'):
@@ -98,6 +100,13 @@ if args[:2] == ['exec', 'api-two'] and os.environ.get('FAIL_SECOND_REPLICA'):
         for build in builds:
             self.assertIn("linux/arm64", build)
             self.assertTrue(build[build.index("--tag") + 1].endswith(":review"))
+
+    def test_local_build_supports_homebrew_standalone_buildx(self):
+        self.write_executable("docker-buildx", '#!/bin/sh\nexec docker buildx "$@"\n')
+        result = self.run_script("build.sh", NO_BUILDX_PLUGIN="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        builds = [command for command in self.commands() if command[:2] == ["buildx", "build"]]
+        self.assertEqual(len(builds), 3)
 
     def test_local_build_rejects_invalid_options_before_docker(self):
         for args in (("--tag",), ("--platform", "windows/amd64"), ("--tag", "bad/tag")):
