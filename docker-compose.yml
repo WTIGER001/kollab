@@ -10,9 +10,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   go-backend:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
+    image: ghcr.io/wtiger001/kollab-api:${KOLLAB_RELEASE:-local}
     restart: always
     deploy:
       replicas: ${API_REPLICAS:-2}
@@ -31,9 +29,7 @@ services:
       - media-preview
 
   media-preview:
-    build:
-      context: ../media-preview
-      dockerfile: Dockerfile
+    image: ghcr.io/wtiger001/kollab-media-preview:${KOLLAB_RELEASE:-local}
     restart: always
     environment:
       PORT: 8082
@@ -42,9 +38,7 @@ services:
       - ./uploads:/app/uploads
 
   caddy:
-    build:
-      context: .
-      dockerfile: Caddy.Dockerfile
+    image: ghcr.io/wtiger001/kollab-caddy:${KOLLAB_RELEASE:-local}
     restart: always
     extra_hosts:
       - "host.docker.internal:host-gateway"

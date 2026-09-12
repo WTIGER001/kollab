@@ -7,6 +7,14 @@ on:
 permissions:
   contents: read
 jobs:
+  release-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release scripts
+        run: |
+          bash -n build.sh deploy.sh
+          python3 -m unittest discover -s tests -p 'test_release_scripts.py'
   backend:
     runs-on: ubuntu-latest
     steps:

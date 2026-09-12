@@ -89,4 +89,4 @@ Deployment uses the exact verified Git revision without changing package version
 
 The edge proxy defaults to host ports 80 and 443; `HTTP_PORT` and `HTTPS_PORT` can override them. Existing additional proxy sites are preserved. Deployment initializes a missing sync signing key privately in the server environment file. Use the same key on trusted peer installations before exchanging sync packages.
 
-Builds run one service at a time. Frontend compilation has an explicit 2 GiB Node heap limit; Go compilation limits parallelism and reuses its build cache. Docker build contexts exclude local environments, uploaded data, generated reports, and installed dependencies. These limits reduce competing memory use but do not replace adequate host memory/swap and disk.
+Images are built in GitHub Actions and distributed through GHCR. The droplet only downloads and starts the selected images. The local `build.sh` uses the same Dockerfiles and pinned converter source; see [Container releases](container_releases.md) for image identity, authentication, failure handling, and local build options.

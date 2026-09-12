@@ -7,26 +7,9 @@ echo "🚀 Starting Kollab deployment..."
 # The release checkout is prepared by CI before this script runs. Deploy exactly
 # that revision; never rewrite package manifests or pull a moving branch here.
 cd "$(dirname "$0")"
-echo "Deploying revision $(git rev-parse --short HEAD)"
-
-# 1b. Pull or clone media-preview peer repository
-if [ -d "../media-preview" ]; then
-  echo "Using the existing media-preview checkout."
-else
-  echo "📥 Cloning media-preview repository..."
-  REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
-  if [[ $REMOTE_URL == *"github.com/WTIGER001/kollab"* ]]; then
-    git clone https://github.com/WTIGER001/media-preview.git ../media-preview
-  elif [[ $REMOTE_URL == *"git@github.com:WTIGER001/kollab"* ]]; then
-    git clone git@github.com:WTIGER001/media-preview.git ../media-preview
-  else
-    # Fallback to HTTPS clone
-    git clone https://github.com/WTIGER001/media-preview.git ../media-preview
-  fi
-fi
-
-# 2. Build is handled by Docker (no host npm/node needed)
-echo "ℹ️ Frontend build is embedded inside Caddy Docker image (no host npm needed)."
+KOLLAB_RELEASE=$(git rev-parse HEAD)
+export KOLLAB_RELEASE
+echo "Deploying prebuilt images for revision $KOLLAB_RELEASE"
 
 # 3. Check for .env file
 if [ ! -f .env ]; then
@@ -62,18 +45,26 @@ else
   exit 1
 fi
 
-# 4. Build images first (old site stays online during build)
-echo "🐳 Building new Docker images before replacing running containers..."
-$DOCKER_CMD build go-backend
-$DOCKER_CMD build media-preview
-$DOCKER_CMD build caddy
+# 4. Download every release image before replacing running containers. There is
+# deliberately no build fallback: missing images must fail the deployment.
+echo "🐳 Downloading verified release images..."
+$DOCKER_CMD pull
+
+# Persist the selected tag so subsequent operator Compose commands use the same
+# release. Do this only after all image pulls succeed, without exposing secrets.
+release_env=$(mktemp .env.release.XXXXXX)
+trap 'rm -f "$release_env"' EXIT
+awk '!/^KOLLAB_RELEASE=/' .env > "$release_env"
+printf '\nKOLLAB_RELEASE=%s\n' "$KOLLAB_RELEASE" >> "$release_env"
+chmod 600 "$release_env"
+mv "$release_env" .env
 
 # 5. Recreate containers after a successful build
 echo "🔄 Swapping running containers to new versions..."
-$DOCKER_CMD up -d
+$DOCKER_CMD up -d --no-build --pull never
 
 # 6. Verify every API replica is healthy before reporting success.
-for api_container in $($DOCKER_CMD ps -q go-backend); do
+for api_container in $($DOCKER_CMD ps --all -q go-backend); do
   ready=false
   for attempt in $(seq 1 60); do
     if docker exec "$api_container" wget -q -O /dev/null http://127.0.0.1:8080/health; then
