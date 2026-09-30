@@ -220,15 +220,16 @@ Click the **Gear icon** in the top-right corner of the macro box in edit mode to
 
 ## 🧾 Page Properties
 
-Use **Page Properties** to keep a small, consistent metadata table with a page.
+Use **Page Properties** to keep a small, consistent metadata table with a page. A new block starts with **Owner**, **Status**, and **Review**.
 
 1. Open the macro picker and select **Page Properties**.
 2. Enter a property name and value, such as `Owner` and `Platform team`.
-3. Select **Add property** for another row. Use its trash icon to remove a row.
+3. Choose the value type: **Text**, **Status**, or **Date**. Status offers Draft, Active, Blocked, and Done. Date uses a calendar field.
+4. Select **Add property** for another row. Use its trash icon to remove a row.
 
-These properties stay with the collaborative page content. Use the same names across related pages—for example, always use `Owner` rather than mixing `Owner` and `DRI`—so they are ready for collection reports as that capability is introduced.
+These properties stay with the collaborative page content. Use the same names across related pages—for example, always use `Owner` rather than mixing `Owner` and `DRI`.
 
-To see those values across the current team or project, insert **Properties Report**. Leave its property-name setting empty to list all indexed properties, or enter a name such as `Owner` to narrow the report.
+To see those values across the current team or project, insert **Properties Report**. Each matching page is one row, and each property is a column. Leave the property-column setting empty to show every property, or enter a name such as `Owner` to show only that column. Select a column heading to sort. Select a page name to open it.
 
 ---
 

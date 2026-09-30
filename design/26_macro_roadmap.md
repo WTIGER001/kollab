@@ -138,7 +138,7 @@ These are not optional "migration features." They protect knowledge continuity a
 
 | Capability | Kollab recommendation | Modernization beyond legacy macro parity |
 | --- | --- | --- |
-| **Content properties and reports** | Deliver the existing planned `pageProperties` / `pagePropertiesRollup` concept as typed schemas plus saved collection views. | Schema evolution, validation, permissions per property, relationship fields, reusable filters, and views beyond a paginated report table. |
+| **Content properties and reports** | The page-properties macro stores text, status, and date fields, and the properties report pivots them into one row per page. | Schema evolution, validation, permissions per property, relationship fields, reusable filters, and views beyond the page-column rollup remain future work. |
 | **Include page, excerpt, and excerpts report** | Deliver live and pinned reusable-content references with version labels and cycle detection. | Author a reusable block once; show its provenance and freshness; permit a safe local override only as an explicit fork. |
 | **Page tree, children, index, labels, and anchors** | Preserve these navigation primitives and make them fast on large workspaces. | Stable object IDs, link-health checks, faceted search, related-content graph, and “why am I seeing this?” query explanations. |
 | **Templates and blueprints** | Provide templates for ADRs, PRDs, RFCs, incident reviews, runbooks, meeting notes, team homepages, and service docs. | Templates can require typed fields, link to source objects, define review rules, and generate a collection item—not merely copy static text. |

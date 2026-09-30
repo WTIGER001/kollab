@@ -1400,7 +1400,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             type: "macroBlock",
             attrs: {
               type: "page-properties",
-              config: { properties: [{ key: "Owner", value: "", type: "text" }] },
+              config: { properties: [{ key: "Owner", value: "", type: "text" }, { key: "Status", value: "", type: "status" }, { key: "Review", value: "", type: "date" }] },
             },
           })
           .run();

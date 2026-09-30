@@ -213,6 +213,26 @@ func TestDocumentServiceIndexesPageProperties(t *testing.T) {
 	}
 }
 
+func TestDocumentServiceNormalizesPropertyTypes(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	content := `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":"Review","value":"next quarter","type":"date"},{"key":"Owner","value":"Ada","type":"person"}]}}}]}`
+	if _, err := service.CreateDocument(context.Background(), "Typed page", "", "proj_wiki", "team_eng", nil, "", &content); err != nil {
+		t.Fatalf("create document: %v", err)
+	}
+	properties, err := service.ListDocumentProperties(context.Background(), "proj_wiki", "", "")
+	if err != nil {
+		t.Fatalf("list properties: %v", err)
+	}
+	indexed := map[string]string{}
+	for _, property := range properties {
+		indexed[property.Key] = property.ValueType
+	}
+	if indexed["Review"] != "text" || indexed["Owner"] != "text" {
+		t.Fatalf("expected unrecognized and invalid date types to index as text, got %#v", indexed)
+	}
+}
+
 func TestDocumentServiceReviewLifecycle(t *testing.T) {
 	repo := NewInMemoryDocumentRepository()
 	service := NewDocumentService(repo, nil, nil, nil)

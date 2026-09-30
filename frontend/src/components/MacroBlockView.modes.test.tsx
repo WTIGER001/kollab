@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DocumentContext } from "./DocumentContext";
 import { MacroBlockView } from "./MacroBlockView";
+import { fetchDocumentProperties } from "../services/api";
 
 const { isEditable } = vi.hoisted(() => ({ isEditable: vi.fn() }));
 
@@ -112,6 +113,32 @@ describe("MacroBlockView mode rendering", () => {
     expect(screen.getByText("No GitLab issue list has been configured.")).toBeInTheDocument();
     expect(screen.queryByText("Fetch Issues")).not.toBeInTheDocument();
     list.unmount();
+  });
+
+  it("pivots page properties into one row per page", async () => {
+    vi.mocked(fetchDocumentProperties).mockResolvedValue([
+      { documentId: "page-b", title: "Runbook", projectId: "project-1", teamId: "team-1", key: "Status", value: "Active", valueType: "status", updatedAt: "2026-09-29T00:00:00Z" },
+      { documentId: "page-b", title: "Runbook", projectId: "project-1", teamId: "team-1", key: "Owner", value: "Ada", valueType: "text", updatedAt: "2026-09-29T00:00:00Z" },
+      { documentId: "page-a", title: "API contract", projectId: "project-1", teamId: "team-1", key: "Owner", value: "Lin", valueType: "text", updatedAt: "2026-09-29T00:00:00Z" },
+    ]);
+    const { unmount } = renderMacro("page-properties-report", false, { key: "" });
+
+    expect(await screen.findByRole("columnheader", { name: "Owner" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Status" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "API contract" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Runbook" })).toBeInTheDocument();
+    expect(screen.getByText("Ada")).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(3);
+    unmount();
+  });
+
+  it("offers a status value for a typed page property", () => {
+    const { unmount } = renderMacro("page-properties", true, { properties: [{ key: "Status", value: "Active", type: "status" }] });
+
+    expect(screen.getByLabelText("Property type 1")).toHaveTextContent("Status");
+    expect(screen.getByLabelText("Property value 1")).toHaveTextContent("Active");
+    unmount();
   });
 
   it("keeps configured GitLab issue lists readable while hiding edit actions", () => {

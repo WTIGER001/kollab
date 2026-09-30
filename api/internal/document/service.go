@@ -1025,6 +1025,25 @@ func (s *DocumentService) ListDocumentProperties(ctx context.Context, projectID 
 	return s.repo.ListProperties(ctx, projectID, teamID, strings.TrimSpace(key))
 }
 
+var indexedPropertyDate = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+
+func normalizeIndexedPropertyType(rawType interface{}, rawValue interface{}) string {
+	value, _ := rawValue.(string)
+	value = strings.TrimSpace(value)
+	valueType, _ := rawType.(string)
+	switch strings.TrimSpace(valueType) {
+	case "status":
+		return "status"
+	case "date":
+		if value == "" || indexedPropertyDate.MatchString(value) {
+			return "date"
+		}
+		return "text"
+	default:
+		return "text"
+	}
+}
+
 func extractDocumentProperties(documentID string, content string) []domain.DocumentProperty {
 	var root map[string]interface{}
 	if err := json.Unmarshal([]byte(content), &root); err != nil {
@@ -1049,11 +1068,7 @@ func extractDocumentProperties(documentID string, content string) []domain.Docum
 									continue
 								}
 								value, _ := property["value"].(string)
-								valueType, _ := property["type"].(string)
-								if valueType == "" {
-									valueType = "text"
-								}
-								properties[key] = domain.DocumentProperty{DocumentID: documentID, Key: key, Value: strings.TrimSpace(value), ValueType: valueType, UpdatedAt: time.Now()}
+								properties[key] = domain.DocumentProperty{DocumentID: documentID, Key: key, Value: strings.TrimSpace(value), ValueType: normalizeIndexedPropertyType(property["type"], value), UpdatedAt: time.Now()}
 							}
 						}
 					}
