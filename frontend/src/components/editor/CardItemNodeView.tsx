@@ -1,10 +1,11 @@
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react';
 import { Box, IconButton } from '@mui/material';
 import { Trash2 } from 'lucide-react';
+import { useIsEditable } from '../../hooks/useIsEditable';
 
 export const CardItemNodeView = (props: any) => {
   const { editor, deleteNode } = props;
-  const isEditable = editor.isEditable;
+  const isEditable = useIsEditable(editor);
 
   return (
     <NodeViewWrapper className="card-item-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>

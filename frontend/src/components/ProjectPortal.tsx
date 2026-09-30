@@ -159,7 +159,7 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
                 { title: "Invite teammates", detail: "Add people when you are ready.", complete: false },
               ].map((step) => (
                 <Box key={step.title} sx={{ display: "flex", gap: 1, p: 1.25, borderRadius: "var(--border-radius-card)", backgroundColor: "var(--glass-bg)" }}>
-                  {step.complete ? <CheckCircle2 size={16} style={{ color: "var(--primary-color)", flexShrink: 0, marginTop: 2 }} /> : <Circle size={16} style={{ color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 }} />}
+                  {step.complete ? <CheckCircle2 size={16} style={{ color: "var(--primary-text-color)", flexShrink: 0, marginTop: 2 }} /> : <Circle size={16} style={{ color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 }} />}
                   <Box>
                     <Typography sx={{ color: "text.primary", fontSize: "12.5px", fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>{step.title}</Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>{step.detail}</Typography>
@@ -229,7 +229,7 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
                   </Typography>
                 </Box>
                 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "primary.main", fontWeight: 600, fontSize: "12px", mt: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "var(--primary-text-color)", fontWeight: 600, fontSize: "12px", mt: 1 }}>
                   Open Page <ArrowRight size={14} />
                 </Box>
               </Box>
@@ -237,7 +237,7 @@ export const ProjectPortal: React.FC<ProjectPortalProps> = ({
           </Box>
         ) : (
           <Box sx={{ p: { xs: 3, sm: 5 }, textAlign: "center", border: "1px dashed var(--border-color)", bgcolor: "var(--glass-bg)", borderRadius: "var(--border-radius-card)" }}>
-            <Box sx={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 1.5, borderRadius: "50%", color: "var(--primary-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 12%, transparent)" }}>
+            <Box sx={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center", mx: "auto", mb: 1.5, borderRadius: "50%", color: "var(--primary-text-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 12%, transparent)" }}>
               <FileText size={20} />
             </Box>
             <Typography variant="h6" sx={{ color: "text.primary", mb: 1, fontWeight: 700, fontFamily: '"Outfit", sans-serif' }}>

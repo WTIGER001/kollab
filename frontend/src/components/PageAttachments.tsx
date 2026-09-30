@@ -188,7 +188,7 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
       fn.endsWith(".md") || 
       fn.endsWith(".json")
     ) {
-      return <FileText size={18} style={{ color: "#3b82f6" }} />; // Blue
+      return <FileText size={18} style={{ color: "var(--accent-blue)" }} />; // Blue
     }
     return <File size={18} style={{ color: "#9ca3af" }} />; // Gray
   };

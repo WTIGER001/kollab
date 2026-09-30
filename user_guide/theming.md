@@ -6,7 +6,7 @@ Kollab supports multiple visual aesthetics to fit your personal or team's workfl
 
 Currently, Kollab provides four distinct built-in aesthetic themes:
 
-1. **Default (Glassmorphism)**: The standard Kollab look. Theme-aware backgrounds with purple/blue accents, translucent glass panels, and smooth rounded corners.
+1. **Default (Glassmorphism)**: The standard Kollab look. Its dark mode uses softer charcoal surfaces instead of near-black panels, brighter blue informational text and icons, stronger indigo primary actions with light labels, brighter navigation/link text, and a higher-contrast editor toolbar for easier reading. It retains translucent glass panels and smooth rounded corners.
 2. **Workbench (Technical)**: A functional, high-contrast theme built for dense information. Features monospace typography (JetBrains Mono), perfectly sharp corners, and neon accents (emerald/sky blue) against a deep black background. 
 3. **Editorial (Refined)**: An elegant, document-focused layout. Uses a serif typeface (Playfair Display) for headings, soft drop shadows, and warm minimalist styling.
 4. **Neobrutalism (Bold)**: A high-impact, unpolished look featuring thick black borders, hard offset drop shadows, and highly saturated colors (hot pinks and vibrant yellows).
@@ -21,6 +21,8 @@ To switch your theme:
 2. Click the button to open the **Aesthetic Theme Selector** modal.
 3. You will see a grid of theme cards, each previewing its unique typography, component styling, and color palette.
 4. Click on a card to instantly apply the aesthetic to your workspace.
-5. All themes fully support both **Light** and **Dark** modes. You can toggle your preferred mode from the Top Navigation bar, and the Theme Engine will automatically adjust the colors to match the aesthetic.
+5. All themes fully support both **Light** and **Dark** modes. You can toggle your preferred mode from the Top Navigation bar, and the Theme Engine will automatically adjust the colors to match the aesthetic. Button labels, links, toolbar text, and informational icons are adjusted so they stay readable on each theme's page and panels, including Neobrutalism's yellow light background.
 
 Your preset choice persists in this browser. Administrators can configure workspace colors under **Server Settings → Appearance**; these apply to the Default preset. Team-wide theme locking is not provided by this release.
+
+If your workspace has a custom palette, its saved colors remain in control. An administrator can adopt the refreshed Default dark appearance from **Server Settings → Appearance** by setting the dark background to `#15171c`, the panel color to `#20232b`, secondary text to `#cbd5e1`, and the primary action color to `#5b5bd6`. That primary color keeps white labels on filled buttons readable.

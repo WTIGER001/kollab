@@ -65,12 +65,23 @@ const activeColors = activePreset.colors[themeMode];
 // Inject active palette based on light/dark mode
 root.style.setProperty('--primary-color', activeColors.primary);
 root.style.setProperty('--bg-color', activeColors.background);
+root.style.setProperty('--accent-blue', readableOn(themeMode === 'dark' ? '#7dd3fc' : '#2563eb', activeColors.textPrimary, [activeColors.background, activeColors.paper]));
 
 // Inject static tokens (fonts, borders, shadows)
 Object.entries(activePreset.cssVariables).forEach(([key, value]) => {
   root.style.setProperty(key, value);
 });
 ```
+
+`--accent-blue` is the semantic informational color for compact labels, file/type icons, editor menu items, and callouts. It starts at `#7dd3fc` in dark mode and `#2563eb` in light mode. `readableOn` in `frontend/src/theme/contrast.ts` mixes that blue toward the active text color only when the page or panel would otherwise fall below WCAG AA (Neobrutal light is the built-in case). Informational backgrounds and borders derive from the resolved color with `color-mix()`.
+
+`--primary-color` remains the fill color for primary buttons, borders, and selected-state surfaces. `--primary-contrast` is whichever of white or `#111111` has the higher contrast on that fill. `--primary-text-color` starts as a 55% (dark) or 88% (light) sRGB mix of the primary color toward the text color, then moves further toward the text color until both the page and panel meet WCAG AA. Sidebar actions, navigation selections, editor links, and compact primary icons use that resolved color.
+
+`--toolbar-text-color` starts as a 60% mix of secondary text toward primary text and uses the same AA adjustment. Editor header controls use it for their inactive state, preventing small labels and icons from being muted twice by an opacity or dark surface. The formatting toolbar applies the same token to every enabled button, menu trigger, and macro icon; active state is conveyed by its background rather than a different foreground color, and disabled controls retain the muted treatment.
+
+The built-in Default dark palette uses `#15171c` for the workspace and `#20232b` for panels, with `#cbd5e1` secondary text and `#5b5bd6` primary actions. Migration `0017_soften_default_dark_theme.sql` updates only a workspace whose seeded palette exactly matches the legacy defaults; migration `0018_adjust_default_dark_primary_contrast.sql` darkens its primary action color to permit a WCAG AA white foreground. Neither migration overwrites an administrator-customized Default palette.
+
+When creating the MUI theme, preset overrides are spread first and their `palette` fields are merged with the resolved palette. This is important because each preset supplies a mode; spreading that override afterward would replace the injected `primary`, `background`, text, and divider values with MUI defaults. Contained primary actions therefore always use the selected workspace/preset primary color and its calculated contrast foreground.
 
 ---
 

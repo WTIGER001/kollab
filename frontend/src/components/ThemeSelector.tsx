@@ -1,4 +1,4 @@
-import { getContrastRatio } from "@mui/material/styles";
+import { readableForeground } from "../theme/contrast";
 import React from 'react';
 import { 
   Card, CardContent, Typography, Box,
@@ -93,7 +93,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                         sx={{
                           minHeight: 44, minWidth: 0, width: "100%", fontSize: { xs: "12px", md: "14px" },
                           bgcolor: colors.primary, 
-                          color: getContrastRatio(colors.primary, '#fff') >= 4.5 ? '#fff' : '#111',
+                          color: readableForeground(colors.primary),
                           borderRadius: preset.cssVariables['--border-radius-button'],
                           boxShadow: preset.cssVariables['--shadow-button'],
                           fontFamily: preset.cssVariables['--font-sans'] || 'inherit',

@@ -16,7 +16,7 @@ export const HelpPreviews: React.FC = () => {
         {/* Word Documents */}
         <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <FileText size={15} style={{ color: "#3b82f6" }} />
+            <FileText size={15} style={{ color: "var(--accent-blue)" }} />
             Word Document Previews (.docx)
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>

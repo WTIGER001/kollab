@@ -17,16 +17,16 @@ export const themeDefault: ThemePreset = {
       glassBorder: "rgba(0, 0, 0, 0.08)",
     },
     dark: {
-      primary: "#818cf8",
+      primary: "#5b5bd6",
       secondary: "#c084fc",
-      background: "#09090b",
-      paper: "#121214",
+      background: "#15171c",
+      paper: "#20232b",
       textPrimary: "#f8fafc",
-      textSecondary: "#94a3b8",
-      border: "rgba(255, 255, 255, 0.08)",
+      textSecondary: "#cbd5e1",
+      border: "rgba(255, 255, 255, 0.12)",
       accent: "#ec4899",
-      glassBg: "rgba(255, 255, 255, 0.02)",
-      glassBorder: "rgba(255, 255, 255, 0.08)",
+      glassBg: "rgba(255, 255, 255, 0.04)",
+      glassBorder: "rgba(255, 255, 255, 0.12)",
     }
   },
   cssVariables: {
@@ -63,14 +63,14 @@ export const themeDefault: ThemePreset = {
         styleOverrides: {
           root: {
             backgroundImage: "none",
-            border: `1px solid ${mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)'}`,
+            border: `1px solid ${mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)'}`,
           },
         },
       },
       MuiDialog: {
         styleOverrides: {
           paper: {
-            backgroundColor: mode === 'light' ? "rgba(255, 255, 255, 0.85)" : "rgba(18, 18, 20, 0.75)",
+            backgroundColor: mode === 'light' ? "rgba(255, 255, 255, 0.85)" : "rgba(32, 35, 43, 0.86)",
             backdropFilter: "blur(16px)",
             boxShadow: mode === 'light' ? "0 12px 40px rgba(0, 0, 0, 0.1)" : "inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 12px 40px rgba(0, 0, 0, 0.4)",
           },

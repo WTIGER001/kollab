@@ -19,6 +19,12 @@ func TestInMemoryThemeRepository(t *testing.T) {
 	if theme == nil || theme.ID != "theme_default" {
 		t.Fatalf("expected default theme, got %+v", theme)
 	}
+	if theme.DarkMode.Background != "#15171c" || theme.DarkMode.Paper != "#20232b" {
+		t.Errorf("expected softened dark default surfaces, got %+v", theme.DarkMode)
+	}
+	if theme.DarkMode.Primary != "#5b5bd6" {
+		t.Errorf("expected dark-mode primary action color with a light contrast label, got %+v", theme.DarkMode)
+	}
 
 	// 2. Save theme
 	newTheme := &domain.WorkspaceTheme{

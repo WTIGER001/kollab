@@ -257,6 +257,30 @@ To lock down views:
 2. **Interaction Handlers**: Click and double-click actions check `if (!editor?.isEditable) return;` at entry.
 3. **Cursor Accents**: CSS selectors within the node wrapper alter `cursor: isEditable ? "pointer" : "default"` and remove hover border animations.
 
+### 7.1 Read-only image preview
+
+`ImageComponent.tsx` subscribes to the editor's editable-state transactions through `useIsEditable`. This is deliberately reactive: `editor.setEditable(false)` alone mutates the long-lived Tiptap editor object, but does not guarantee a React node view will be rendered again. The hook therefore removes image controls as soon as the page returns to read mode.
+
+The same state guard prevents the shared table, link, selection, table-creation, and AI editing affordances from mounting in `EditorFloatingMenus.tsx`. Layout sections and card items use the same subscription rather than reading a potentially stale `editor.isEditable` value during render.
+
+For a `customImage` in read mode, activating the image with a pointer, `Enter`, or `Space` opens a client-only full-screen `Dialog`. It requests the image's existing authenticated original rendition when `imageId` is present; external or legacy images retain their stored `src`. The viewer owns ephemeral state only:
+
+```ts
+{ open: boolean; scale: number; pan: { x: number; y: number } }
+```
+
+Zoom is clamped to `1.0..4.0`; mouse/trackpad wheel and explicit controls change scale in `0.25` increments. Pointer movement changes `pan` only while scale exceeds `1.0`, so ordinary clicks remain available to open the preview. Closing or resetting restores a 100% centered viewport. No lightbox action writes to the ProseMirror document, Yjs state, or image metadata.
+
+### 7.2 Macro mode matrix
+
+`MacroBlockView` renders the same persisted macro data in both modes, but its action surface is mode-gated. Read mode has no macro wrapper header, settings popover, delete action, configuration inputs, refresh control, import action, or mutable column selector. Reader-safe navigation, downloads, hyperlinks, diagram/image previews, and calendar interaction remain enabled.
+
+The GitLab/Jira macros have an explicit unconfigured reader state rather than exposing their connection and fetch forms. A configured GitLab issue list derives `visibleColumns` from its saved configuration, defaulting to all five columns when legacy content has no `columns` attribute; reader mode can therefore render saved issue data without edit controls.
+
+Non-`macroBlock` node views use the shared `useIsEditable` subscription. Cards grids and tabs only perform legacy ID normalization while editable, preventing a read-only render from dispatching a ProseMirror transaction. Inline Status and Inline Date reject keyboard-triggered editors outside edit mode and close an open popover when editability changes.
+
+`MacroBlockView.modes.test.tsx` is the regression matrix. It mounts every registered macro-block type in both modes, verifies the appropriate wrapper/chrome boundary, and has focused assertions for both unconfigured and configured issue integrations. The separate component tests cover the supporting node views and the shared editability hook.
+
 ---
 
 ## 8. Page Analytics Algorithm

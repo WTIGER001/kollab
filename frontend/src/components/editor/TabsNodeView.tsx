@@ -2,6 +2,7 @@ import { NodeViewWrapper, NodeViewContent } from "@tiptap/react";
 import { Box, Tabs, Tab, IconButton } from "@mui/material";
 import { Plus, Trash2, Square } from "lucide-react";
 import React from "react";
+import { useIsEditable } from "../../hooks/useIsEditable";
 
 export const TabsNodeView = (props: any) => {
   const { node, updateAttributes, getPos, editor } = props;
@@ -56,19 +57,11 @@ export const TabsNodeView = (props: any) => {
     );
   };
 
-  const [isEditable, setIsEditable] = React.useState(editor.isEditable);
-
-  React.useEffect(() => {
-    setIsEditable(editor.isEditable);
-    const updateEditable = () => setIsEditable(editor.isEditable);
-    editor.on('transaction', updateEditable);
-    return () => {
-      editor.off('transaction', updateEditable);
-    };
-  }, [editor]);
+  const isEditable = useIsEditable(editor);
 
   // Normalize: ensure every tabItem has a unique tabId
   React.useEffect(() => {
+    if (!isEditable) return;
     let needsUpdate = false;
     const tr = editor.state.tr;
     let childPos = typeof getPos === 'function' ? getPos() + 1 : 0;
@@ -92,7 +85,7 @@ export const TabsNodeView = (props: any) => {
         editor.view.dispatch(tr);
       }
     }
-  }, [node, getPos, editor]);
+  }, [node, getPos, editor, isEditable]);
 
   const domId = React.useMemo(() => `tabs-${Math.random().toString(36).substr(2, 9)}`, []);
 

@@ -10,7 +10,9 @@ Whenever you open a page, it defaults to **Read-Only Mode**.
 
 * **Clean Presentation**: Helper guides, dashed columns, and block boundaries are hidden to provide a sleek, publishing-style reading view.
 * **Locked Blocks**: Elements like Callout Panels, Inline Status Badges, and Inline Dates are locked against accidental changes or delete clicks.
-* **Floating Bars Hidden**: Sizing and layout bars on columns and images do not display.
+* **Floating Bars Hidden**: Image alignment/size/delete controls, table and link controls, selection actions, and layout controls do not display.
+* **Image preview**: Click an image to open it in a full-screen preview. Use the **+** and **−** controls or your trackpad/mouse wheel to zoom. When zoomed in, drag the image to pan; use **Reset view** to recenter it. Press `Esc` or select **Close** when you are finished.
+* **Macros stay reader-friendly**: Pages, attachments, charts, calendars, diagrams, excerpts, reviews, and issue cards show their saved content without configuration fields, delete buttons, refresh controls, or import actions. Links, downloads, page navigation, and image/diagram previews remain available.
 * **Breadcrumb Navigation**: The top-left corner displays your active location path: `[Team Workspace] > [Project Workspace] > [Parent Folders...] > [Active Document Name]`.
 
 ---
@@ -26,6 +28,7 @@ To begin making changes to the document, click the **Edit** button in the top-ri
   * **Date Pills**: Clicking date pills opens the popup calendar date-selector.
   * **Images**: Hovering or selecting images triggers alignment and sizing toolbars.
   * **Layouts**: Section borders appear with layout controls (2-Column, Asymmetric, delete section).
+  * **Configured macros**: Macros show their edit header and settings. GitLab/Jira issue cards and lists expose their connection, refresh, column, reset, and import controls only here.
 * **Handover & Handback**: Once you are finished, click the **Done** button in the top-right toolbar. You can provide a checkpoint description or skip the named checkpoint; background saving continues. See [Version history](version_history.md).
 
 ---

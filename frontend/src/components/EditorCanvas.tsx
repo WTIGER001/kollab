@@ -1430,7 +1430,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       icon: (
         <FolderInput
           size={16}
-          style={{ color: "var(--accent-blue, #60a5fa)" }}
+          style={{ color: "var(--accent-blue)" }}
         />
       ),
       action: (ed) => {
@@ -1498,7 +1498,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description:
         "Embed an interactive file preview (Word, PowerPoint, 3D model, PDF)",
       icon: (
-        <Paperclip size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+        <Paperclip size={16} style={{ color: "var(--accent-blue)" }} />
       ),
       action: (ed) => {
         ed.chain()
@@ -1541,7 +1541,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       label: "Excerpt Include",
       description: "Include excerpt from another page",
       icon: (
-        <FileUp size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+        <FileUp size={16} style={{ color: "var(--accent-blue)" }} />
       ),
       action: (ed) => {
         ed.chain()
@@ -1628,7 +1628,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       label: "Mermaid Diagram",
       description: "Render flowcharts and sequence diagrams from text",
       icon: (
-        <Network size={16} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+        <Network size={16} style={{ color: "var(--accent-blue)" }} />
       ),
       action: (ed) => {
         ed.chain()
@@ -1861,7 +1861,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id: "inline-status",
       label: "Status Badge",
       description: "Insert an inline status pill",
-      icon: <Smile size={16} style={{ color: "#3b82f6" }} />,
+      icon: <Smile size={16} style={{ color: "var(--accent-blue)" }} />,
       action: (ed) =>
         ed
           .chain()
@@ -1877,7 +1877,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id: "callout-info",
       label: "Info Panel",
       description: "Insert a blue information callout",
-      icon: <Info size={16} style={{ color: "#3b82f6" }} />,
+      icon: <Info size={16} style={{ color: "var(--accent-blue)" }} />,
       action: (ed) =>
         ed
           .chain()
@@ -2558,7 +2558,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               overscrollBehaviorX: "contain",
               "@media (max-width:899.95px)": { "& > *": { flexShrink: 0 }, "& .MuiIconButton-root": { minWidth: 44, minHeight: 44 }, "& .MuiInputBase-root": { minHeight: 44 } },
               gap: 0.75,
-              color: "text.secondary",
+              color: "var(--toolbar-text-color)",
+              // Toolbar formatting choices are one visual family. Active
+              // states use their background, while every enabled control uses
+              // the same readable foreground; only disabled controls dim.
+              "& .MuiIconButton-root:not(.Mui-disabled), & .MuiButton-root:not(.Mui-disabled), & .MuiInputBase-root:not(.Mui-disabled)": {
+                color: "var(--toolbar-text-color) !important",
+              },
+              "& .MuiIconButton-root:not(.Mui-disabled) svg": {
+                color: "var(--toolbar-text-color) !important",
+              },
               px: { xs: 2, sm: 3, md: 4 },
               pt: 1,
               pb: 1,
@@ -3136,9 +3145,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 size="small"
                 onClick={() => setAiPromptOpen(true)}
                 sx={{
-                  color: "inherit",
+                  color: "var(--primary-text-color)",
                   "&:hover": {
-                    color: "primary.light",
+                    color: "var(--primary-text-color)",
                     backgroundColor: "action.hover",
                   },
                 }}
@@ -3184,13 +3193,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       size="small"
                       onClick={() => cmd.action(editor)}
                       sx={{
-                        color: isActive() ? "primary.light" : "inherit",
+                        color: isActive() ? "var(--primary-text-color)" : "inherit",
                         backgroundColor: isActive()
                           ? "rgba(139, 92, 246, 0.1)"
                           : "transparent",
                         flexShrink: 0,
                         "&:hover": {
-                          color: "primary.light",
+                          color: "var(--primary-text-color)",
                           backgroundColor: "action.hover",
                         },
                       }}
@@ -3211,7 +3220,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   setMacroSelectorOpen(true);
                 }}
                 sx={{
-                  color: "primary.light",
+                  color: "var(--primary-text-color)",
                   backgroundColor: "rgba(139, 92, 246, 0.08)",
                   border: "1px dashed rgba(139, 92, 246, 0.3)",
                   flexShrink: 0,

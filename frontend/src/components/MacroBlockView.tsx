@@ -647,7 +647,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       fn.endsWith(".md") || 
       fn.endsWith(".json")
     ) {
-      return <FileText size={18} style={{ color: "#3b82f6" }} />;
+      return <FileText size={18} style={{ color: "var(--accent-blue)" }} />;
     }
     return <File size={18} style={{ color: "#9ca3af" }} />;
   };
@@ -709,11 +709,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       case "ai-content":
         return <Sparkles size={14} color="#c084fc" />;
       case "children-display":
-        return <FolderOpen size={14} color="#60a5fa" />;
+        return <FolderOpen size={14} color="var(--accent-blue)" />;
       case "page-index":
         return <FileText size={14} color="#a78bfa" />;
       case "excerpt-include":
-        return <FileUp size={14} color="#60a5fa" />;
+        return <FileUp size={14} color="var(--accent-blue)" />;
       case "attachments-list":
       case "single-attachment":
         return <Paperclip size={14} color="#f472b6" />;
@@ -724,11 +724,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       case "excalidraw":
         return <PenTool size={14} color="#a78bfa" />;
       case "mermaid":
-        return <Network size={14} color="#60a5fa" />;
+        return <Network size={14} color="var(--accent-blue)" />;
       case "hero":
         return <ImageIcon size={14} color="#f43f5e" />;
       default:
-        return <Cpu size={14} color="#60a5fa" />;
+        return <Cpu size={14} color="var(--accent-blue)" />;
     }
   };
 
@@ -2930,7 +2930,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           {type === "jira-gitlab-issue" && (
             <Box sx={{ width: "100%" }}>
               {!config.url ? (
-                <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
+                isEditable ? <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
                     JIRA / GitLab Issue Card Integration
                   </Typography>
@@ -2983,9 +2983,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     }}
                     sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
                   >
-                    Fetch Issue Details
+                  Fetch Issue Details
                   </Button>
-                </Box>
+                </Box> : <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: "13px" }}>
+                  No issue has been configured for this card.
+                </Typography>
               ) : (
                 <Box
                   sx={{
@@ -3052,7 +3054,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
+                  {isEditable && <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
                     <Button
                       variant="outlined"
                       size="small"
@@ -3076,7 +3078,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     >
                       Import to Page
                     </Button>
-                  </Box>
+                  </Box>}
                 </Box>
               )}
             </Box>
@@ -3085,7 +3087,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           {type === "gitlab-issue-list" && (
             <Box sx={{ width: "100%" }}>
               {!config.integrationId ? (
-                <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
+                isEditable ? <Box sx={{ p: 3, border: "1px dashed var(--border-color)", borderRadius: "8px", textAlign: "center" }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
                     GitLab Issue List
                   </Typography>
@@ -3175,17 +3177,21 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     }}
                     sx={{ textTransform: "none", bgcolor: "var(--primary-color)", color: "#fff", "&:hover": { bgcolor: "var(--primary-dark)" } }}
                   >
-                    Fetch Issues
+                  Fetch Issues
                   </Button>
-                </Box>
+                </Box> : <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", fontSize: "13px" }}>
+                  No GitLab issue list has been configured.
+                </Typography>
               ) : (
-                <Box sx={{ width: "100%", border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                (() => {
+                  const visibleColumns = config.columns || ["key", "title", "status", "assignee", "priority"];
+                  return <Box sx={{ width: "100%", border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
                   <Box sx={{ p: 1.5, bgcolor: "var(--panel-color)", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <List size={16} style={{ color: "#fca121" }} />
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>GitLab Issues</Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 1 }}>
+                    {isEditable && <Box sx={{ display: "flex", gap: 1 }}>
                       {/* Column Toggles */}
                       {["key", "title", "status", "assignee", "priority"].map(col => (
                         <Chip
@@ -3197,7 +3203,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             const newCols = cols.includes(col) ? cols.filter((c: string) => c !== col) : [...cols, col];
                             updateAttributes({ config: { ...config, columns: newCols } });
                           }}
-                          variant={config.columns?.includes(col) ? "filled" : "outlined"}
+                          variant={visibleColumns.includes(col) ? "filled" : "outlined"}
                           sx={{ textTransform: "capitalize", fontSize: "10px" }}
                         />
                       ))}
@@ -3219,33 +3225,34 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       >
                         Refresh
                       </Button>
-                    </Box>
+                    </Box>}
                   </Box>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        {config.columns?.includes("key") && <TableCell>Key</TableCell>}
-                        {config.columns?.includes("title") && <TableCell>Title</TableCell>}
-                        {config.columns?.includes("status") && <TableCell>Status</TableCell>}
-                        {config.columns?.includes("assignee") && <TableCell>Assignee</TableCell>}
-                        {config.columns?.includes("priority") && <TableCell>Priority</TableCell>}
+                        {visibleColumns.includes("key") && <TableCell>Key</TableCell>}
+                        {visibleColumns.includes("title") && <TableCell>Title</TableCell>}
+                        {visibleColumns.includes("status") && <TableCell>Status</TableCell>}
+                        {visibleColumns.includes("assignee") && <TableCell>Assignee</TableCell>}
+                        {visibleColumns.includes("priority") && <TableCell>Priority</TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {config.issues?.map((issue: any, idx: number) => (
                         <TableRow key={idx}>
-                          {config.columns?.includes("key") && <TableCell sx={{ fontFamily: "monospace", fontSize: "12px" }}><Link href={issue.url} target="_blank" rel="noopener noreferrer" underline="hover">{issue.key}</Link></TableCell>}
-                          {config.columns?.includes("title") && <TableCell>{issue.title}</TableCell>}
-                          {config.columns?.includes("status") && <TableCell>
+                          {visibleColumns.includes("key") && <TableCell sx={{ fontFamily: "monospace", fontSize: "12px" }}><Link href={issue.url} target="_blank" rel="noopener noreferrer" underline="hover">{issue.key}</Link></TableCell>}
+                          {visibleColumns.includes("title") && <TableCell>{issue.title}</TableCell>}
+                          {visibleColumns.includes("status") && <TableCell>
                             <Chip size="small" label={issue.status} sx={{ height: 20, fontSize: "10px" }} />
                           </TableCell>}
-                          {config.columns?.includes("assignee") && <TableCell>{issue.assignee}</TableCell>}
-                          {config.columns?.includes("priority") && <TableCell>{issue.priority}</TableCell>}
+                          {visibleColumns.includes("assignee") && <TableCell>{issue.assignee}</TableCell>}
+                          {visibleColumns.includes("priority") && <TableCell>{issue.priority}</TableCell>}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </Box>
+                </Box>;
+                })()
               )}
             </Box>
           )}

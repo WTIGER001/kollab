@@ -10,9 +10,11 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const chipRef = React.useRef<HTMLDivElement | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const isEditable = useIsEditable(editor);
 
   React.useEffect(() => {
     const openFromKeyboard = (event: Event) => {
+      if (!isEditable) return;
       const pos = (event as CustomEvent<{ pos: number }>).detail?.pos;
       if (typeof getPos === "function" && pos === getPos() && chipRef.current) {
         setAnchorEl(chipRef.current);
@@ -20,10 +22,10 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     };
     window.addEventListener("open-inline-date", openFromKeyboard);
     return () => window.removeEventListener("open-inline-date", openFromKeyboard);
-  }, [getPos]);
+  }, [getPos, isEditable]);
 
   React.useEffect(() => {
-    if (node.attrs.autoOpen) {
+    if (isEditable && node.attrs.autoOpen) {
       // Small timeout to ensure the DOM element is fully painted and positioned
       const timer = setTimeout(() => {
         if (chipRef.current) {
@@ -33,10 +35,10 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [node.attrs.autoOpen, updateAttributes]);
+  }, [node.attrs.autoOpen, updateAttributes, isEditable]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (!editor?.isEditable) return;
+    if (!isEditable) return;
     setAnchorEl(event.currentTarget);
   };
 
@@ -82,7 +84,9 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
     }
   };
 
-  const isEditable = useIsEditable(editor);
+  React.useEffect(() => {
+    if (!isEditable) setAnchorEl(null);
+  }, [isEditable]);
 
   return (
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>

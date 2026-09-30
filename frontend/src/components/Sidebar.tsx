@@ -415,7 +415,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               mx: 1,
               my: 0,
               borderRadius: "4px",
-              color: isActive ? "var(--primary-color)" : "text.secondary",
+              color: isActive ? "var(--primary-text-color)" : "text.secondary",
               backgroundColor: dragOverId === doc.id
                 ? "rgba(139, 92, 246, 0.15)"
                 : isActive 
@@ -428,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : "1px solid transparent",
               "& .action-btn": { opacity: 0 },
               "&:hover": {
-                color: isActive ? "var(--primary-color)" : "text.primary",
+                color: isActive ? "var(--primary-text-color)" : "text.primary",
                 backgroundColor: isActive 
                   ? "color-mix(in srgb, var(--primary-color) 18%, transparent)" 
                   : "color-mix(in srgb, var(--text-primary) 4%, transparent)",
@@ -842,7 +842,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontSize: "12px",
                     fontWeight: isSelected ? 600 : 500,
                     fontFamily: '"Outfit", sans-serif',
-                    color: isSelected ? "var(--primary-color)" : "text.primary",
+                    color: isSelected ? "var(--primary-text-color)" : "text.primary",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between"
@@ -850,17 +850,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     {space.type === "personal" ? (
-                      <User size={12} style={{ color: isSelected ? "var(--primary-color)" : "inherit" }} />
+                      <User size={12} style={{ color: isSelected ? "var(--primary-text-color)" : "inherit" }} />
                     ) : space.type === "team" ? (
-                      <Users size={12} style={{ color: isSelected ? "var(--primary-color)" : "inherit" }} />
+                      <Users size={12} style={{ color: isSelected ? "var(--primary-text-color)" : "inherit" }} />
                     ) : (
-                      <Briefcase size={12} style={{ color: isSelected ? "var(--primary-color)" : "inherit" }} />
+                      <Briefcase size={12} style={{ color: isSelected ? "var(--primary-text-color)" : "inherit" }} />
                     )}
                     <Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', fontWeight: isSelected ? 600 : 500 }} noWrap>
                       {space.name}
                     </Typography>
                   </Box>
-                  {isSelected && <Check size={12} style={{ color: "var(--primary-color)" }} />}
+                  {isSelected && <Check size={12} style={{ color: "var(--primary-text-color)" }} />}
                 </MenuItem>
               );
             })}
@@ -892,19 +892,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   fontSize: "12.5px",
                   fontWeight: isTeamSelected ? 600 : 500,
                   fontFamily: '"Outfit", sans-serif',
-                  color: isTeamSelected ? "var(--primary-color)" : "text.primary",
+                  color: isTeamSelected ? "var(--primary-text-color)" : "text.primary",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between"
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Users size={12} style={{ color: isTeamSelected ? "var(--primary-color)" : "inherit" }} />
+                  <Users size={12} style={{ color: isTeamSelected ? "var(--primary-text-color)" : "inherit" }} />
                   <Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif', fontWeight: isTeamSelected ? 700 : 600 }} noWrap>
                     {t.name}
                   </Typography>
                 </Box>
-                {isTeamSelected && <Check size={12} style={{ color: "var(--primary-color)" }} />}
+                {isTeamSelected && <Check size={12} style={{ color: "var(--primary-text-color)" }} />}
               </MenuItem>
 
               {/* Projects under this Team */}
@@ -925,19 +925,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       fontSize: "12px",
                       fontWeight: isProjectSelected ? 600 : 500,
                       fontFamily: '"Outfit", sans-serif',
-                      color: isProjectSelected ? "var(--primary-color)" : "text.secondary",
+                      color: isProjectSelected ? "var(--primary-text-color)" : "text.secondary",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between"
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Briefcase size={10} style={{ color: isProjectSelected ? "var(--primary-color)" : "inherit" }} />
+                      <Briefcase size={10} style={{ color: isProjectSelected ? "var(--primary-text-color)" : "inherit" }} />
                       <Typography sx={{ fontSize: "12px", fontFamily: '"Outfit", sans-serif', fontWeight: isProjectSelected ? 600 : 500 }} noWrap>
                         {p.name}
                       </Typography>
                     </Box>
-                    {isProjectSelected && <Check size={10} style={{ color: "var(--primary-color)" }} />}
+                    {isProjectSelected && <Check size={10} style={{ color: "var(--primary-text-color)" }} />}
                   </MenuItem>
                 );
               })}
@@ -965,19 +965,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 fontSize: "12.5px",
                 fontWeight: isPersonalSelected ? 600 : 500,
                 fontFamily: '"Outfit", sans-serif',
-                color: isPersonalSelected ? "var(--primary-color)" : "text.primary",
+                color: isPersonalSelected ? "var(--primary-text-color)" : "text.primary",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between"
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <User size={12} style={{ color: isPersonalSelected ? "var(--primary-color)" : "inherit" }} />
+                <User size={12} style={{ color: isPersonalSelected ? "var(--primary-text-color)" : "inherit" }} />
                 <Typography sx={{ fontSize: "12.5px", fontFamily: '"Outfit", sans-serif', fontWeight: isPersonalSelected ? 700 : 600 }} noWrap>
                   Personal Space
                 </Typography>
               </Box>
-              {isPersonalSelected && <Check size={12} style={{ color: "var(--primary-color)" }} />}
+              {isPersonalSelected && <Check size={12} style={{ color: "var(--primary-text-color)" }} />}
             </MenuItem>
           );
         })()}
@@ -1155,7 +1155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             fontWeight: 600,
             fontSize: "13px",
             fontFamily: '"Outfit", sans-serif',
-            color: "var(--primary-color)",
+            color: "var(--primary-text-color)",
             p: 0,
             minWidth: "auto",
             justifyContent: "flex-start",
@@ -1179,7 +1179,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={handleOpenTemplates}
           sx={{ 
             p: 0.25,
-            color: "var(--primary-color)",
+            color: "var(--primary-text-color)",
             backgroundColor: "transparent",
             "&:hover": {
               backgroundColor: "transparent",

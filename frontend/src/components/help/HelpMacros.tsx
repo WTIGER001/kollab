@@ -143,7 +143,7 @@ export const HelpMacros: React.FC = () => {
 
         <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", p: 2 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <Code size={15} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+            <Code size={15} style={{ color: "var(--accent-blue)" }} />
             Mermaid.js Diagram Macro (/mermaid)
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.4 }}>

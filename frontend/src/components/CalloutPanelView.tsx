@@ -49,9 +49,9 @@ export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, up
       case "info":
       default:
         return {
-          bg: "rgba(59, 130, 246, 0.04)",
-          border: "rgba(59, 130, 246, 0.25)",
-          color: "#3b82f6",
+          bg: "color-mix(in srgb, var(--accent-blue) 8%, transparent)",
+          border: "color-mix(in srgb, var(--accent-blue) 32%, transparent)",
+          color: "var(--accent-blue)",
           icon: <Info size={18} />,
         };
     }
@@ -176,9 +176,9 @@ export const CalloutPanelView: React.FC<NodeViewProps> = ({ node, deleteNode, up
                 onClick={() => updateAttributes({ type: "info" })}
                 sx={{
                   p: 0.5,
-                  color: type === "info" ? "#3b82f6" : "text.disabled",
-                  backgroundColor: type === "info" ? "rgba(59, 130, 246, 0.08)" : "transparent",
-                  "&:hover": { color: "#3b82f6", backgroundColor: "rgba(59, 130, 246, 0.08)" },
+                  color: type === "info" ? "var(--accent-blue)" : "text.disabled",
+                  backgroundColor: type === "info" ? "color-mix(in srgb, var(--accent-blue) 12%, transparent)" : "transparent",
+                  "&:hover": { color: "var(--accent-blue)", backgroundColor: "color-mix(in srgb, var(--accent-blue) 12%, transparent)" },
                 }}
               >
                 <Info size={12} />

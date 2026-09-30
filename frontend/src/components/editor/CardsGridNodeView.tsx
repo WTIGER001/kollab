@@ -2,23 +2,16 @@ import React from 'react';
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react';
 import { Box, IconButton, Select, MenuItem } from '@mui/material';
 import { Plus, Trash2, Square } from 'lucide-react';
+import { useIsEditable } from '../../hooks/useIsEditable';
 
 export const CardsGridNodeView = (props: any) => {
   const { node, updateAttributes, editor, getPos, deleteNode } = props;
   
-  const [isEditable, setIsEditable] = React.useState(editor.isEditable);
-
-  React.useEffect(() => {
-    setIsEditable(editor.isEditable);
-    const updateEditable = () => setIsEditable(editor.isEditable);
-    editor.on('transaction', updateEditable);
-    return () => {
-      editor.off('transaction', updateEditable);
-    };
-  }, [editor]);
+  const isEditable = useIsEditable(editor);
 
   // Normalize: ensure every cardItem has a unique cardId
   React.useEffect(() => {
+    if (!isEditable) return;
     let needsUpdate = false;
     const tr = editor.state.tr;
     let childPos = typeof getPos === 'function' ? getPos() + 1 : 0;
@@ -41,7 +34,7 @@ export const CardsGridNodeView = (props: any) => {
         editor.view.dispatch(tr);
       }
     }
-  }, [node, getPos, editor]);
+  }, [node, getPos, editor, isEditable]);
 
   const addCard = () => {
     if (typeof getPos === 'function') {

@@ -5,14 +5,14 @@
   --font-mono: "JetBrains Mono", monospace;
   
   /* Core Base Colors */
-  --bg-dark: #09090b;
-  --panel-dark: #121214;
-  --panel-light: #1c1c1f;
+  --bg-dark: #15171c;
+  --panel-dark: #20232b;
+  --panel-light: #2a2e38;
   
   /* Accents */
   --accent-purple: #818cf8;
   --accent-purple-hover: #a5b4fc;
-  --accent-blue: #3b82f6;
+  --accent-blue: #2563eb;
   --accent-pink: #ec4899;
   
   /* Borders */
@@ -301,7 +301,7 @@ h7, h8 {
 
 .ProseMirror ul li::before {
   content: "•" !important;
-  color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
   font-size: 1.4rem !important;
   line-height: 1 !important;
   position: absolute !important;
@@ -311,7 +311,7 @@ h7, h8 {
 
 .ProseMirror ol li::before {
   content: counter(tiptap-counter) "." !important;
-  color: var(--primary-color) !important;
+  color: var(--primary-text-color) !important;
   font-weight: 700 !important;
   font-family: var(--font-sans) !important;
   font-size: 0.95rem !important;
@@ -380,7 +380,7 @@ h7, h8 {
 
 /* Links */
 .ProseMirror a {
-  color: var(--primary-color);
+  color: var(--primary-text-color);
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
   text-underline-offset: 2px;

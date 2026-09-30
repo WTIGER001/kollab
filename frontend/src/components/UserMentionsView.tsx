@@ -242,7 +242,7 @@ export const UserMentionsView: React.FC<UserMentionsViewProps> = ({
           {Object.keys(projectGroups).length > 0 && (
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, mt: 2 }}>
-                <Folder size={18} style={{ color: "var(--accent-blue, #3b82f6)" }} />
+                <Folder size={18} style={{ color: "var(--accent-blue)" }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', color: "var(--text-primary)" }}>
                   Projects
                 </Typography>

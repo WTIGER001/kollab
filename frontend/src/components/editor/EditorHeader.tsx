@@ -137,7 +137,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
             flexDirection: { xs: "column", sm: "row" },
             alignItems: { xs: "stretch", sm: "center" },
             justifyContent: "space-between",
-            color: "text.secondary",
+            color: "var(--toolbar-text-color)",
             px: { xs: 2, sm: 3, md: 4 },
             pt: 2,
             pb: 1.5,
@@ -268,7 +268,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   fontFamily: '"Outfit", sans-serif',
                   letterSpacing: "0.05em",
                   backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
-                  color: "var(--primary-color)",
+                  color: "var(--primary-text-color)",
                   border: "1px solid rgba(139, 92, 246, 0.25)",
                   borderColor: "color-mix(in srgb, var(--primary-color) 25%, transparent)",
                   borderRadius: "4px",
@@ -289,7 +289,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       p: "2px 8px",
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: "var(--primary-color, #8b5cf6)",
+                      color: "var(--primary-text-color)",
                       textTransform: "none",
                       fontFamily: '"Outfit", sans-serif',
                       minWidth: 0,
@@ -312,14 +312,13 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   <>
                     <CircularProgress
                       size={10}
-                      sx={{ color: "text.secondary", opacity: 0.7 }}
+                      sx={{ color: "var(--toolbar-text-color)" }}
                       thickness={6}
                     />
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
-                        opacity: 0.6,
+                        color: "var(--toolbar-text-color)",
                         fontSize: "11px",
                         fontWeight: 500,
                         userSelect: "none",
@@ -337,8 +336,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "text.secondary",
-                        opacity: 0.6,
+                        color: "var(--toolbar-text-color)",
                         fontSize: "11px",
                         fontWeight: 500,
                         display: "flex",
@@ -429,7 +427,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   }
                 }}
                 sx={{
-                  color: isFavorite ? "var(--accent-color)" : "text.secondary",
+                  color: isFavorite ? "var(--accent-color)" : "var(--toolbar-text-color)",
                   "&:hover": {
                     color: "var(--accent-color)",
                     backgroundColor: "action.hover",
@@ -448,9 +446,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                 data-mobile-secondary
                 onClick={toggleWatch}
                 sx={{
-                  color: isWatching ? "var(--primary-color)" : "var(--text-secondary)",
+                  color: isWatching ? "var(--primary-text-color)" : "var(--toolbar-text-color)",
                   "&:hover": {
-                    color: "var(--primary-color)",
+                    color: "var(--primary-text-color)",
                     backgroundColor: "var(--glass-bg)",
                   },
                 }}
@@ -475,7 +473,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     minWidth: { xs: 26, sm: "auto" },
                     borderRadius: "5px",
                     borderColor: "var(--border-color)",
-                    color: "text.secondary",
+                    color: "var(--toolbar-text-color)",
                     textTransform: "none",
                     "&:hover": {
                       borderColor: "var(--border-color)",
@@ -512,7 +510,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       borderColor: "var(--border-color)",
-                      color: "text.secondary",
+                      color: "var(--toolbar-text-color)",
                       textTransform: "none",
                       "&:hover": {
                         borderColor: "var(--border-color)",
@@ -546,7 +544,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       borderColor: "var(--border-color)",
-                      color: "text.secondary",
+                      color: "var(--toolbar-text-color)",
                       textTransform: "none",
                       "&:hover": {
                         borderColor: "var(--border-color)",
@@ -580,7 +578,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         minWidth: { xs: 26, sm: "auto" },
                         borderRadius: "5px",
                         borderColor: "var(--border-color)",
-                        color: showComments ? "text.primary" : "text.secondary",
+                      color: showComments ? "text.primary" : "var(--toolbar-text-color)",
                         backgroundColor: showComments ? "rgba(255, 255, 255, 0.05)" : "transparent",
                         textTransform: "none",
                         "&:hover": {
@@ -610,7 +608,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       minWidth: { xs: 26, sm: "auto" },
                       borderRadius: "5px",
                       borderColor: "var(--border-color)",
-                      color: "text.secondary",
+                      color: "var(--toolbar-text-color)",
                       textTransform: "none",
                       "&:hover": {
                         borderColor: "var(--border-color)",
@@ -681,9 +679,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     data-mobile-secondary
                     onClick={handleToggleHistory}
                     sx={{
-                      color: historyOpen ? "primary.light" : "text.secondary",
+                      color: historyOpen ? "var(--primary-text-color)" : "var(--toolbar-text-color)",
                       "&:hover": {
-                        color: "primary.light",
+                        color: "var(--primary-text-color)",
                         backgroundColor: "action.hover",
                       },
                     }}
@@ -720,7 +718,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     minWidth: { xs: 26, sm: "auto" },
                     borderRadius: "5px",
                     backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
-                    color: "var(--primary-color)",
+                    color: "var(--primary-text-color)",
                     border: "1px solid var(--border-color)",
                     borderColor: "var(--border-color)",
                     boxShadow: "none",
@@ -759,7 +757,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                     aria-label="Page actions"
                     onClick={handleOpenMoreMenu}
                     sx={{
-                      color: "text.secondary",
+                      color: "var(--toolbar-text-color)",
                       width: 26,
                       height: 26,
                       "&:hover": { backgroundColor: "action.hover" },

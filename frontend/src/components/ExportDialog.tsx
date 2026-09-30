@@ -117,13 +117,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                 borderRadius: 2,
                 border: "1px solid",
                 borderColor: format === "word" ? "primary.main" : "var(--border-color, #e5e7eb)",
-                backgroundColor: format === "word" ? "rgba(37, 99, 235, 0.05)" : "transparent",
+                backgroundColor: format === "word" ? "color-mix(in srgb, var(--accent-blue) 8%, transparent)" : "transparent",
                 transition: "all 0.2s"
               }}
             >
               <Radio value="word" sx={{ p: 0, mr: 1.5 }} />
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
-                <FileText size={18} style={{ color: "#2563eb" }} />
+                <FileText size={18} style={{ color: "var(--accent-blue)" }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Microsoft Word (.docx)</Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>Editable document compatible with MS Word</Typography>

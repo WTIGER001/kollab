@@ -3,6 +3,7 @@ import { NodeViewWrapper, NodeViewContent } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { Box, Paper, IconButton, Tooltip, Divider, Typography } from "@mui/material";
 import { Trash2, Columns2, Columns3, Layout } from "lucide-react";
+import { useIsEditable } from "../hooks/useIsEditable";
 
 export const LayoutSectionView: React.FC<NodeViewProps> = ({ 
   node, 
@@ -12,6 +13,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
 }) => {
   const { layout } = node.attrs;
   const isThreeCol = layout === "threecol";
+  const isEditable = useIsEditable(editor);
 
   const handleSetLayout = (newLayout: string) => {
     updateAttributes({ layout: newLayout });
@@ -25,7 +27,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
       style={{ position: "relative" }}
     >
       {/* Floating Layout Controls Bar */}
-      {editor?.isEditable && (
+      {isEditable && (
         <Paper
           elevation={3}
           className="layout-controls-bar"

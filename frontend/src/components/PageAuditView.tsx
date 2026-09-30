@@ -370,7 +370,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                         {log.action === "edit" ? (
                           <Edit3 size={13} style={{ color: "var(--primary-color)" }} />
                         ) : (
-                          <Eye size={13} style={{ color: "var(--accent-blue, #60a5fa)" }} />
+                          <Eye size={13} style={{ color: "var(--accent-blue)" }} />
                         )}
                         <Typography variant="caption" sx={{ fontSize: "11.5px", fontWeight: 500 }}>
                           {formatDate(log.createdAt)}
@@ -449,7 +449,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                         <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", textTransform: "uppercase", display: "block" }}>
                           Views
                         </Typography>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--accent-blue, #60a5fa)", mt: 0.25 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--accent-blue)", mt: 0.25 }}>
                           {group.viewsCount}
                         </Typography>
                       </Box>

@@ -10,9 +10,11 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [inputText, setInputText] = useState(text);
   const chipRef = useRef<HTMLDivElement | null>(null);
+  const isEditable = useIsEditable(editor);
 
   useEffect(() => {
     const openFromKeyboard = (event: Event) => {
+      if (!isEditable) return;
       const pos = (event as CustomEvent<{ pos: number }>).detail?.pos;
       if (typeof getPos === "function" && pos === getPos() && chipRef.current) {
         setAnchorEl(chipRef.current);
@@ -21,10 +23,10 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
     };
     window.addEventListener("open-inline-status", openFromKeyboard);
     return () => window.removeEventListener("open-inline-status", openFromKeyboard);
-  }, [getPos, text]);
+  }, [getPos, text, isEditable]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (!editor?.isEditable) return;
+    if (!isEditable) return;
     setAnchorEl(event.currentTarget);
     setInputText(text); // Reset input to current text
   };
@@ -47,21 +49,27 @@ export const InlineStatusView: React.FC<NodeViewProps> = ({ node, deleteNode, up
         return { bg: "rgba(148, 163, 184, 0.12)", text: "#94a3b8", border: "rgba(148, 163, 184, 0.3)" };
       case "blue":
       default:
-        return { bg: "rgba(59, 130, 246, 0.12)", text: "#3b82f6", border: "rgba(59, 130, 246, 0.3)" };
+        return {
+          bg: "color-mix(in srgb, var(--accent-blue) 12%, transparent)",
+          text: "var(--accent-blue)",
+          border: "color-mix(in srgb, var(--accent-blue) 30%, transparent)",
+        };
     }
   };
 
   const style = getColors();
 
   const colorOptions = [
-    { name: "blue", hex: "#3b82f6" },
+    { name: "blue", hex: "var(--accent-blue)" },
     { name: "yellow", hex: "#f59e0b" },
     { name: "green", hex: "#10b981" },
     { name: "red", hex: "#ef4444" },
     { name: "gray", hex: "#94a3b8" },
   ];
 
-  const isEditable = useIsEditable(editor);
+  useEffect(() => {
+    if (!isEditable) setAnchorEl(null);
+  }, [isEditable]);
 
   return (
     <NodeViewWrapper style={{ display: "inline-block", verticalAlign: "middle", margin: "0 4px", userSelect: "none" }}>

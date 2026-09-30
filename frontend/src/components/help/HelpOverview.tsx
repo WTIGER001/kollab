@@ -18,7 +18,7 @@ export const HelpOverview: React.FC = () => {
       
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 4 }}>
         <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}>
+          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "color-mix(in srgb, var(--accent-blue) 12%, transparent)", color: "var(--accent-blue)" }}>
             <Layers size={18} />
           </Box>
           <Box>

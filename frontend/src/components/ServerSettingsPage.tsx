@@ -95,13 +95,13 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   });
 
   const [darkColors, setDarkColors] = useState<ColorScheme>({
-    primary: "#8b5cf6",
+    primary: "#5b5bd6",
     secondary: "#6366f1",
-    background: "#0b0c10",
-    paper: "#161824",
+    background: "#15171c",
+    paper: "#20232b",
     textPrimary: "#ffffff",
-    textSecondary: "#94a3b8",
-    border: "#1e293b",
+    textSecondary: "#cbd5e1",
+    border: "#334155",
     accent: "#3b82f6"
   });
 

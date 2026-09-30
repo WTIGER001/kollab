@@ -478,7 +478,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
       return { label: "PDF Document", color: "#ef4444", icon: <File size={16} color="#ef4444" /> };
     }
     if (nameLower.endsWith(".docx") || mimeType.includes("word")) {
-      return { label: "Word Document", color: "#3b82f6", icon: <FileText size={16} color="#3b82f6" /> };
+      return { label: "Word Document", color: "var(--accent-blue)", icon: <FileText size={16} color="var(--accent-blue)" /> };
     }
     if (nameLower.endsWith(".pptx") || mimeType.includes("presentation")) {
       return { label: "PowerPoint", color: "#f97316", icon: <Presentation size={16} color="#f97316" /> };

@@ -4,6 +4,7 @@ import { TableCreatorDialog } from "../TableCreatorDialog";
 import { AIPromptBar } from "../AIPromptBar";
 import { LinkBubbleMenu } from "./LinkBubbleMenu";
 import { SelectionBubbleMenu } from "./SelectionBubbleMenu";
+import { useIsEditable } from "../../hooks/useIsEditable";
 
 export interface EditorFloatingMenusProps {
   editor: any;
@@ -26,24 +27,26 @@ export const EditorFloatingMenus: React.FC<EditorFloatingMenusProps> = ({
   onEditLink,
   onAddComment,
 }) => {
+  const isEditable = useIsEditable(editor);
+
   return (
     <>
       {/* Popups & Menus that float above editor */}
-      {editor && <TableBubbleToolbar editor={editor} />}
-      {editor && <LinkBubbleMenu editor={editor} onEditLink={onEditLink} />}
-      {editor && <SelectionBubbleMenu editor={editor} onAddComment={onAddComment} />}
+      {editor && isEditable && <TableBubbleToolbar editor={editor} />}
+      {editor && isEditable && <LinkBubbleMenu editor={editor} onEditLink={onEditLink} />}
+      {editor && isEditable && <SelectionBubbleMenu editor={editor} onAddComment={onAddComment} />}
 
-      <TableCreatorDialog
+      {isEditable && <TableCreatorDialog
         open={tableCreatorOpen}
         onClose={() => setTableCreatorOpen(false)}
         onSubmit={insertTable}
-      />
+      />}
 
-      <AIPromptBar
+      {isEditable && <AIPromptBar
         open={aiPromptOpen}
         onClose={() => setAiPromptOpen(false)}
         editor={editor}
-      />
+      />}
     </>
   );
 };

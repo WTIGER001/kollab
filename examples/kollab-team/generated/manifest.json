@@ -89,7 +89,7 @@
     },
     {
       "type": "codeBlock",
-      "count": 34,
+      "count": 35,
       "pages": [
         "authoring-demo",
         "document-model",
@@ -224,7 +224,7 @@
     },
     {
       "type": "heading",
-      "count": 424,
+      "count": 426,
       "pages": [
         "architecture",
         "assessment",
@@ -345,7 +345,7 @@
     },
     {
       "type": "listItem",
-      "count": 788,
+      "count": 791,
       "pages": [
         "features-home",
         "maintenance",
@@ -688,7 +688,7 @@
     },
     {
       "type": "paragraph",
-      "count": 1718,
+      "count": 1730,
       "pages": [
         "architecture",
         "assessment",
@@ -880,7 +880,7 @@
     },
     {
       "type": "text",
-      "count": 4869,
+      "count": 4946,
       "pages": [
         "architecture",
         "assessment",
@@ -981,7 +981,7 @@
     "user_guide/project_portal.md": "d6d2a9b03a038d1f16b29e8e230eac5dca1a0481fe4300e1dd02ca0781efc659",
     "user_guide/search.md": "7586af36b72e902826fd1d74f58d5e86ebf06c4235af5ba5989cc6edd54197ff",
     "user_guide/mobile.md": "554bd1b66f7431aa6dd5219fc813f7fc4ee26e8c46f46b13ac4706ebaf20b8a5",
-    "user_guide/theming.md": "c26e733f6dc4cbf7cfffc5fbc75eb0dca4cc2778ea9aaeeee2a4d5c5a4e55230",
+    "user_guide/theming.md": "33513924fda81c01cc22a17d2e65308b6e892480160dc03edb470a5b260fb825",
     "user_guide/page_settings.md": "381db476f089edbd382523cae529b5830a9a242b90ad52dd8152ea0efac7cf71",
     "user_guide/trash_and_indexing.md": "caa919892660c170655f407575610a2ec0056ad74167ad47c78e5113835ac61a",
     "user_guide/basic_formatting.md": "a441901060d1fa451b0bae4d7d54bb8985b29125cc49070ae76886eb8fd793a0",
@@ -990,7 +990,7 @@
     "user_guide/attachments_and_previews.md": "78f8c61f2c538b35ed4bc8b083410d821b4df856eac0799f8a4369275e467f88",
     "user_guide/image_library.md": "729c15d346a3c81ec5b73d3c8640d9ba0ddc057d138333a16c3a4e09174dcae9",
     "user_guide/tags.md": "5d5d9fa2aece2d9974026b70dbe064095c0f55ae15e956e386fe5f97e06104e2",
-    "user_guide/readonly_edit_modes.md": "8e36b6614b18929af4134c072881053c515152ca868a481a11a4c6d167c68993",
+    "user_guide/readonly_edit_modes.md": "19997e62ed4f984663c0479c6ea516b8f3718589c5de9f9784e2f06da694f06b",
     "user_guide/comments.md": "195a261b276118763a26771a8e4dce182e562d589308e7f251b5f3bafc370e61",
     "user_guide/tasks.md": "f37654cdb8415131d265af1d6584d6b2abae746646d1c88148d08b66fe2ca67d",
     "user_guide/content_reviews.md": "74946b60725d981d3647f49b452e5e0f0bc42999f6704446143d5bfb4caad4c9",
@@ -1004,7 +1004,7 @@
     "user_guide/synchronization.md": "bd90b171200a92ffd46a0c76cf6f001a0eb0e49f08149938a8a9d4f89b18bd07",
     "user_guide/jira_confluence_integrations.md": "f399da4b6cf899aa11d1274cced2c710af97ac52ce3b24836e7b8a5ed30119ae",
     "user_guide/confluence_import_guide.md": "06ce5a27971019f5ea5ecc6e85f5c859cbeaf75f1038e1ce9afb42bef030b427",
-    "design/02_editor_core.md": "96a7c957472556bd158df083d81eb79256049f1495c472568adbcf10dd184721",
+    "design/02_editor_core.md": "ece6996750d00e4ad024cd19d314f0a945d879e144f50e3ef1b738161f53a838",
     "design/03_macros_and_plugins.md": "ca16b866921e857d543f2844ebf3b3a5f71f18e12cd0205eaf348af3b8840c10",
     "design/04_search_and_ai.md": "977d77423d017d5c96ab7c9caab70f2e165c7b5ea72124a1fe5c5d0f76b00fc5",
     "design/07_import_export_media.md": "e7691b8175d4c3580525b228a0d806afd92591f0db82eafb5c52ae7b94e677e7",
@@ -1057,5 +1057,5 @@
       "size": 43728
     }
   ],
-  "contentSha256": "37c2ccd6673c31b1f24f8d874fcb24cf95f7db94786e77b5592cea38be0df45b"
+  "contentSha256": "00b125992d997ce18ffcedc00645bdd16fb87fb6955197062297c76d667d3b78"
 }
