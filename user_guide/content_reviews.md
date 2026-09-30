@@ -12,8 +12,16 @@ Anyone who can edit the page can update its review state. Readers can see the cu
 
 An approved page automatically displays as **Stale** after its next-review date passes. Kollab does not yet send reminder notifications for overdue reviews.
 
-## Publish a reviewed page
+## What approval shares
 
-Publishing saves the current page as the reader-safe version. Later edits remain in the draft until you publish again, so readers using the published page do not see unfinished changes.
+The page everyone edits in the workspace is always the live page. Checkpoints and version history keep earlier copies of that live page. They do not hide later edits from the team.
 
-Use the page's **Publish** action when the content is ready. Kollab first confirms the current draft has saved, then creates the published snapshot. If either step fails, the editor remains open and shows an error so you can retry without losing your work. The published snapshot is retained in version history and can be safely replaced by a newer publication.
+Choosing **Approved** records the page as it is right then. That reviewed snapshot is what these audiences see:
+
+- Share links that can only be read
+- Excerpt includes on other pages
+- Search for people who cannot edit the page
+
+Save the page before you approve it, so the snapshot matches what you see. Later edits stay on the live page for people who can edit. Approve the review again when those edits are ready to share. A page that has never been approved keeps showing its live content everywhere, including share links.
+
+Changing the status away from Approved does not remove the last snapshot. Share links keep the last approved copy until you approve again.

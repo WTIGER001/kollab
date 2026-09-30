@@ -109,9 +109,9 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
                         borderRadius: "3px",
                         cursor: "pointer",
                         border: "1px solid",
-                        borderColor: isHovered ? "rgba(139, 92, 246, 0.5)" : "rgba(255, 255, 255, 0.06)",
+                        borderColor: isHovered ? "color-mix(in srgb, var(--primary-color) 50%, transparent)" : "rgba(255, 255, 255, 0.06)",
                         backgroundColor: isHovered
-                          ? "rgba(139, 92, 246, 0.45)"
+                          ? "color-mix(in srgb, var(--primary-color) 45%, transparent)"
                           : "rgba(255, 255, 255, 0.04)",
                         transition: "all 0.15s ease",
                         "&:hover": {
@@ -217,10 +217,10 @@ export const TableCreatorDialog: React.FC<TableCreatorDialogProps> = ({
             color: "#ffffff",
             textTransform: "none",
             fontWeight: 600,
-            boxShadow: "0 4px 14px rgba(139, 92, 246, 0.3)",
+            boxShadow: "0 4px 14px color-mix(in srgb, var(--primary-color) 30%, transparent)",
             "&:hover": {
-              backgroundColor: "rgba(139, 92, 246, 0.9)",
-              boxShadow: "0 6px 20px rgba(139, 92, 246, 0.4)",
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 90%, transparent)",
+              boxShadow: "0 6px 20px color-mix(in srgb, var(--primary-color) 40%, transparent)",
             },
           }}
         >

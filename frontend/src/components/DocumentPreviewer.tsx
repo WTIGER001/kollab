@@ -628,10 +628,10 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     textTransform: "uppercase",
                     minWidth: 32,
                     borderColor: "var(--border-color) !important",
-                    bgcolor: heightSize === sz ? "rgba(139, 92, 246, 0.15)" : "transparent",
+                    bgcolor: heightSize === sz ? "color-mix(in srgb, var(--primary-color) 15%, transparent)" : "transparent",
                     color: heightSize === sz ? "var(--primary-color)" : "text.secondary",
                     "&:hover": {
-                      bgcolor: heightSize === sz ? "rgba(139, 92, 246, 0.25)" : "rgba(255,255,255,0.05)"
+                      bgcolor: heightSize === sz ? "color-mix(in srgb, var(--primary-color) 25%, transparent)" : "rgba(255,255,255,0.05)"
                     }
                   }}
                 >
@@ -732,7 +732,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     borderColor: "var(--border-color)",
                     color: "text.primary",
                     fontFamily: '"Outfit", sans-serif',
-                    "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
+                    "&:hover": { borderColor: "var(--primary-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 10%, transparent)" }
                   }}
                 >
                   Local Fallback Viewer
@@ -749,7 +749,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                   borderColor: "var(--border-color)",
                   color: "text.primary",
                   fontFamily: '"Outfit", sans-serif',
-                  "&:hover": { borderColor: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.1)" }
+                  "&:hover": { borderColor: "var(--primary-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 10%, transparent)" }
                 }}
               >
                 Download File
@@ -810,7 +810,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
         {/* Audio Player */}
         {!loading && !error && (mimeType.startsWith("audio/") || /\.(mp3|wav|m4a|ogg)$/i.test(filename)) && (
           <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", bgcolor: "rgba(0,0,0,0.03)", p: 4 }}>
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 3, width: "80px", height: "80px", borderRadius: "50%", bgcolor: "rgba(139, 92, 246, 0.15)", color: "var(--primary-color)" }}>
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 3, width: "80px", height: "80px", borderRadius: "50%", bgcolor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "var(--primary-color)" }}>
               <ChevronRight size={40} style={{ transform: "rotate(-90deg)" }} />
             </Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "var(--text-primary)" }}>{filename}</Typography>
@@ -985,7 +985,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                         mb: 0.5,
                         py: 1,
                         borderLeft: currentSlideIndex === idx ? "3px solid var(--primary-color)" : "3px solid transparent",
-                        bgcolor: currentSlideIndex === idx ? "rgba(139, 92, 246, 0.1) !important" : "transparent",
+                        bgcolor: currentSlideIndex === idx ? "color-mix(in srgb, var(--primary-color) 10%, transparent) !important" : "transparent",
                         "&:hover": { bgcolor: "action.hover" }
                       }}
                     >
@@ -1047,7 +1047,7 @@ export const DocumentPreviewer: React.FC<DocumentPreviewerProps> = ({
                     fontFamily: '"Outfit", sans-serif',
                     fontSize: "24px",
                     lineHeight: 1.25,
-                    borderBottom: "2px solid rgba(139, 92, 246, 0.4)",
+                    borderBottom: "2px solid color-mix(in srgb, var(--primary-color) 40%, transparent)",
                     pb: 1.5,
                     mb: 2,
                     letterSpacing: "-0.01em"

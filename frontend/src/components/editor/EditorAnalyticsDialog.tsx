@@ -80,7 +80,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
               width: 32,
               height: 32,
               borderRadius: "8px",
-              backgroundColor: "rgba(139, 92, 246, 0.12)",
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
               color: "var(--primary-color)",
             }}
           >
@@ -129,7 +129,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                color: "#8b5cf6",
+                color: "var(--primary-text-color)",
               }}
             >
               <FileText size={16} />
@@ -687,7 +687,7 @@ export const EditorAnalyticsDialog: React.FC<EditorAnalyticsDialogProps> = ({
                         strokeLinejoin="round"
                         style={{
                           filter:
-                            "drop-shadow(0 2px 8px rgba(139, 92, 246, 0.4))",
+                            "drop-shadow(0 2px 8px color-mix(in srgb, var(--primary-color) 40%, transparent))",
                         }}
                       />
                     )}

@@ -169,7 +169,7 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
                 borderBottom: "var(--border-color)",
                 "&.Mui-selected": {
                   color: "var(--primary-color)",
-                  backgroundColor: "rgba(139, 92, 246, 0.05)",
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 5%, transparent)",
                 },
                 "&:hover": {
                   color: "text.primary",
@@ -254,10 +254,10 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
                       borderColor: "var(--primary-color)",
                       boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)",
                       transform: "translateY(-1px)",
-                      backgroundColor: "rgba(139, 92, 246, 0.02)",
+                      backgroundColor: "color-mix(in srgb, var(--primary-color) 2%, transparent)",
                       "& .macro-icon-box": {
-                        backgroundColor: "rgba(139, 92, 246, 0.15)",
-                        borderColor: "rgba(139, 92, 246, 0.3)",
+                        backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
+                        borderColor: "color-mix(in srgb, var(--primary-color) 30%, transparent)",
                       },
                     },
                   }}

@@ -169,7 +169,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             >
               <Radio value="json" sx={{ p: 0, mr: 1.5 }} />
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%" }}>
-                <Cpu size={18} style={{ color: "#8b5cf6" }} />
+                <Cpu size={18} style={{ color: "var(--primary-text-color)" }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "13px" }}>Portable Data (.json)</Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>Export page tree structure for migrations</Typography>

@@ -331,6 +331,17 @@ export interface DocumentPublication {
 export const publishDocument = (documentId: string): Promise<DocumentPublication> =>
   request(`/api/documents/${documentId}/publish`, { method: "POST" });
 
+export const fetchReviewedDocument = async (id: string): Promise<Document | null> => {
+  try {
+    const payload = await request(`/api/documents/${id}/published`);
+    return payload.document as Document;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("not been published") || message.includes("status 404")) return null;
+    throw err;
+  }
+};
+
 export const deleteDocument = (id: string, permanent?: boolean): Promise<void> => {
   const url = permanent ? `/api/documents/${id}?permanent=true` : `/api/documents/${id}`;
   return request(url, {

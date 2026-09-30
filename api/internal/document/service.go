@@ -882,7 +882,48 @@ func (s *DocumentService) UpdateDocumentReview(ctx context.Context, documentID s
 	if err := s.repo.SaveReview(ctx, review); err != nil {
 		return nil, err
 	}
+	if status == "approved" {
+		if _, err := s.PublishDocument(ctx, documentID, userID); err != nil {
+			return nil, err
+		}
+	}
 	return s.GetDocumentReview(ctx, documentID)
+}
+
+// AudienceDocument returns the last approved snapshot. The live page remains
+// the workspace document; this snapshot is only for share links, excerpt
+// includes, and readers who cannot edit.
+func (s *DocumentService) AudienceDocument(ctx context.Context, documentID string) (*domain.Document, bool, error) {
+	document, _, err := s.GetPublishedDocument(ctx, documentID)
+	if err != nil {
+		if err.Error() == "document has not been published" {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return document, true, nil
+}
+
+// ForReader replaces a search hit with its approved snapshot. A hit that
+// exists only in the unpublished draft is omitted so read-only search does
+// not reveal it. Pages that have never been approved stay on the live content.
+func (s *DocumentService) ForReader(ctx context.Context, doc *domain.Document, query string) (*domain.Document, error) {
+	if doc == nil {
+		return nil, nil
+	}
+	snapshot, ok, err := s.AudienceDocument(ctx, doc.ID)
+	if err != nil || !ok {
+		return doc, err
+	}
+	if query != "" {
+		haystack := strings.ToLower(snapshot.Title + " " + ExtractTextFromJSON(snapshot.Content))
+		if !strings.Contains(haystack, strings.ToLower(query)) {
+			return nil, nil
+		}
+	}
+	copy := *doc
+	copy.Content = snapshot.Content
+	return &copy, nil
 }
 
 func (s *DocumentService) FindConfluenceImport(ctx context.Context, archiveSHA256, sourcePath, teamID, projectID string) (*domain.ConfluenceImportRecord, error) {

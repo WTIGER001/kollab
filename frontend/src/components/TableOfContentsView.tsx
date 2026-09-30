@@ -123,7 +123,7 @@ export const TableOfContentsView: React.FC<NodeViewProps> = ({ deleteNode, edito
                       color: "text.secondary",
                       "&:hover": {
                         color: "var(--primary-color)",
-                        backgroundColor: "rgba(139, 92, 246, 0.04)",
+                        backgroundColor: "color-mix(in srgb, var(--primary-color) 4%, transparent)",
                         "& .arrow-icon": {
                           opacity: 1,
                           transform: "translateX(2px)"

@@ -102,8 +102,8 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           fontWeight: 600,
           fontFamily: '"Outfit", sans-serif',
           color: "var(--primary-color)",
-          backgroundColor: "rgba(139, 92, 246, 0.08)", // Primary HSL alpha
-          border: "1px solid rgba(139, 92, 246, 0.25)",
+          backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)", // Primary HSL alpha
+          border: "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)",
           borderRadius: "4px",
           cursor: isEditable ? "pointer" : "default",
           transition: "all 0.15s ease",
@@ -111,7 +111,7 @@ export const InlineDateView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           "&:hover": isEditable ? {
             opacity: 0.85,
             boxShadow: "0 0 0 1px var(--primary-color)",
-            backgroundColor: "rgba(139, 92, 246, 0.12)",
+            backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
           } : {},
         }}
       />

@@ -10,7 +10,7 @@
   "nodeInventory": [
     {
       "type": "bulletList",
-      "count": 137,
+      "count": 138,
       "pages": [
         "ref-design-02_editor_core",
         "ref-design-03_macros_and_plugins",
@@ -28,6 +28,7 @@
         "ref-user_guide-basic_formatting",
         "ref-user_guide-comments",
         "ref-user_guide-confluence_import_guide",
+        "ref-user_guide-content_reviews",
         "ref-user_guide-editor_macros",
         "ref-user_guide-image_library",
         "ref-user_guide-oidc_sso",
@@ -345,7 +346,7 @@
     },
     {
       "type": "listItem",
-      "count": 792,
+      "count": 798,
       "pages": [
         "features-home",
         "maintenance",
@@ -688,7 +689,7 @@
     },
     {
       "type": "paragraph",
-      "count": 1731,
+      "count": 1742,
       "pages": [
         "architecture",
         "assessment",
@@ -880,7 +881,7 @@
     },
     {
       "type": "text",
-      "count": 4973,
+      "count": 5045,
       "pages": [
         "architecture",
         "assessment",
@@ -993,8 +994,8 @@
     "user_guide/readonly_edit_modes.md": "19997e62ed4f984663c0479c6ea516b8f3718589c5de9f9784e2f06da694f06b",
     "user_guide/comments.md": "195a261b276118763a26771a8e4dce182e562d589308e7f251b5f3bafc370e61",
     "user_guide/tasks.md": "f37654cdb8415131d265af1d6584d6b2abae746646d1c88148d08b66fe2ca67d",
-    "user_guide/content_reviews.md": "74946b60725d981d3647f49b452e5e0f0bc42999f6704446143d5bfb4caad4c9",
-    "user_guide/version_history.md": "c72b70998b9f489d7df64d41ee594108b50b402720ab4e437cd699719fe9d5c5",
+    "user_guide/content_reviews.md": "0b52cd128b08ee671a8f3888d58b43f725e52ab7704e7625e3cd3a204240c211",
+    "user_guide/version_history.md": "111e3d498f5dd5fec70ee4068d4162016b0937e8fdb9845b603206d4232bca78",
     "user_guide/page_access.md": "393f43c688327184503546a482a4b7e85a4b3b55c0775587e4b56e6a772c9c5c",
     "user_guide/watching_pages.md": "d7b51d2e5840dd22a7fe702e6e2585e60f14471f91aca7a7ccf859df08500060",
     "user_guide/server_settings.md": "baec03708179272e07b7ac760569268747673dd32b3e612776ef68eb53489278",
@@ -1004,8 +1005,8 @@
     "user_guide/synchronization.md": "bd90b171200a92ffd46a0c76cf6f001a0eb0e49f08149938a8a9d4f89b18bd07",
     "user_guide/jira_confluence_integrations.md": "f399da4b6cf899aa11d1274cced2c710af97ac52ce3b24836e7b8a5ed30119ae",
     "user_guide/confluence_import_guide.md": "06ce5a27971019f5ea5ecc6e85f5c859cbeaf75f1038e1ce9afb42bef030b427",
-    "design/02_editor_core.md": "ece6996750d00e4ad024cd19d314f0a945d879e144f50e3ef1b738161f53a838",
-    "design/03_macros_and_plugins.md": "8b021aecd2ff0720cbeeda813852b24483b3f2fdbbf8515566e8fb7811694bd8",
+    "design/02_editor_core.md": "8af81f5379273a308608d0142ac371ea8c6a5db049f1edbc09cb5e603e44f722",
+    "design/03_macros_and_plugins.md": "d57905e305812388039dceb4fb2ebfabb89a8f711befba2c3435e06892be71ae",
     "design/04_search_and_ai.md": "977d77423d017d5c96ab7c9caab70f2e165c7b5ea72124a1fe5c5d0f76b00fc5",
     "design/07_import_export_media.md": "e7691b8175d4c3580525b228a0d806afd92591f0db82eafb5c52ae7b94e677e7",
     "design/08_metadata_and_social.md": "92cb5c10022d9a91de130fe8904c4a94c218b1fd7b5d4db55861d943539a39ab",
@@ -1014,7 +1015,7 @@
     "design/25_local_identity.md": "28b41fc441bb70a8a259e3d742e40fae0c321d4095e57c2723a41b4babf068ad",
     "design/26_confluence_style_permissions.md": "16e95f1b669a7f976bc8d0b6afc0a16a9a08c13d6b09dd2314f527dfdafaefda",
     "design/05_data_lifecycle.md": "a1f23b6d45b01492dc8e3769c2cfe8999d998fbbad50de40f8760ea0462d8714",
-    "design/11_enterprise_publishing_and_templates.md": "42ade8bc2233e8004b48982840b7af8cadfe7b2cb644e13f9a62407b99b3d053",
+    "design/11_enterprise_publishing_and_templates.md": "8267499b1f3272020e34468118160a86b95c561b682d14bd329fd16fb65f5441",
     "design/multi_instance_sync.md": "645370f84a1207bf821ac6b97988d8534f3047046d14dc6ff56c4e1fde408da0",
     "design/23_database_migrations.md": "6f4cddcca3cebad3bc2a312b9b1ab2615f9282dda121000f0bdf9ed2d76d9bb9",
     "design/container_releases.md": "915238b9eea3eb7758c78d9c8c7870f6e932d6fbbd7895aa49bfe14644e20aaf",
@@ -1057,5 +1058,5 @@
       "size": 43728
     }
   ],
-  "contentSha256": "efea1a0306a65bcfac989d72387e35302e089f4fd47bdb9b18cea59e2a6337c1"
+  "contentSha256": "f94ef04b5833ce5bfe80853a69c20aaffa41846de310fa5847f7c76aaa06cb05"
 }

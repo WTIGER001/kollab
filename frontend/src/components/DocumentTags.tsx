@@ -169,7 +169,7 @@ export const DocumentTags: React.FC<DocumentTagsProps> = ({ docId, readOnly = fa
                   "&:hover": {
                     borderColor: "var(--primary-color)",
                     color: "var(--primary-color)",
-                    backgroundColor: "rgba(139, 92, 246, 0.05)"
+                    backgroundColor: "color-mix(in srgb, var(--primary-color) 5%, transparent)"
                   }
                 }}
               >
@@ -263,7 +263,7 @@ export const DocumentTags: React.FC<DocumentTagsProps> = ({ docId, readOnly = fa
                         display: "flex",
                         alignItems: "center",
                         "&:hover": {
-                          backgroundColor: "rgba(139, 92, 246, 0.08)"
+                          backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)"
                         }
                       }}
                     >

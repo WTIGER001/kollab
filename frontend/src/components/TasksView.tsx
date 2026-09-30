@@ -124,7 +124,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ username, onNavigate }) =>
             px: 0.75,
             py: 0.15,
             borderRadius: "4px",
-            backgroundColor: "rgba(139, 92, 246, 0.15)",
+            backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
             color: "var(--primary-color)",
             fontWeight: 600,
             fontSize: "11.5px",
@@ -154,10 +154,10 @@ export const TasksView: React.FC<TasksViewProps> = ({ username, onNavigate }) =>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box 
             sx={{ 
-              backgroundColor: "rgba(139, 92, 246, 0.1)", 
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)", 
               p: 1.5, 
               borderRadius: "12px", 
-              border: "1px solid rgba(139, 92, 246, 0.2)",
+              border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)",
               display: "flex",
               alignItems: "center"
             }}
@@ -179,9 +179,9 @@ export const TasksView: React.FC<TasksViewProps> = ({ username, onNavigate }) =>
             sx={{
               fontWeight: 600,
               fontFamily: '"Outfit", sans-serif',
-              backgroundColor: pendingCount > 0 ? "rgba(139, 92, 246, 0.12)" : "rgba(34, 197, 94, 0.12)",
+              backgroundColor: pendingCount > 0 ? "color-mix(in srgb, var(--primary-color) 12%, transparent)" : "rgba(34, 197, 94, 0.12)",
               color: pendingCount > 0 ? "var(--primary-color)" : "#22c55e",
-              border: pendingCount > 0 ? "1px solid rgba(139, 92, 246, 0.25)" : "1px solid rgba(34, 197, 94, 0.25)",
+              border: pendingCount > 0 ? "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)" : "1px solid rgba(34, 197, 94, 0.25)",
               borderRadius: "6px"
             }}
           />
@@ -280,7 +280,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ username, onNavigate }) =>
                           backgroundColor: task.completed ? "rgba(0, 0, 0, 0.08)" : "transparent",
                           transition: "background-color 0.15s ease",
                           "&:hover": {
-                            backgroundColor: "rgba(139, 92, 246, 0.03)"
+                            backgroundColor: "color-mix(in srgb, var(--primary-color) 3%, transparent)"
                           }
                         }}
                         onClick={() => handleTaskClick(task)}

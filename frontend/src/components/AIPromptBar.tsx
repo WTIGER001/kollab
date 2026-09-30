@@ -199,7 +199,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
         width: 360,
         backgroundColor: "rgba(16, 18, 26, 0.95)",
         backdropFilter: "blur(16px)",
-        border: "1px solid rgba(139, 92, 246, 0.2)",
+        border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)",
         borderRadius: 2,
         boxShadow: "0 16px 48px rgba(0, 0, 0, 0.5)",
         p: 1.5,
@@ -267,19 +267,19 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
                   label="Summarize"
                   size="small"
                   onClick={() => handleChipClick("Summarize selection")}
-                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "rgba(139,92,246,0.15)", color: "primary.light" } }}
+                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "primary.light" } }}
                 />
                 <Chip
                   label="Improve Writing"
                   size="small"
                   onClick={() => handleChipClick("Improve selected text")}
-                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "rgba(139,92,246,0.15)", color: "primary.light" } }}
+                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "primary.light" } }}
                 />
                 <Chip
                   label="Make Shorter"
                   size="small"
                   onClick={() => handleChipClick("Make selection shorter")}
-                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "rgba(139,92,246,0.15)", color: "primary.light" } }}
+                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "primary.light" } }}
                 />
               </>
             ) : (
@@ -288,13 +288,13 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
                   label="Draft Intro"
                   size="small"
                   onClick={() => handleChipClick("Write a quick introduction")}
-                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "rgba(139,92,246,0.15)", color: "primary.light" } }}
+                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "primary.light" } }}
                 />
                 <Chip
                   label="Expand Draft"
                   size="small"
                   onClick={() => handleChipClick("Write a longer description")}
-                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "rgba(139,92,246,0.15)", color: "primary.light" } }}
+                  sx={{ fontSize: "10px", backgroundColor: "action.hover", color: "text.secondary", "&:hover": { backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)", color: "primary.light" } }}
                 />
               </>
             )}

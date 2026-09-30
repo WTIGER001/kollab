@@ -200,7 +200,7 @@ flowchart TD
 > [!NOTE]
 > **Status:** 🟢 Completed
 
-The editing state is managed by the React host state `isEditing: boolean` inside [EditorCanvas.tsx](../frontend/src/components/EditorCanvas.tsx).
+The editing state is managed by the React host state `isEditing: boolean` inside [EditorCanvas.tsx](../frontend/src/components/EditorCanvas.tsx). **Done** opens `CheckpointDialog` (`frontend/src/components/editor/CheckpointDialog.tsx`) and saves a named checkpoint of the live page. It does not record the audience snapshot. Idle timeout uses `IdleSessionDialog` in the same file and also saves a checkpoint. Version history UI lives in `EditorHistoryDrawer`.
 
 When `isEditing` changes, it is synchronized with the ProseMirror/Tiptap instance via `editor.setEditable(isEditing)` within a React `useEffect`:
 

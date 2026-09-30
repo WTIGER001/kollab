@@ -27,7 +27,7 @@ Kollab should **match the jobs**, rather than replicate a large catalog of provi
 
 | Confluence-strength to meet | Kollab's reimagined improvement |
 | --- | --- |
-| Collaborative pages, spaces, hierarchy, templates, comments, versions, and publishing | A single document model with real-time collaboration, explicit draft/review/published lifecycle, portable exports, and stable IDs that survive title or location changes. |
+| Collaborative pages, spaces, hierarchy, templates, comments, versions, and publishing | A single live document with real-time collaboration, checkpoints, and a reviewed snapshot for share links, excerpts, and read-only search. Portable exports and stable IDs survive title or location changes. |
 | Macros and Smart Links | A small set of consistent primitives—**smart object**, **collection view**, **embedded source**, **reusable content**, and **action**—with predictable configuration, source/freshness labels, and text-first fallbacks. |
 | Content properties and reports | Typed, schema-governed document properties and saved collection views; no fragile, visually-hidden table as the data model. |
 | Databases and multiple views | A first-class collection model that can present the same items as table, board, list, cards, calendar, timeline, or relationship graph, while preserving page context. |

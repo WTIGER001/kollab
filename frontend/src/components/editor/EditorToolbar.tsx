@@ -118,13 +118,13 @@ export const EditorToolbar = ({
                         fontSize: "13px",
                         fontFamily: '"Outfit", sans-serif',
                         "&:hover": {
-                          backgroundColor: "rgba(139, 92, 246, 0.08)",
+                          backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)",
                         },
                         "&.Mui-selected": {
-                          backgroundColor: "rgba(139, 92, 246, 0.12)",
+                          backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                           color: "var(--primary-color)",
                           "&:hover": {
-                            backgroundColor: "rgba(139, 92, 246, 0.18)",
+                            backgroundColor: "color-mix(in srgb, var(--primary-color) 18%, transparent)",
                           },
                         },
                       },
@@ -159,7 +159,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("bold") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("bold")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -174,7 +174,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("italic") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("italic")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -189,7 +189,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("strike") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("strike")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -204,7 +204,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("underline") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("underline")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -219,7 +219,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("highlight") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("highlight")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -234,7 +234,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("subscript") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("subscript")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -249,7 +249,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("superscript") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("superscript")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -264,7 +264,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("link") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("link")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -279,7 +279,7 @@ export const EditorToolbar = ({
               sx={{
                 color: editor.isActive("code") ? "primary.light" : "inherit",
                 backgroundColor: editor.isActive("code")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -296,7 +296,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive("codeBlock")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -313,7 +313,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive("blockquote")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -337,7 +337,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive({ textAlign: "left" })
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -356,7 +356,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive({ textAlign: "center" })
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -373,7 +373,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive({ textAlign: "right" })
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -397,7 +397,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive("bulletList")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -414,7 +414,7 @@ export const EditorToolbar = ({
                   ? "primary.light"
                   : "inherit",
                 backgroundColor: editor.isActive("orderedList")
-                  ? "rgba(139, 92, 246, 0.1)"
+                  ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                   : "transparent",
               }}
             >
@@ -667,7 +667,7 @@ export const EditorToolbar = ({
                     sx={{
                       color: isActive() ? "primary.light" : "inherit",
                       backgroundColor: isActive()
-                        ? "rgba(139, 92, 246, 0.1)"
+                        ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                         : "transparent",
                       flexShrink: 0,
                       "&:hover": {
@@ -693,12 +693,12 @@ export const EditorToolbar = ({
               }}
               sx={{
                 color: "primary.light",
-                backgroundColor: "rgba(139, 92, 246, 0.08)",
-                border: "1px dashed rgba(139, 92, 246, 0.3)",
+                backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)",
+                border: "1px dashed color-mix(in srgb, var(--primary-color) 30%, transparent)",
                 flexShrink: 0,
                 ml: 0.5,
                 "&:hover": {
-                  backgroundColor: "rgba(139, 92, 246, 0.15)",
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
                   borderColor: "var(--primary-color)",
                 },
               }}

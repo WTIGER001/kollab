@@ -246,7 +246,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary", fontSize: "13px" }}>
                     {topic.title}
                   </Typography>
-                  <Typography variant="caption" sx={{ px: 1, py: 0.25, borderRadius: "4px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)", fontSize: "10px", fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ px: 1, py: 0.25, borderRadius: "4px", backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)", color: "var(--primary-color)", fontSize: "10px", fontWeight: 600 }}>
                     {topic.categoryLabel}
                   </Typography>
                 </Box>
@@ -328,8 +328,8 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ open, onClose }) => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: "220px", order: 1 }}>
           <Box
             sx={{
-              backgroundColor: "rgba(139, 92, 246, 0.1)",
-              border: "1px solid rgba(139, 92, 246, 0.2)",
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)",
+              border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)",
               p: 0.75,
               borderRadius: "8px",
               display: "flex",

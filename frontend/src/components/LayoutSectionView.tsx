@@ -71,7 +71,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                   sx={{ 
                     p: 0.5, 
                     color: "primary.light", 
-                    backgroundColor: "rgba(139, 92, 246, 0.15) !important" 
+                    backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent) !important" 
                   }}
                 >
                   <Columns3 size={13} />
@@ -87,7 +87,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                   sx={{
                     p: 0.5,
                     color: layout === "twocol" ? "primary.light" : "text.secondary",
-                    backgroundColor: layout === "twocol" ? "rgba(139, 92, 246, 0.1)" : "transparent",
+                    backgroundColor: layout === "twocol" ? "color-mix(in srgb, var(--primary-color) 10%, transparent)" : "transparent",
                     "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >
@@ -102,7 +102,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                   sx={{
                     p: 0.5,
                     color: layout === "asymmetric-left" ? "primary.light" : "text.secondary",
-                    backgroundColor: layout === "asymmetric-left" ? "rgba(139, 92, 246, 0.1)" : "transparent",
+                    backgroundColor: layout === "asymmetric-left" ? "color-mix(in srgb, var(--primary-color) 10%, transparent)" : "transparent",
                     "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >
@@ -117,7 +117,7 @@ export const LayoutSectionView: React.FC<NodeViewProps> = ({
                   sx={{
                     p: 0.5,
                     color: layout === "asymmetric-right" ? "primary.light" : "text.secondary",
-                    backgroundColor: layout === "asymmetric-right" ? "rgba(139, 92, 246, 0.1)" : "transparent",
+                    backgroundColor: layout === "asymmetric-right" ? "color-mix(in srgb, var(--primary-color) 10%, transparent)" : "transparent",
                     "&:hover": { backgroundColor: "action.hover" }
                   }}
                 >

@@ -24,6 +24,7 @@ vi.mock("../services/api", () => ({
   fetchTeams: vi.fn().mockResolvedValue([]),
   fetchUserMentions: vi.fn().mockResolvedValue([]),
   fetchDocument: vi.fn().mockResolvedValue({ id: "source", title: "Source", content: "" }),
+  fetchReviewedDocument: vi.fn().mockResolvedValue(null),
   fetchDocumentProperties: vi.fn().mockResolvedValue([]),
   fetchDocumentReview: vi.fn().mockResolvedValue({ status: "draft", nextReviewAt: null }),
   updateDocumentReview: vi.fn(),

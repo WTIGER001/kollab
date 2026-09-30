@@ -417,7 +417,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               borderRadius: "4px",
               color: isActive ? "var(--primary-text-color)" : "text.secondary",
               backgroundColor: dragOverId === doc.id
-                ? "rgba(139, 92, 246, 0.15)"
+                ? "color-mix(in srgb, var(--primary-color) 15%, transparent)"
                 : isActive 
                   ? "color-mix(in srgb, var(--primary-color) 12%, transparent)" 
                   : "transparent",
@@ -1282,7 +1282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               border: "1.5px dashed",
               borderColor: dragOverId === "root" ? "primary.main" : "rgba(255, 255, 255, 0.08)",
               borderRadius: "6px",
-              backgroundColor: dragOverId === "root" ? "rgba(139, 92, 246, 0.08)" : "transparent",
+              backgroundColor: dragOverId === "root" ? "color-mix(in srgb, var(--primary-color) 8%, transparent)" : "transparent",
               textAlign: "center",
               cursor: "pointer",
               transition: "all 0.15s ease",

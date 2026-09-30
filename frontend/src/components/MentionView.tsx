@@ -26,8 +26,8 @@ export const MentionView: React.FC<NodeViewProps> = ({ node }) => {
             fontWeight: 600,
             fontFamily: '"Outfit", sans-serif',
             color: "var(--primary-color, #8b5cf6)",
-            backgroundColor: "rgba(139, 92, 246, 0.12)",
-            border: "1px solid rgba(139, 92, 246, 0.25)",
+            backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)",
             borderRadius: "4px",
             cursor: "default",
             transition: "all 0.15s ease",
@@ -36,8 +36,8 @@ export const MentionView: React.FC<NodeViewProps> = ({ node }) => {
               paddingRight: "6px",
             },
             "&:hover": {
-              backgroundColor: "rgba(139, 92, 246, 0.18)",
-              borderColor: "rgba(139, 92, 246, 0.4)",
+              backgroundColor: "color-mix(in srgb, var(--primary-color) 18%, transparent)",
+              borderColor: "color-mix(in srgb, var(--primary-color) 40%, transparent)",
             },
           }}
         />

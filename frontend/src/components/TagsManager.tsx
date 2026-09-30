@@ -220,7 +220,7 @@ export const TagsManager: React.FC = () => {
               color: "var(--primary-color)",
               "&:hover": {
                 borderColor: "var(--primary-dark)",
-                backgroundColor: "rgba(139, 92, 246, 0.04)"
+                backgroundColor: "color-mix(in srgb, var(--primary-color) 4%, transparent)"
               }
             }}
           >
@@ -245,7 +245,7 @@ export const TagsManager: React.FC = () => {
                   "&:hover": {
                     transform: "translateY(-1px)",
                     boxShadow: "var(--shadow-premium)",
-                    borderColor: "rgba(139, 92, 246, 0.12)"
+                    borderColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)"
                   }
                 }}
               >
@@ -275,7 +275,7 @@ export const TagsManager: React.FC = () => {
                           sx={{ 
                             p: 0.5,
                             color: "text.secondary",
-                            "&:hover": { color: "var(--primary-color)", bgcolor: "rgba(139, 92, 246, 0.05)" }
+                            "&:hover": { color: "var(--primary-color)", bgcolor: "color-mix(in srgb, var(--primary-color) 5%, transparent)" }
                           }}
                         >
                           <Edit2 size={12} />

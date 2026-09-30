@@ -134,7 +134,7 @@ export const UserMentionsView: React.FC<UserMentionsViewProps> = ({
                 borderBottom: "1px solid var(--border-color)",
                 "&:last-child": { borderBottom: 0 },
                 "&.MuiTableRow-hover:hover": {
-                  backgroundColor: "rgba(139, 92, 246, 0.02)"
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 2%, transparent)"
                 }
               }}
             >
@@ -172,10 +172,10 @@ export const UserMentionsView: React.FC<UserMentionsViewProps> = ({
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
         <Box 
           sx={{ 
-            backgroundColor: "rgba(139, 92, 246, 0.1)", 
+            backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)", 
             p: 1.5, 
             borderRadius: "12px", 
-            border: "1px solid rgba(139, 92, 246, 0.2)",
+            border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)",
             display: "flex",
             alignItems: "center"
           }}

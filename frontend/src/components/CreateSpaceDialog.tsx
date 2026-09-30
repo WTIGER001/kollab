@@ -318,7 +318,7 @@ export const CreateSpaceDialog: React.FC<CreateSpaceDialogProps> = ({
             bgcolor: "primary.main",
             borderRadius: "6px",
             textTransform: "none",
-            boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
+            boxShadow: "0 4px 12px color-mix(in srgb, var(--primary-color) 20%, transparent)",
             "&:hover": { bgcolor: "primary.dark" }
           }}
         >

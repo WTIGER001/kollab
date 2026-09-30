@@ -43,7 +43,6 @@ import {
   fetchDocument,
   fetchDocumentAnalytics,
   autogenSummary,
-	publishDocument,
   addFavorite,
   removeFavorite,
   isFavorite as checkIsFavorite,
@@ -67,6 +66,7 @@ import { DocumentTags } from "./DocumentTags";
 import { EditorHeader } from "./editor/EditorHeader";
 import { EditorAnalyticsDialog } from "./editor/EditorAnalyticsDialog";
 import { EditorHistoryDrawer } from "./editor/EditorHistoryDrawer";
+import { CheckpointDialog, IdleSessionDialog } from "./editor/CheckpointDialog";
 import { EditorMacroDialog } from "./editor/EditorMacroDialog";
 import { EditorFloatingMenus } from "./editor/EditorFloatingMenus";
 import { InsertLinkDialog } from "./editor/InsertLinkDialog";
@@ -915,7 +915,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSaveRef = React.useRef<{ title: string; content: string; summary?: string; save: typeof onSave } | null>(null);
   const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingCheckpoint, setIsSavingCheckpoint] = useState(false);
   const flushPendingSave = () => {
     const pending = pendingSaveRef.current;
     if (!pending) return saveQueueRef.current;
@@ -953,22 +953,19 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
   }, []);
 
-  const publishCurrentDraft = async () => {
+  const saveCheckpoint = async () => {
     if (!activeDocId || !editor || editor.isDestroyed) return;
-    setIsPublishing(true);
+    setIsSavingCheckpoint(true);
     try {
-      // Publishing must snapshot the confirmed draft, never a debounced save
-      // that has merely been queued in the browser.
-      await saveDocumentNow(title, commitDescription || "Published version");
-      await publishDocument(activeDocId);
-      showToast("Published current draft", "success");
+      await saveDocumentNow(title, commitDescription || "Named checkpoint");
+      showToast("Saved checkpoint", "success");
       setIsEditing(false);
       setCommitModalOpen(false);
     } catch (err) {
-      console.error("Failed to publish document:", err);
-      showToast("Could not publish the draft. Keep editing and try again.", "error");
+      console.error("Failed to save checkpoint:", err);
+      showToast("Could not save the checkpoint. Keep editing and try again.", "error");
     } finally {
-      setIsPublishing(false);
+      setIsSavingCheckpoint(false);
     }
   };
 
@@ -1851,7 +1848,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id: "image",
       label: "Insert Image",
       description: "Upload and insert an image",
-      icon: <Image size={16} style={{ color: "#8b5cf6" }} />,
+      icon: <Image size={16} style={{ color: "var(--primary-text-color)" }} />,
       action: (ed) => {
         triggerImageUpload(ed);
       },
@@ -2619,13 +2616,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                           fontSize: "13px",
                           fontFamily: '"Outfit", sans-serif',
                           "&:hover": {
-                            backgroundColor: "rgba(139, 92, 246, 0.08)",
+                            backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)",
                           },
                           "&.Mui-selected": {
-                            backgroundColor: "rgba(139, 92, 246, 0.12)",
+                            backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                             color: "var(--primary-color)",
                             "&:hover": {
-                              backgroundColor: "rgba(139, 92, 246, 0.18)",
+                              backgroundColor: "color-mix(in srgb, var(--primary-color) 18%, transparent)",
                             },
                           },
                         },
@@ -2660,7 +2657,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("bold") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("bold")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2677,7 +2674,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive("italic")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2694,7 +2691,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive("strike")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2709,7 +2706,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("underline") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("underline")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2724,7 +2721,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                   position: "relative",
                   color: editor.getAttributes("textStyle")?.color || "inherit",
                   backgroundColor: editor.isActive("textStyle", { color: editor.getAttributes("textStyle")?.color })
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2751,7 +2748,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("highlight") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("highlight")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2766,7 +2763,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("subscript") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("subscript")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2781,7 +2778,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("superscript") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("superscript")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2803,7 +2800,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("link") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("link")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2818,7 +2815,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 sx={{
                   color: editor.isActive("code") ? "primary.light" : "inherit",
                   backgroundColor: editor.isActive("code")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2835,7 +2832,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive("codeBlock")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2861,7 +2858,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive({ textAlign: "left" })
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2880,7 +2877,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive({ textAlign: "center" })
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2899,7 +2896,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive({ textAlign: "right" })
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2923,7 +2920,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive("bulletList")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -2940,7 +2937,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     ? "primary.light"
                     : "inherit",
                   backgroundColor: editor.isActive("orderedList")
-                    ? "rgba(139, 92, 246, 0.1)"
+                    ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                     : "transparent",
                 }}
               >
@@ -3195,7 +3192,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                       sx={{
                         color: isActive() ? "var(--primary-text-color)" : "inherit",
                         backgroundColor: isActive()
-                          ? "rgba(139, 92, 246, 0.1)"
+                          ? "color-mix(in srgb, var(--primary-color) 10%, transparent)"
                           : "transparent",
                         flexShrink: 0,
                         "&:hover": {
@@ -3221,12 +3218,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }}
                 sx={{
                   color: "var(--primary-text-color)",
-                  backgroundColor: "rgba(139, 92, 246, 0.08)",
-                  border: "1px dashed rgba(139, 92, 246, 0.3)",
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)",
+                  border: "1px dashed color-mix(in srgb, var(--primary-color) 30%, transparent)",
                   flexShrink: 0,
                   ml: 0.5,
                   "&:hover": {
-                    backgroundColor: "rgba(139, 92, 246, 0.15)",
+                    backgroundColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
                     borderColor: "var(--primary-color)",
                   },
                 }}
@@ -3315,7 +3312,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     borderColor: "var(--primary-color, #8b5cf6)",
                     "&:hover": {
                       borderColor: "var(--primary-dark)",
-                      backgroundColor: "rgba(139, 92, 246, 0.04)",
+                      backgroundColor: "color-mix(in srgb, var(--primary-color) 4%, transparent)",
                     },
                   }}
                 >
@@ -3781,218 +3778,30 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         uniqueActiveUsers={uniqueActiveUsers}
       />
 
-      {/* Commit Checkpoint Modal */}
-      <Dialog
+      <CheckpointDialog
         open={commitModalOpen}
+        description={commitDescription}
+        saving={isSavingCheckpoint}
+        generating={isGeneratingSummary}
+        onDescription={setCommitDescription}
         onClose={() => setCommitModalOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        sx={{
-          "& .MuiDialog-paper": {
-            backgroundColor: "var(--panel-color)",
-            backgroundImage: "none",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            color: "text.primary",
-            p: 1,
-          },
+        onSkip={() => { saveDocument(); setIsEditing(false); setCommitModalOpen(false); }}
+        onSave={saveCheckpoint}
+        onGenerate={async () => {
+          if (!editor) return;
+          setIsGeneratingSummary(true);
+          try {
+            const res = await autogenSummary(activeDocId || "", JSON.stringify(editor.getJSON()), title);
+            setCommitDescription(res.summary);
+          } catch (err) {
+            console.error("AI summary failed:", err);
+            alert("AI description generation failed. Using word difference fallback.");
+          } finally {
+            setIsGeneratingSummary(false);
+          }
         }}
-      >
-        <DialogTitle
-          sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}
-        >
-          Save Version Checkpoint
-        </DialogTitle>
-        <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-        >
-          <DialogContentText
-            sx={{ color: "text.secondary", fontSize: "13px", mb: 1 }}
-          >
-            Describe your changes to create a named checkpoint in the document
-            version history.
-          </DialogContentText>
-          <InputBase
-            autoFocus
-            placeholder="Change Description"
-            fullWidth
-            value={commitDescription}
-            onChange={(e) => setCommitDescription(e.target.value)}
-            disabled={isGeneratingSummary}
-            sx={{
-              fontSize: "13px",
-              fontFamily: '"Inter", sans-serif',
-              color: "text.primary",
-              backgroundColor: "rgba(0, 0, 0, 0.2)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "6px",
-              px: 1.5,
-              py: 1,
-              mb: 1,
-              "&:hover": { borderColor: "var(--border-color)" },
-              "&.Mui-focused": {
-                borderColor: "var(--primary-color)",
-                boxShadow: "0 0 0 2px rgba(139, 92, 246, 0.15)",
-              },
-              transition: "all 0.15s ease",
-            }}
-          />
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={async () => {
-              if (!editor) return;
-              setIsGeneratingSummary(true);
-              try {
-                const res = await autogenSummary(
-                  activeDocId || "",
-                  JSON.stringify(editor.getJSON()),
-                  title,
-                );
-                setCommitDescription(res.summary);
-              } catch (err) {
-                console.error("AI summary failed:", err);
-                alert(
-                  "AI description generation failed. Using word difference fallback.",
-                );
-              } finally {
-                setIsGeneratingSummary(false);
-              }
-            }}
-            disabled={isGeneratingSummary}
-            sx={{
-              alignSelf: "flex-start",
-              fontSize: "11px",
-              fontFamily: '"Outfit", sans-serif',
-              fontWeight: 600,
-              textTransform: "none",
-              color: "var(--primary-color)",
-              borderColor: "rgba(139, 92, 246, 0.3)",
-              "&:hover": {
-                borderColor: "var(--primary-color)",
-                backgroundColor: "rgba(139, 92, 246, 0.05)",
-              },
-            }}
-            startIcon={
-              isGeneratingSummary ? (
-                <CircularProgress size={12} color="inherit" />
-              ) : (
-                <Sparkles size={12} />
-              )
-            }
-          >
-            {isGeneratingSummary ? "Generating..." : "Auto-generate using AI"}
-          </Button>
-        </DialogContent>
-        <DialogActions
-          sx={{
-            px: 3,
-            pb: 2,
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <Button
-            onClick={() => {
-              // Skip Checkpoint
-              saveDocument();
-              setIsEditing(false);
-              setCommitModalOpen(false);
-            }}
-            sx={{
-              color: "text.secondary",
-              textTransform: "none",
-              fontFamily: '"Outfit", sans-serif',
-              fontWeight: 600,
-              fontSize: "12px",
-              "&:hover": { color: "text.primary" },
-            }}
-          >
-            Skip Checkpoint
-          </Button>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Button
-              onClick={() => setCommitModalOpen(false)}
-              sx={{
-                color: "text.secondary",
-                textTransform: "none",
-                fontFamily: '"Outfit", sans-serif',
-                fontWeight: 600,
-                fontSize: "12px",
-                "&:hover": { color: "text.primary" },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-			  onClick={publishCurrentDraft}
-              variant="contained"
-			  disabled={isGeneratingSummary || isPublishing}
-              sx={{
-                backgroundColor: "var(--primary-color)",
-                color: "var(--primary-contrast)",
-                textTransform: "none",
-                fontFamily: '"Outfit", sans-serif',
-                fontWeight: 600,
-                fontSize: "12px",
-                px: 2,
-                "&:hover": {
-                  backgroundColor: "var(--primary-hover)",
-                },
-              }}
-            >
-			  {isPublishing ? "Publishing..." : "Publish & Save"}
-            </Button>
-          </Box>
-        </DialogActions>
-      </Dialog>
-
-      {/* Idle Timeout Dialog */}
-      <Dialog
-        open={idleToastOpen}
-        onClose={() => setIdleToastOpen(false)}
-        sx={{
-          "& .MuiDialog-paper": {
-            backgroundColor: "var(--panel-color)",
-            backgroundImage: "none",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            color: "text.primary",
-            p: 1,
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{ fontFamily: '"Outfit", sans-serif', fontWeight: 600 }}
-        >
-          Session Idle Timeout
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText sx={{ color: "text.secondary", fontSize: "14px" }}>
-            You have been checked out due to 10 minutes of inactivity. Your
-            edits were automatically published and saved as a checkpoint.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={() => setIdleToastOpen(false)}
-            variant="contained"
-            sx={{
-              backgroundColor: "var(--primary-color)",
-              color: "var(--primary-contrast)",
-              textTransform: "none",
-              fontFamily: '"Outfit", sans-serif',
-              fontWeight: 600,
-              px: 3,
-              "&:hover": {
-                backgroundColor: "var(--primary-hover)",
-              },
-            }}
-          >
-            Got it
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
+      <IdleSessionDialog open={idleToastOpen} onClose={() => setIdleToastOpen(false)} />
 
       {/* View JSON Dialog */}
       <Dialog

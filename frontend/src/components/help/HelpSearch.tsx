@@ -26,7 +26,7 @@ export const HelpSearch: React.FC = () => {
         </Box>
 
         <Box sx={{ display: "flex", gap: 2, p: 2, borderRadius: "8px", backgroundColor: "action.hover", border: "1px solid var(--border-color)" }}>
-          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.1)", color: "var(--primary-color)" }}>
+          <Box sx={{ p: 1, height: "fit-content", borderRadius: "6px", backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)", color: "var(--primary-color)" }}>
             <Sparkles size={18} />
           </Box>
           <Box>

@@ -58,8 +58,8 @@ import {
 import { DocumentContext } from "./DocumentContext";
 import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
-import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocument, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
-import { buildPropertyRollup, formatPropertyDate, normalizePropertyType, sortRollupRows, statusChoices, type PropertyType } from "./pageProperties";
+import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocument, fetchReviewedDocument, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
+import { PagePropertiesEditor, PagePropertiesRollup } from "./macros/PagePropertiesMacro";
 import type { Attachment, Tag as TagType, Document as SourceDocument, DocumentProperty, DocumentReview } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
@@ -234,7 +234,6 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   const [uniqueId] = useState(() => `macro-uniq-${Math.random().toString(36).substring(2, 9)}`);
   const [propertyReport, setPropertyReport] = useState<DocumentProperty[]>([]);
   const [propertyReportError, setPropertyReportError] = useState<string | null>(null);
-  const [propertySort, setPropertySort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "title", direction: "asc" });
   const [documentReview, setDocumentReview] = useState<DocumentReview | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
 	const [includedDocument, setIncludedDocument] = useState<SourceDocument | null>(null);
@@ -255,7 +254,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
 		let cancelled = false;
 		setIncludedDocument(null);
 		setExcerptIncludeError(null);
-		fetchDocument(sourcePageID)
+		fetchReviewedDocument(sourcePageID)
+			.then((reviewed) => reviewed ?? fetchDocument(sourcePageID))
 			.then((document) => { if (!cancelled) setIncludedDocument(document); })
 			.catch(() => { if (!cancelled) setExcerptIncludeError("The source page is unavailable or you no longer have access to it."); });
 		return () => { cancelled = true; };
@@ -827,106 +827,27 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             </Box>
           )}
 
-          {type === "page-properties" && (() => {
-            const properties = Array.isArray(config.properties) ? config.properties : [];
-            const updateProperty = (index: number, patch: { key?: string; value?: string; type?: PropertyType }) => {
-              updateConfig("properties", properties.map((property: any, propertyIndex: number) => {
-                if (propertyIndex !== index) return property;
-                const next = { ...property, ...patch, type: normalizePropertyType(patch.type ?? property.type) };
-                if (patch.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(next.value || "")) next.value = "";
-                return next;
-              }));
-            };
-            const renderValue = (property: any) => {
-              const propertyType = normalizePropertyType(property.type);
-              if (!property.value) return "—";
-              if (propertyType === "status") return <Chip label={property.value} size="small" sx={{ color: "var(--text-primary)", backgroundColor: "color-mix(in srgb, var(--accent-color) 16%, transparent)", border: "1px solid var(--border-color)" }} />;
-              if (propertyType === "date") return formatPropertyDate(property.value);
-              return property.value;
-            };
-            return (
-              <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
-                <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                  <Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Page properties</Typography>
-                  {isEditable && <Button size="small" onClick={() => updateConfig("properties", [...properties, { key: "", value: "", type: "text" }])} sx={{ color: "var(--primary-text-color)", minWidth: 0 }}>Add property</Button>}
-                </Box>
-                {properties.length === 0 ? (
-                  <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No properties have been added.</Typography>
-                ) : (
-                  <Table size="small" aria-label="Page properties">
-                    <TableBody>
-                      {properties.map((property: any, index: number) => {
-                        const propertyType = normalizePropertyType(property.type);
-                        const statusValue = property.value || "";
-                        return (
-                        <TableRow key={index}>
-                          <TableCell sx={{ width: "28%", borderColor: "var(--border-color)", fontWeight: 600, color: "var(--text-primary)" }}>
-                            {isEditable ? <TextField value={property.key || ""} onChange={(event) => updateProperty(index, { key: event.target.value })} variant="standard" placeholder="Property" fullWidth slotProps={{ htmlInput: { "aria-label": `Property name ${index + 1}` } }} /> : property.key || "Untitled property"}
-                          </TableCell>
-                          {isEditable && <TableCell sx={{ width: 120, borderColor: "var(--border-color)" }}>
-                            <Select value={propertyType} onChange={(event) => updateProperty(index, { type: event.target.value as PropertyType })} variant="standard" aria-label={`Property type ${index + 1}`} fullWidth>
-                              <MenuItem value="text">Text</MenuItem>
-                              <MenuItem value="status">Status</MenuItem>
-                              <MenuItem value="date">Date</MenuItem>
-                            </Select>
-                          </TableCell>}
-                          <TableCell sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}>
-                            {isEditable && propertyType === "text" && <TextField value={property.value || ""} onChange={(event) => updateProperty(index, { value: event.target.value })} variant="standard" placeholder="Value" fullWidth slotProps={{ htmlInput: { "aria-label": `Property value ${index + 1}` } }} />}
-                            {isEditable && propertyType === "status" && <Select value={statusValue} onChange={(event) => updateProperty(index, { value: event.target.value })} variant="standard" displayEmpty aria-label={`Property value ${index + 1}`} fullWidth>
-                              <MenuItem value=""><em>Choose a status</em></MenuItem>
-                              {(statusChoices.includes(property.value) || !property.value ? statusChoices : [property.value, ...statusChoices]).map((choice) => <MenuItem key={choice} value={choice}>{choice}</MenuItem>)}
-                            </Select>}
-                            {isEditable && propertyType === "date" && <TextField value={/^\d{4}-\d{2}-\d{2}$/.test(property.value || "") ? property.value : ""} onChange={(event) => updateProperty(index, { value: event.target.value })} type="date" variant="standard" fullWidth slotProps={{ htmlInput: { "aria-label": `Property value ${index + 1}` } }} />}
-                            {!isEditable && renderValue(property)}
-                          </TableCell>
-                          {isEditable && <TableCell sx={{ width: 40, borderColor: "var(--border-color)" }}><IconButton aria-label={`Remove property ${index + 1}`} size="small" onClick={() => updateConfig("properties", properties.filter((_: unknown, propertyIndex: number) => propertyIndex !== index))}><Trash2 size={14} /></IconButton></TableCell>}
-                        </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </Paper>
-            );
-          })()}
+          {type === "page-properties" && (
+            <PagePropertiesEditor
+              properties={Array.isArray(config.properties) ? config.properties : []}
+              isEditable={isEditable}
+              onChange={(properties) => updateConfig("properties", properties)}
+            />
+          )}
 
-          {type === "page-properties-report" && (() => {
-            const rollup = buildPropertyRollup(propertyReport, config.key || "");
-            const rows = sortRollupRows(rollup.rows, propertySort.column, propertySort.direction);
-            const sortBy = (column: string) => setPropertySort((current) => ({ column, direction: current.column === column && current.direction === "asc" ? "desc" : "asc" }));
-            const headerCell = (column: string, label: string) => (
-              <TableCell key={column} sortDirection={propertySort.column === column ? propertySort.direction : false} sx={{ borderColor: "var(--border-color)", color: "var(--text-secondary)", fontWeight: 700 }}>
-                <Button onClick={() => sortBy(column)} aria-label={`Sort by ${label}`} sx={{ color: "inherit", fontWeight: 700, textTransform: "none", minWidth: 0, px: 0 }}>{label}</Button>
-              </TableCell>
-            );
-            return (
-            <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
-              <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)" }}><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Properties rollup{config.key ? `: ${config.key}` : ""}</Typography></Box>
-              {propertyReportError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{propertyReportError}</Typography> : rows.length === 0 ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No matching page properties yet.</Typography> : (
-                <Box sx={{ overflowX: "auto" }}>
-                  <Table size="small" aria-label="Page properties rollup">
-                    <TableHead><TableRow>{headerCell("title", "Page")}{rollup.columns.map((column) => headerCell(column, column))}</TableRow></TableHead>
-                    <TableBody>{rows.map((row) => (
-                      <TableRow key={row.documentId}>
-                        <TableCell sx={{ borderColor: "var(--border-color)" }}><Button variant="text" onClick={() => context?.onSelectDoc(row.documentId)} sx={{ textTransform: "none", color: "var(--primary-text-color)", fontWeight: 600 }}>{row.title}</Button></TableCell>
-                        {rollup.columns.map((column) => {
-                          const cell = row.cells[column];
-                          const value = cell?.value ?? "";
-                          return <TableCell key={column} sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}>{!value ? "—" : cell.valueType === "status" ? <Chip label={value} size="small" sx={{ color: "var(--text-primary)", backgroundColor: "color-mix(in srgb, var(--accent-color) 16%, transparent)", border: "1px solid var(--border-color)" }} /> : cell.valueType === "date" ? formatPropertyDate(value) : value}</TableCell>;
-                        })}
-                      </TableRow>
-                    ))}</TableBody>
-                  </Table>
-                </Box>
-              )}
-            </Paper>
-            );
-          })()}
+          {type === "page-properties-report" && (
+            <PagePropertiesRollup
+              properties={propertyReport}
+              keyFilter={config.key || ""}
+              error={propertyReportError}
+              onOpenPage={(documentId) => context?.onSelectDoc(documentId)}
+            />
+          )}
 
           {type === "content-review" && (
             <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
               <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                <Box><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Content review</Typography><Typography sx={{ color: "var(--text-secondary)", fontSize: "12px" }}>Track approval and the next required review.</Typography></Box>
+                <Box><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Content review</Typography><Typography sx={{ color: "var(--text-secondary)", fontSize: "12px" }}>Approving records the snapshot used by share links, excerpts, and read-only search.</Typography></Box>
                 <Chip label={(documentReview?.status || "draft").replace("_", " ")} size="small" sx={{ textTransform: "capitalize", color: "var(--primary-color)", backgroundColor: "var(--glass-bg)", border: "1px solid var(--border-color)" }} />
               </Box>
               {reviewError ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{reviewError}</Typography> : !documentReview ? <Box sx={{ p: 2 }}><CircularProgress size={18} /></Box> : <Box sx={{ p: 2, display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
@@ -1099,11 +1020,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               p: 2.5, 
               border: "1px solid var(--border-color)", 
               borderRadius: 2, 
-              bgcolor: "rgba(139, 92, 246, 0.02)",
+              bgcolor: "color-mix(in srgb, var(--primary-color) 2%, transparent)",
               backdropFilter: "blur(8px)"
             }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                <Box sx={{ p: 0.5, display: "flex", borderRadius: 1, backgroundColor: "rgba(139, 92, 246, 0.1)", border: "1px solid rgba(139, 92, 246, 0.2)" }}>
+                <Box sx={{ p: 0.5, display: "flex", borderRadius: 1, backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)" }}>
                   <Sparkles size={14} style={{ color: "var(--accent-purple)" }} />
                 </Box>
                 <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: '"Outfit", sans-serif', fontSize: "13px", color: "text.primary" }}>
@@ -1148,7 +1069,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         fontWeight: 700,
                         bgcolor: "primary.main",
                         borderRadius: "6px",
-                        boxShadow: "0 4px 12px rgba(139, 92, 246, 0.15)",
+                        boxShadow: "0 4px 12px color-mix(in srgb, var(--primary-color) 15%, transparent)",
                         "&:hover": { bgcolor: "primary.dark" }
                       }}
                     >
@@ -1177,8 +1098,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                   p: 2, 
                   borderRadius: 1.5,
                   borderLeft: "3.5px solid var(--accent-purple)", 
-                  bgcolor: "rgba(139, 92, 246, 0.03)",
-                  border: "1px solid rgba(139, 92, 246, 0.08)",
+                  bgcolor: "color-mix(in srgb, var(--primary-color) 3%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--primary-color) 8%, transparent)",
                   borderLeftColor: "var(--accent-purple)"
                 }}>
                   <Typography variant="body2" sx={{ 
@@ -1683,7 +1604,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             transition: "all 0.2s ease",
                             "&:hover": {
                               bgcolor: "action.hover",
-                              borderColor: "rgba(139, 92, 246, 0.25)",
+                              borderColor: "color-mix(in srgb, var(--primary-color) 25%, transparent)",
                               transform: "translateY(-1px)",
                             }
                           }}
@@ -1710,7 +1631,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               const targetUser = config.username === "current" || !config.username ? "Current Reader" : `@${config.username}`;
               const sortOrder = config.sortBy === "title" ? "Page Title" : "Last Updated";
               return (
-                <Box sx={{ p: 1.5, border: "1.5px dashed rgba(139, 92, 246, 0.25)", borderRadius: "8px", bgcolor: "rgba(139, 92, 246, 0.03)" }}>
+                <Box sx={{ p: 1.5, border: "1.5px dashed color-mix(in srgb, var(--primary-color) 25%, transparent)", borderRadius: "8px", bgcolor: "color-mix(in srgb, var(--primary-color) 3%, transparent)" }}>
                   <Typography variant="body2" sx={{ color: "var(--primary-color)", fontWeight: 600, fontSize: "12.5px", display: "flex", alignItems: "center", gap: 0.75, fontFamily: '"Outfit", sans-serif' }}>
                     <AtSign size={14} /> Mentions List Macro
                   </Typography>
@@ -1779,8 +1700,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         cursor: "pointer",
                         transition: "all 0.15s ease",
                         "&:hover": {
-                          borderColor: "rgba(139, 92, 246, 0.3)",
-                          bgcolor: "rgba(139, 92, 246, 0.02)",
+                          borderColor: "color-mix(in srgb, var(--primary-color) 30%, transparent)",
+                          bgcolor: "color-mix(in srgb, var(--primary-color) 2%, transparent)",
                           boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                         }
                       }}
@@ -2049,7 +1970,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         transition: "all 0.2s ease",
                         "&:hover": {
                           bgcolor: "action.hover",
-                          borderColor: "rgba(139, 92, 246, 0.15)",
+                          borderColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
                         }
                       }}
                     >
@@ -2153,7 +2074,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                         transition: "all 0.2s ease",
                         "&:hover": {
                           bgcolor: "action.hover",
-                          borderColor: "rgba(139, 92, 246, 0.2)",
+                          borderColor: "color-mix(in srgb, var(--primary-color) 20%, transparent)",
                           transform: "translateY(-1px)"
                         }
                       }}
@@ -2351,7 +2272,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                     transition: "all 0.2s ease",
                     "&:hover": {
                       bgcolor: "action.hover",
-                      borderColor: "rgba(139, 92, 246, 0.25)",
+                      borderColor: "color-mix(in srgb, var(--primary-color) 25%, transparent)",
                       transform: "translateY(-1px)"
                     }
                   }}
@@ -3080,7 +3001,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       label={config.status || "Open"}
                       size="small"
                       sx={{
-                        bgcolor: "rgba(139, 92, 246, 0.15)",
+                        bgcolor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
                         color: "var(--primary-color)",
                         fontWeight: 600,
                         fontSize: "11px"
@@ -3340,7 +3261,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           userSelect: "none",
           transition: "all 0.2s ease",
           "&:hover": {
-            borderColor: "rgba(139, 92, 246, 0.2)",
+            borderColor: "color-mix(in srgb, var(--primary-color) 20%, transparent)",
             backgroundColor: "rgba(22, 25, 36, 0.6)",
           }
         }}

@@ -7,28 +7,37 @@ This document outlines the architecture for advanced enterprise features inspire
 ## 1. Draft vs. Published Separation
 
 > [!NOTE]
-> **Status:** 🟡 Publication snapshots and live excerpt includes are implemented. Reader-mode routing, whole-page includes, and revision-pinned references remain planned.
+> **Status:** 🟢 The workspace page is the live document. An approved content review records one audience snapshot. Read-only share links, excerpt includes, and read-only search use that snapshot. Whole-page includes and revision-pinned references remain planned.
 
-To support large-scale enterprise editing without exposing incomplete thoughts to a wide audience, the collaborative Yjs state is formally separated from the "Published" state that read-only viewers see.
+The page people open in the workspace is `documents.content`, including the collaborative projection. Checkpoints and restores write `document_versions` and stay in history. They are not a visibility gate.
 
-### 1.1 Database Schema Enhancements
-The `documents` table tracks the active draft. Migration `0009_document_publications.sql` stores the safe, readable snapshot in a separate one-row-per-document mapping, avoiding a disruptive rewrite of existing document scans.
+Audience surfaces use a separate snapshot so a share link or excerpt does not reveal a later draft. That snapshot is recorded when a content review is set to `approved`. A page that has never been approved keeps serving live content on those surfaces.
+
+### 1.1 Database Schema
+Migration `0009_document_publications.sql` stores one row per document. It does not add `published_version_id` or `has_unpublished_changes` to `documents`.
 
 ```sql
-ALTER TABLE documents 
-ADD COLUMN published_version_id VARCHAR(255) REFERENCES document_versions(id) ON DELETE SET NULL,
-ADD COLUMN has_unpublished_changes BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS document_publications (
+    document_id VARCHAR(255) PRIMARY KEY REFERENCES documents(id) ON DELETE CASCADE,
+    version_id VARCHAR(255) NOT NULL REFERENCES document_versions(id) ON DELETE RESTRICT,
+    published_by VARCHAR(255) REFERENCES users(id) ON DELETE SET NULL,
+    published_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
-### 1.2 Routing & Rendering Logic
-- **Viewers (Read-Only)**: When a user without edit permissions (or an editor who is just browsing) visits a page, the backend serves the `content` from the `document_versions` row matching `published_version_id`. They do **not** connect to the Yjs WebSocket relay.
-- **Editors (Drafting)**: When a user clicks "Edit", they join the Yjs WebSocket room. The Yjs room is seeded by the `documents.content` column (the active draft). 
+`DocumentService.PublishDocument` writes a `document_versions` row from the current document content and upserts `document_publications`. `POST /api/documents/{id}/publish` remains for compatibility. The editor does not call it. `UpdateDocumentReview` calls it when `status == "approved"`. Changing the review away from approved leaves the last row in place.
 
-### 1.3 Publishing Lifecycle
-1. Authors collaborate in real-time in the Yjs room (`has_unpublished_changes = TRUE`).
-2. An author clicks the **"Publish"** button.
-3. The editor flushes and awaits the ordinary draft-save request, then the backend generates a new `document_versions` row, capturing that confirmed AST. A failed save or publish leaves the editor open; it never promotes a merely queued debounce timer to a publication.
-4. The backend updates `documents.published_version_id` to this new version ID and sets `has_unpublished_changes = FALSE`.
+### 1.2 Routing & Rendering Logic
+- **Workspace reads**: `GetDocument` returns the live page for editors and for signed-in readers inside the workspace.
+- **Share links**: `OpenSharedDocument` renders live content when the link grants write. Otherwise it replaces `doc.Content` with `AudienceDocument` when a snapshot exists, then renders HTML.
+- **Read-only search**: after the live-content SQL match, a caller who cannot write and who supplied a query is passed through `ForReader`. A hit whose query is absent from the approved title and text is dropped. Text that exists only in an older snapshot and was removed from the live page is not found by the SQL search.
+- **Editors**: they join the Yjs room seeded from the live page. **Done** saves a named checkpoint and leaves edit mode. It does not write `document_publications`.
+
+### 1.3 Review snapshot
+1. The author saves the live page.
+2. The content-review block sets status to `approved`.
+3. `PublishDocument` captures the current AST as a version and points `document_publications.version_id` at it.
+4. A later draft stays on the live page until the review is approved again.
 
 ---
 
@@ -96,13 +105,13 @@ Used to embed an entire external document.
 Used to embed a specific fragment from an external document.
 - **Node Type**: `macroBlock` with `type: "excerpt-include"`
 - **Attributes**: `config.pageId`, with optional `config.excerptId`
-- **Resolution**: The React macro view reads the current source through `GET /api/documents/{pageId}`. The existing document read middleware therefore remains the authorization boundary; a missing or revoked source renders an access-safe message rather than cached source text.
+- **Resolution**: The React macro view calls `GET /api/documents/{pageId}/published` and uses that snapshot when one exists. A 404 (`document has not been published`) falls back to `GET /api/documents/{pageId}`. Both requests use the existing document read middleware; a missing or revoked source renders an access-safe message rather than cached source text.
 
 ### 3.2 Transclusion Rendering Engine
 Because transclusions must be resolved before the user sees them, the backend or the React NodeView must fetch the target content.
 
 1. **Stable source blocks**: New `excerpt` nodes receive a generated `excerptId` serialized in `data-excerpt-id`. Existing excerpts without an ID remain readable and can be selected as the first excerpt on a source page.
-2. **Client-side resolution**: `excerpt-include` fetches the source page from the ordinary protected document endpoint; no local sidebar-tree cache is trusted as source content.
+2. **Client-side resolution**: `excerpt-include` prefers the approved snapshot from `GET /api/documents/{pageId}/published` and falls back to the live protected document when the page has never been approved. No local sidebar-tree cache is trusted as source content.
 3. **Excerpt filtering**: The macro traverses the returned Tiptap JSON and renders the selected `attrs.excerptId`, or the first explicit excerpt for backward-compatible includes.
 4. **Cycle safety**: A macro rejects a direct self-include. Included content is text-only rather than recursively rendering nested include macros, so a longer include cycle cannot recurse through the renderer.
-5. **Future expansion**: Whole-page embeds, revision IDs, server-side fragment responses, and published-state snapshots will add explicit provenance/version labels without changing the saved excerpt ID format.
+5. **Future expansion**: Whole-page embeds, revision IDs, and server-side fragment responses will add explicit provenance/version labels without changing the saved excerpt ID format. The audience snapshot is already the approved content review.

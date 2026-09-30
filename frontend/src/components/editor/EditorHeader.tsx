@@ -242,9 +242,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                         textTransform: "none",
                         fontFamily: '"Outfit", sans-serif',
                         minWidth: 0,
-                        backgroundColor: "rgba(139, 92, 246, 0.05)",
+                        backgroundColor: "color-mix(in srgb, var(--primary-color) 5%, transparent)",
                         borderRadius: "4px",
-                        border: "1px solid rgba(139, 92, 246, 0.15)",
+                        border: "1px solid color-mix(in srgb, var(--primary-color) 15%, transparent)",
                         "&:hover": {
                           backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                         },
@@ -269,7 +269,7 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                   letterSpacing: "0.05em",
                   backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                   color: "var(--primary-text-color)",
-                  border: "1px solid rgba(139, 92, 246, 0.25)",
+                  border: "1px solid color-mix(in srgb, var(--primary-color) 25%, transparent)",
                   borderColor: "color-mix(in srgb, var(--primary-color) 25%, transparent)",
                   borderRadius: "4px",
                 }}
@@ -293,9 +293,9 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
                       textTransform: "none",
                       fontFamily: '"Outfit", sans-serif',
                       minWidth: 0,
-                      backgroundColor: "rgba(139, 92, 246, 0.05)",
+                      backgroundColor: "color-mix(in srgb, var(--primary-color) 5%, transparent)",
                       borderRadius: "4px",
-                      border: "1px solid rgba(139, 92, 246, 0.15)",
+                      border: "1px solid color-mix(in srgb, var(--primary-color) 15%, transparent)",
                       "&:hover": {
                         backgroundColor: "color-mix(in srgb, var(--primary-color) 12%, transparent)",
                       },

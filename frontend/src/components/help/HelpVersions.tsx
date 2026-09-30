@@ -31,7 +31,7 @@ export const HelpVersions: React.FC = () => {
             AI Checkpoint Descriptions
           </Typography>
           <Typography variant="caption" sx={{ color: "var(--text-secondary)", display: "block", lineHeight: 1.4 }}>
-            When clicking **Done** to exit edit mode, you can type a custom checkpoint description or click **Auto-generate using AI** to have Google Gemini or OpenAI automatically summarize your modifications.
+            When clicking **Done** to exit edit mode, you can type a custom checkpoint description or click **Auto-generate using AI** to have Google Gemini or OpenAI automatically summarize your modifications. The checkpoint stays on the live page. Read-only share links, excerpts, and search use the snapshot recorded when a content review is approved.
           </Typography>
         </Box>
 

@@ -26,6 +26,8 @@ When you are finished editing a document and want to save your work:
     -   **Skip Checkpoint**: Exit edit mode without writing a description. The background auto-save remains as-is.
 3.  Once saved, the `"Auto-saved snapshot"` for your session is finalized and renamed to your description.
 
+A checkpoint stays in history. It does not change what a read-only share link, an excerpt include, or a read-only search result shows. Those use the snapshot recorded when a content review is set to **Approved**. See [Reviewing page content](content_reviews.md).
+
 ---
 
 ## ⏰ Idle Session Timeouts

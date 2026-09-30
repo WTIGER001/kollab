@@ -22,7 +22,7 @@ export const HelpMacros: React.FC = () => {
           <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2, lineHeight: 1.4 }}>
             Highlight warnings, tips, notes, or information. Callouts feature customizable panel types and sync edits in real-time.
           </Typography>
-          <Box sx={{ p: 1.5, borderRadius: "6px", backgroundColor: "rgba(139, 92, 246, 0.08)", border: "1px solid rgba(139, 92, 246, 0.15)", display: "flex", gap: 1 }}>
+          <Box sx={{ p: 1.5, borderRadius: "6px", backgroundColor: "color-mix(in srgb, var(--primary-color) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--primary-color) 15%, transparent)", display: "flex", gap: 1 }}>
             <Info size={14} style={{ color: "var(--primary-color)", marginTop: 2, flexShrink: 0 }} />
             <Typography variant="caption" sx={{ fontSize: "11px", color: "text.primary" }}>
               <strong>Tip:</strong> Callout panels support dynamic formatting and type-toggling in the active toolbar.

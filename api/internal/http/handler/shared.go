@@ -45,15 +45,23 @@ func (h *DocumentHandler) OpenSharedDocument(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Shared page is unavailable", 404)
 		return
 	}
-	html, err := docExporter.TiptapToHTML(doc.Title, doc.Content)
-	if err != nil {
-		http.Error(w, "Unable to render shared page", 500)
-		return
-	}
 	canWrite, canComment := false, false
 	if userID != "" {
 		canWrite, _, _ = h.evaluator.EvaluateDocumentAccess(r.Context(), userID, id, "write", req.Token, req.Password)
 		canComment, _, _ = h.evaluator.EvaluateDocumentAccess(r.Context(), userID, id, "comment", req.Token, req.Password)
+	}
+	if !canWrite {
+		if snapshot, ok, snapErr := h.docService.AudienceDocument(r.Context(), id); snapErr != nil {
+			http.Error(w, "Unable to render shared page", 500)
+			return
+		} else if ok {
+			doc.Content = snapshot.Content
+		}
+	}
+	html, err := docExporter.TiptapToHTML(doc.Title, doc.Content)
+	if err != nil {
+		http.Error(w, "Unable to render shared page", 500)
+		return
 	}
 	mediaToken, err := h.evaluator.IssueSharedMediaGrant(req.Token, id, userID)
 	if err != nil {

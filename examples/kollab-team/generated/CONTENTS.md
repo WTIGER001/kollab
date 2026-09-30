@@ -76,7 +76,7 @@
 
 | Node or macro | Instances |
 | --- | ---: |
-| bulletList | 137 |
+| bulletList | 138 |
 | calloutPanel | 63 |
 | cardItem | 3 |
 | cardsGrid | 1 |
@@ -93,7 +93,7 @@
 | inlineStatus | 1 |
 | layoutColumn | 2 |
 | layoutSection | 1 |
-| listItem | 792 |
+| listItem | 798 |
 | macro:ai-content | 1 |
 | macro:attachments-list | 1 |
 | macro:chart-analytics | 1 |
@@ -117,7 +117,7 @@
 | mention | 1 |
 | noFormatPanel | 1 |
 | orderedList | 99 |
-| paragraph | 1731 |
+| paragraph | 1742 |
 | tabItem | 3 |
 | table | 13 |
 | tableCell | 228 |
@@ -127,4 +127,4 @@
 | tabsContainer | 1 |
 | taskItem | 29 |
 | taskList | 7 |
-| text | 4973 |
+| text | 5045 |

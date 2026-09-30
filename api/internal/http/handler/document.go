@@ -524,13 +524,31 @@ func (h *DocumentHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	userID, _ := middleware.GetUserID(r.Context())
 
-	// Filter docs that the user has permission to read
+	// Editors search the live page. Readers receive the last approved snapshot
+	// when one exists, and draft-only matches are left out.
 	permittedDocs := make([]*domain.Document, 0)
 	for _, doc := range docs {
 		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, doc.ID, "read", "", "")
-		if err == nil && allowed {
-			permittedDocs = append(permittedDocs, doc)
+		if err != nil || !allowed {
+			continue
 		}
+		canWrite, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, doc.ID, "write", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if !canWrite && query != "" {
+			visible, err := h.docService.ForReader(r.Context(), doc, query)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if visible == nil {
+				continue
+			}
+			doc = visible
+		}
+		permittedDocs = append(permittedDocs, doc)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

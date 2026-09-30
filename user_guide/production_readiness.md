@@ -10,7 +10,7 @@ The technical notes record the completed checks and remaining deployment decisio
 
 Use the Trash page within your team, project, or personal space to restore pages or permanently delete them. Page activity opens for the page you selected. Personal settings use your signed-in account. The default workspace theme can be saved by an administrator and applies to users selecting the Default preset.
 
-The editor waits for the collaboration connection before enabling changes. Changes are synchronized to the server and merged after reconnecting. If saving fails, keep the page open and retry; a pending save now triggers a warning before closing the tab. Publishing waits for a successful draft save.
+The editor waits for the collaboration connection before enabling changes. Changes are synchronized to the server and merged after reconnecting. If saving fails, keep the page open and retry; a pending save now triggers a warning before closing the tab. Done saves a named checkpoint of the live page. Approving a content review records the snapshot used by read-only share links, excerpts, and search.
 
 Sharing links open a dedicated shared page. Enter the link password if one was set. Visitors can read public links; sign in to comment or edit when the link's role permits it. Expired or revoked links stop granting access. GitLab issue cards require a configured GitLab connection and a matching issue URL.
 

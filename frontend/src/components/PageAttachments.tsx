@@ -368,13 +368,13 @@ export const PageAttachments: React.FC<PageAttachmentsProps> = ({
                 textAlign: "center",
                 cursor: "pointer",
                 backgroundColor: isDragActive 
-                  ? "rgba(139, 92, 246, 0.05)" 
+                  ? "color-mix(in srgb, var(--primary-color) 5%, transparent)" 
                   : "rgba(0, 0, 0, 0.1)",
                 transition: "all 0.2s ease",
                 position: "relative",
                 "&:hover": {
                   borderColor: "var(--primary-color, #8b5cf6)",
-                  backgroundColor: "rgba(139, 92, 246, 0.02)"
+                  backgroundColor: "color-mix(in srgb, var(--primary-color) 2%, transparent)"
                 }
               }}
               component="label"

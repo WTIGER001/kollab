@@ -284,6 +284,37 @@ func TestDocumentServicePublishesAnImmutableSnapshot(t *testing.T) {
 	}
 }
 
+func TestApprovedReviewRecordsTheAudienceSnapshot(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	ctx := context.Background()
+	approved := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"approved policy"}]}]}`
+	document, err := service.CreateDocument(ctx, "Policy", "", "proj_wiki", "team_eng", nil, "author", &approved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.UpdateDocumentReview(ctx, document.ID, "approved", nil, "author"); err != nil {
+		t.Fatalf("approve: %v", err)
+	}
+	draft := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"secret draft"}]}]}`
+	updated, err := service.UpdateDocument(ctx, document.ID, document.Title, "", draft, "author", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot, ok, err := service.AudienceDocument(ctx, document.ID)
+	if err != nil || !ok || !strings.Contains(snapshot.Content, "approved policy") || strings.Contains(snapshot.Content, "secret draft") {
+		t.Fatalf("audience snapshot = ok:%v %#v (%v)", ok, snapshot, err)
+	}
+	visible, err := service.ForReader(ctx, updated, "secret")
+	if err != nil || visible != nil {
+		t.Fatalf("draft-only search hit should be hidden, got %#v (%v)", visible, err)
+	}
+	visible, err = service.ForReader(ctx, updated, "policy")
+	if err != nil || visible == nil || strings.Contains(visible.Content, "secret draft") {
+		t.Fatalf("approved search hit should return the snapshot, got %#v (%v)", visible, err)
+	}
+}
+
 func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {
 	repo := NewInMemoryDocumentRepository()
 	service := NewDocumentService(repo, nil, nil, nil)

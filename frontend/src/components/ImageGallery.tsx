@@ -126,7 +126,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
                   "&:hover": {
                     transform: "scale(1.04)",
                     borderColor: "var(--primary-color)",
-                    boxShadow: "0 6px 16px rgba(139, 92, 246, 0.2)",
+                    boxShadow: "0 6px 16px color-mix(in srgb, var(--primary-color) 20%, transparent)",
                     "& .img-overlay": { opacity: 1 },
                   },
                 }}

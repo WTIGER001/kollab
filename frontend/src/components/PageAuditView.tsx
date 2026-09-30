@@ -159,7 +159,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
               "&:hover": {
                 color: "var(--primary-color)",
                 backgroundColor: "action.hover",
-                borderColor: "rgba(139, 92, 246, 0.2)"
+                borderColor: "color-mix(in srgb, var(--primary-color) 20%, transparent)"
               }
             }}
           >
@@ -348,7 +348,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                           sx={{
                             width: 32,
                             height: 32,
-                            bgcolor: log.action === "edit" ? "rgba(139, 92, 246, 0.12)" : "rgba(59, 130, 246, 0.12)",
+                            bgcolor: log.action === "edit" ? "color-mix(in srgb, var(--primary-color) 12%, transparent)" : "rgba(59, 130, 246, 0.12)",
                             color: log.action === "edit" ? "var(--primary-color)" : "info.main",
                             fontSize: "12px",
                             fontWeight: 700
@@ -415,7 +415,7 @@ export const PageAuditView: React.FC<PageAuditViewProps> = ({
                     overflow: "hidden",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      borderColor: "rgba(139, 92, 246, 0.15)",
+                      borderColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
                       backgroundColor: "rgba(22, 25, 36, 0.4)",
                     }
                   }}

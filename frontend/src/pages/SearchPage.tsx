@@ -119,7 +119,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onNavigate }) => {
                   fontSize: "0.875rem",
                   "&.Mui-selected": {
                     color: "var(--primary-color)",
-                    backgroundColor: "rgba(139, 92, 246, 0.1)",
+                    backgroundColor: "color-mix(in srgb, var(--primary-color) 10%, transparent)",
                   }
                 }
               }}
@@ -166,8 +166,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ onNavigate }) => {
                     backgroundColor: "rgba(0,0,0,0.1)",
                     border: "1px solid var(--border-color)",
                     "&:hover": {
-                      backgroundColor: "rgba(139, 92, 246, 0.05)",
-                      borderColor: "rgba(139, 92, 246, 0.3)",
+                      backgroundColor: "color-mix(in srgb, var(--primary-color) 5%, transparent)",
+                      borderColor: "color-mix(in srgb, var(--primary-color) 30%, transparent)",
                     },
                   }}
                 >
