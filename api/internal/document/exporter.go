@@ -324,6 +324,51 @@ func TiptapToHTML(title string, contentJSON string) (string, error) {
 	return htmlDoc, nil
 }
 
+func macroBlockHTML(n TiptapNode) string {
+	if n.Attrs == nil {
+		return ""
+	}
+	macroType, _ := n.Attrs["type"].(string)
+	config, _ := n.Attrs["config"].(map[string]any)
+	switch macroType {
+	case "page-properties":
+		return propertiesTableHTML(config)
+	case "status-badge":
+		status, _ := config["status"].(string)
+		if status == "" {
+			status = "Status"
+		}
+		return fmt.Sprintf("<p>Status note: %s. This is an annotation, not an approval.</p>\n", html.EscapeString(status))
+	case "chart-analytics", "roadmap-planner", "team-calendars":
+		return "<p>This block shows only the values saved on the page.</p>\n"
+	default:
+		return ""
+	}
+}
+
+func propertiesTableHTML(config map[string]any) string {
+	if config == nil {
+		return "<p>No page properties are saved in this snapshot.</p>\n"
+	}
+	raw, _ := config["properties"].([]any)
+	if len(raw) == 0 {
+		return "<p>No page properties are saved in this snapshot.</p>\n"
+	}
+	var sb strings.Builder
+	sb.WriteString("<table><thead><tr><th>Property</th><th>Value</th></tr></thead><tbody>")
+	for _, item := range raw {
+		property, _ := item.(map[string]any)
+		key, _ := property["key"].(string)
+		value, _ := property["value"].(string)
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		fmt.Fprintf(&sb, "<tr><td>%s</td><td>%s</td></tr>", html.EscapeString(key), html.EscapeString(value))
+	}
+	sb.WriteString("</tbody></table>\n")
+	return sb.String()
+}
+
 func nodeToHTML(n TiptapNode) string {
 	var sb strings.Builder
 
@@ -534,6 +579,8 @@ func nodeToHTML(n TiptapNode) string {
 		sb.WriteString("</blockquote>\n")
 	case "hardBreak":
 		sb.WriteString("<br />")
+	case "macroBlock":
+		sb.WriteString(macroBlockHTML(n))
 	default:
 		// Fallback for unknown node types: render their content
 		for _, child := range n.Content {

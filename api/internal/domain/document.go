@@ -196,6 +196,8 @@ type DocumentService interface {
 	GetPublishedDocument(ctx context.Context, documentID string) (*Document, *DocumentPublication, error)
 	PublishDocument(ctx context.Context, documentID string, userID string) (*DocumentPublication, error)
 	AudienceDocument(ctx context.Context, documentID string) (*Document, bool, error)
+	AudienceProperties(ctx context.Context, documentID string, sample DocumentProperty) ([]DocumentProperty, bool, error)
+	InlineReviewedExcerpts(ctx context.Context, content string) (string, error)
 	ForReader(ctx context.Context, doc *Document, query string) (*Document, error)
 	RestoreDocumentVersion(ctx context.Context, docID string, versionID string, userID string) (*Document, error)
 	CreateManualMilestone(ctx context.Context, docID string, summary string, userID string) (*DocumentVersion, error)

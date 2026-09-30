@@ -57,6 +57,12 @@ func (h *DocumentHandler) OpenSharedDocument(w http.ResponseWriter, r *http.Requ
 		} else if ok {
 			doc.Content = snapshot.Content
 		}
+		if resolved, resolveErr := h.docService.InlineReviewedExcerpts(r.Context(), doc.Content); resolveErr != nil {
+			http.Error(w, "Unable to render shared page", 500)
+			return
+		} else {
+			doc.Content = resolved
+		}
 	}
 	html, err := docExporter.TiptapToHTML(doc.Title, doc.Content)
 	if err != nil {

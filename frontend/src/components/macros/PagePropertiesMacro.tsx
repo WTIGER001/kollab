@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Box, Button, Chip, IconButton, MenuItem, Paper, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, IconButton, MenuItem, Paper, Select, Table, TableBody, TableCell, TableRow, TextField, Typography } from "@mui/material";
 import { Trash2 } from "lucide-react";
 import type { DocumentProperty } from "../../services/api";
-import { buildPropertyRollup, formatPropertyDate, normalizePropertyType, sortRollupRows, statusChoices, type PropertyType } from "../pageProperties";
+import { buildPropertyRollup, formatPropertyDate, normalizePropertyType, statusChoices, type PropertyType } from "../pageProperties";
+import { CollectionTable } from "./CollectionTable";
 
 export const PagePropertiesEditor = ({
   properties,
@@ -85,37 +85,25 @@ export const PagePropertiesRollup = ({
   error: string | null;
   onOpenPage: (documentId: string) => void;
 }) => {
-  const [propertySort, setPropertySort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "title", direction: "asc" });
   const rollup = buildPropertyRollup(properties, keyFilter);
-  const rows = sortRollupRows(rollup.rows, propertySort.column, propertySort.direction);
-  const sortBy = (column: string) => setPropertySort((current) => ({ column, direction: current.column === column && current.direction === "asc" ? "desc" : "asc" }));
+  if (error) return <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{error}</Typography>;
   return (
-    <Paper variant="outlined" sx={{ borderColor: "var(--border-color)", backgroundColor: "var(--panel-color)", overflow: "hidden" }}>
-      <Box sx={{ px: 2, py: 1.25, borderBottom: "1px solid var(--border-color)" }}><Typography sx={{ fontWeight: 700, fontSize: "13px", color: "var(--text-primary)" }}>Properties rollup{keyFilter ? `: ${keyFilter}` : ""}</Typography></Box>
-      {error ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>{error}</Typography> : rows.length === 0 ? <Typography sx={{ p: 2, color: "var(--text-secondary)", fontSize: "13px" }}>No matching page properties yet.</Typography> : (
-        <Box sx={{ overflowX: "auto" }}>
-          <Table size="small" aria-label="Page properties rollup">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ borderColor: "var(--border-color)", color: "var(--text-secondary)", fontWeight: 700 }}><Button onClick={() => sortBy("title")} aria-label="Sort by Page" sx={{ color: "inherit", fontWeight: 700, textTransform: "none", minWidth: 0, px: 0 }}>Page</Button></TableCell>
-                {rollup.columns.map((column) => (
-                  <TableCell key={column} sx={{ borderColor: "var(--border-color)", color: "var(--text-secondary)", fontWeight: 700 }}><Button onClick={() => sortBy(column)} aria-label={`Sort by ${column}`} sx={{ color: "inherit", fontWeight: 700, textTransform: "none", minWidth: 0, px: 0 }}>{column}</Button></TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>{rows.map((row) => (
-              <TableRow key={row.documentId}>
-                <TableCell sx={{ borderColor: "var(--border-color)" }}><Button variant="text" onClick={() => onOpenPage(row.documentId)} sx={{ textTransform: "none", color: "var(--primary-text-color)", fontWeight: 600 }}>{row.title}</Button></TableCell>
-                {rollup.columns.map((column) => {
-                  const cell = row.cells[column];
-                  const value = cell?.value ?? "";
-                  return <TableCell key={column} sx={{ borderColor: "var(--border-color)", color: "var(--text-primary)" }}>{!value ? "—" : cell.valueType === "status" ? <Chip label={value} size="small" sx={{ color: "var(--text-primary)", backgroundColor: "color-mix(in srgb, var(--accent-color) 16%, transparent)", border: "1px solid var(--border-color)" }} /> : cell.valueType === "date" ? formatPropertyDate(value) : value}</TableCell>;
-                })}
-              </TableRow>
-            ))}</TableBody>
-          </Table>
-        </Box>
-      )}
-    </Paper>
+    <CollectionTable
+      title={keyFilter ? `Properties rollup: ${keyFilter}` : "Properties rollup"}
+      columns={[{ id: "title", label: "Page" }, ...rollup.columns.map((column) => ({ id: column, label: column }))]}
+      rows={rollup.rows.map((row) => ({
+        id: row.documentId,
+        cells: {
+          title: row.title,
+          ...Object.fromEntries(rollup.columns.map((column) => {
+            const cell = row.cells[column];
+            const value = cell?.value ?? "";
+            return [column, !value ? "" : cell.valueType === "date" ? formatPropertyDate(value) : value];
+          })),
+        },
+      }))}
+      emptyMessage="No matching page properties yet."
+      onOpen={onOpenPage}
+    />
   );
 };

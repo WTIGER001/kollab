@@ -141,8 +141,6 @@ export const EditorToolbar = ({
             <MenuItem value="h4">Heading 4</MenuItem>
             <MenuItem value="h5">Heading 5</MenuItem>
             <MenuItem value="h6">Heading 6</MenuItem>
-            <MenuItem value="h7">Heading 7</MenuItem>
-            <MenuItem value="h8">Heading 8</MenuItem>
           </Select>
 
           <Divider

@@ -24,7 +24,6 @@ import {
   Stack,
   Divider,
   CircularProgress,
-  Tooltip,
   Dialog,
   useTheme,
   Table,
@@ -60,6 +59,7 @@ import { DocumentPreviewer } from "./DocumentPreviewer";
 import type { DocumentItem } from "./Sidebar";
 import { fetchAttachments, API_BASE_URL, generateAIContent, fetchTags, fetchAllDocumentTags, fetchTeamUsers, fetchTeams, fetchUserMentions, getApiToken, fetchDocument, fetchReviewedDocument, fetchDocumentProperties, fetchDocumentReview, updateDocumentReview } from "../services/api";
 import { PagePropertiesEditor, PagePropertiesRollup } from "./macros/PagePropertiesMacro";
+import { CollectionTable, MacroEmpty } from "./macros/CollectionTable";
 import type { Attachment, Tag as TagType, Document as SourceDocument, DocumentProperty, DocumentReview } from "../services/api";
 import { marked } from "marked";
 import mermaid from "mermaid";
@@ -575,7 +575,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
   }, [type, session.user?.id, context?.selectedTeamId, context?.selectedProjectId, isEditable]);
 
   useEffect(() => {
-    if (type === "page-index") {
+    if (type === "page-index" || type === "popular-labels") {
       setTagsLoading(true);
       Promise.all([fetchTags(), fetchAllDocumentTags()])
         .then(([tagsData, assocData]) => {
@@ -609,8 +609,12 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
         if (res && res.text) {
           const pos = getPos();
     if (pos === undefined || editor.isDestroyed) return;
+          const paragraphs = String(res.text).split(/\n{2,}/).map((block) => block.trim()).filter(Boolean).map((block) => ({
+            type: "paragraph",
+            content: [{ type: "text", text: block }],
+          }));
           editor.chain().focus()
-            .insertContentAt(pos, res.text)
+            .insertContentAt(pos, paragraphs.length ? paragraphs : [{ type: "paragraph", content: [{ type: "text", text: res.text }] }])
             .run();
           deleteNode();
         } else {
@@ -1161,13 +1165,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               data = [];
             }
             if (!Array.isArray(data) || data.length === 0) {
-              data = [
-                { name: 'Jan', value: 400 },
-                { name: 'Feb', value: 300 },
-                { name: 'Mar', value: 200 },
-                { name: 'Apr', value: 278 },
-                { name: 'May', value: 189 },
-              ];
+              return <MacroEmpty message="This chart has no saved data. It is not reading workspace analytics." />;
             }
 
             const COLORS = ['#818cf8', '#c084fc', '#ec4899', '#34d399', '#fbbf24', '#f87171'];
@@ -1222,11 +1220,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               epics = [];
             }
             if (!Array.isArray(epics) || epics.length === 0) {
-              epics = [
-                { id: "1", title: "Phase 1: Foundations", start: 0, duration: 2, color: "#818cf8" },
-                { id: "2", title: "Phase 2: Backend", start: 1, duration: 3, color: "#34d399" },
-                { id: "3", title: "Phase 3: Frontend UI", start: 3, duration: 2, color: "#c084fc" }
-              ];
+              return <MacroEmpty message="This roadmap has no saved rows. It is not connected to tasks or a release plan." />;
             }
 
             const totalDuration = Math.max(...epics.map(e => e.start + e.duration), 6);
@@ -1285,12 +1279,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               events = [];
             }
             if (!Array.isArray(events) || events.length === 0) {
-              const today = new Date();
-              events = [
-                { title: 'Project Kickoff', start: new Date(today.getFullYear(), today.getMonth(), 2, 10, 0), end: new Date(today.getFullYear(), today.getMonth(), 2, 12, 0) },
-                { title: 'Milestone 1', start: new Date(today.getFullYear(), today.getMonth(), 10), end: new Date(today.getFullYear(), today.getMonth(), 12) },
-                { title: 'Launch', start: new Date(today.getFullYear(), today.getMonth(), 28, 9, 0), end: new Date(today.getFullYear(), today.getMonth(), 28, 17, 0) }
-              ];
+              return <MacroEmpty message="This calendar has no saved events. It does not read a team calendar." />;
             } else {
               events = events.map(e => ({
                 ...e,
@@ -1319,41 +1308,11 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
           })()}
 
           {type === "popular-labels" && (() => {
-            const labels = [
-              { text: "documentation", weight: 24, color: "#818cf8" },
-              { text: "api", weight: 18, color: "#c084fc" },
-              { text: "frontend", weight: 14, color: "#34d399" },
-              { text: "backend", weight: 12, color: "#fbbf24" },
-              { text: "design", weight: 10, color: "#f87171" },
-              { text: "sprint-planning", weight: 8, color: "#60a5fa" },
-              { text: "bug", weight: 5, color: "#a78bfa" },
-            ];
-
-            return (
-              <Box sx={{ width: "100%", my: 2, p: 2, bgcolor: "background.paper", borderRadius: 2, border: "1px solid var(--border-color)" }}>
-                <Typography variant="subtitle2" sx={{ mb: 2, fontFamily: '"Outfit", sans-serif', color: "text.primary", fontWeight: 600 }}>
-                  Popular Labels Heatmap
-                </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center", justifyContent: "center", minHeight: 120 }}>
-                  {labels.map((label, idx) => (
-                    <Typography
-                      key={idx}
-                      sx={{
-                        fontSize: `${Math.max(12, label.weight * 1.5)}px`,
-                        color: label.color,
-                        fontWeight: label.weight > 15 ? 700 : 500,
-                        opacity: 0.7 + (label.weight / 100),
-                        transition: "all 0.2s",
-                        cursor: "pointer",
-                        "&:hover": { opacity: 1, transform: "scale(1.1)" }
-                      }}
-                    >
-                      #{label.text}
-                    </Typography>
-                  ))}
-                </Box>
-              </Box>
-            );
+            const counts = new Map<string, number>();
+            Object.values(docTagsMap).forEach((tags) => tags.forEach((tag) => counts.set(tag.id, (counts.get(tag.id) || 0) + 1)));
+            const limit = Number(config.limit) || allTags.length;
+            const rows = allTags.slice(0, limit).map((tag) => ({ id: tag.id, cells: { name: tag.name, pages: String(counts.get(tag.id) || 0) } }));
+            return <CollectionTable title={config.title || "Page tags"} columns={[{ id: "name", label: "Tag" }, { id: "pages", label: "Pages" }]} rows={rows} emptyMessage="No page tags yet. Tags are added on each page, not generated here." />;
           })()}
 
           {type === "excerpt-include" && (() => {
@@ -1450,6 +1409,27 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               maxDepth = config.depthCustom ? parseInt(config.depthCustom, 10) : 1;
             } else if (depthLimit !== "all") {
               maxDepth = parseInt(depthLimit, 10);
+            }
+
+            if (displayType === "titles") {
+              const rows: Array<{ id: string; cells: Record<string, string> }> = [];
+              const walk = (items: DocumentItem[], depth: number) => {
+                if (maxDepth !== -1 && depth > maxDepth) return;
+                sortItems(items).forEach((item) => {
+                  rows.push({ id: item.id, cells: { title: item.title || "Untitled", updated: item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : "" } });
+                  if (item.children?.length) walk(item.children, depth + 1);
+                });
+              };
+              walk(rawChildren, 1);
+              return (
+                <CollectionTable
+                  title="Child pages"
+                  columns={[{ id: "title", label: "Page" }, { id: "updated", label: "Updated" }]}
+                  rows={maxLimit ? rows.slice(0, maxLimit) : rows}
+                  emptyMessage="No sub-pages found."
+                  onOpen={(id) => context.onSelectDoc(id)}
+                />
+              );
             }
 
             const renderItemContent = (item: DocumentItem, titleText: string, excerptText: string, inCard = false) => {
@@ -1678,47 +1658,13 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
             }
 
             return (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
-                {sortedDocs.map((doc) => {
-                  return (
-                    <Box
-                      key={doc.id}
-                      onClick={() => {
-                        if (context?.onSelectDoc) {
-                          context.onSelectDoc(doc.id);
-                        }
-                      }}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        px: 1.5,
-                        py: 1,
-                        borderRadius: "6px",
-                        border: "1px solid var(--border-color)",
-                        bgcolor: "action.hover",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                        "&:hover": {
-                          borderColor: "color-mix(in srgb, var(--primary-color) 30%, transparent)",
-                          bgcolor: "color-mix(in srgb, var(--primary-color) 2%, transparent)",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                        }
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                        <AtSign size={14} style={{ color: "var(--primary-color)" }} />
-                        <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", fontFamily: '"Outfit", sans-serif' }} noWrap>
-                          {doc.title || "Untitled Page"}
-                        </Typography>
-                      </Box>
-                      <Typography sx={{ fontSize: "11px", color: "text.disabled", fontFamily: '"Outfit", sans-serif' }}>
-                        {doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : ""}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
+              <CollectionTable
+                title="Mentions"
+                columns={[{ id: "title", label: "Page" }, { id: "updated", label: "Updated" }]}
+                rows={sortedDocs.map((doc) => ({ id: doc.id, cells: { title: doc.title || "Untitled", updated: doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : "" } }))}
+                emptyMessage="No mentions found."
+                onOpen={(id) => context?.onSelectDoc(id)}
+              />
             );
           })()}
 
@@ -1779,248 +1725,21 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               }
             });
 
-            // Group
-            const groupBy = config.groupBy || "none";
-            if (groupBy === "tag") {
-              const grouped: Record<string, DocumentItem[]> = {};
-              const untagged: DocumentItem[] = [];
-
-              sortedDocs.forEach(doc => {
-                const docTags = docTagsMap[doc.id] || [];
-                if (docTags.length === 0) {
-                  untagged.push(doc);
-                } else {
-                  docTags.forEach(tag => {
-                    if (!grouped[tag.id]) {
-                      grouped[tag.id] = [];
-                    }
-                    grouped[tag.id].push(doc);
-                  });
-                }
-              });
-
-              const activeTags = allTags.filter(t => grouped[t.id] && grouped[t.id].length > 0);
-
-              return (
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "1fr 1fr",
-                      md: "1fr 1fr 1fr",
-                    },
-                    gap: 2.5,
-                  }}
-                >
-                  {activeTags.map((tag) => (
-                    <Box
-                      key={tag.id}
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "8px",
-                        bgcolor: "action.hover",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            bgcolor: tag.color || "var(--primary-color)",
-                          }}
-                        />
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: "13px",
-                            fontFamily: '"Outfit", sans-serif',
-                            color: "text.primary",
-                          }}
-                        >
-                          {tag.name}
-                        </Typography>
-                      </Box>
-                      <Box component="ul" sx={{ listStyleType: "none", p: 0, m: 0, display: "flex", flexDirection: "column", gap: 0.75 }}>
-                        {grouped[tag.id].map((doc) => (
-                          <Box component="li" key={doc.id} sx={{ display: "flex", flexDirection: "column" }}>
-                            <Typography
-                              variant="body2"
-                              onClick={() => context.onSelectDoc(doc.id)}
-                              sx={{
-                                cursor: "pointer",
-                                fontSize: "12.5px",
-                                fontWeight: 500,
-                                color: "text.secondary",
-                                transition: "all 0.15s ease",
-                                "&:hover": {
-                                  color: tag.color || "var(--primary-color, #8b5cf6)",
-                                  textDecoration: "underline",
-                                },
-                              }}
-                            >
-                              {doc.title}
-                            </Typography>
-                            {sortBy === "updated" && doc.updatedAt && (
-                              <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", mt: 0.25 }}>
-                                Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  ))}
-                  
-                  {untagged.length > 0 && filterTags.length === 0 && (
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "8px",
-                        bgcolor: "action.hover",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, borderBottom: "1.5px solid rgba(255, 255, 255, 0.05)", pb: 0.5, mb: 1.25 }}>
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            bgcolor: "text.disabled",
-                          }}
-                        />
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: "13px",
-                            fontFamily: '"Outfit", sans-serif',
-                            color: "text.secondary",
-                          }}
-                        >
-                          Untagged
-                        </Typography>
-                      </Box>
-                      <Box component="ul" sx={{ listStyleType: "none", p: 0, m: 0, display: "flex", flexDirection: "column", gap: 0.75 }}>
-                        {untagged.map((doc) => (
-                          <Box component="li" key={doc.id} sx={{ display: "flex", flexDirection: "column" }}>
-                            <Typography
-                              variant="body2"
-                              onClick={() => context.onSelectDoc(doc.id)}
-                              sx={{
-                                cursor: "pointer",
-                                fontSize: "12.5px",
-                                fontWeight: 500,
-                                color: "text.secondary",
-                                transition: "all 0.15s ease",
-                                "&:hover": {
-                                  color: "var(--primary-color, #8b5cf6)",
-                                  textDecoration: "underline",
-                                },
-                              }}
-                            >
-                              {doc.title}
-                            </Typography>
-                            {sortBy === "updated" && doc.updatedAt && (
-                              <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", mt: 0.25 }}>
-                                Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-                </Box>
-              );
-            }
-
-            // Flat directory
             return (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "1fr 1fr",
-                    md: "1fr 1fr 1fr",
+              <CollectionTable
+                title="Page index"
+                columns={[{ id: "title", label: "Page" }, { id: "tags", label: "Tags" }, { id: "updated", label: "Updated" }]}
+                rows={sortedDocs.map((doc) => ({
+                  id: doc.id,
+                  cells: {
+                    title: doc.title || "Untitled",
+                    tags: (docTagsMap[doc.id] || []).map((tag) => tag.name).join(", "),
+                    updated: doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : "",
                   },
-                  gap: 2,
-                }}
-              >
-                {sortedDocs.map((doc) => {
-                  const docTags = docTagsMap[doc.id] || [];
-                  return (
-                    <Paper
-                      key={doc.id}
-                      elevation={0}
-                      sx={{
-                        p: 1.5,
-                        borderRadius: "8px",
-                        bgcolor: "action.hover",
-                        border: "1px solid var(--border-color)",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        gap: 1.5,
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          bgcolor: "action.hover",
-                          borderColor: "color-mix(in srgb, var(--primary-color) 15%, transparent)",
-                        }
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          onClick={() => context.onSelectDoc(doc.id)}
-                          sx={{
-                            cursor: "pointer",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "text.primary",
-                            transition: "all 0.15s ease",
-                            "&:hover": {
-                              color: "var(--primary-color, #8b5cf6)",
-                              textDecoration: "underline",
-                            },
-                          }}
-                        >
-                          {doc.title}
-                        </Typography>
-                        {sortBy === "updated" && doc.updatedAt && (
-                          <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "10px", display: "block", mt: 0.5 }}>
-                            Updated: {new Date(doc.updatedAt).toLocaleDateString()}
-                          </Typography>
-                        )}
-                      </Box>
-                      {docTags.length > 0 && (
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
-                          {docTags.map(tag => (
-                            <Chip
-                              key={tag.id}
-                              label={tag.name}
-                              size="small"
-                              sx={{
-                                height: 16,
-                                fontSize: "9px",
-                                fontWeight: 700,
-                                bgcolor: `${tag.color}15`,
-                                color: tag.color,
-                                border: `1px solid ${tag.color}25`,
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </Paper>
-                  );
-                })}
-              </Box>
+                }))}
+                emptyMessage="No pages found in this space."
+                onOpen={(id) => context.onSelectDoc(id)}
+              />
             );
           })()}
 
@@ -2110,73 +1829,14 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
               );
             }
 
-            // Table layout
             return (
-              <Box 
-                sx={{ 
-                  width: "100%", 
-                  overflowX: "auto",
-                  mt: 1,
-                  borderRadius: "8px",
-                  border: "1px solid var(--border-color)",
-                  backgroundColor: "rgba(0,0,0,0.1)"
-                }}
-              >
-                <Box 
-                  component="table" 
-                  sx={{ 
-                    width: "100%", 
-                    borderCollapse: "collapse",
-                    fontSize: "13px",
-                    fontFamily: '"Outfit", sans-serif',
-                    color: "text.primary",
-                    textAlign: "left"
-                  }}
-                >
-                  <Box component="thead">
-                    <Box component="tr" sx={{ borderBottom: "var(--border-color)", bgcolor: "action.hover" }}>
-                      <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Name</Box>
-                      <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Size</Box>
-                      <Box component="th" sx={{ p: 1.5, fontWeight: 700 }}>Type</Box>
-                      <Box component="th" sx={{ p: 1.5, fontWeight: 700, textAlign: "right" }}>Action</Box>
-                    </Box>
-                  </Box>
-                  <Box component="tbody">
-                    {attachments.map(att => (
-                      <Box 
-                        component="tr" 
-                        key={att.id} 
-                        sx={{ 
-                          borderBottom: "var(--border-color)", 
-                          "&:hover": { bgcolor: "action.hover" } 
-                        }}
-                      >
-                        <Box component="td" sx={{ p: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
-                          {getFileIcon(att.mimeType, att.filename)}
-                          <Typography variant="body2" noWrap sx={{ fontSize: "13px", fontWeight: 500, color: "text.primary", maxWidth: "250px" }}>
-                            {att.filename}
-                          </Typography>
-                        </Box>
-                        <Box component="td" sx={{ p: 1.5, color: "text.secondary" }}>{formatFileSize(att.fileSize)}</Box>
-                        <Box component="td" sx={{ p: 1.5, color: "text.secondary" }}>{att.mimeType.split("/")[1] || "unknown"}</Box>
-                        <Box component="td" sx={{ p: 1.5, textAlign: "right" }}>
-                          <Tooltip title="Download">
-                            <IconButton 
-                              size="small" 
-                              component="a"
-                              href={authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${att.id}`)}
-                              download={att.filename}
-                              sx={{ p: 0.5, color: "text.secondary", "&:hover": { color: "primary.light" } }}
-                            >
-                              <Download size={14} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              </Box>
+              <CollectionTable
+                title="Attachments"
+                columns={[{ id: "name", label: "File" }, { id: "size", label: "Size" }, { id: "type", label: "Type" }]}
+                rows={attachments.map((att) => ({ id: att.id, cells: { name: att.filename, size: formatFileSize(att.fileSize), type: att.mimeType.split("/")[1] || "file" } }))}
+                emptyMessage="No attachments found for this document."
+                onOpen={(id) => window.open(authenticatedMediaUrl(`${API_BASE_URL}/api/attachments/${id}`), "_blank", "noopener")}
+              />
             );
           })()}
 
@@ -2951,7 +2611,8 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             assignee: data.assignee,
                             priority: data.priority,
                             creator: data.creator,
-                            attachments: data.attachments
+                            attachments: data.attachments,
+                            fetchedAt: new Date().toISOString(),
                           }
                         });
                       } catch (err) {
@@ -3031,6 +2692,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>{config.creator || "System"}</Typography>
                     </Box>
                   </Box>
+                  <Typography sx={{ color: "var(--text-secondary)", fontSize: "12px", mt: 1 }}>{config.fetchedAt ? `Fetched ${new Date(config.fetchedAt).toLocaleString()}. This card keeps that snapshot until someone fetches it again.` : "Shown from the last details saved on this page."}</Typography>
 
                   {isEditable && <Box sx={{ display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
                     <Button
@@ -3195,7 +2857,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                             });
                             if (!res.ok) return;
                             const data = await res.json();
-                            updateAttributes({ config: { ...config, issues: data.issues } });
+                            updateAttributes({ config: { ...config, issues: data.issues, fetchedAt: new Date().toISOString() } });
                           } catch (err) {
                             console.error("Failed to refresh issues", err);
                           }
@@ -3205,6 +2867,7 @@ export const MacroBlockView: React.FC<NodeViewProps> = ({ node, deleteNode, upda
                       </Button>
                     </Box>}
                   </Box>
+                  <Typography sx={{ color: "var(--text-secondary)", fontSize: "12px", px: 0.5, pb: 1 }}>{config.fetchedAt ? `Saved from GitLab ${new Date(config.fetchedAt).toLocaleString()}. This list is a snapshot, not a live board.` : "These rows are the last snapshot saved on the page."}</Typography>
                   <Table size="small">
                     <TableHead>
                       <TableRow>

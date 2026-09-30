@@ -313,6 +313,15 @@ func TestApprovedReviewRecordsTheAudienceSnapshot(t *testing.T) {
 	if err != nil || visible == nil || strings.Contains(visible.Content, "secret draft") {
 		t.Fatalf("approved search hit should return the snapshot, got %#v (%v)", visible, err)
 	}
+	properties, ok, err := service.AudienceProperties(ctx, document.ID, domain.DocumentProperty{DocumentID: document.ID, Title: document.Title})
+	if err != nil || !ok || len(properties) != 0 {
+		t.Fatalf("page without properties should keep an empty audience projection, got %#v ok=%v (%v)", properties, ok, err)
+	}
+	include := `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{"pageId":"` + document.ID + `"}}}]}`
+	inlined, err := service.InlineReviewedExcerpts(ctx, include)
+	if err != nil || !strings.Contains(inlined, "approved policy") || strings.Contains(inlined, "secret draft") {
+		t.Fatalf("shared excerpt = %s (%v)", inlined, err)
+	}
 }
 
 func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {

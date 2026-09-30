@@ -22,15 +22,13 @@ To keep the editing toolbar clean and focused, Kollab groups all document macros
 
 ### Browsing Categories
 The Insert Dialog is divided into focused vertical tabs on the left:
-1. **Text & Lists**: Basic formatting blocks, lists, code panels, lorem ipsum, and symbols.
-2. **Layout & Structure**: Columns, cards, tabs, page metadata, banners, and tables.
-3. **Media & Attachments**: Images, file previews, and attachment lists.
-4. **Callouts & Panels**: Information, tip, warning, note, error, check, and expandable panels.
-5. **Task & Status**: Checklists, status indicators, and date pills.
-6. **Diagrams & Charts**: Draw.io, Excalidraw, Mermaid, charts, calendars, and roadmaps.
-7. **AI & Automation**: AI prompt and generated-content blocks.
-8. **Integrations & Dev**: Imports, excerpts, issue embeds, page indexes, and other connected content.
-9. **Advanced** and **Templates**: Table of Contents and saved block templates.
+1. **Write**: Headings, lists, callouts, tasks, Mermaid, and Ask AI. Ask AI inserts ordinary paragraphs. Mermaid is the diagram to use when the picture should stay as text on the page.
+2. **Structure**: Columns, cards, tabs, tables, banners, and page properties. A status indicator only annotates the page. Approving a content review is what records the snapshot share links use.
+3. **Reuse**: Excerpts, excerpt includes, and **New page from selection**.
+4. **Live data**: Child pages, the page index, property reports, tag counts, mentions, attachments, and connected GitLab or Jira cards. These tables are empty when the source has no rows. GitLab and Jira cards keep the last fetched snapshot and show when it was saved.
+5. **Templates**: Saved block templates.
+
+Charts, roadmaps, and calendars are not in the picker. A page that already contains one still shows the values saved in that block, and a blank one says that it has no source. Tag summaries count real page tags.
 ### Searching Macros
 - **Search Bar**: A search input is located at the top of the dialog. Type any term (e.g., `table` or `color`) to find matching macros immediately by name or description.
 - **Global Search Layout**: When you type a search query, the vertical tabs sidebar temporarily collapses to present a full-width grid of search results matching globally. Clearing the search query instantly restores the category vertical tabs.
@@ -71,7 +69,7 @@ Callout panels are beautifully colored message boxes featuring a distinct editab
 
 ## 🏷️ Inline Status Badges
 
-Status badges are colored pills that sit inline with your text. They are commonly used to indicate ticket states (e.g. `TO DO`, `APPROVED`, `BLOCKED`).
+Status badges are colored pills that sit inline with your text. They annotate the sentence they sit in (for example `TO DO`, `APPROVED`, or `BLOCKED`). Approving the page is a separate step: use the Content Review block, which records the snapshot share links use.
 
 ### How to Insert a Status Badge
 1.  While typing a sentence, type **`/status`** and press **`Enter`**.
@@ -362,7 +360,7 @@ Click the **Gear icon** in the top-right corner of the block in edit mode to con
 
 ## 🧬 Mermaid.js Diagramming Macro
 
-The Mermaid macro compiles textual diagram definitions (like flowcharts, sequence diagrams, state diagrams, or Gantt charts) into live vector drawings.
+Mermaid is the default diagram. It compiles textual diagram definitions (like flowcharts, sequence diagrams, state diagrams, or Gantt charts) into vector drawings that stay in the page as text. Draw.io and Excalidraw remain available when you need a freehand canvas.
 
 ### How to Insert
 1. Type **`/mermaid`** and press **`Enter`** (or select **Mermaid Diagram** from the slash command menu).

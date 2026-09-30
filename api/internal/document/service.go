@@ -1066,6 +1066,123 @@ func (s *DocumentService) ListDocumentProperties(ctx context.Context, projectID 
 	return s.repo.ListProperties(ctx, projectID, teamID, strings.TrimSpace(key))
 }
 
+// AudienceProperties returns the properties stored in the approved snapshot.
+// The second result is false when the page has never been approved.
+func (s *DocumentService) AudienceProperties(ctx context.Context, documentID string, sample domain.DocumentProperty) ([]domain.DocumentProperty, bool, error) {
+	snapshot, ok, err := s.AudienceDocument(ctx, documentID)
+	if err != nil || !ok {
+		return nil, ok, err
+	}
+	extracted := extractDocumentProperties(documentID, snapshot.Content)
+	for i := range extracted {
+		extracted[i].Title = sample.Title
+		extracted[i].ProjectID = sample.ProjectID
+		extracted[i].TeamID = sample.TeamID
+	}
+	return extracted, true, nil
+}
+
+// InlineReviewedExcerpts replaces excerpt-include macros with the text of the
+// approved source, falling back to the live page when it has never been approved.
+func (s *DocumentService) InlineReviewedExcerpts(ctx context.Context, content string) (string, error) {
+	var root map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &root); err != nil || root == nil {
+		return content, nil
+	}
+	rewritten := s.rewriteExcerptIncludes(ctx, root)
+	encoded, err := json.Marshal(rewritten)
+	if err != nil {
+		return content, err
+	}
+	return string(encoded), nil
+}
+
+func (s *DocumentService) rewriteExcerptIncludes(ctx context.Context, node map[string]interface{}) map[string]interface{} {
+	if nodeType, _ := node["type"].(string); nodeType == "macroBlock" {
+		if attrs, _ := node["attrs"].(map[string]interface{}); attrs != nil {
+			if macroType, _ := attrs["type"].(string); macroType == "excerpt-include" {
+				config, _ := attrs["config"].(map[string]interface{})
+				pageID, _ := config["pageId"].(string)
+				excerptID, _ := config["excerptId"].(string)
+				text := s.reviewedExcerptText(ctx, pageID, excerptID)
+				if text == "" {
+					text = "The included excerpt is not available."
+				}
+				return map[string]interface{}{"type": "paragraph", "content": []interface{}{map[string]interface{}{"type": "text", "text": text}}}
+			}
+		}
+	}
+	if children, ok := node["content"].([]interface{}); ok {
+		next := make([]interface{}, 0, len(children))
+		for _, child := range children {
+			childNode, ok := child.(map[string]interface{})
+			if !ok {
+				next = append(next, child)
+				continue
+			}
+			next = append(next, s.rewriteExcerptIncludes(ctx, childNode))
+		}
+		node["content"] = next
+	}
+	return node
+}
+
+func (s *DocumentService) reviewedExcerptText(ctx context.Context, pageID string, excerptID string) string {
+	if pageID == "" {
+		return ""
+	}
+	snapshot, ok, err := s.AudienceDocument(ctx, pageID)
+	if err != nil {
+		return ""
+	}
+	if !ok {
+		document, _, err := s.GetDocument(ctx, pageID)
+		if err != nil || document == nil {
+			return ""
+		}
+		snapshot = document
+	}
+	var root map[string]interface{}
+	if err := json.Unmarshal([]byte(snapshot.Content), &root); err != nil {
+		return ""
+	}
+	var text string
+	var visit func(map[string]interface{})
+	visit = func(node map[string]interface{}) {
+		if text != "" {
+			return
+		}
+		if nodeType, _ := node["type"].(string); nodeType == "excerpt" {
+			attrs, _ := node["attrs"].(map[string]interface{})
+			id, _ := attrs["excerptId"].(string)
+			if excerptID == "" || id == excerptID {
+				text = strings.TrimSpace(ExtractTextFromJSON(mustJSON(node)))
+				return
+			}
+		}
+		if children, ok := node["content"].([]interface{}); ok {
+			for _, child := range children {
+				if childNode, ok := child.(map[string]interface{}); ok {
+					visit(childNode)
+				}
+			}
+		}
+	}
+	visit(root)
+	if text == "" && excerptID == "" {
+		text = strings.TrimSpace(ExtractTextFromJSON(snapshot.Content))
+	}
+	return text
+}
+
+func mustJSON(value interface{}) string {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return ""
+	}
+	return string(encoded)
+}
+
 var indexedPropertyDate = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
 func normalizeIndexedPropertyType(rawType interface{}, rawValue interface{}) string {

@@ -97,7 +97,8 @@ func (h *DocumentHandler) ListProperties(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	visible := properties[:0]
+	visible := make([]domain.DocumentProperty, 0)
+	audienceApplied := map[string]bool{}
 	for _, item := range properties {
 		userID, _ := middleware.GetUserID(r.Context())
 		allowed, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.DocumentID, "read", "", "")
@@ -105,9 +106,39 @@ func (h *DocumentHandler) ListProperties(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
 			return
 		}
-		if allowed {
-			visible = append(visible, item)
+		if !allowed {
+			continue
 		}
+		canWrite, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.DocumentID, "write", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if canWrite {
+			visible = append(visible, item)
+			continue
+		}
+		if !canWrite {
+			if audienceApplied[item.DocumentID] {
+				continue
+			}
+			audience, ok, err := h.docService.AudienceProperties(r.Context(), item.DocumentID, item)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if ok {
+				audienceApplied[item.DocumentID] = true
+				key := strings.TrimSpace(r.URL.Query().Get("key"))
+				for _, property := range audience {
+					if key == "" || strings.EqualFold(strings.TrimSpace(property.Key), key) {
+						visible = append(visible, property)
+					}
+				}
+				continue
+			}
+		}
+		visible = append(visible, item)
 	}
 	_ = json.NewEncoder(w).Encode(visible)
 }
@@ -928,9 +959,26 @@ func (h *DocumentHandler) GetMentions(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
 			return
 		}
-		if allowed {
-			visible = append(visible, item)
+		if !allowed {
+			continue
 		}
+		canWrite, _, err := h.evaluator.EvaluateDocumentAccess(r.Context(), userID, item.ID, "write", "", "")
+		if err != nil {
+			http.Error(w, "Unable to verify access", http.StatusInternalServerError)
+			return
+		}
+		if !canWrite {
+			visibleDoc, err := h.docService.ForReader(r.Context(), item, username)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if visibleDoc == nil {
+				continue
+			}
+			item = visibleDoc
+		}
+		visible = append(visible, item)
 	}
 	_ = json.NewEncoder(w).Encode(visible)
 }

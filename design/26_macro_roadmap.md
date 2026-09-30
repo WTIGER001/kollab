@@ -63,7 +63,9 @@ Every new macro should satisfy the following before it moves out of discovery:
 
 ## 2. What Is Already Covered
 
-This roadmap does not reopen existing work. Current specifications already cover native callouts, status, task lists, dates, details, cards/tabs, navigation, smart links, Draw.io, image galleries, Markdown import, GitLab and Jira views, code blocks, smart tables, data tables/charts/CSV, maps, page properties/rollups, media, and several legacy-wiki parity candidates. See [03_macros_and_plugins.md](03_macros_and_plugins.md), [11_enterprise_publishing_and_templates.md](11_enterprise_publishing_and_templates.md), and [20_jira_confluence_integrations.md](20_jira_confluence_integrations.md).
+This roadmap does not reopen existing work. Current specifications already cover native callouts, status, task lists, dates, details, cards/tabs, navigation, smart links, Draw.io, image galleries, Markdown import, GitLab and Jira views, code blocks, smart tables, page properties/rollups, media, and several legacy-wiki parity candidates. See [03_macros_and_plugins.md](03_macros_and_plugins.md), [11_enterprise_publishing_and_templates.md](11_enterprise_publishing_and_templates.md), and [20_jira_confluence_integrations.md](20_jira_confluence_integrations.md).
+
+Charts, roadmaps, calendars, and a sample tag cloud are not offered as new macros. A collection table is the list primitive, and it stays empty when its source has no rows. CI, incidents, and on-call views wait until that table, honest empty states, and the GitLab/Jira freshness label are the pattern for every live include.
 
 The candidates below focus on gaps, refinements, and high-leverage composition around those foundations.
 

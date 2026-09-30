@@ -14,7 +14,7 @@ describe('EditorMacroDialog', () => {
       id: 'text-1',
       label: 'Heading 1',
       description: 'Big heading',
-      category: 'text',
+      category: 'write',
       icon: <span>H1</span>,
       action: vi.fn(),
     },
@@ -22,7 +22,7 @@ describe('EditorMacroDialog', () => {
       id: 'layout-1',
       label: 'Columns',
       description: 'Create two columns',
-      category: 'layout',
+      category: 'structure',
       icon: <span>Col</span>,
       action: vi.fn(),
     }
@@ -33,7 +33,7 @@ describe('EditorMacroDialog', () => {
     setMacroSelectorOpen: mockSetMacroSelectorOpen,
     macroSearchQuery: '',
     setMacroSearchQuery: mockSetMacroSearchQuery,
-    activeCategoryTab: 'text',
+    activeCategoryTab: 'write',
     setActiveCategoryTab: mockSetActiveCategoryTab,
     commands,
     toggleFavorite: mockToggleFavorite,
@@ -50,8 +50,8 @@ describe('EditorMacroDialog', () => {
     expect(screen.getByText('Insert Macro or Block')).toBeInTheDocument();
     
     // Check tabs
-    expect(screen.getByText('Text & Lists')).toBeInTheDocument();
-    expect(screen.getByText('Layout & Structure')).toBeInTheDocument();
+    expect(screen.getByText('Write')).toBeInTheDocument();
+    expect(screen.getByText('Structure')).toBeInTheDocument();
     
     // Only the 'text' category commands should be visible initially
     expect(screen.getByText('Heading 1')).toBeInTheDocument();
@@ -61,15 +61,15 @@ describe('EditorMacroDialog', () => {
   it('switches category tabs', () => {
     render(<EditorMacroDialog {...defaultProps} />);
     
-    fireEvent.click(screen.getByText('Layout & Structure'));
-    expect(mockSetActiveCategoryTab).toHaveBeenCalledWith('layout');
+    fireEvent.click(screen.getByText('Structure'));
+    expect(mockSetActiveCategoryTab).toHaveBeenCalledWith('structure');
   });
 
   it('filters commands by search query and hides tabs', () => {
     // When searching, tabs are hidden and all categories are searched
     render(<EditorMacroDialog {...defaultProps} macroSearchQuery="col" />);
     
-    expect(screen.queryByText('Text & Lists')).not.toBeInTheDocument(); // Tabs hidden
+    expect(screen.queryByText('Write')).not.toBeInTheDocument(); // Tabs hidden
     
     expect(screen.queryByText('Heading 1')).not.toBeInTheDocument();
     expect(screen.getByText('Columns')).toBeInTheDocument();
@@ -144,7 +144,7 @@ describe('EditorMacroDialog', () => {
   });
 
   it('displays correct tooltip for favorited commands', () => {
-    render(<EditorMacroDialog {...defaultProps} activeCategoryTab="layout" />);
+    render(<EditorMacroDialog {...defaultProps} activeCategoryTab="structure" />);
     
     // The layout-1 command IS favorited
     const starButtons = screen.getAllByLabelText('Remove from Favorites'); // Tooltip title

@@ -115,7 +115,7 @@ func TestExporter(t *testing.T) {
 	if !strings.Contains(html2, "invalid json") {
 		t.Errorf("expected HTML to contain 'invalid json'")
 	}
-	
+
 	// Huge JSON to test nodeToHTML and nodeToOpenXML
 	hugeJSON := `{"type":"doc","content":[
 		{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"H1"}]},
@@ -136,12 +136,12 @@ func TestExporter(t *testing.T) {
 		{"type":"details","content":[{"type":"summary","content":[{"type":"text","text":"details"}]},{"type":"paragraph","content":[{"type":"text","text":"content"}]}]},
 		{"type":"drawio","attrs":{"xml":"<xml></xml>"}}
 	]}`
-	
+
 	_, err = TiptapToHTML("All Nodes", hugeJSON)
 	if err != nil {
 		t.Errorf("unexpected error in TiptapToHTML with huge JSON: %v", err)
 	}
-	
+
 	_, err = BuildDOCX("All Nodes", hugeJSON)
 	if err != nil {
 		t.Errorf("unexpected error in BuildDOCX with huge JSON: %v", err)
@@ -164,4 +164,14 @@ func TestExporter(t *testing.T) {
 		t.Errorf("unexpected error in WriteHTMLZip: %v", err)
 	}
 	zw.Close()
+}
+
+func TestMacroBlockShareHTMLUsesSavedValues(t *testing.T) {
+	html, err := TiptapToHTML("Share", `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":"Owner","value":"Ada"}]}}},{"type":"macroBlock","attrs":{"type":"status-badge","config":{"status":"Active"}}},{"type":"macroBlock","attrs":{"type":"chart-analytics","config":{}}}]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(html, "Ada") || !strings.Contains(html, "annotation") || !strings.Contains(html, "saved on the page") {
+		t.Fatalf("share html = %s", html)
+	}
 }

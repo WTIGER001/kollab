@@ -52,6 +52,7 @@ import {
   fetchAttachments,
   fetchTeamUsers,
   getTemplates,
+  createDocument,
   API_BASE_URL,
 } from "../services/api";
 import type {
@@ -102,7 +103,6 @@ import {
   Heading4,
   Heading5,
   Heading6,
-  Heading,
   List,
   ListOrdered,
   Code,
@@ -322,7 +322,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [showComments, setShowComments] = useState(true);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [macroSelectorOpen, setMacroSelectorOpen] = useState(false);
-  const [activeCategoryTab, setActiveCategoryTab] = useState("text");
+  const [activeCategoryTab, setActiveCategoryTab] = useState("write");
   const [macroSearchQuery, setMacroSearchQuery] = useState("");
   
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -1140,7 +1140,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Big section title",
       icon: <Heading1 size={16} style={{ color: "var(--accent-blue)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 1 }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "h2",
@@ -1148,7 +1148,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Medium section subtitle",
       icon: <Heading2 size={16} style={{ color: "var(--accent-purple)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 2 }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "h3",
@@ -1156,7 +1156,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Small section heading",
       icon: <Heading3 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 3 }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "h4",
@@ -1164,7 +1164,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 4",
       icon: <Heading4 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 4 }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "h5",
@@ -1172,7 +1172,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 5",
       icon: <Heading5 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 5 }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "h6",
@@ -1180,33 +1180,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Heading level 6",
       icon: <Heading6 size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleHeading({ level: 6 }).run(),
-      category: "text",
-    },
-    {
-      id: "h7",
-      label: "Heading 7",
-      description: "Heading level 7",
-      icon: <Heading size={16} style={{ color: "var(--accent-pink)" }} />,
-      action: (ed) =>
-        ed
-          .chain()
-          .focus()
-          .toggleHeading({ level: 7 as any })
-          .run(),
-      category: "text",
-    },
-    {
-      id: "h8",
-      label: "Heading 8",
-      description: "Heading level 8",
-      icon: <Heading size={16} style={{ color: "var(--accent-pink)" }} />,
-      action: (ed) =>
-        ed
-          .chain()
-          .focus()
-          .toggleHeading({ level: 8 as any })
-          .run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "bullet",
@@ -1214,7 +1188,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Simple bulleted list",
       icon: <List size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) => ed.chain().focus().toggleBulletList().run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "number",
@@ -1222,7 +1196,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Ordered sequential list",
       icon: <ListOrdered size={16} style={{ color: "#fbbf24" }} />,
       action: (ed) => ed.chain().focus().toggleOrderedList().run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "code",
@@ -1230,7 +1204,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Syntax highlighted code block",
       icon: <Code size={16} style={{ color: "#2dd4bf" }} />,
       action: (ed) => ed.chain().focus().toggleCodeBlock().run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "quote",
@@ -1238,22 +1212,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Blockquote style",
       icon: <Quote size={16} style={{ color: "#a78bfa" }} />,
       action: (ed) => ed.chain().focus().toggleBlockquote().run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "ai-prompt",
       label: "Ask AI",
-      description: "Generate or rewrite text inline",
+      description: "Insert the answer as ordinary paragraphs you can edit",
       icon: <Sparkles size={16} style={{ color: "var(--accent-purple)" }} />,
       action: () => {
         setAiPromptOpen(true);
       },
-      category: "ai",
+      category: "write",
     },
     {
       id: "status-badge",
       label: "Status Indicator",
-      description: "Dynamically render status widget",
+      description: "Annotates this page. Approval is the Content Review block, which records the snapshot share links use.",
       icon: <BadgeAlert size={16} style={{ color: "#34d399" }} />,
       action: (ed) => {
         ed.chain()
@@ -1267,7 +1241,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "tasks",
+      category: "structure",
     },
     {
       id: "markdown-paste",
@@ -1286,88 +1260,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
-    },
-    {
-      id: "ai-content",
-      label: "AI Content Block",
-      description: "Ask AI to generate text directly on the page",
-      icon: <Sparkles size={16} style={{ color: "var(--accent-purple)" }} />,
-      action: (ed) => {
-        ed.chain()
-          .focus()
-          .insertContent({
-            type: "macroBlock",
-            attrs: {
-              type: "ai-content",
-              config: { prompt: "", generatedText: "" },
-            },
-          })
-          .run();
-      },
-      category: "ai",
-    },
-    {
-      id: "chart-analytics",
-      label: "Analytics Chart",
-      description: "Insert interactive chart block",
-      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
-      action: (ed) => {
-        ed.chain()
-          .focus()
-          .insertContent({
-            type: "macroBlock",
-            attrs: {
-              type: "chart-analytics",
-              config: { tableId: "table_metrics_01" },
-            },
-          })
-          .run();
-      },
-      category: "diagrams",
-    },
-    {
-      id: "roadmap-planner",
-      label: "Roadmap Planner",
-      description: "Insert a Gantt-style project roadmap",
-      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
-      action: (ed) => {
-        ed.chain()
-          .focus()
-          .insertContent({
-            type: "macroBlock",
-            attrs: {
-              type: "roadmap-planner",
-              config: {},
-            },
-          })
-          .run();
-      },
-      category: "diagrams",
-    },
-    {
-      id: "team-calendars",
-      label: "Team Calendars",
-      description: "Embed a team event calendar",
-      icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
-      action: (ed) => {
-        ed.chain()
-          .focus()
-          .insertContent({
-            type: "macroBlock",
-            attrs: {
-              type: "team-calendars",
-              config: {},
-            },
-          })
-          .run();
-      },
-      category: "diagrams",
+      category: "write",
     },
     {
       id: "popular-labels",
-      label: "Popular Labels",
-      description: "Generate a word cloud of popular labels",
+      label: "Tag summary",
+      description: "Count the page tags already used in this workspace",
       icon: <BadgeAlert size={16} style={{ color: "var(--accent-purple)" }} />,
       action: (ed) => {
         ed.chain()
@@ -1381,7 +1279,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "live",
     },
     {
       id: "page-properties",
@@ -1400,7 +1298,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "page-properties-report",
@@ -1408,7 +1306,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "List indexed page properties in this space",
       icon: <List size={16} style={{ color: "var(--accent-color)" }} />,
       action: (ed) => ed.chain().focus().insertContent({ type: "macroBlock", attrs: { type: "page-properties-report", config: { key: "" } } }).run(),
-      category: "layout",
+      category: "live",
     },
     {
       id: "content-review",
@@ -1416,7 +1314,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Set the page review state and next review date",
       icon: <FileCheck2 size={16} style={{ color: "var(--accent-color)" }} />,
       action: (ed) => ed.chain().focus().insertContent({ type: "macroBlock", attrs: { type: "content-review", config: {} } }).run(),
-      category: "layout",
+      category: "live",
     },
     {
       id: "children-display",
@@ -1440,7 +1338,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "layout",
+      category: "live",
     },
     {
       id: "page-index",
@@ -1461,7 +1359,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "layout",
+      category: "live",
     },
     {
       id: "attachments-list",
@@ -1485,7 +1383,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "media",
+      category: "live",
     },
     {
       id: "file-preview",
@@ -1507,7 +1405,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "media",
+      category: "live",
     },
     {
       id: "excerpt",
@@ -1529,7 +1427,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "reuse",
     },
     {
       id: "excerpt-include",
@@ -1550,7 +1448,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "reuse",
     },
     {
       id: "mentions-list",
@@ -1574,7 +1472,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "live",
     },
     {
       id: "drawio",
@@ -1595,7 +1493,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "diagrams",
+      category: "write",
     },
     {
       id: "excalidraw",
@@ -1616,12 +1514,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "diagrams",
+      category: "write",
     },
     {
       id: "mermaid",
       label: "Mermaid Diagram",
-      description: "Render flowcharts and sequence diagrams from text",
+      description: "Default diagram. Flowcharts and sequences stay in the page as text",
       icon: (
         <Network size={16} style={{ color: "var(--accent-blue)" }} />
       ),
@@ -1637,7 +1535,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "diagrams",
+      category: "write",
     },
     {
       id: "jira-gitlab-issue",
@@ -1656,7 +1554,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "live",
     },
     {
       id: "gitlab-issue-list",
@@ -1678,7 +1576,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "integrations",
+      category: "live",
     },
     {
       id: "table",
@@ -1688,7 +1586,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setTableCreatorOpen(true);
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "hero",
@@ -1713,7 +1611,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           })
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "cards-grid",
@@ -1730,7 +1628,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           ]
         }).run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "tabs",
@@ -1746,7 +1644,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           ]
         }).run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "layout-twocol",
@@ -1768,7 +1666,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "layout-threecol",
@@ -1791,7 +1689,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "layout-asymmetric-left",
@@ -1813,7 +1711,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "layout-asymmetric-right",
@@ -1840,7 +1738,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           .setTextSelection(pos + 3)
           .run();
       },
-      category: "layout",
+      category: "structure",
     },
     {
       id: "image",
@@ -1850,7 +1748,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: (ed) => {
         triggerImageUpload(ed);
       },
-      category: "media",
+      category: "live",
     },
     {
       id: "inline-status",
@@ -1866,7 +1764,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             attrs: { text: "TODO", color: "blue" },
           })
           .run(),
-      category: "tasks",
+      category: "write",
     },
     {
       id: "callout-info",
@@ -1883,7 +1781,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "callout-note",
@@ -1900,7 +1798,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "callout-tip",
@@ -1917,7 +1815,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "callout-warning",
@@ -1934,7 +1832,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "callout-error",
@@ -1951,7 +1849,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "callout-check",
@@ -1968,7 +1866,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             content: [{ type: "paragraph" }],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "task-list",
@@ -1976,7 +1874,42 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       description: "Insert a checkable task checklist",
       icon: <ListTodo size={16} style={{ color: "var(--accent-purple)" }} />,
       action: (ed) => ed.chain().focus().toggleTaskList().run(),
-      category: "tasks",
+      category: "write",
+    },
+    {
+      id: "selection-task",
+      label: "Task from selection",
+      description: "Turn the selected text into a checklist item",
+      icon: <ListTodo size={16} style={{ color: "var(--accent-color)" }} />,
+      action: (ed) => {
+        const text = ed.state.doc.textBetween(ed.state.selection.from, ed.state.selection.to, "\n").trim();
+        if (!text) {
+          ed.chain().focus().toggleTaskList().run();
+          return;
+        }
+        ed.chain().focus().insertContent({
+          type: "taskList",
+          content: [{ type: "taskItem", content: [{ type: "paragraph", content: [{ type: "text", text }] }] }],
+        }).run();
+      },
+      category: "write",
+    },
+    {
+      id: "selection-page",
+      label: "New page from selection",
+      description: "Save the selected text as a child page",
+      icon: <FileText size={16} style={{ color: "var(--accent-blue)" }} />,
+      action: (ed) => {
+        const text = ed.state.doc.textBetween(ed.state.selection.from, ed.state.selection.to, "\n\n").trim();
+        if (!text || !activeDocId || !selectedTeamId) return;
+        const title = text.split("\n")[0].slice(0, 80);
+        const content = JSON.stringify({
+          type: "doc",
+          content: text.split(/\n{2,}/).map((block: string) => block.trim()).filter(Boolean).map((block: string) => ({ type: "paragraph", content: [{ type: "text", text: block }] })),
+        });
+        void createDocument(title, selectedProjectId || null, selectedTeamId, activeDocId, undefined, content).then((doc) => onSelectDoc?.(doc.id));
+      },
+      category: "reuse",
     },
     {
       id: "details-summary",
@@ -1997,7 +1930,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             ],
           })
           .run(),
-      category: "callouts",
+      category: "write",
     },
     {
       id: "inline-date",
@@ -2006,7 +1939,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       icon: <Calendar size={16} style={{ color: "var(--accent-pink)" }} />,
       action: (ed) =>
         ed.chain().focus().insertContent({ type: "inlineDate" }).run(),
-      category: "tasks",
+      category: "write",
     },
     {
       id: "no-format-panel",
@@ -2015,7 +1948,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       icon: <SquareTerminal size={16} style={{ color: "#94a3b8" }} />,
       action: (ed) =>
         ed.chain().focus().insertContent({ type: "noFormatPanel" }).run(),
-      category: "text",
+      category: "write",
     },
     {
       id: "table-of-contents",
@@ -2024,7 +1957,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       icon: <List size={16} style={{ color: "var(--primary-color)" }} />,
       action: (ed) =>
         ed.chain().focus().insertContent({ type: "tableOfContents" }).run(),
-      category: "advanced",
+      category: "structure",
     },
     {
       id: "symbol-picker",
@@ -2059,7 +1992,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
           setSymbolMenuAnchorEl(document.querySelector(".editor-content"));
         }
       },
-      category: "text",
+      category: "write",
     },
     {
       id: "lorem-ipsum",
@@ -2069,7 +2002,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       action: () => {
         setLoremDialogOpen(true);
       },
-      category: "text",
+      category: "write",
     },
   ];
 
@@ -2637,8 +2570,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
               <MenuItem value="h4">Heading 4</MenuItem>
               <MenuItem value="h5">Heading 5</MenuItem>
               <MenuItem value="h6">Heading 6</MenuItem>
-              <MenuItem value="h7">Heading 7</MenuItem>
-              <MenuItem value="h8">Heading 8</MenuItem>
             </Select>
 
             <Divider

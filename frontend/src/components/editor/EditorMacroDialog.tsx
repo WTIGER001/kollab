@@ -17,12 +17,8 @@ import {
   Star,
   Type,
   Columns2,
-  Info,
-  ListTodo,
   Layers,
-  Image,
-  Network,
-  Sparkles,
+  FileText,
   Link2,
 } from "lucide-react";
 
@@ -178,15 +174,10 @@ export const EditorMacroDialog: React.FC<EditorMacroDialogProps> = ({
               },
             }}
           >
-            <Tab label="Text & Lists" value="text" icon={<Type size={16} />} iconPosition="start" />
-            <Tab label="Layout & Structure" value="layout" icon={<Columns2 size={16} />} iconPosition="start" />
-            <Tab label="Media & Attachments" value="media" icon={<Image size={16} />} iconPosition="start" />
-            <Tab label="Callouts & Panels" value="callouts" icon={<Info size={16} />} iconPosition="start" />
-            <Tab label="Task & Status" value="tasks" icon={<ListTodo size={16} />} iconPosition="start" />
-            <Tab label="Diagrams & Charts" value="diagrams" icon={<Network size={16} />} iconPosition="start" />
-            <Tab label="AI & Automation" value="ai" icon={<Sparkles size={16} />} iconPosition="start" />
-            <Tab label="Integrations & Dev" value="integrations" icon={<Link2 size={16} />} iconPosition="start" />
-            <Tab label="Advanced" value="advanced" icon={<Layers size={16} />} iconPosition="start" />
+            <Tab label="Write" value="write" icon={<Type size={16} />} iconPosition="start" />
+            <Tab label="Structure" value="structure" icon={<Columns2 size={16} />} iconPosition="start" />
+            <Tab label="Reuse" value="reuse" icon={<FileText size={16} />} iconPosition="start" />
+            <Tab label="Live data" value="live" icon={<Link2 size={16} />} iconPosition="start" />
             <Tab label="Templates" value="Snippets" icon={<Layers size={16} />} iconPosition="start" />
           </Tabs>
         )}
