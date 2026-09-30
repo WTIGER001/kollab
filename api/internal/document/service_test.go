@@ -324,6 +324,69 @@ func TestApprovedReviewRecordsTheAudienceSnapshot(t *testing.T) {
 	}
 }
 
+func TestAudienceIncludesResolveReviewedAndLiveSources(t *testing.T) {
+	repo := NewInMemoryDocumentRepository()
+	service := NewDocumentService(repo, nil, nil, nil)
+	ctx := context.Background()
+	approved := `{"type":"doc","content":[{"type":"excerpt","attrs":{"excerptId":"policy"},"content":[{"type":"paragraph","content":[{"type":"text","text":"approved excerpt"}]}]}]}`
+	source, err := service.CreateDocument(ctx, "Source", "", "proj_wiki", "team_eng", nil, "author", &approved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.UpdateDocumentReview(ctx, source.ID, "approved", nil, "author"); err != nil {
+		t.Fatal(err)
+	}
+	live := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"live only"}]}]}`
+	unpublished, err := service.CreateDocument(ctx, "Draft page", "", "proj_wiki", "team_eng", nil, "author", &live)
+	if err != nil {
+		t.Fatal(err)
+	}
+	propertiesContent := `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":"Owner","value":"Ada","type":"text"},{"key":" ","value":"skip"}]}}}]}`
+	withProperties, err := service.CreateDocument(ctx, "Owned", "", "proj_wiki", "team_eng", nil, "author", &propertiesContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.UpdateDocumentReview(ctx, withProperties.ID, "approved", nil, "author"); err != nil {
+		t.Fatal(err)
+	}
+
+	missing, ok, err := service.AudienceProperties(ctx, unpublished.ID, domain.DocumentProperty{Title: "Draft page"})
+	if err != nil || ok || missing != nil {
+		t.Fatalf("unpublished properties = %#v ok=%v (%v)", missing, ok, err)
+	}
+	owned, ok, err := service.AudienceProperties(ctx, withProperties.ID, domain.DocumentProperty{Title: "Owned", ProjectID: "proj_wiki", TeamID: "team_eng"})
+	if err != nil || !ok || len(owned) != 1 || owned[0].Key != "Owner" || owned[0].Value != "Ada" || owned[0].Title != "Owned" || owned[0].ProjectID != "proj_wiki" {
+		t.Fatalf("owned properties = %#v ok=%v (%v)", owned, ok, err)
+	}
+
+	if original, err := service.InlineReviewedExcerpts(ctx, "not json"); err != nil || original != "not json" {
+		t.Fatalf("invalid content = %q (%v)", original, err)
+	}
+	unavailable, err := service.InlineReviewedExcerpts(ctx, `{"type":"doc","content":["plain",{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{}}}]}`)
+	if err != nil || !strings.Contains(unavailable, "The included excerpt is not available.") {
+		t.Fatalf("missing page = %s (%v)", unavailable, err)
+	}
+	matched, err := service.InlineReviewedExcerpts(ctx, `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{"pageId":"`+source.ID+`","excerptId":"policy"}}}]}`)
+	if err != nil || !strings.Contains(matched, "approved excerpt") {
+		t.Fatalf("matched excerpt = %s (%v)", matched, err)
+	}
+	mismatched, err := service.InlineReviewedExcerpts(ctx, `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{"pageId":"`+source.ID+`","excerptId":"other"}}}]}`)
+	if err != nil || !strings.Contains(mismatched, "The included excerpt is not available.") {
+		t.Fatalf("mismatched excerpt = %s (%v)", mismatched, err)
+	}
+	liveInclude, err := service.InlineReviewedExcerpts(ctx, `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{"pageId":"`+unpublished.ID+`"}}}]}`)
+	if err != nil || !strings.Contains(liveInclude, "live only") {
+		t.Fatalf("live fallback = %s (%v)", liveInclude, err)
+	}
+	unknown, err := service.InlineReviewedExcerpts(ctx, `{"type":"doc","content":[{"type":"macroBlock","attrs":{"type":"excerpt-include","config":{"pageId":"missing-page"}}}]}`)
+	if err != nil || !strings.Contains(unknown, "The included excerpt is not available.") {
+		t.Fatalf("unknown page = %s (%v)", unknown, err)
+	}
+	if mustJSON(func() {}) != "" {
+		t.Fatal("expected unmarshalable values to produce no JSON")
+	}
+}
+
 func TestDocumentServiceNotifiesOtherWatchersOnUpdate(t *testing.T) {
 	repo := NewInMemoryDocumentRepository()
 	service := NewDocumentService(repo, nil, nil, nil)

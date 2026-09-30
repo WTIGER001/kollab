@@ -26,7 +26,10 @@ jobs:
       - name: Test and enforce coverage
         working-directory: api
         run: |
-          go test -coverpkg=./... -coverprofile=coverage.out ./...
+          # -count=1 avoids replaying cached coverage profiles. Those profiles
+          # were recorded against older line numbers and under-count the build
+          # when -coverpkg instruments packages outside the test being cached.
+          go test -count=1 -coverpkg=./... -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out | awk '/^total:/ {gsub(/%/, "", $3); print "Coverage: " $3 "%"; if ($3 <= 60) exit 1}'
   frontend:
     runs-on: ubuntu-latest

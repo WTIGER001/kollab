@@ -174,4 +174,8 @@ func TestMacroBlockShareHTMLUsesSavedValues(t *testing.T) {
 	if !strings.Contains(html, "Ada") || !strings.Contains(html, "annotation") || !strings.Contains(html, "saved on the page") {
 		t.Fatalf("share html = %s", html)
 	}
+	empty, err := TiptapToHTML("Share", `{"type":"doc","content":[{"type":"macroBlock"},{"type":"macroBlock","attrs":{"type":"status-badge","config":{}}},{"type":"macroBlock","attrs":{"type":"page-properties","config":{"properties":[{"key":" "}]}}},{"type":"macroBlock","attrs":{"type":"children-display"}}]}`)
+	if err != nil || !strings.Contains(empty, "annotation") || strings.Contains(empty, "children-display") {
+		t.Fatalf("empty macros = %s (%v)", empty, err)
+	}
 }
