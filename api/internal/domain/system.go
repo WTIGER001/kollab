@@ -24,6 +24,11 @@ type SystemSettings struct {
 	ClassificationBannerText      string `json:"classificationBannerText"`
 	ClassificationBannerBgColor   string `json:"classificationBannerBgColor"`
 	ClassificationBannerTextColor string `json:"classificationBannerTextColor"`
+	OpenAIAPIKey                  string `json:"openaiApiKey,omitempty"`
+	OpenAIAPIKeyCiphertext        string `json:"-"`
+	OpenAIAPIKeyConfigured        bool   `json:"openaiApiKeyConfigured"`
+	OpenAIBaseURL                 string `json:"openaiBaseUrl"`
+	OpenAIModel                   string `json:"openaiModel"`
 }
 
 type AuditLog struct {

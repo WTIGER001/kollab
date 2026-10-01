@@ -3652,6 +3652,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         insertTable={handleInsertTable}
         aiPromptOpen={aiPromptOpen}
         setAiPromptOpen={setAiPromptOpen}
+        documentId={activeDocId}
         onEditLink={() => {
           if (editor) {
             const attrs = editor.getAttributes("link");

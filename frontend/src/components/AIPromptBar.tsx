@@ -15,11 +15,12 @@ interface AIPromptBarProps {
   editor: any;
   open: boolean;
   onClose: () => void;
+  documentId?: string | null;
 }
 
 type AIStatus = "idle" | "generating" | "completed";
 
-export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose }) => {
+export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose, documentId }) => {
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<AIStatus>("idle");
@@ -117,7 +118,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
       startPos = originalRange.from;
     }
 
-    generateAIContent(activePrompt)
+    generateAIContent(activePrompt, documentId || undefined)
       .then((res) => {
         const responseText = res.text;
         const words = responseText.split(" ");
@@ -197,11 +198,11 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
         left: position.left,
         zIndex: 1100,
         width: 360,
-        backgroundColor: "rgba(16, 18, 26, 0.95)",
+        backgroundColor: "var(--panel-color)",
         backdropFilter: "blur(16px)",
         border: "1px solid color-mix(in srgb, var(--primary-color) 20%, transparent)",
         borderRadius: 2,
-        boxShadow: "0 16px 48px rgba(0, 0, 0, 0.5)",
+        boxShadow: "var(--shadow-elevation)",
         p: 1.5,
         display: "flex",
         flexDirection: "column",
@@ -226,7 +227,7 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
               display: "flex",
               alignItems: "center",
               gap: 1,
-              backgroundColor: "rgba(0,0,0,0.25)",
+              backgroundColor: "var(--bg-color)",
               border: "1px solid var(--border-color)",
               borderRadius: 1.5,
               px: 1.5,
@@ -258,6 +259,9 @@ export const AIPromptBar: React.FC<AIPromptBarProps> = ({ editor, open, onClose 
               <Send size={13} />
             </IconButton>
           </Box>
+          <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontSize: "10px" }}>
+            This page is included as context. Paste up to three public URLs to include their readable text.
+          </Typography>
 
           {/* Quick Option Chips */}
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>

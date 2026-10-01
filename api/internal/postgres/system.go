@@ -81,6 +81,12 @@ func (r *PostgresSystemRepository) GetSettings(ctx context.Context) (*domain.Sys
 			settings.AsposeEnabled = val == "true"
 		case "aspose_license":
 			settings.AsposeLicense = val
+		case "openai_api_key_ciphertext":
+			settings.OpenAIAPIKeyCiphertext = val
+		case "openai_base_url":
+			settings.OpenAIBaseURL = val
+		case "openai_model":
+			settings.OpenAIModel = val
 		}
 	}
 
@@ -111,6 +117,9 @@ func (r *PostgresSystemRepository) UpdateSettings(ctx context.Context, settings 
 		{"auth_login_button_text", settings.AuthLoginButtonText},
 		{"aspose_enabled", strconv.FormatBool(settings.AsposeEnabled)},
 		{"aspose_license", settings.AsposeLicense},
+		{"openai_api_key_ciphertext", settings.OpenAIAPIKeyCiphertext},
+		{"openai_base_url", settings.OpenAIBaseURL},
+		{"openai_model", settings.OpenAIModel},
 	}
 
 	for _, q := range queries {

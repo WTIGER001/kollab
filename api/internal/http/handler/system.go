@@ -1,9 +1,18 @@
 package handler
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -19,6 +28,13 @@ type SystemHandler struct {
 	hub               *ws.Hub
 	systemService     domain.SystemService
 	attachmentService domain.AttachmentService
+	settingsKey       []byte
+}
+
+// SetSettingsEncryptionKey provides the server-only key used for write-only
+// provider credentials. It must be consistent across API replicas.
+func (h *SystemHandler) SetSettingsEncryptionKey(key []byte) {
+	h.settingsKey = append([]byte(nil), key...)
 }
 
 func NewSystemHandler(systemService domain.SystemService, attachmentService domain.AttachmentService) *SystemHandler {
@@ -52,6 +68,18 @@ func (h *SystemHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
 		settings.AsposeEnabled = config.AsposeEnabled
 		settings.AsposeLicense = config.AsposeLicense
 	}
+	settings.OpenAIAPIKeyConfigured = settings.OpenAIAPIKeyCiphertext != "" || os.Getenv("OPENAI_API_KEY") != "" || os.Getenv("OPENAI_KEY") != ""
+	settings.OpenAIAPIKeyCiphertext = ""
+	settings.OpenAIAPIKey = ""
+	settings.OpenAIBaseURL = strings.TrimSpace(settings.OpenAIBaseURL)
+	settings.OpenAIModel = strings.TrimSpace(settings.OpenAIModel)
+	if settings.OpenAIBaseURL != "" {
+		parsed, err := url.Parse(settings.OpenAIBaseURL)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			http.Error(w, "OpenAI base URL must be a complete http or https URL", http.StatusBadRequest)
+			return
+		}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(settings)
@@ -75,6 +103,26 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
+	existing, err := h.systemService.GetSettings(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to load existing settings", http.StatusInternalServerError)
+		return
+	}
+	if settings.OpenAIAPIKey != "" {
+		if len(h.settingsKey) == 0 {
+			http.Error(w, "Server credential encryption is not configured", http.StatusServiceUnavailable)
+			return
+		}
+		ciphertext, err := encryptSetting(h.settingsKey, settings.OpenAIAPIKey)
+		if err != nil {
+			http.Error(w, "Failed to encrypt OpenAI API key", http.StatusInternalServerError)
+			return
+		}
+		settings.OpenAIAPIKeyCiphertext = ciphertext
+	} else {
+		settings.OpenAIAPIKeyCiphertext = existing.OpenAIAPIKeyCiphertext
+	}
+	settings.OpenAIAPIKey = ""
 
 	// Basic validation on policy
 	validPolicies := map[string]bool{
@@ -119,6 +167,8 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	settings.OpenAIAPIKeyConfigured = settings.OpenAIAPIKeyCiphertext != ""
+	settings.OpenAIAPIKeyCiphertext = ""
 
 	// Update Aspose settings on the media-preview container
 	if config, err := h.attachmentService.UpdateAsposeConfig(r.Context(), settings.AsposeEnabled, settings.AsposeLicense); err != nil {
@@ -130,6 +180,44 @@ func (h *SystemHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(settings)
+}
+
+func encryptSetting(key []byte, value string) (string, error) {
+	digest := sha256.Sum256(key)
+	block, err := aes.NewCipher(digest[:])
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+	return base64.RawStdEncoding.EncodeToString(append(nonce, gcm.Seal(nil, nonce, []byte(value), nil)...)), nil
+}
+
+func decryptSetting(key []byte, value string) (string, error) {
+	digest := sha256.Sum256(key)
+	block, err := aes.NewCipher(digest[:])
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+	data, err := base64.RawStdEncoding.DecodeString(value)
+	if err != nil || len(data) < gcm.NonceSize() {
+		return "", fmt.Errorf("invalid encrypted setting")
+	}
+	plain, err := gcm.Open(nil, data[:gcm.NonceSize()], data[gcm.NonceSize():], nil)
+	if err != nil {
+		return "", err
+	}
+	return string(plain), nil
 }
 
 func (h *SystemHandler) GetAuditLogs(w http.ResponseWriter, r *http.Request) {

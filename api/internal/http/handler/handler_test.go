@@ -188,9 +188,11 @@ func (m *mockSystemRepo) GetSyncOperations(ctx context.Context, sinceID int) ([]
 type mockLLMClient struct {
 	generateTextVal string
 	generateTextErr error
+	lastPrompt      string
 }
 
 func (m *mockLLMClient) GenerateText(ctx context.Context, prompt string) (string, error) {
+	m.lastPrompt = prompt
 	return m.generateTextVal, m.generateTextErr
 }
 
@@ -344,7 +346,7 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	attachmentH := handler.NewAttachmentHandler(attachmentService, evaluator)
 
 	aiClient := &mockLLMClient{generateTextVal: "Mock AI generated response"}
-	aiH := handler.NewAIHandler(systemService, aiClient)
+	aiH := handler.NewAIHandler(systemService, aiClient, docService, evaluator)
 
 	tagRepo := inmemtag.NewInMemoryTagRepository()
 	tagService := inmemtag.NewTagService(tagRepo)
@@ -1637,7 +1639,17 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 
 	// 16. Test AI Generation & Rate Limiting
 	// Default rate limit is 10, let's first test that a normal generation succeeds
-	aiPayload := `{"prompt": "Generate a test overview"}`
+	aiContextContent := `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"AI reference material"}]}]}`
+	aiContextBody, _ := json.Marshal(map[string]string{"title": "AI context", "projectId": "proj_wiki", "teamId": "team_eng", "content": aiContextContent})
+	wContext, contextCode := sendReq("POST", "/api/documents", aiContextBody, token)
+	if contextCode != http.StatusCreated {
+		t.Fatalf("expected AI context page creation to succeed, got %d: %s", contextCode, wContext.Body.String())
+	}
+	var aiContextDoc domain.Document
+	if err := json.Unmarshal(wContext.Body.Bytes(), &aiContextDoc); err != nil {
+		t.Fatalf("failed to decode AI context page: %v", err)
+	}
+	aiPayload := fmt.Sprintf(`{"prompt": "Generate a test overview", "documentId": %q}`, aiContextDoc.ID)
 	wAI, codeAI := sendReq("POST", "/api/ai/generate", []byte(aiPayload), token)
 	if codeAI != http.StatusOK {
 		t.Fatalf("expected AI generation to succeed with 200, got %d. Body: %s", codeAI, wAI.Body.String())
@@ -1648,6 +1660,9 @@ func runIntegrationTests(t *testing.T, db *pgxpool.Pool, userRepo domain.UserRep
 	}
 	if aiRes["text"] != "Mock AI generated response" {
 		t.Errorf("expected AI response 'Mock AI generated response', got %q", aiRes["text"])
+	}
+	if !strings.Contains(aiClient.lastPrompt, "CURRENT KOLLAB PAGE") {
+		t.Errorf("expected AI prompt to include the authorized current page, got %q", aiClient.lastPrompt)
 	}
 
 	// Update settings to set rate limit to 2

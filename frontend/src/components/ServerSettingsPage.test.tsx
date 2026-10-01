@@ -131,6 +131,22 @@ describe('ServerSettingsPage', () => {
     });
   });
 
+  it('submits a replacement OpenAI key without rendering a saved key', async () => {
+    render(<ServerSettingsPage {...defaultProps} systemSettings={{ ...defaultProps.systemSettings, openaiApiKeyConfigured: true, openaiBaseUrl: 'https://gateway.example/v1', openaiModel: 'gateway-model' }} />);
+
+    expect(screen.queryByDisplayValue('sk-saved-secret')).not.toBeInTheDocument();
+    const keyInput = screen.getByLabelText('Replace OpenAI API key');
+    expect(keyInput).toHaveAttribute('type', 'password');
+    fireEvent.change(keyInput, { target: { value: 'sk-new-secret' } });
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    await waitFor(() => expect(mockOnSaveSettings).toHaveBeenCalledWith(expect.objectContaining({
+      openaiApiKey: 'sk-new-secret',
+      openaiBaseUrl: 'https://gateway.example/v1',
+      openaiModel: 'gateway-model',
+    })));
+  });
+
   it('calls downloadBackup when Export Full Server Backup ZIP is clicked', async () => {
     render(<ServerSettingsPage {...defaultProps} section="backups" />);
 

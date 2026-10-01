@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 func TestOpenAIClientGeneratesTextAndEmbeddings(t *testing.T) {
@@ -19,18 +18,25 @@ func TestOpenAIClientGeneratesTextAndEmbeddings(t *testing.T) {
 			t.Fatalf("decode request: %v", err)
 		}
 		if _, embeddingRequest := request["input"]; embeddingRequest {
+			if r.URL.Path != "/v1/embeddings" {
+				t.Fatalf("unexpected embeddings path: %s", r.URL.Path)
+			}
 			if request["dimensions"] != float64(768) {
 				t.Fatalf("expected 768 embedding dimensions, got %#v", request)
 			}
 			_, _ = w.Write([]byte(`{"data":[{"embedding":[0.1,0.2]}]}`))
 			return
 		}
+		if r.URL.Path != "/v1/chat/completions" {
+			t.Fatalf("unexpected chat path: %s", r.URL.Path)
+		}
 		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"generated text"}}]}`))
 	}))
 	defer server.Close()
 
 	client := NewOpenAIClient("test-key")
-	client.client = &http.Client{Timeout: time.Second, Transport: &mockTransport{mockURL: server.URL}}
+	client.baseURL = server.URL + "/v1"
+	client.client = server.Client()
 	text, err := client.GenerateText(context.Background(), "hello")
 	if err != nil || text != "generated text" {
 		t.Fatalf("unexpected generated text: %q, %v", text, err)
@@ -47,6 +53,7 @@ func TestOpenAIClientReportsBadResponses(t *testing.T) {
 	}))
 	defer server.Close()
 	client := NewOpenAIClient("test-key")
+	client.baseURL = server.URL + "/v1"
 	client.client = &http.Client{Transport: &mockTransport{mockURL: server.URL}}
 
 	if _, err := client.GenerateText(context.Background(), "hello"); err == nil {
@@ -63,5 +70,17 @@ func TestOpenAIClientReportsBadResponses(t *testing.T) {
 	client.client = &http.Client{Transport: &mockTransport{mockURL: emptyServer.URL}}
 	if _, err := client.GenerateText(context.Background(), "hello"); err == nil {
 		t.Fatal("expected empty choices failure")
+	}
+}
+
+func TestOpenAIClientUsesConfiguredBaseURLAndDefaultModel(t *testing.T) {
+	t.Setenv("OPENAI_BASE_URL", "https://gateway.example/v1/")
+	t.Setenv("OPENAI_MODEL", "")
+	client := NewOpenAIClient("test-key")
+	if client.baseURL != "https://gateway.example/v1" {
+		t.Fatalf("unexpected base URL: %q", client.baseURL)
+	}
+	if client.model != "gpt-5.6-sol" {
+		t.Fatalf("unexpected default model: %q", client.model)
 	}
 }

@@ -663,6 +663,10 @@ export interface SystemSettings {
   classificationBannerText?: string;
   classificationBannerBgColor?: string;
   classificationBannerTextColor?: string;
+  openaiApiKey?: string;
+  openaiApiKeyConfigured?: boolean;
+  openaiBaseUrl?: string;
+  openaiModel?: string;
 }
 
 export interface AuditLogEntry {
@@ -686,10 +690,10 @@ export const updateSystemSettings = (settings: SystemSettings): Promise<SystemSe
   });
 };
 
-export const generateAIContent = (prompt: string): Promise<{ text: string }> => {
+export const generateAIContent = (prompt: string, documentId?: string): Promise<{ text: string }> => {
   return request("/api/ai/generate", {
     method: "POST",
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, documentId }),
   });
 };
 

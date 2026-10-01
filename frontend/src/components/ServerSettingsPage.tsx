@@ -73,6 +73,10 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
   const [authLegalDisclaimer, setAuthLegalDisclaimer] = useState("");
   const [authLoginButtonText, setAuthLoginButtonText] = useState("Log In to Workspace");
   const [aiRateLimit, setAiRateLimit] = useState(10);
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [openaiBaseUrl, setOpenaiBaseUrl] = useState("");
+  const [openaiModel, setOpenaiModel] = useState("gpt-5.6-sol");
+  const [openaiApiKeyConfigured, setOpenaiApiKeyConfigured] = useState(false);
   const [asposeEnabled, setAsposeEnabled] = useState(true);
   const [asposeLicense, setAsposeLicense] = useState("");
   const [classificationBannerEnabled, setClassificationBannerEnabled] = useState(false);
@@ -126,6 +130,10 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
       setAuthLegalDisclaimer(systemSettings.authLegalDisclaimer || "");
       setAuthLoginButtonText(systemSettings.authLoginButtonText || "Log In to Workspace");
       setAiRateLimit(systemSettings.aiRateLimit || 10);
+      setOpenaiApiKey("");
+      setOpenaiBaseUrl(systemSettings.openaiBaseUrl || "");
+      setOpenaiModel(systemSettings.openaiModel || "gpt-5.6-sol");
+      setOpenaiApiKeyConfigured(!!systemSettings.openaiApiKeyConfigured);
       setAsposeEnabled(systemSettings.asposeEnabled !== false);
       setAsposeLicense(systemSettings.asposeLicense || "");
       setClassificationBannerEnabled(!!systemSettings.classificationBannerEnabled);
@@ -153,6 +161,9 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
         authLegalDisclaimer: authLegalDisclaimer,
         authLoginButtonText: authLoginButtonText,
         aiRateLimit: aiRateLimit,
+        openaiApiKey: openaiApiKey || undefined,
+        openaiBaseUrl: openaiBaseUrl,
+        openaiModel: openaiModel,
         asposeEnabled: asposeEnabled,
         asposeLicense: asposeLicense,
         classificationBannerEnabled: classificationBannerEnabled,
@@ -313,6 +324,43 @@ export const ServerSettingsPage: React.FC<ServerSettingsPageProps> = ({
                 }
               }}
             />
+
+            <Box sx={{ p: 3, border: "1px solid var(--border-color)", borderRadius: "var(--border-radius-card)", bgcolor: "var(--glass-bg)", display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ color: "var(--text-primary)", fontWeight: 700 }}>
+                  OpenAI assistant
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>
+                  The API key is encrypted on the server and is never shown after saving.
+                </Typography>
+              </Box>
+              <TextField
+                label={openaiApiKeyConfigured ? "Replace OpenAI API key" : "OpenAI API key"}
+                type="password"
+                value={openaiApiKey}
+                onChange={(e) => setOpenaiApiKey(e.target.value)}
+                placeholder={openaiApiKeyConfigured ? "A key is already configured" : "sk-..."}
+                helperText={openaiApiKeyConfigured ? "Leave blank to keep the saved key." : "Required unless the server environment already provides OPENAI_API_KEY."}
+                autoComplete="new-password"
+                fullWidth
+              />
+              <TextField
+                label="OpenAI-compatible base URL (optional)"
+                value={openaiBaseUrl}
+                onChange={(e) => setOpenaiBaseUrl(e.target.value)}
+                placeholder="https://api.openai.com/v1"
+                helperText="Include /v1 when your gateway requires it."
+                fullWidth
+              />
+              <TextField
+                label="OpenAI model"
+                value={openaiModel}
+                onChange={(e) => setOpenaiModel(e.target.value)}
+                placeholder="gpt-5.6-sol"
+                helperText="Defaults to gpt-5.6-sol."
+                fullWidth
+              />
+            </Box>
 
             <Divider sx={{ my: 1 }} />
 

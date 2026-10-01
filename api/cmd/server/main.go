@@ -303,6 +303,11 @@ func main() {
 	libImageHandler := handler.NewLibraryImageHandler(libImageService)
 	themeHandler := handler.NewThemeHandler(themeService)
 	systemHandler := handler.NewSystemHandler(systemService, attachmentService)
+	settingsEncryptionKey := os.Getenv("KOLLAB_SETTINGS_ENCRYPTION_KEY")
+	if settingsEncryptionKey == "" {
+		settingsEncryptionKey = jwtSecret
+	}
+	systemHandler.SetSettingsEncryptionKey([]byte(settingsEncryptionKey))
 	systemHandler.SetHub(wsHub)
 	commentHandler := handler.NewCommentHandler(commentService, userRepo)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService, evaluator)
@@ -314,7 +319,8 @@ func main() {
 	integrationHandler := handler.NewIntegrationHandler(integrationService)
 
 	aiClient := ai.NewLLMClient()
-	aiHandler := handler.NewAIHandler(systemService, aiClient)
+	aiHandler := handler.NewAIHandler(systemService, aiClient, docService, evaluator)
+	aiHandler.SetSettingsEncryptionKey([]byte(settingsEncryptionKey))
 
 	// Discover the provider metadata once at startup. This binds API access-token
 	// validation to the provider's declared issuer, API audience, API scope, and

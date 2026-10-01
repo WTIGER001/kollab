@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -14,22 +15,35 @@ type OpenAIClient struct {
 	apiKey     string
 	model      string
 	embedModel string
+	baseURL    string
 	client     *http.Client
 }
 
 func NewOpenAIClient(apiKey string) *OpenAIClient {
 	model := os.Getenv("OPENAI_MODEL")
+	baseURL := os.Getenv("OPENAI_BASE_URL")
+	return NewOpenAIClientWithConfig(apiKey, baseURL, model)
+}
+
+// NewOpenAIClientWithConfig creates an OpenAI-compatible client from server-side
+// configuration. Empty model and base URL values use Kollab's safe defaults.
+func NewOpenAIClientWithConfig(apiKey, baseURL, model string) *OpenAIClient {
 	if model == "" {
-		model = "gpt-4o-mini"
+		model = "gpt-5.6-sol"
 	}
 	embedModel := os.Getenv("OPENAI_EMBED_MODEL")
 	if embedModel == "" {
 		embedModel = "text-embedding-3-small"
 	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
 	return &OpenAIClient{
 		apiKey:     apiKey,
 		model:      model,
 		embedModel: embedModel,
+		baseURL:    baseURL,
 		client: &http.Client{
 			Timeout: 15 * time.Second,
 		},
@@ -69,7 +83,7 @@ func (c *OpenAIClient) GenerateText(ctx context.Context, prompt string) (string,
 		return "", fmt.Errorf("failed to encode request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/chat/completions", buf)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
@@ -127,7 +141,7 @@ func (c *OpenAIClient) GenerateTextEmbeddings(ctx context.Context, text string) 
 		return nil, fmt.Errorf("failed to encode request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/embeddings", buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/embeddings", buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

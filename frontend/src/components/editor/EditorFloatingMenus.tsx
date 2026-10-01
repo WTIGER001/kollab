@@ -13,6 +13,7 @@ export interface EditorFloatingMenusProps {
   insertTable: (rows: number, cols: number, withHeader: boolean) => void;
   aiPromptOpen: boolean;
   setAiPromptOpen: (val: boolean) => void;
+  documentId?: string | null;
   onEditLink: () => void;
   onAddComment: (commentId: string) => void;
 }
@@ -24,6 +25,7 @@ export const EditorFloatingMenus: React.FC<EditorFloatingMenusProps> = ({
   insertTable,
   aiPromptOpen,
   setAiPromptOpen,
+  documentId,
   onEditLink,
   onAddComment,
 }) => {
@@ -46,6 +48,7 @@ export const EditorFloatingMenus: React.FC<EditorFloatingMenusProps> = ({
         open={aiPromptOpen}
         onClose={() => setAiPromptOpen(false)}
         editor={editor}
+        documentId={documentId}
       />}
     </>
   );

@@ -17,6 +17,7 @@ Use these guides for the current application. Azure backup and Jira remain proto
 ## Write and collaborate
 
 - [Text formatting and links](basic_formatting.md)
+- [AI assistant](ai_assistant.md)
 - [Editor blocks and macros](editor_macros.md)
 - [Templates and reusable snippets](templates.md)
 - [Attachments and previews](attachments_and_previews.md)

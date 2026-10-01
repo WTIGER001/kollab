@@ -47,6 +47,8 @@ This directory contains the hierarchical technical specifications of Project Kol
 ### 🔍 [4. Hybrid Search & AI Providers](04_search_and_ai.md)
 *Postgres pgvector similarity queries, Ollama embedding configurations, keyword fallback logic, and the Multi-Provider LLM adapter.*
 
+- [AI assistant context and OpenAI configuration](ai_assistant.md) - OpenAI-first provider selection, configurable API gateways, authorized page references, and safe public URL ingestion.
+
 ### ⏳ [5. Data Lifecycle & Version Control](05_data_lifecycle.md)
 *Version DB schemas, auto-snapshot rules, history restorations, soft deletes, cascading page deletions, and trash recovery.*
 
